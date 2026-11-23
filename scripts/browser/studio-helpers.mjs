@@ -18,7 +18,19 @@ export async function openSuggestedPalette(opts = {}) {
   return page;
 }
 
+const TAB_IDS = {
+  'My Palette': 'palette',
+  'Living System': 'system',
+  '2050 Climate': 'climate',
+  'Planting Plan': 'plan',
+};
+
 export async function clickStudioTab(page, tabName) {
+  const id = TAB_IDS[tabName];
+  if (id) {
+    await page.locator(`[data-studio-tab="${id}"]`).click();
+    return;
+  }
   await page.locator(aria('tab', tabName)).click();
 }
 

@@ -73,22 +73,39 @@
   --level-outside: var(--danger);
   --level-fits: var(--text);
   --level-unknown: var(--text-secondary);
-  /* Field Studio editorial tokens (Slice 3.2: v14/v15 unified calm surfaces & accessible tooltips). */
+  /* Field Studio editorial tokens (Slice 3.2 / VP-1: v14 unified calm surfaces, plant-data semantics & accessible tooltips). */
+  --on-ink: #FCFBF7;
+  --surface-hover: #E7E0D3;
   --tip-bg: #27231D;
   --tip-text: #FBF8F2;
   --tip-border: rgba(255, 248, 235, 0.16);
   --rule-hairline: rgba(58, 46, 28, 0.12);
   --ochre-tint: rgba(156, 90, 22, 0.08);
   --ochre-border: rgba(156, 90, 22, 0.34);
-  /* Harmonized field-notebook sun-tier tokens (Slice 3.5 SVG blueprint & diagrams; zero bright primaries). */
-  --sun-full: #E8C57B;
-  --sun-full-ink: #7A5410;
-  --sun-mostly: #D9B382;
-  --sun-mostly-ink: #6A461C;
-  --sun-part: #C5B99E;
-  --sun-part-ink: #4A4234;
-  --sun-shade: #B8B2A6;
-  --sun-shade-ink: #3E3A33;
+  --plant-green: #2F6B3B;
+  --plant-green-bg: rgba(47, 107, 59, 0.10);
+  --warn-dot: #B88214;
+  --risk-bg: rgba(162, 59, 42, 0.10);
+  --winter-ink: #1B4968;
+  --winter-bg: rgba(43, 106, 148, 0.09);
+  --winter-line: rgba(43, 106, 148, 0.30);
+  --cal-winter: #2B6A94;
+  --cal-sow: #9C5A16;
+  --cal-bloom: #C78A1A;
+  --cal-harvest: #2F6B3B;
+  /* Harmonized field-notebook Preferred Sun Exposure tokens (v14 WCAG AA >= 4.5:1). */
+  --sun-full: #C77D1A;
+  --sun-full-ink: #7A4A06;
+  --sun-full-bg: rgba(199, 125, 26, 0.13);
+  --sun-mostly: #3E7B52;
+  --sun-mostly-ink: #225434;
+  --sun-mostly-bg: rgba(62, 123, 82, 0.12);
+  --sun-part: #2B6A94;
+  --sun-part-ink: #1B4968;
+  --sun-part-bg: rgba(43, 106, 148, 0.12);
+  --sun-shade: #7D4E6B;
+  --sun-shade-ink: #5C314C;
+  --sun-shade-bg: rgba(125, 78, 107, 0.13);
 
   --font-sans: 'Source Sans 3', 'Source Sans 3 Fallback', 'Noto Sans', 'Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: 'Literata', 'Literata Fallback', 'Noto Serif', 'Noto Serif SC', Georgia, serif;
@@ -145,20 +162,37 @@
   --role-mulch: #B79E84;
   --role-ground: #B8B060;
   --role-shelter: #98ACBC;
+  --on-ink: #171511;
+  --surface-hover: #332E27;
   --tip-bg: #F3EEE3;
   --tip-text: #161510;
   --tip-border: rgba(58, 46, 28, 0.22);
   --rule-hairline: rgba(255, 248, 235, 0.10);
   --ochre-tint: rgba(227, 160, 76, 0.12);
   --ochre-border: rgba(227, 160, 76, 0.42);
-  --sun-full: #6C5222;
-  --sun-full-ink: #F0CB7D;
-  --sun-mostly: #5A462B;
-  --sun-mostly-ink: #E2B987;
-  --sun-part: #474137;
-  --sun-part-ink: #D4C8AE;
-  --sun-shade: #38352F;
-  --sun-shade-ink: #C2BCB0;
+  --plant-green: #8CC48E;
+  --plant-green-bg: rgba(140, 196, 142, 0.14);
+  --warn-dot: #E5B94C;
+  --risk-bg: rgba(232, 141, 123, 0.15);
+  --winter-ink: #96C9EC;
+  --winter-bg: rgba(108, 169, 212, 0.15);
+  --winter-line: rgba(108, 169, 212, 0.36);
+  --cal-winter: #7FB8E0;
+  --cal-sow: #E3A04C;
+  --cal-bloom: #E5B94C;
+  --cal-harvest: #8CC48E;
+  --sun-full: #E3A04C;
+  --sun-full-ink: #F4BE6E;
+  --sun-full-bg: rgba(227, 160, 76, 0.17);
+  --sun-mostly: #6DB383;
+  --sun-mostly-ink: #97D4AA;
+  --sun-mostly-bg: rgba(109, 179, 131, 0.17);
+  --sun-part: #6CA9D4;
+  --sun-part-ink: #96C9EC;
+  --sun-part-bg: rgba(108, 169, 212, 0.18);
+  --sun-shade: #C291B0;
+  --sun-shade-ink: #E0B6D0;
+  --sun-shade-bg: rgba(194, 145, 176, 0.18);
 }
 
 @media (prefers-color-scheme: dark) {

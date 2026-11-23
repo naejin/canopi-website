@@ -5,11 +5,11 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: antigravity/gemini, at: 2026-11-23T13:34:39Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T14:27:51Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:54Z }
-  - { by: antigravity/gemini, at: 2026-11-23T13:43:05Z }
+  - { by: antigravity/gemini, at: 2026-11-23T14:27:44Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -24,8 +24,8 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:e82498da626c5859
-    last_modified: 2026-11-23T13:42:46Z
+    digest: sha256:1ddd7d149e534f0b
+    last_modified: 2026-11-23T14:18:49Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -110,7 +110,7 @@ sources:
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
     digest: sha256:0ede506690c0787d
-    last_modified: 2026-11-23T13:42:46Z
+    last_modified: 2026-11-23T13:43:06Z
   - id: consortium-pf-env-mjs
     resource: ../../scripts/consortium-pf-env.mjs
     title: scripts/consortium-pf-env.mjs

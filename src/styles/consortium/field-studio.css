@@ -1879,4 +1879,746 @@
   }
 }
 
+/* ==========================================================================
+   Slice VP-1: Direct 1:1 v14 Mockup Visual-Parity Overrides
+   Full-bleed 2-tier Studio Header, 4-segment Health Ribbon, Persistent
+   Collapsible Right Rail (410px), Calm Onboarding, 3-Layer My Palette Cards,
+   and Editorial Field Dossier. Breakpoints strictly 639px & 960px.
+   ========================================================================== */
+
+/* Hide legacy step breadcrumb & BETA clutter on onboarding */
+.ct #ct-head .ct-steps,
+.ct #ct-head .ct-beta {
+  display: none;
+}
+
+/* Full-bleed studio header bands breaking cleanly out of .wrap */
+.ct .ct-palette-page {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+.ct .ct-studio-header {
+  display: block;
+  padding: 0;
+  margin-bottom: 0;
+  border-bottom: none;
+  background: transparent;
+  min-width: 0;
+  max-width: 100%;
+}
+.ct .ct-studio-t1-band {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+}
+.ct .ct-studio-t1 {
+  max-width: 1440px;
+  margin: 0 auto;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.ct .ct-studio-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+  flex-wrap: wrap;
+}
+.ct .ct-studio-name {
+  font-family: var(--font-display);
+  font-size: 16.5px;
+  font-weight: 600;
+  padding: 4px 8px;
+  margin-left: -8px;
+  min-height: 36px;
+  max-width: 240px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+}
+.ct .ct-studio-name:hover,
+.ct .ct-studio-name:focus {
+  background: var(--bg);
+  border-color: var(--border);
+}
+.ct .ct-doc-filename {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.ct .ct-file-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ct .ct-file-status.is-dirty {
+  border-color: var(--ochre-border);
+  background: var(--ochre-tint);
+  color: var(--accent-ink);
+}
+.ct .ct-fs-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+.ct .ct-file-status.is-dirty .ct-fs-dot {
+  background: var(--accent);
+}
+.ct .ct-doc-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+.ct .ct-studio-loc {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 5px 10px;
+  min-height: 36px;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ct .ct-studio-loc:hover {
+  background: var(--bg);
+  border-color: var(--border);
+  color: var(--text);
+}
+.ct .ct-loc-edit {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.ct .ct-studio-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Tier 2 sticky nav & horizon bar */
+.ct .ct-studio-t2-band {
+  position: sticky;
+  top: 0;
+  z-index: 42;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+}
+.ct .ct-studio-t2 {
+  max-width: 1440px;
+  margin: 0 auto;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.ct .ct-studio-tabs {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+.ct .ct-studio-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 12px 2px 10px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ct .ct-studio-tab[aria-selected="true"] {
+  color: var(--text);
+  border-bottom-color: var(--text);
+}
+.ct .ct-studio-tab-count {
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.ct .ct-studio-t2-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* Warm-ink dark-pill segmented controls (NOT ochre) */
+.ct .ct-ink-seg {
+  display: inline-flex;
+  align-items: center;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px;
+  gap: 2px;
+}
+.ct .ct-ink-seg .ct-studio-horizon-btn,
+.ct .ct-ink-seg .ct-seg-btn,
+.ct .ct-ink-seg .ct-rail-tab {
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  padding: 4px 11px;
+  min-height: 28px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ct .ct-ink-seg .ct-studio-horizon-btn[aria-pressed="true"],
+.ct .ct-ink-seg .ct-seg-btn[aria-pressed="true"],
+.ct .ct-ink-seg .ct-rail-tab[aria-selected="true"] {
+  background: var(--text);
+  color: var(--on-ink);
+}
+.ct .ct-rail-toggle-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  padding: 5px 10px;
+  min-height: 34px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ct .ct-rail-toggle-btn:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Tier 3: 4-Segment Whisper-Quiet Hairline Health Ribbon */
+.ct .ct-studio-ribbon-band {
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+}
+.ct .ct-studio-ribbon {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 0;
+}
+.ct .ct-health-items {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+.ct .ct-health-seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border-right: 1px solid var(--border);
+  padding: 0 12px;
+  white-space: nowrap;
+}
+.ct .ct-health-seg:first-child {
+  padding-left: 0;
+}
+.ct .ct-health-seg:last-child {
+  border-right: none;
+}
+.ct .ct-health-item {
+  background: transparent;
+  border: none;
+  padding: 7px 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ct .ct-health-item:hover {
+  color: var(--text);
+}
+.ct .ct-health-item strong {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+.ct .ct-hdot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.ct .ct-hdot.is-good[data-stratum="high"] {
+  background: var(--plant-green);
+}
+.ct .ct-hdot.is-warn {
+  background: var(--warn-dot);
+}
+.ct .ct-hdot.is-risk {
+  background: var(--danger);
+}
+.ct .ct-hdot.is-winter {
+  background: var(--winter-ink);
+}
+.ct .ct-ribbon-status {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* Fluid Split-Pane Studio Layout (persistent across ALL 4 tabs) */
+.ct .ct-studio-split {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 0;
+}
+.ct .ct-studio-canvas {
+  padding: 20px 20px 72px;
+  min-width: 0;
+}
+@media (min-width: 960px) {
+  .ct .ct-studio-split {
+    grid-template-columns: minmax(0, 1fr) 410px;
+  }
+  .ct .ct-studio-split.is-collapsed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ct .ct-studio-canvas {
+    padding: 20px 26px 84px;
+  }
+  .ct .ct-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .ct .ct-studio-split.is-collapsed .ct-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .ct .ct-rail {
+    position: sticky;
+    top: 48px;
+    height: calc(100vh - 48px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border: none;
+    border-left: 1px solid var(--border);
+    border-radius: 0;
+    padding: 0;
+  }
+}
+
+/* Persistent Right Rail (Coach & All Plants) */
+.ct .ct-rail {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+.ct .ct-rail-head {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.ct .ct-rail-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+.ct .ct-rail-close:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+.ct .ct-rail-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ct .ct-coach-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ct .ct-coach-title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0;
+}
+.ct .ct-auto-strengthen {
+  width: 100%;
+  justify-content: center;
+}
+.ct .ct-coach-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ct .ct-coach-note {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 13px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+}
+.ct .ct-coach-note:hover {
+  border-color: var(--border-strong);
+}
+.ct .ct-coach-gap-k {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+.ct .ct-coach-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+.ct .ct-coach-name {
+  font-family: var(--font-display);
+  font-size: 15.5px;
+  font-weight: 600;
+}
+.ct .ct-rail-meta {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin-top: 2px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 5px;
+}
+.ct .ct-coach-why {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+.ct .ct-rail-explore {
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.ct .ct-rail-explore:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+.ct .ct-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.ct .ct-intent-chip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  min-height: 30px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.ct .ct-intent-chip[aria-pressed="true"] {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--on-ink);
+}
+.ct .ct-rail-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.ct .ct-pool-item {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+.ct .ct-pool-item:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-alt);
+}
+.ct .ct-pool-item.is-in-pal {
+  background: var(--surface);
+}
+.ct .ct-pool-name-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 5px;
+}
+.ct .ct-rail-request {
+  margin-top: 4px;
+}
+
+/* My Palette Toolbar, Cards, Sun Dots, Semantic Status, Grouping */
+.ct .ct-pal-search {
+  flex: 1;
+  min-width: 190px;
+  min-height: 38px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+}
+.ct .ct-group-select {
+  min-height: 38px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.ct .ct-card {
+  padding: 15px 16px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.ct .ct-card:hover {
+  border-color: var(--border-strong);
+}
+.ct .ct-card-common {
+  font-family: var(--font-display);
+  font-size: 17.5px;
+  font-weight: 600;
+}
+.ct .ct-card-top-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.ct .ct-status-pill {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+.ct .ct-status-pill.is-fit[data-stratum="high"] {
+  background: var(--plant-green-bg);
+  color: var(--plant-green);
+}
+.ct .ct-status-pill.is-care {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+.ct .ct-status-pill.is-risk {
+  background: var(--risk-bg);
+  color: var(--danger);
+}
+.ct .ct-card-rm {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 5px;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.ct .ct-card-rm:hover {
+  background: var(--surface-alt);
+  color: var(--danger);
+}
+.ct .ct-sun-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+.ct .ct-sun-dot[data-sun-tier="emergent"] {
+  background: var(--sun-full);
+}
+.ct .ct-sun-dot[data-sun-tier="high"] {
+  background: var(--sun-mostly);
+}
+.ct .ct-sun-dot[data-sun-tier="medium"] {
+  background: var(--sun-part);
+}
+.ct .ct-sun-dot[data-sun-tier="low"] {
+  background: var(--sun-shade);
+}
+.ct .ct-msep {
+  color: var(--border-strong);
+  margin: 0 4px;
+}
+.ct .ct-ph-alert {
+  color: var(--warning);
+  font-weight: 600;
+}
+.ct .ct-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ct .ct-group-details {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.ct .ct-group-summary {
+  padding: 10px 14px;
+  background: var(--surface-alt);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 14px;
+}
+.ct .ct-group-cards {
+  padding: 12px;
+}
+
+/* Field Dossier v14 polish */
+.ct .ct-dossier-title-block {
+  min-width: 0;
+}
+.ct .ct-dossier-pos {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 0 4px;
+  white-space: nowrap;
+}
+
+/* Mobile 44px touch targets for new VP-1 controls */
+@media (max-width: 639px) {
+  .ct .ct-doc-filename,
+  .ct .ct-doc-sep,
+  .ct .ct-studio-t2-right {
+    display: none;
+  }
+  .ct .ct-studio-t1-band,
+  .ct .ct-studio-t2-band,
+  .ct .ct-studio-ribbon-band {
+    padding: 0 12px;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+  .ct .ct-studio-t1 {
+    flex-wrap: wrap;
+    padding-block: 8px;
+    gap: 8px;
+  }
+  .ct .ct-studio-actions {
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+  .ct .ct-studio-loc {
+    max-width: 100%;
+    white-space: normal;
+  }
+  .ct .ct-studio-t2 {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .ct .ct-studio-tabs {
+    gap: 14px;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .ct .ct-studio-canvas {
+    padding: 14px 12px 72px;
+  }
+  .ct .ct-studio-name,
+  .ct .ct-studio-loc,
+  .ct .ct-ink-seg .ct-studio-horizon-btn,
+  .ct .ct-ink-seg .ct-seg-btn,
+  .ct .ct-ink-seg .ct-rail-tab,
+  .ct .ct-file-status,
+  .ct .ct-health-item,
+  .ct .ct-rail-close,
+  .ct .ct-rail-toggle-btn,
+  .ct .ct-rail-explore,
+  .ct .ct-intent-chip,
+  .ct .ct-card-rm,
+  .ct .ct-pal-search,
+  .ct .ct-group-select,
+  .ct .ct-auto-strengthen {
+    min-height: 44px;
+  }
+  .ct .ct-ink-seg .ct-studio-horizon-btn,
+  .ct .ct-ink-seg .ct-seg-btn,
+  .ct .ct-ink-seg .ct-rail-tab,
+  .ct .ct-card-rm,
+  .ct .ct-rail-close {
+    min-width: 44px;
+  }
+}
+
 

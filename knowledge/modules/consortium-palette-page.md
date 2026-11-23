@@ -2,16 +2,16 @@
 type: Module
 title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
-generated: { by: antigravity/gemini, at: 2026-11-23T13:34:38Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T14:27:50Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:09Z }
-  - { by: antigravity/gemini, at: 2026-11-23T12:51:23Z }
+  - { by: antigravity/gemini, at: 2026-11-23T14:27:42Z }
 sources:
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:3fa654f83fddb98e
-    last_modified: 2026-11-23T12:51:27Z
+    digest: sha256:cd272d92bc5f5d9c
+    last_modified: 2026-11-23T14:10:40Z
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx

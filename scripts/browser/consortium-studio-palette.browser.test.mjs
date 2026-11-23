@@ -45,8 +45,9 @@ test('StudioHeader: editable design name, location badge, Open/Save menus, dirty
   });
   assert.ok(saveDirty, 'Save control reflects edited design state');
 
-  // Open Request a plant modal and close with Escape
-  await page.locator(aria('button', 'Request a plant')).click();
+  // Open Request a plant modal from Open .canopi menu and close with Escape
+  await page.locator(aria('button', 'Open .canopi')).click();
+  await page.locator(aria('menuitem', 'Request a plant')).click();
   assert.ok(await has(page, 'dialog[open]', 4_000), 'Request a plant modal opens');
   await page.keyboard.press('Escape');
   assert.deepEqual(await pageErrorsOf(page), [], 'zero console/page errors');

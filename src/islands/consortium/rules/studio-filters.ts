@@ -54,6 +54,8 @@ function primarySunTier(t: Taxon): Stratum {
   return t.light?.preferred ?? t.light?.sunniest ?? t.stratum?.value ?? 'high';
 }
 
+export const sunTierOf = primarySunTier;
+
 export function sunTierLabel(t: Taxon): string {
   const tier = primarySunTier(t);
   return SUN_TIER_OPTIONS.find((o) => o.id === tier)?.label ?? 'Mostly sun';

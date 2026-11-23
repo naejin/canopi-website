@@ -4,20 +4,20 @@ title: Agentic delivery adapter
 description: Commands, worktree rules, and handoff gates for running Coral + Antigravity multi-agent work on canopi-website.
 tags: [process, coral]
 status: stable
-generated: { by: antigravity/gemini, at: 2026-11-22T22:39:22Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T14:27:52Z }
 verified:
-  - { by: antigravity/gemini, at: 2026-11-22T22:39:21Z }
+  - { by: antigravity/gemini, at: 2026-11-23T14:27:46Z }
 sources:
   - id: agents-md
     resource: ../../AGENTS.md
     title: AGENTS.md
-    digest: sha256:4fbf1b49391e18ff
-    last_modified: 2026-11-22T22:39:10Z
+    digest: sha256:07a31a28bf87b10b
+    last_modified: 2026-11-23T14:08:49Z
   - id: githooks-lib
     resource: ../../.githooks/lib.sh
     title: .githooks/lib.sh
     digest: sha256:f65bdfdd2055c69d
-    last_modified: 2026-11-22T22:39:10Z
+    last_modified: 2026-11-22T22:39:24Z
   - id: ci-yml
     resource: ../../.github/workflows/ci.yml
     title: .github/workflows/ci.yml
@@ -45,6 +45,7 @@ Run heavy commands under `timeout 600 systemd-run --user --scope -q -p MemoryMax
 - **Code & policy checks:** `npm run check && npm test && npm run check:arch && npm run check:dup && npm run check:dead && node_modules/.bin/ast-grep scan && node scripts/expect-fail.mjs --zero`
 - **Build & site checks:** `npm run build && node scripts/check-built-site.mjs`
 - **Browser & accessibility checks:** `npm run test:browser:smoke && npm run test:axe` (or full `npm run test:browser`; remember `build:browser-test` points `.wrangler/deploy/config.json` at `dist-test/`, so always rebuild production before any `wrangler` preview/deploy).
+- **Mandatory UI Visual-Parity Gate:** When an approved HTML mockup exists, port its exact layout, CSS structure, and component anatomy — never approximate from text summaries. Before approving or shipping any UI change, capture paired side-by-side headless browser screenshots (`mockup-XX` vs `live-XX` at identical `1440×900` & `390×844`, Light & Dark) of every screen and verify visual parity side-by-side.
 - **OKF knowledge:** Set `export OKF_ACTOR=antigravity/<model>`, run `python3 .okf/okf.pyz impact`, update affected concepts, then run `python3 .okf/okf.pyz sync && python3 .okf/okf.pyz check` (must report 0 errors).
 
 ## Preview & Port Isolation

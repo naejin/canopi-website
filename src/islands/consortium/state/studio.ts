@@ -13,7 +13,9 @@ import * as store from '../store.ts';
 
 export type StudioTab = 'palette' | 'system' | 'climate' | 'plan';
 export type PaletteViewMode = 'cards' | 'compact';
+export type PaletteGroupMode = 'none' | 'sun' | 'stage' | 'status';
 export type RailTab = 'coach' | 'all';
+export type WateringMode = 'Rain-fed' | 'Occasional' | 'Irrigated';
 
 export interface ClimateStressState {
   heatDeltaC: number;
@@ -47,7 +49,35 @@ const DEFAULT_MICROCLIMATE: MicroclimateState = {
 
 export const studioTab = signal<StudioTab>('palette');
 export const paletteViewMode = signal<PaletteViewMode>('cards');
+export const paletteGroupMode = signal<PaletteGroupMode>('none');
 export const railTab = signal<RailTab>('coach');
+export const poolOpen = signal<boolean>(true);
+export const wateringMode = signal<WateringMode>('Rain-fed');
+
+export interface PlantPoolPreset {
+  tab?: RailTab;
+  sun?: 'emergent' | 'high' | 'medium' | 'low' | null;
+  stage?: number | null;
+  role?: string | null;
+  intent?: 'winter' | 'gap' | 'soil' | 'early' | null;
+  banner?: string | null;
+}
+
+export const railPreset = signal<PlantPoolPreset | null>(null);
+
+export function openPlantPool(preset: PlantPoolPreset = {}): void {
+  batch(() => {
+    poolOpen.value = true;
+    railTab.value = preset.tab ?? 'all';
+    railPreset.value = preset;
+  });
+}
+
+const WATERING_CYCLE: readonly WateringMode[] = ['Rain-fed', 'Occasional', 'Irrigated'];
+export function cycleWateringMode(): void {
+  const idx = WATERING_CYCLE.indexOf(wateringMode.peek());
+  wateringMode.value = WATERING_CYCLE[(idx + 1) % WATERING_CYCLE.length];
+}
 export const designName = signal<string>('My Field Palette');
 export const designDirty = signal<boolean>(false);
 export const autoSaveEnabled = signal<boolean>(false);

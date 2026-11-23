@@ -2,11 +2,11 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: antigravity/gemini, at: 2026-11-23T13:34:46Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T14:27:49Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:54Z }
-  - { by: antigravity/gemini, at: 2026-11-23T13:34:40Z }
+  - { by: antigravity/gemini, at: 2026-11-23T14:27:41Z }
 sources:
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
@@ -87,12 +87,12 @@ sources:
     resource: ../../scripts/browser/consortium-studio-onboarding.browser.test.mjs
     title: scripts/browser/consortium-studio-onboarding.browser.test.mjs
     digest: sha256:d68dbc38f90873d3
-    last_modified: 2026-11-23T13:29:33Z
+    last_modified: 2026-11-23T13:35:12Z
   - id: browser-tests-test-mjs
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
-    digest: sha256:33da8c7984a92423
-    last_modified: 2026-11-23T13:19:24Z
+    digest: sha256:0ede506690c0787d
+    last_modified: 2026-11-23T13:43:06Z
   - id: bytes-ts
     resource: ../../src/islands/consortium/data/bytes.ts
     title: src/islands/consortium/data/bytes.ts
@@ -136,8 +136,8 @@ sources:
   - id: consortium-s4-browser-test-mjs
     resource: ../../scripts/browser/consortium-studio-palette.browser.test.mjs
     title: scripts/browser/consortium-studio-palette.browser.test.mjs
-    digest: sha256:5e8f297aa9bb662c
-    last_modified: 2026-11-23T13:30:24Z
+    digest: sha256:399fe0c6f76ef2e7
+    last_modified: 2026-11-23T14:18:49Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
@@ -262,7 +262,7 @@ sources:
     resource: ../../scripts/browser/consortium-studio-plan-i18n.browser.test.mjs
     title: scripts/browser/consortium-studio-plan-i18n.browser.test.mjs
     digest: sha256:124f350b6be35d25
-    last_modified: 2026-11-23T13:28:14Z
+    last_modified: 2026-11-23T13:35:12Z
   - id: suggest-block-ts
     resource: ../../src/islands/consortium/rules/suggest-block.ts
     title: src/islands/consortium/rules/suggest-block.ts
@@ -306,8 +306,8 @@ sources:
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
-    digest: sha256:10b7eb37d3f4f1f0
-    last_modified: 2026-11-23T12:42:30Z
+    digest: sha256:8523dfade9a3e6bb
+    last_modified: 2026-11-23T14:08:55Z
   - id: find-tsx
     resource: ../../src/islands/consortium/views/find/Find.tsx
     title: src/islands/consortium/views/find/Find.tsx

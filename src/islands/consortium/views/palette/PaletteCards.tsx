@@ -1,12 +1,15 @@
 /** @jsxImportSource preact */
-// My Palette — 3-Layer Zero-Pill-Soup Plant Cards & 200-Species Compact List (Slice 3.3, v14/v15).
-// Top: common + botanical name, subtle sun-tier & succession indicator, clean remove/swap actions.
-// Middle: pure-typography middot metadata line (no multi-colored pill soup).
-// Bottom: unified 12-month activity sparkline (J F M A M J J A S O N D) + Dossier trigger.
+// My Palette — v14 1:1 Port: Search + Filters + Group + Dark-Pill Cards/List Toggle,
+// 3-Layer Editorial Botanical Cards (with sun-tier dot & semantic status), and Compact List.
 import { useMemo, useState } from 'preact/hooks';
 import { jobsOf, type Taxon } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
-import { openFieldDossier, paletteViewMode } from '../../state/studio.ts';
+import {
+  openFieldDossier,
+  paletteGroupMode,
+  paletteViewMode,
+  type PaletteGroupMode,
+} from '../../state/studio.ts';
 import { nameOf } from '../kit/names.ts';
 import { T } from '../../strings.ts';
 import {
@@ -18,6 +21,7 @@ import {
   ROLE_OPTIONS,
   stageSpanOf,
   sunTierLabel,
+  sunTierOf,
   type StudioFilterState,
 } from '../../rules/studio-filters.ts';
 import { FilterPopover } from './FilterPopover.tsx';
@@ -39,37 +43,158 @@ function roleSummary(t: Taxon): string {
     .map((j) => ROLE_OPTIONS.find((r) => r.id === j)?.label)
     .filter(Boolean)
     .slice(0, 2);
-  return labels.length ? labels.join(' · ') : 'Companion species';
+  return labels.length ? labels.join(', ') : 'Companion';
 }
 
-function heightText(t: Taxon): string {
-  return formatHeightRange(t.traits.height_m);
+function verdictMeta(level: string | undefined): { cls: string; icon: string; label: string; key: string } {
+  if (level === 'outside') return { cls: 'is-risk', icon: '✕', label: 'At risk', key: 'At risk' };
+  if (level === 'look') return { cls: 'is-care', icon: '⚠', label: 'Needs care', key: 'Needs care' };
+  return { cls: 'is-fit', icon: '✓', label: 'Thrives', key: 'Thrives' };
 }
 
 export function PaletteCards() {
   const members = store.memberTaxa.value;
+  const verdicts = store.memberVerdicts.value;
+  const sitePh = store.location.value?.lookup?.soil?.phH2o ?? store.siteEdits.value.soilPh ?? null;
+  const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<StudioFilterState>({ ...EMPTY_STUDIO_FILTERS });
   const mode = paletteViewMode.value;
+  const groupBy = paletteGroupMode.value;
 
-  const filtered = useMemo(
-    () => members.filter((t) => matchesStudioFilters(t, filters)),
-    [members, filters],
-  );
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return members.filter((t) => {
+      if (!matchesStudioFilters(t, filters)) return false;
+      if (!q) return true;
+      const roles = roleSummary(t).toLowerCase();
+      return nameOf(t).toLowerCase().includes(q) || t.canonical_name.toLowerCase().includes(q) || roles.includes(q);
+    });
+  }, [members, filters, query]);
+
   const ids = useMemo(() => filtered.map((t) => t.id), [filtered]);
 
+  const groups = useMemo(() => {
+    if (groupBy === 'none') return [{ label: '', items: filtered }];
+    const map = new Map<string, Taxon[]>();
+    for (const t of filtered) {
+      const key = groupBy === 'sun'
+        ? sunTierLabel(t)
+        : groupBy === 'stage'
+          ? stageSpanOf(t).label
+          : verdictMeta(verdicts?.get(t.id)?.level).key;
+      const list = map.get(key) ?? [];
+      list.push(t);
+      map.set(key, list);
+    }
+    return [...map.entries()].map(([label, items]) => ({ label, items }));
+  }, [filtered, groupBy, verdicts]);
+
   if (!members.length) return null;
+
+  const renderCard = (t: Taxon) => {
+    const tier = sunTierOf(t);
+    const v = verdictMeta(verdicts?.get(t.id)?.level);
+    const h = formatHeightRange(t.traits.height_m);
+    const ph = t.traits.soil_ph;
+    const phMismatch = sitePh != null && ph && ((ph.min != null && sitePh < ph.min - 0.3) || (ph.max != null && sitePh > ph.max + 0.3));
+    return (
+      <article
+        key={t.id}
+        class="ct-card"
+        data-plant-card={t.id}
+        data-plant-id={t.id}
+        onClick={() => openFieldDossier(t.id, ids)}
+      >
+        {/* Layer 1: Common + Latin on left; semantic status + quiet × remove on right */}
+        <div class="ct-card-top">
+          <div class="ct-card-names">
+            <span class="ct-card-common">{nameOf(t)}</span>
+            <span class="ct-sci">{t.canonical_name}</span>
+          </div>
+          <div class="ct-card-top-right">
+            <span class={`ct-status-pill ${v.cls}`} data-stratum={v.cls === 'is-fit' ? 'high' : undefined}>
+              {v.icon} {v.label}
+            </span>
+            <button
+              type="button"
+              class="ct-card-rm"
+              aria-label={`Remove ${nameOf(t)}`}
+              onClick={(e) => { e.stopPropagation(); store.removeMember(t.id); }}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+
+        {/* Layer 2: Pure-typography middot metadata with colored sun-tier dot */}
+        <p class="ct-card-meta">
+          <span><span class="ct-sun-dot" data-sun-tier={tier} aria-hidden="true" />{sunTierLabel(t)}</span>
+          <span class="ct-msep" aria-hidden="true">·</span>
+          <span>{stageSpanOf(t).label}</span>
+          {h && <><span class="ct-msep" aria-hidden="true">·</span><span>{h}</span></>}
+          <span class="ct-msep" aria-hidden="true">·</span>
+          <span>{roleSummary(t)}</span>
+          {phMismatch && ph && (
+            <>
+              <span class="ct-msep" aria-hidden="true">·</span>
+              <span class="ct-ph-alert">pH {ph.min?.toFixed(1) ?? '?'}–{ph.max?.toFixed(1) ?? '?'}</span>
+            </>
+          )}
+        </p>
+
+        {/* Layer 3: 12-month sparkline + conditional Swap + Dossier → */}
+        <div class="ct-card-foot">
+          <Sparkline taxon={t} />
+          <span class="ct-card-acts">
+            {v.cls !== 'is-fit' && (
+              <button
+                type="button"
+                class="ct-card-act"
+                onClick={(e) => { e.stopPropagation(); store.openSheet('swap', t.id); }}
+              >
+                ⇄ Swap
+              </button>
+            )}
+            <button
+              type="button"
+              class="ct-card-act is-primary-link"
+              onClick={(e) => { e.stopPropagation(); openFieldDossier(t.id, ids); }}
+            >
+              {T('studio.dossier')}
+            </button>
+          </span>
+        </div>
+      </article>
+    );
+  };
 
   return (
     <section class="ct-studio-main" data-palette-cards aria-label="My palette species">
       <div class="ct-toolbar">
         <div class="ct-toolbar-group">
+          <input
+            type="search"
+            class="ct-pal-search"
+            aria-label="Search within your plants"
+            placeholder={`Search your ${members.length} plants (name, Latin, role)…`}
+            value={query}
+            onInput={(e) => setQuery((e.currentTarget as HTMLInputElement).value)}
+          />
           <FilterPopover value={filters} onChange={setFilters} />
-          <span class="ct-muted ct-small-text">
-            {filtered.length} of {members.length} shown
-          </span>
+          <select
+            class="ct-group-select"
+            aria-label="Group plants by"
+            value={groupBy}
+            onChange={(e) => { paletteGroupMode.value = (e.currentTarget as HTMLSelectElement).value as PaletteGroupMode; }}
+          >
+            <option value="none">Group: None</option>
+            <option value="sun">By Sun Exposure</option>
+            <option value="stage">By Succession</option>
+            <option value="status">By Status</option>
+          </select>
         </div>
 
-        <div class="ct-seg-switch" role="group" aria-label="Palette view mode">
+        <div class="ct-seg-switch ct-ink-seg" role="group" aria-label="Palette view mode">
           <button
             type="button"
             class="ct-seg-btn"
@@ -106,12 +231,15 @@ export function PaletteCards() {
             </thead>
             <tbody>
               {filtered.map((t) => (
-                <tr key={t.id} data-plant-id={t.id}>
+                <tr key={t.id} data-plant-id={t.id} onClick={() => openFieldDossier(t.id, ids)}>
                   <td>
                     <strong>{nameOf(t)}</strong>{' '}
                     <span class="ct-sci">{t.canonical_name}</span>
                   </td>
-                  <td>{sunTierLabel(t)}</td>
+                  <td>
+                    <span class="ct-sun-dot" data-sun-tier={sunTierOf(t)} aria-hidden="true" />
+                    {sunTierLabel(t)}
+                  </td>
                   <td>{stageSpanOf(t).label}</td>
                   <td>{roleSummary(t)}</td>
                   <td><Sparkline taxon={t} /></td>
@@ -120,7 +248,7 @@ export function PaletteCards() {
                       <button
                         type="button"
                         class="ct-card-act is-primary-link"
-                        onClick={() => openFieldDossier(t.id, ids)}
+                        onClick={(e) => { e.stopPropagation(); openFieldDossier(t.id, ids); }}
                       >
                         {T('studio.dossier')}
                       </button>
@@ -128,9 +256,9 @@ export function PaletteCards() {
                         type="button"
                         class="ct-card-act"
                         aria-label={`Remove ${nameOf(t)}`}
-                        onClick={() => store.removeMember(t.id)}
+                        onClick={(e) => { e.stopPropagation(); store.removeMember(t.id); }}
                       >
-                        Remove
+                        {T('studio.remove')}
                       </button>
                     </span>
                   </td>
@@ -139,55 +267,23 @@ export function PaletteCards() {
             </tbody>
           </table>
         </div>
-      ) : (
+      ) : groupBy === 'none' ? (
         <div class="ct-cards">
-          {filtered.map((t) => {
-            const h = heightText(t);
-            const metaParts = [sunTierLabel(t), stageSpanOf(t).label, roleSummary(t), h].filter(Boolean);
-            return (
-              <article key={t.id} class="ct-card" data-plant-card={t.id} data-plant-id={t.id}>
-                {/* Layer 1: Identity & clean actions */}
-                <div class="ct-card-top">
-                  <div class="ct-card-names">
-                    <span class="ct-card-common">{nameOf(t)}</span>
-                    <span class="ct-sci">{t.canonical_name}</span>
-                  </div>
-                  <div class="ct-card-acts">
-                    <button
-                      type="button"
-                      class="ct-card-act"
-                      onClick={() => store.openSheet('swap', t.id)}
-                    >
-                      Swap
-                    </button>
-                    <button
-                      type="button"
-                      class="ct-card-act"
-                      aria-label={`Remove ${nameOf(t)}`}
-                      onClick={() => store.removeMember(t.id)}
-                    >
-                      ×
-                    </button>
-                  </div>
-                </div>
-
-                {/* Layer 2: Pure-typography middot metadata line (zero pill soup) */}
-                <p class="ct-card-meta">{metaParts.join(' · ')}</p>
-
-                {/* Layer 3: Unified 12-month sparkline + 1-click Dossier trigger */}
-                <div class="ct-card-foot">
-                  <Sparkline taxon={t} />
-                  <button
-                    type="button"
-                    class="ct-card-act is-primary-link"
-                    onClick={() => openFieldDossier(t.id, ids)}
-                  >
-                    Dossier →
-                  </button>
-                </div>
-              </article>
-            );
-          })}
+          {filtered.map(renderCard)}
+        </div>
+      ) : (
+        <div class="ct-groups">
+          {groups.map((g) => (
+            <details key={g.label} class="ct-group-details" open>
+              <summary class="ct-group-summary">
+                <span>{g.label}</span>
+                <span class="ct-muted ct-small-text">{g.items.length}</span>
+              </summary>
+              <div class="ct-cards ct-group-cards">
+                {g.items.map(renderCard)}
+              </div>
+            </details>
+          ))}
         </div>
       )}
     </section>

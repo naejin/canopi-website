@@ -39,7 +39,7 @@ import { YourPlants } from './YourPlants.tsx';
 import { PlantSearch } from '../plants/Many.tsx';
 import { wide } from '../plants/state.ts';
 import { PaletteLimits } from '../figures/slots.tsx';
-import { dossierId, studioTab } from '../../state/studio.ts';
+import { dossierId, poolOpen, studioTab } from '../../state/studio.ts';
 import { lazyPart } from '../lazy.tsx';
 import { StudioHeader } from './StudioHeader.tsx';
 import { RequestPlantModal } from './RequestPlantModal.tsx';
@@ -131,73 +131,76 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
   const footBlock = foot && <div key="foot" class="ct-palette-foot">{foot}</div>;
   const plantsBlock = <div key="plants" class="ct-many-right"><YourPlants rows={rows} /></div>;
   const activeTab = studioTab.value;
+  const railVisible = poolOpen.value;
   return (
     <div class="ct-palette-page">
       <StudioHeader />
-      {activeTab === 'system' ? (
-        <LazyLivingSystem.View />
-      ) : activeTab === 'climate' ? (
-        <LazyClimate2050.View />
-      ) : activeTab === 'plan' ? (
-        <LazyPlantingPlan.View />
-      ) : (
-      <>
-      <div class="ct-studio-split">
-        <PaletteCards />
-        <StudioRail />
+      <div class={`ct-studio-split${railVisible ? '' : ' is-collapsed'}`}>
+        <div class="ct-studio-canvas">
+          {activeTab === 'system' ? (
+            <LazyLivingSystem.View />
+          ) : activeTab === 'climate' ? (
+            <LazyClimate2050.View />
+          ) : activeTab === 'plan' ? (
+            <LazyPlantingPlan.View />
+          ) : (
+            <>
+              <PaletteCards />
+              <h2 class="visually-hidden ct-palette-title" data-view-heading="" tabIndex={-1}>{T('palette.title')}</h2>
+              {store.verdictFailed.value && <VerdictNotice />}
+              {failedLists.length > 0 && (
+                <p class="ct-notice" role="alert">{P('palette.listFailed', store.failedMembers.value.length, { lists: listOf(failedLists.map(zoneName)) })} {retry === 'failed'
+                  ? <button type="button" class="button button-secondary" onClick={() => globalThis.location.reload()}>{T('load.reload')}</button>
+                  : <button type="button" class="button button-secondary" aria-busy={retry === 'busy' ? 'true' : undefined} aria-disabled={retry === 'busy' ? 'true' : undefined} onClick={() => void store.retryFailedLists()}>{T('load.retry')}</button>}</p>
+              )}
+              {legacyStack.value && (
+              <>
+              {footBlock}
+              {big && !desk && <PlantSearch n={members.length + unchecked} class="ct-many-headsearch" />}
+              {!(big && desk) && <FindEntry where="head" />}
+              <PaletteLimits />
+              {big ? (
+                <div class="ct-palette-body" data-pictures="" data-many="">
+                  <div key="left" class="ct-many-left">
+                    <NextStep holes={holes} members={members} />
+                    <div class="ct-palette-pictures">
+                      <Years {...pic} warnings={groups.length} />
+                      <JobsPicture {...pic} />
+                    </div>
+                  </div>
+                  <FindPanelSlot key="panel" />
+                  {desk ? [plantsBlock, weigh] : [weigh, plantsBlock]}
+                </div>
+              ) : (
+                <div class="ct-palette-body" data-pictures={members.length ? '' : undefined}>
+                  {members.length > 0 && <FindPanelSlot key="panel" />}
+                  <NextStep key="next" holes={holes} members={members} />
+                  {members.length === 0 && <FindPanelSlot key="panel" />}
+                  {members.length > 0 && (
+                    <div class="ct-palette-pictures">
+                      <Years {...pic} warnings={groups.length} />
+                      <JobsPicture {...pic} />
+                    </div>
+                  )}
+                  {members.length > 0 && (
+                    <div class="ct-palette-side">
+                      <Warnings groups={groups} />
+                      <Balance members={members} unchecked={unchecked} />
+                    </div>
+                  )}
+                  <YourPlants rows={rows} />
+                </div>
+              )}
+              <FindEntry where="bar" />
+              </>
+              )}
+              <Said />
+              {shown && <FirstView />}
+            </>
+          )}
+        </div>
+        {railVisible && <StudioRail />}
       </div>
-      <h2 class="visually-hidden ct-palette-title" data-view-heading="" tabIndex={-1}>{T('palette.title')}</h2>
-      {store.verdictFailed.value && <VerdictNotice />}
-      {failedLists.length > 0 && (
-        <p class="ct-notice" role="alert">{P('palette.listFailed', store.failedMembers.value.length, { lists: listOf(failedLists.map(zoneName)) })} {retry === 'failed'
-          ? <button type="button" class="button button-secondary" onClick={() => globalThis.location.reload()}>{T('load.reload')}</button>
-          : <button type="button" class="button button-secondary" aria-busy={retry === 'busy' ? 'true' : undefined} aria-disabled={retry === 'busy' ? 'true' : undefined} onClick={() => void store.retryFailedLists()}>{T('load.retry')}</button>}</p>
-      )}
-      {legacyStack.value && (
-      <>
-      {footBlock}
-      {big && !desk && <PlantSearch n={members.length + unchecked} class="ct-many-headsearch" />}
-      {!(big && desk) && <FindEntry where="head" />}
-      <PaletteLimits />
-      {big ? (
-        <div class="ct-palette-body" data-pictures="" data-many="">
-          <div key="left" class="ct-many-left">
-            <NextStep holes={holes} members={members} />
-            <div class="ct-palette-pictures">
-              <Years {...pic} warnings={groups.length} />
-              <JobsPicture {...pic} />
-            </div>
-          </div>
-          <FindPanelSlot key="panel" />
-          {desk ? [plantsBlock, weigh] : [weigh, plantsBlock]}
-        </div>
-      ) : (
-        <div class="ct-palette-body" data-pictures={members.length ? '' : undefined}>
-          {members.length > 0 && <FindPanelSlot key="panel" />}
-          <NextStep key="next" holes={holes} members={members} />
-          {members.length === 0 && <FindPanelSlot key="panel" />}
-          {members.length > 0 && (
-            <div class="ct-palette-pictures">
-              <Years {...pic} warnings={groups.length} />
-              <JobsPicture {...pic} />
-            </div>
-          )}
-          {members.length > 0 && (
-            <div class="ct-palette-side">
-              <Warnings groups={groups} />
-              <Balance members={members} unchecked={unchecked} />
-            </div>
-          )}
-          <YourPlants rows={rows} />
-        </div>
-      )}
-      <FindEntry where="bar" />
-      </>
-      )}
-      <Said />
-      {shown && <FirstView />}
-      </>
-      )}
       <RequestPlantModal />
       {dossierId.value !== null && <LazyFieldDossier.View />}
     </div>

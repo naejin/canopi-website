@@ -66,6 +66,7 @@ export function FieldDossier() {
   const inPalette = store.members.value.includes(taxon.id);
   const peers = store.memberTaxa.value.filter((m) => m.id !== taxon.id).slice(0, 5);
   const canStep = list.length > 1;
+  const curIdx = list.indexOf(taxon.id);
 
   return (
     <div
@@ -75,7 +76,7 @@ export function FieldDossier() {
     >
       <div class="ct-dossier" role="dialog" aria-modal="true" aria-labelledby="ct-dossier-title">
         <div class="ct-dossier-head">
-          <div>
+          <div class="ct-dossier-title-block">
             <h2 id="ct-dossier-title">{nameOf(taxon)}</h2>
             <p class="ct-muted ct-small-text">
               <span class="ct-sci">{taxon.canonical_name}</span> · {sunTierLabel(taxon)} · {spec.lifeline.label}
@@ -85,6 +86,7 @@ export function FieldDossier() {
             {canStep && (
               <>
                 <button type="button" class="ct-dossier-btn" onClick={() => stepFieldDossier(-1)}>{T('studio.prev')}</button>
+                {curIdx >= 0 && <span class="ct-dossier-pos">{curIdx + 1}/{list.length}</span>}
                 <button type="button" class="ct-dossier-btn" onClick={() => stepFieldDossier(1)}>{T('studio.next')}</button>
               </>
             )}
