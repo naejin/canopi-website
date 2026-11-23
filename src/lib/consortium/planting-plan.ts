@@ -243,8 +243,8 @@ export function computePlantingPlan(
     const peers = Math.max(1, byBand[sunBand].length);
     const targetBandM2 = netAreaM2 * bandShare[sunBand] * densMult;
     const shareM2 = targetBandM2 / peers;
-    const rawQty = Math.max(1, Math.round((shareM2 / unitFootprintM2) * bufferMult));
-    const maxReasonable = seed ? Math.max(10, Math.round(netAreaM2 * 2)) : Math.max(1, Math.round(netAreaM2 / Math.max(0.2, unitFootprintM2)));
+    const rawQty = Math.max(1, Math.round((shareM2 / Math.max(0.45, unitFootprintM2)) * bufferMult));
+    const maxReasonable = seed ? Math.max(10, Math.round(netAreaM2 * 0.6)) : Math.max(1, Math.round(netAreaM2 / Math.max(0.6, unitFootprintM2)));
     const autoQty = Math.min(rawQty, maxReasonable);
 
     const override = cfg.quantityOverrides[t.id];
@@ -291,7 +291,7 @@ export function computePlantingPlan(
   const totalUnits = items.reduce((s, i) => s + i.qty, 0);
   const totalSeedGrams = items.reduce((s, i) => s + i.seedGrams, 0);
   const totalFootprint = Object.values(sunFootprint).reduce((a, b) => a + b, 0);
-  const coveragePct = Math.round((totalFootprint / netAreaM2) * 100);
+  const coveragePct = Math.min(185, Math.round((totalFootprint / netAreaM2) * 100));
 
   // Contextual agronomy notes (shade-timing & dioecious pollination)
   const notes: AgronomyNote[] = [];

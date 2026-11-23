@@ -3380,3 +3380,671 @@
 }
 
 
+
+/* ==========================================================================
+   Stage 1 Clean Replacement: Self-Contained Base + v14 1:1 Onboarding +
+   Flush Full-Height Studio Rail + 4-Track Sparkline + Screen 2-5 Parity
+   (Legacy CSS retired from ConsortiumPage.astro. Zero raw hex; breakpoints
+   strictly 639px & 960px.)
+   ========================================================================== */
+
+/* Retire legacy pre-redesign page head & unlock full-bleed canvas */
+.ct #ct-head {
+  display: none;
+}
+.ct .ct-wrap {
+  max-width: none;
+  padding: 0;
+}
+.ct .tool-release {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 0 24px 32px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Self-contained utility primitives (retired from base.css / details.css) */
+.ct .ct-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.ct .ct-muted {
+  color: var(--text-muted);
+}
+.ct .ct-small-text {
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.ct .link-button,
+.ct .ct-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.ct .ct-sep {
+  color: var(--text-muted);
+}
+.ct .ct-ico {
+  vertical-align: -3px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+}
+
+/* Floating bottom-left toast (non-blocking body, clickable buttons) */
+.ct .ct-toast-region {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  z-index: 60;
+  max-width: 420px;
+  pointer-events: none;
+}
+.ct .ct-toast-region .ct-toast {
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--text);
+  color: var(--bg);
+  font-size: 13.5px;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--text) 24%, transparent);
+}
+.ct .ct-toast-region .ct-toast button {
+  pointer-events: auto;
+  background: transparent;
+  color: inherit;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ct .ct-toast-region .ct-toast .ct-toast-dismiss:not(:focus) {
+  position: absolute;
+  width: 0;
+  height: 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+/* ClimateHand (one link away when no location is given) */
+.ct .ct-hand {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 28px 24px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.ct .ct-hand-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ct .ct-zone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  cursor: pointer;
+}
+.ct .ct-zone:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-alt);
+}
+
+/* Screen 1 — 1:1 v14 Editorial Onboarding */
+.ct .ct-onboard-shell {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 34px 24px 72px;
+}
+.ct .ct-onboard-hero {
+  max-width: 68ch;
+  margin-bottom: 26px;
+}
+.ct .ct-onboard-hero h1 {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: clamp(28px, 3.2vw, 38px);
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--text);
+}
+.ct .ct-onboard-hero p {
+  margin: 0;
+  font-size: 16.5px;
+  line-height: 1.5;
+  color: var(--text-soft);
+}
+.ct .ct-onboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+@media (min-width: 960px) {
+  .ct .ct-onboard-grid {
+    grid-template-columns: 1.25fr 0.85fr;
+  }
+}
+.ct .ct-ob-left {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+.ct .ct-ob-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+@media (min-width: 960px) {
+  .ct .ct-ob-aside {
+    position: sticky;
+    top: 72px;
+  }
+}
+.ct .ct-ob-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ct .ct-ob-h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--text);
+}
+.ct .ct-ob-aside-lede {
+  margin: -4px 0 2px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-soft);
+}
+.ct .ct-field-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  margin-top: 8px;
+}
+.ct .ct-place-field {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+}
+.ct .ct-sample-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.ct .ct-sample-label {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+.ct .ct-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ct .ct-filter-chip[aria-pressed="true"] {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+.ct .ct-q-quick-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 8px;
+  font-size: 12.5px;
+}
+.ct .ct-privacy {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+/* Thick ink-bordered editorial Site Postcard */
+.ct .ct-postcard {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--text);
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ct .ct-postcard-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ct .ct-postcard-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+.ct .ct-postcard-tag {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.ct .ct-postcard-summary {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-soft);
+}
+.ct .ct-postcard-rows {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--border);
+}
+.ct .ct-postcard-row {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13.5px;
+}
+.ct .ct-postcard-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.ct .ct-postcard-val {
+  color: var(--text);
+  font-weight: 600;
+}
+.ct .ct-postcard-mild {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-soft);
+}
+.ct .ct-adv-figures {
+  border-top: 1px dashed var(--border-strong);
+  padding-top: 8px;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+.ct .ct-adv-summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text);
+}
+.ct .ct-postcard-attr {
+  margin: 0;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+/* Compact inline Country line inside Step 1 */
+.ct .ct-country {
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ct .ct-country-text {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-soft);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.ct .ct-country-icon {
+  flex: none;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.6;
+}
+.ct .ct-country-acts {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Step 2 Space 2x2 Grid & Inline Area Box */
+.ct .ct-room-grid,
+.ct .ct-space-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.ct .ct-room-choice {
+  text-align: left;
+  padding: 11px 13px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ct .ct-room-choice[aria-pressed="true"],
+.ct .ct-room-choice:has(input:checked) {
+  border-color: var(--text);
+  background: var(--surface);
+}
+.ct .ct-ob-area-box {
+  margin-top: 6px;
+}
+.ct .ct-area-net {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding-top: 8px;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+/* Path A Kit Cards with Right-Aligned Action Label & Path B Dropzone */
+.ct .ct-kit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ct .ct-kit-opt {
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.ct .ct-kit-opt:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-alt);
+}
+.ct .ct-kit-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.ct .ct-kit-act {
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  color: var(--text);
+}
+.ct .ct-ob-cta {
+  width: 100%;
+  min-height: 44px;
+  justify-content: center;
+  font-weight: 600;
+}
+.ct .ct-ob-dropzone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1.5px dashed var(--border-strong);
+  background: var(--bg);
+}
+.ct .ct-ob-drop-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.ct .ct-ob-drop-title {
+  font-size: 13.5px;
+  color: var(--text);
+}
+.ct .ct-ob-drop-copy {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Full-Bleed Studio Shell + Flush Full-Height Right Rail (Screens 2-5) */
+.ct .ct-studio-split {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0;
+  gap: 0;
+  align-items: start;
+  min-height: calc(100vh - 102px);
+}
+@media (min-width: 960px) {
+  .ct .ct-studio-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 410px;
+  }
+  .ct .ct-studio-split.is-rail-closed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.ct .ct-studio-main {
+  padding: 20px 26px 96px;
+  min-width: 0;
+}
+.ct .ct-studio-rail {
+  background: var(--surface);
+  border: 0;
+  border-left: 1px solid var(--border);
+  border-radius: 0;
+  margin: 0;
+  padding: 0;
+}
+@media (min-width: 960px) {
+  .ct .ct-studio-rail {
+    position: sticky;
+    top: 55px;
+    height: calc(100vh - 55px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+}
+
+/* My Palette: Single-Row Full-Width Flex Search + 4-Track v14 Sparkline Pill */
+.ct .ct-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+.ct .ct-toolbar-group {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+.ct .ct-toolbar .ct-seg-switch {
+  flex: 0 0 auto;
+}
+.ct .ct-pal-search {
+  flex: 1 1 200px;
+  min-width: 140px;
+  max-width: none;
+  width: auto;
+}
+.ct .ct-spark {
+  display: inline-grid;
+  grid-template-columns: repeat(12, 6px);
+  gap: 2px;
+  align-items: center;
+  height: 24px;
+  padding: 3px 6px;
+  background: var(--bg);
+  border-radius: 5px;
+  border: 1px solid var(--border);
+}
+.ct .ct-ms-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5px;
+  height: 100%;
+  justify-content: center;
+  align-items: center;
+}
+.ct .ct-ms-w {
+  width: 6px;
+  height: 2.5px;
+  border-radius: 999px;
+  background: var(--light-low);
+}
+.ct .ct-ms-s {
+  width: 4.5px;
+  height: 4.5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.ct .ct-ms-b {
+  width: 6px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--light-emergent);
+}
+.ct .ct-ms-h[data-stratum="high"] {
+  width: 6px;
+  height: 5px;
+  border-radius: 1.5px;
+  background: var(--s-high);
+}
+.ct .ct-ms-e {
+  width: 4px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--border);
+}
+
+/* Planting Plan: Single-Row Controls Bar + High-Contrast Legend Pills */
+.ct .ct-plan-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-items: flex-end;
+}
+.ct .ct-plan-controls .ct-area-input {
+  width: 78px;
+  padding: 5px 8px;
+}
+.ct .ct-plan-controls .ct-seg-btn,
+.ct .ct-plan-controls .ct-plan-pill-btn {
+  padding: 4px 9px;
+  font-size: 12px;
+}
+.ct .ct-plan-controls .ct-plan-ctrl-group:last-child {
+  flex-basis: 100%;
+  align-items: flex-start;
+}
+.ct .ct-bp-dot {
+  background: var(--surface);
+  color: var(--text);
+  border: 2px solid var(--text);
+  font-weight: 700;
+}
+
+/* Mobile <= 639px Touch Targets & Stacking */
+@media (max-width: 639px) {
+  .ct .ct-onboard-shell {
+    padding: 20px 14px 64px;
+  }
+  .ct .ct-studio-main {
+    padding: 14px 12px 72px;
+  }
+  .ct .ct-postcard-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+  .ct .ct-room-grid,
+  .ct .ct-space-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ct .ct-filter-chip,
+  .ct .ct-kit-opt,
+  .ct .ct-ob-cta {
+    min-height: 44px;
+  }
+}

@@ -2,10 +2,10 @@
 type: Architecture Decision
 title: Plant palette chunk-2 hand-off rulings (D1-D10)
 description: The agent rulings of 2026-11-18 on the PP-C chunk-2 hand-offs, as auto-approved under the owner's autonomy rule, and where each lives in the code.
-generated: { by: antigravity/gemini, at: 2026-11-23T15:07:44Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T15:46:16Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:16Z }
-  - { by: antigravity/gemini, at: 2026-11-23T15:07:38Z }
+  - { by: antigravity/gemini, at: 2026-11-23T15:45:59Z }
 sources:
   - id: jobspicture-tsx
     resource: ../../src/islands/consortium/views/palette/JobsPicture.tsx
@@ -30,8 +30,8 @@ sources:
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
-    digest: sha256:db0dc259328e7353
-    last_modified: 2026-11-23T11:50:28Z
+    digest: sha256:c40ee8fe93f63c81
+    last_modified: 2026-11-23T15:35:23Z
   - id: holes-ts
     resource: ../../src/lib/consortium/holes.ts
     title: src/lib/consortium/holes.ts
@@ -40,8 +40,8 @@ sources:
   - id: place-tsx
     resource: ../../src/islands/consortium/views/place/Place.tsx
     title: src/islands/consortium/views/place/Place.tsx
-    digest: sha256:7961fb54dba72506
-    last_modified: 2026-11-23T15:01:27Z
+    digest: sha256:2cfe03db3164e8e9
+    last_modified: 2026-11-23T15:41:25Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts

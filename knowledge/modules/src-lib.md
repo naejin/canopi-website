@@ -5,17 +5,17 @@ description: Framework-free logic shared by the Worker endpoints, the page scrip
 resource: ../../src/lib
 tags: [module]
 status: stable
-generated: { by: antigravity/gemini, at: 2026-11-23T12:36:51Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T15:46:18Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:21:18Z }
-  - { by: antigravity/gemini, at: 2026-11-23T12:36:42Z }
+  - { by: antigravity/gemini, at: 2026-11-23T15:46:12Z }
 sources:
   - id: lib
     resource: ../../src/lib
     title: src/lib/
-    digest: sha256:c6d4886012efabb8
-    last_modified: 2026-11-23T11:50:28Z
+    digest: sha256:ebab845e694ca064
+    last_modified: 2026-11-23T15:35:30Z
   - id: contact-api
     resource: ../../src/pages/api/contact.ts
     title: src/pages/api/contact.ts

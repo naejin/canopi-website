@@ -2,9 +2,9 @@
 type: Convention
 title: Palette language-robust layout
 description: "The Plant palette's parts (.ct) lay out in any face and all 11 locales: a one-line step bar, CJK breaking and system faces, long-word hyphenation, checked at 320-1280 px."
-generated: { by: antigravity/gemini, at: 2026-11-23T13:35:10Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T15:46:15Z }
 verified:
-  - { by: antigravity/gemini, at: 2026-11-23T12:36:24Z }
+  - { by: antigravity/gemini, at: 2026-11-23T15:45:59Z }
 sources:
   - id: shell-css
     resource: ../../src/styles/consortium/shell.css
@@ -19,13 +19,13 @@ sources:
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
-    digest: sha256:db0dc259328e7353
-    last_modified: 2026-11-23T11:50:28Z
+    digest: sha256:c40ee8fe93f63c81
+    last_modified: 2026-11-23T15:35:23Z
   - id: consortium-seams-layout-browser-test-mjs
     resource: ../../scripts/browser/consortium-studio-plan-i18n.browser.test.mjs
     title: scripts/browser/consortium-studio-plan-i18n.browser.test.mjs
     digest: sha256:124f350b6be35d25
-    last_modified: 2026-11-23T13:28:14Z
+    last_modified: 2026-11-23T13:35:12Z
 enforced_by: [scripts/browser/consortium-studio-plan-i18n.browser.test.mjs]
 ---
 

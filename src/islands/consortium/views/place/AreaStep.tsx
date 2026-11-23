@@ -1,12 +1,26 @@
 /** @jsxImportSource preact */
-// Step 2 Planting Area & Open .canopi Path B (Slice 3.2, v14/v15):
-// - Planting Area input + unit selector (m² | ha | ft² | ac), Density (Standard | Intensive | Spacious),
-//   Pathways % (0–40%), live Net Plantable Area readout synced to plantingConfig in state/studio.ts
-// - Compact Path B ("Open .canopi file") placed below the primary Path A CTA
+// Step 2 Planting Area & Open .canopi Path B (Stage 1 — 1:1 port of v14 mockup-01-onboard):
+// - Dark-pill Area unit (m² | ha | ft² | ac), Density (Spacious 0.7× | Balanced 1.0× | Dense syntropic 1.4×),
+//   Pathways % (0% | 10% | 20% | 30%), live Net planted area readout synced to plantingConfig
+// - Compact Path B dashed dropzone ("Drop a .canopi file or browse" + "Browse…")
 import { useRef, useState } from 'preact/hooks';
 import { convertArea, toSquareMeters, type AreaUnit, type DensityMode } from '../../../../lib/consortium/index.ts';
 import { openStudioCanopiText, plantingConfig, setPlantingConfig } from '../../state/studio.ts';
-import { FieldTip } from '../kit/field-tip.tsx';
+
+const UNITS: readonly { id: AreaUnit; label: string }[] = [
+  { id: 'm2', label: 'm²' },
+  { id: 'ha', label: 'ha' },
+  { id: 'ft2', label: 'ft²' },
+  { id: 'ac', label: 'ac' },
+];
+
+const DENSITIES: readonly { id: DensityMode; label: string }[] = [
+  { id: 'spacious', label: 'Spacious 0.7×' },
+  { id: 'balanced', label: 'Balanced 1.0×' },
+  { id: 'dense', label: 'Dense 1.4×' },
+];
+
+const PATHWAYS = [0, 10, 20, 30] as const;
 
 export function AreaStep() {
   const cfg = plantingConfig.value;
@@ -16,18 +30,11 @@ export function AreaStep() {
   const unitLabel = cfg.areaUnit === 'm2' ? 'm²' : cfg.areaUnit === 'ft2' ? 'ft²' : cfg.areaUnit;
 
   return (
-    <section class="ct-area-step" data-area-step aria-labelledby="ct-area-h">
-      <div class="ct-postcard-head">
-        <h3 class="ct-postcard-title" id="ct-area-h">Planting area</h3>
-        <FieldTip
-          label="Explain planting area"
-          text="Used to scale plant counts, spacing, seed weights, and mulch volume in your Planting Plan. You can change this anytime."
-        />
-      </div>
-      <div class="ct-area-grid">
-        <div class="ct-area-field">
-          <label for="ct-area-val">Plot size</label>
-          <div class="ct-area-inline">
+    <section class="ct-area-step" data-area-step aria-label="Planting area">
+      <div class="ct-plan-controls ct-ob-area-box">
+        <div class="ct-plan-ctrl-group">
+          <label class="ct-eyebrow" for="ct-area-val">PLANTING AREA</label>
+          <div class="ct-plan-area-row">
             <input
               id="ct-area-val"
               type="number"
@@ -42,51 +49,60 @@ export function AreaStep() {
                 }
               }}
             />
-            <select
-              aria-label="Area unit"
-              class="ct-area-select"
-              value={cfg.areaUnit}
-              onChange={(e) => setPlantingConfig({ areaUnit: (e.currentTarget as HTMLSelectElement).value as AreaUnit })}
-            >
-              <option value="m2">m²</option>
-              <option value="ha">ha</option>
-              <option value="ft2">ft²</option>
-              <option value="ac">ac</option>
-            </select>
+            <div class="ct-ink-seg" role="group" aria-label="Area unit">
+              {UNITS.map((u) => (
+                <button
+                  key={u.id}
+                  type="button"
+                  class="ct-seg-btn"
+                  aria-pressed={cfg.areaUnit === u.id ? 'true' : 'false'}
+                  onClick={() => setPlantingConfig({ areaUnit: u.id })}
+                >
+                  {u.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div class="ct-area-field">
-          <label for="ct-area-density">Density</label>
-          <select
-            id="ct-area-density"
-            class="ct-area-select"
-            value={cfg.densityMode}
-            onChange={(e) => setPlantingConfig({ densityMode: (e.currentTarget as HTMLSelectElement).value as DensityMode })}
-          >
-            <option value="balanced">Standard</option>
-            <option value="dense">Intensive</option>
-            <option value="spacious">Spacious</option>
-          </select>
+        <div class="ct-plan-ctrl-group">
+          <span class="ct-eyebrow">DENSITY</span>
+          <div class="ct-plan-chip-row" role="group" aria-label="Planting density">
+            {DENSITIES.map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                class={`ct-plan-pill-btn${cfg.densityMode === d.id ? ' is-active' : ''}`}
+                aria-pressed={cfg.densityMode === d.id ? 'true' : 'false'}
+                onClick={() => setPlantingConfig({ densityMode: d.id })}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div class="ct-area-field">
-          <label for="ct-area-paths">Pathways ({cfg.pathwaysPct}%)</label>
-          <input
-            id="ct-area-paths"
-            type="range"
-            min="0"
-            max="40"
-            step="5"
-            value={cfg.pathwaysPct}
-            onInput={(e) => setPlantingConfig({ pathwaysPct: Number((e.currentTarget as HTMLInputElement).value) })}
-          />
+        <div class="ct-plan-ctrl-group">
+          <span class="ct-eyebrow">PATHWAYS %</span>
+          <div class="ct-plan-chip-row" role="group" aria-label="Pathways percentage">
+            {PATHWAYS.map((pct) => (
+              <button
+                key={pct}
+                type="button"
+                class={`ct-plan-pill-btn${cfg.pathwaysPct === pct ? ' is-active' : ''}`}
+                aria-pressed={cfg.pathwaysPct === pct ? 'true' : 'false'}
+                onClick={() => setPlantingConfig({ pathwaysPct: pct })}
+              >
+                {pct}%
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       <div class="ct-area-net" data-net-area>
-        <span>Net plantable area</span>
-        <strong>{netDisplay} {unitLabel}</strong>
+        <span>Net planted area</span>
+        <strong>{netDisplay} {unitLabel} ({100 - cfg.pathwaysPct}% of {displayArea} {unitLabel})</strong>
       </div>
     </section>
   );
@@ -106,7 +122,10 @@ export function OpenCanopiPathB() {
 
   return (
     <div class="ct-path-b ct-ob-dropzone" data-open-canopi-path-b>
-      <span class="ct-ob-drop-copy">Drop a .canopi file or browse</span>
+      <div class="ct-ob-drop-text">
+        <strong class="ct-ob-drop-title">Drop a .canopi file or browse</strong>
+        <span class="ct-ob-drop-copy">Stays local · custom plants preserved intact</span>
+      </div>
       <input
         ref={inputRef}
         type="file"
@@ -120,7 +139,7 @@ export function OpenCanopiPathB() {
         }}
       />
       <button type="button" class="button button-secondary ct-small" onClick={() => inputRef.current?.click()}>
-        Open .canopi file
+        Browse…
       </button>
       {error && <p class="ct-path-b-err" role="alert">{error}</p>}
     </div>

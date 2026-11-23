@@ -4,10 +4,10 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future check, the verdict engine and its words; native and soil moved to P5.2), the rules S1 ported, and the format 4 installer for schema 4.7 (no older schema or minor) that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: antigravity/gemini, at: 2026-11-23T12:36:47Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T15:46:16Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:21:11Z }
-  - { by: antigravity/gemini, at: 2026-11-23T12:36:30Z }
+  - { by: antigravity/gemini, at: 2026-11-23T15:46:10Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts

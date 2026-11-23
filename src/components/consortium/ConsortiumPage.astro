@@ -24,25 +24,8 @@ import { setStrings } from '../../islands/consortium/strings.ts';
 import { END_KEY, LINK_VERSION } from '../../lib/consortium/state.ts';
 import { SAVE_FRAGMENT_MAX, STORE } from '../../islands/consortium/state/save.ts';
 import { LOCATION_STORE, SITE_CLIMATE } from '../../islands/consortium/state/persist.ts';
-import '../../styles/consortium/base.css';
-import '../../styles/consortium/details.css';
-import '../../styles/consortium/shell.css';
-import '../../styles/consortium/print.css';
-// P5 (commit 0): one stylesheet per stream, each owned by its stream (src/styles/consortium/p5/).
-import '../../styles/consortium/p5/s5b.css';
-import '../../styles/consortium/p5/s5c.css';
-import '../../styles/consortium/p5/s5d.css';
-import '../../styles/consortium/p5/s5e.css';
-// PP-B (commit 0): the page-level stylesheets of the Plant palette, each owned by its stream
-// (scripts/plan/pp-b-owners.json): the palette page (b2), Place (b1a), Your plants (b3). Page-level, so
-// no stylesheet loads with a lazy chunk (A14).
-import '../../styles/consortium/palette-page.css';
-import '../../styles/consortium/place.css';
-import '../../styles/consortium/plants.css';
-// PP-C (commit 0): Find's stylesheet (c1), page-level for the same reason.
-import '../../styles/consortium/find.css';
-import '../../styles/consortium/figures.css';
 import '../../styles/consortium/field-studio.css';
+import '../../styles/consortium/print.css';
 
 interface Props { lang: Locale; }
 const { lang } = Astro.props;

@@ -4,10 +4,10 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: antigravity/gemini, at: 2026-11-23T15:07:40Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T15:46:13Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:20Z }
-  - { by: antigravity/gemini, at: 2026-11-23T15:07:32Z }
+  - { by: antigravity/gemini, at: 2026-11-23T15:46:04Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -188,8 +188,8 @@ sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
-    digest: sha256:793798093401743e
-    last_modified: 2026-11-23T14:51:22Z
+    digest: sha256:7b64c1fa58f990d4
+    last_modified: 2026-11-23T15:41:42Z
   - id: poolslot-tsx
     resource: ../../src/islands/consortium/views/PoolSlot.tsx
     title: src/islands/consortium/views/PoolSlot.tsx

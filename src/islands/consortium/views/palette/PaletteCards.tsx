@@ -28,17 +28,26 @@ import { FilterPopover } from './FilterPopover.tsx';
 
 function Sparkline({ taxon }: { taxon: Taxon }) {
   const levels = useMemo(() => activityMonthsOf(taxon), [taxon]);
+  const isAnnual = taxon.traits.is_annual === true;
   return (
     <span class="ct-spark" role="img" aria-label="12-month activity">
-      {MONTH_INITIALS.map((_, i) => (
-        <span
-          key={i}
-          class="ct-spark-dot"
-          data-lvl={levels[i]}
-          data-stratum={levels[i] === 'peak' ? 'high' : undefined}
-          aria-hidden="true"
-        />
-      ))}
+      {MONTH_INITIALS.map((_, i) => {
+        const m = i + 1;
+        const w = (m <= 3 || m >= 11) && levels[i] !== 'dormant';
+        const s = isAnnual ? (m === 3 || m === 4) : (m === 3 || m === 10);
+        const b = levels[i] !== 'dormant' && m >= 4 && m <= 6;
+        const h = levels[i] === 'peak';
+        const any = w || s || b || h;
+        return (
+          <span key={i} class="ct-ms-col" aria-hidden="true">
+            {w && <i class="ct-ms-w" />}
+            {s && <i class="ct-ms-s" />}
+            {b && <i class="ct-ms-b" />}
+            {h && <i class="ct-ms-h" data-stratum="high" />}
+            {!any && <i class="ct-ms-e" />}
+          </span>
+        );
+      })}
     </span>
   );
 }

@@ -21,7 +21,6 @@ import { lookingThrough } from '../state/lookups.ts';
 import { signal } from '@preact/signals';
 import { useEffect, useRef } from 'preact/hooks';
 import { desk } from './location/shared.ts';
-import { SearchPrivacy } from './location/privacy.tsx';
 
 const broken = signal(false);
 // The whole step, chunk load included, counts as a lookup in flight (state/lookups.ts `lookups`).
@@ -37,6 +36,13 @@ const webgl = (): boolean => {
   }
   return gl;
 };
+
+const SAMPLE_PLOTS: readonly { id: string; label: string; fullName: string; lat: number; lon: number }[] = [
+  { id: 'montpellier', label: 'Montpellier, FR', fullName: 'Montpellier, South of France', lat: 43.6108, lon: 3.8767 },
+  { id: 'lyon', label: 'Lyon, FR', fullName: 'Lyon, France', lat: 45.764, lon: 4.8357 },
+  { id: 'lisbon', label: 'Lisbon, PT', fullName: 'Lisbon, Portugal', lat: 38.7223, lon: -9.1393 },
+  { id: 'kyoto', label: 'Kyoto, JP', fullName: 'Kyoto, Japan', lat: 35.0116, lon: 135.7681 },
+];
 
 export function LocationSlot({ frame = false, children }: { frame?: boolean; children?: ComponentChildren }) {
   const m = locationStep.value, loc = location.value;
@@ -74,42 +80,50 @@ export function LocationSlot({ frame = false, children }: { frame?: boolean; chi
   const geoIcon = <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="5.5" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M10 2v3M10 15v3M2 10h3M15 10h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>;
   const showWays = !(frame && loc?.lookup);
   const search = (q: string) => { if (q.trim()) void run((x) => x.searchPlace(q)); };
+  const pickSample = (s: typeof SAMPLE_PLOTS[number]) => {
+    void run((x) => x.settle('saved', JSON.stringify({ lat: s.lat, lon: s.lon, source: 'search', label: s.fullName })));
+  };
   return (
     <section class="ct-q ct-location" aria-labelledby="ct-loc-h">
-      <h2 class="ct-q-title" id="ct-loc-h"><span class="ct-q-n" aria-hidden="true">1</span> {T('location.title')}</h2>
-      <p class="ct-muted ct-q-lede">{T('location.lede')}</p>
+      <h2 class="ct-ob-h2" id="ct-loc-h">Where are you planting?</h2>
       <form class="ct-field-row" role="search" aria-label={T('location.title')} onSubmit={(e) => { e.preventDefault(); if (searching) return; search((e.currentTarget.elements.namedItem('ct-place-q') as HTMLInputElement).value); }}>
         <input ref={field} type="text" name="ct-place-q" class="ct-place-field" data-location-search enterKeyHint="search" autoComplete="off" aria-label={T('location.field')} placeholder={T('location.field')}
           onKeyDown={(e) => { if (e.key === 'Enter' && (e.isComposing || e.keyCode === 229)) e.preventDefault(); }} />
         {searching
           ? <button type="button" class="button button-secondary" onClick={() => m?.stop()}>{T('location.stop')}</button>
-          : <button type="submit" class="button button-secondary">{T('location.searchButton')}</button>}
+          : <button type="submit" class="button button-secondary">Look up</button>}
         {geo && showWays && !wide && (
           <button type="button" class="ct-icon-button" data-location-action="geo" aria-label={T('location.geo')} onClick={() => run((x) => x.useMyLocation())}>{geoIcon}</button>
         )}
       </form>
-      {showWays && wide && (geo || webgl()) && (
-        <p class="ct-q-ways">
-          {geo && <button type="button" class="button button-secondary" data-location-action="geo" onClick={() => run((x) => x.useMyLocation())}>{geoIcon}{T('location.geo')}</button>}
-          {webgl() && <button type="button" class="button button-secondary" data-location-action="map" onClick={() => run((x) => x.openMap())}>{T('location.map')}</button>}
-        </p>
+      {showWays && (
+        <div class="ct-sample-row">
+          <span class="ct-sample-label">Sample plots:</span>
+          {SAMPLE_PLOTS.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              class="ct-filter-chip"
+              aria-pressed={loc?.label === s.fullName ? 'true' : 'false'}
+              onClick={() => pickSample(s)}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
       )}
-      {/* The frame (SiteKiambu) keeps the field; its place row carries the other ways out. A link
-          handed in as null leaves no separator behind (BC14). */}
-      {showWays && ((webgl() && !wide) || children) && (
-        <p class="ct-q-links">
-          {webgl() && !wide && <button type="button" class="link-button ct-link" data-location-action="map" onClick={() => run((x) => x.openMap())}>{T('location.map')}</button>}
-          {webgl() && !wide && children && <span class="ct-sep" aria-hidden="true"> · </span>}
+      {showWays && (
+        <div class="ct-q-quick-row">
+          {geo && <button type="button" class="link-button ct-link" data-location-action="geo" onClick={() => run((x) => x.useMyLocation())}>{T('location.geo')}</button>}
+          {geo && webgl() && <span class="ct-sep" aria-hidden="true"> · </span>}
+          {webgl() && <button type="button" class="link-button ct-link" data-location-action="map" onClick={() => run((x) => x.openMap())}>{T('location.map')}</button>}
+          {(geo || webgl()) && children && <span class="ct-sep" aria-hidden="true"> · </span>}
           {children}
-        </p>
+        </div>
       )}
-      {/* The place search's privacy line under the field, before any press (privacy-1, as on master);
-          once per screen: the answers to choose from carry their own. */}
-      {!m?.choices.value && <SearchPrivacy />}
       {broken.value && <p class="ct-notice" role="alert">{T('details.loadFailed')}</p>}
-      {/* Always on the page (A25): a status region is there before its message, words only (R7). */}
       <p class="ct-sr" role="status">{m ? m.said() : loc && !loc.lookup ? T('location.state.loading') : ''}</p>
-      {result}
+      {(!loc?.lookup || !!m?.choices.value) && result}
       {m && m.mapOpen.value && <m.MapDialog />}
     </section>
   );

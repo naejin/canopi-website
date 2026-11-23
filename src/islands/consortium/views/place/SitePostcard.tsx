@@ -1,15 +1,17 @@
 /** @jsxImportSource preact */
-// Step 1 Site & Climate Postcard (Slice 3.2, v14/v15 editorial design):
-// - 3 hairline editorial rows: Winter & Frost, Summer & Rain, Soil & Subsoil (with .field-tip explanations)
-// - Quiet 1-line Mild-Winter / frost-free footer when applicable
-// - Collapsible interactive Microclimate Sliders (Slope °, Aspect, Landform) wired to adjustMicroclimate()
-// - ODbL 1.0 attribution (COPERNICUS/DEM/GLO30_2024_1 + MERIT/Hydro/v1_0_1)
+// Step 1 Site & Climate Postcard (Stage 1 — 1:1 port of v14 mockup-01-onboard):
+// - Thick ink left-bordered .ct-postcard with place header + compact country/climate tag
+// - 3 hairline editorial rows: WINTER & FROST, SUMMER & RAIN, SOIL & SUBSOIL
+// - Mild-winter advantage line when applicable
+// - Collapsible "Tune canopi-climate readings & microclimate (live updates)" hosting sliders + PlaceFigures
+// - ODbL 1.0 + canopi-data Schema 4.9 attribution footer
+import type { ComponentChildren } from 'preact';
 import { siteClimate as climateOf } from '../../../../lib/consortium/index.ts';
 import { adjustMicroclimate, type MicroAspect, type MicroLandform } from '../../../../lib/climate/v07.ts';
-import { location as siteLocation, climate } from '../../store.ts';
+import { location as siteLocation, climate, country } from '../../store.ts';
 import { pageLang } from '../../strings.ts';
 import { formatTemp } from '../../format.ts';
-import { zoneName } from '../kit/names.ts';
+import { countryName, zoneName } from '../kit/names.ts';
 import { FieldTip } from '../kit/field-tip.tsx';
 import { microclimate, setMicroclimate } from '../../state/studio.ts';
 
@@ -27,81 +29,99 @@ const LANDFORM_LABELS: readonly { id: MicroLandform; label: string }[] = [
   { id: 'valley', label: 'Valley / frost hollow' },
 ];
 
-export function SitePostcard() {
+export function SitePostcard({ children }: { children?: ComponentChildren }) {
   const loc = siteLocation.value;
   const z = climate.value;
-  if (!loc?.lookup || !z) return null;
-  const sc = climateOf(loc.lookup);
-  if (!sc.today) return null;
-
+  const sc = loc?.lookup ? climateOf(loc.lookup) : null;
   const lang = pageLang();
   const mc = microclimate.value;
-  const adj = adjustMicroclimate(
-    { coldC: sc.today.tminColdC, hotC: sc.today.tmaxWarmC, lat: loc.lat },
-    { slopeDeg: mc.slopeDeg, aspect: mc.aspect, landform: mc.landform },
-  );
+  const cCode = country.value.code;
+  const cLabel = cCode ? `${countryName(cCode)} invasive list active` : 'No invasive list active';
 
-  const mildWinter = adj.adjustedColdC >= 0;
-  const ph = loc.lookup.soil?.phH2o;
-  const tex = loc.lookup.soil?.texture;
-  const aridity = sc.today.aridityIndex;
-  const hasMicroShift = adj.coldDeltaC !== 0 || adj.hotDeltaC !== 0 || adj.falseSpringDeltaPct !== 0;
+  const hasLive = Boolean(loc?.lookup && sc?.today);
+  const adj = hasLive && loc && sc?.today
+    ? adjustMicroclimate(
+        { coldC: sc.today.tminColdC, hotC: sc.today.tmaxWarmC, lat: loc.lat },
+        { slopeDeg: mc.slopeDeg, aspect: mc.aspect, landform: mc.landform },
+      )
+    : null;
+
+  const mildWinter = adj ? adj.adjustedColdC >= 0 : (z === 'Mediterranean' || z === 'Subtropical' || z === 'Tropical');
+  const ph = loc?.lookup?.soil?.phH2o ?? null;
+  const tex = loc?.lookup?.soil?.texture ?? null;
+  const aridity = sc?.today?.aridityIndex ?? null;
+  const hasMicroShift = Boolean(adj && (adj.coldDeltaC !== 0 || adj.hotDeltaC !== 0 || adj.falseSpringDeltaPct !== 0));
+
+  const title = loc?.label || (z ? `${zoneName(z)} climate` : 'Select a town or sample plot');
+  const summary = hasLive && sc
+    ? `${z ? zoneName(z) : 'Local'} climate (Köppen ${sc.koppen}) read on-device from your 11 km climate & soil grid${ph != null ? ` (soil pH ${ph.toFixed(1)})` : ''}.`
+    : z
+      ? `Using the ${zoneName(z)} regional climate baseline. Search a town or click a sample plot above for local soil pH and 2050s warming.`
+      : 'Pick a sample plot above or enter your town/coordinates to read local frost lows, summer peaks, and soil pH from on-device tiles.';
 
   return (
     <section class="ct-postcard" data-site-postcard aria-label="Site climate summary">
       <div class="ct-postcard-head">
-        <h3 class="ct-postcard-title">{zoneName(z)}</h3>
-        <span class="ct-postcard-koppen">Köppen {sc.koppen}</span>
+        <strong class="ct-postcard-title">{title}</strong>
+        <span class="ct-postcard-tag">From canopi-climate v0.7.0 · {cLabel}</span>
       </div>
+      <p class="ct-postcard-summary">{summary}</p>
 
       <ul class="ct-postcard-rows">
         <li class="ct-postcard-row">
           <span class="ct-postcard-label">
-            Winter &amp; Frost
+            WINTER &amp; FROST
             <FieldTip
               label="Explain Winter and Frost"
               text="Coldest-month average low adjusted for your slope and landform. Used to check winter hardiness and frost-window timing."
             />
           </span>
           <span class="ct-postcard-val">
-            {formatTemp(adj.adjustedColdC, lang)} coldest low · {mildWinter ? 'Mild winter' : 'Hard frosts'}
+            {adj
+              ? `${formatTemp(adj.adjustedColdC, lang)} coldest low · ${mildWinter ? 'Mild winter' : 'Hard frosts'}`
+              : z
+                ? `${zoneName(z)} baseline · ${mildWinter ? 'Mild winter' : 'Seasonal frosts'}`
+                : 'Awaiting location — pick a sample plot or search'}
           </span>
         </li>
         <li class="ct-postcard-row">
           <span class="ct-postcard-label">
-            Summer &amp; Rain
+            SUMMER &amp; RAIN
             <FieldTip
               label="Explain Summer and Rain"
               text="Warmest-month average high and aridity balance. Higher aridity means more rain relative to summer evaporation."
             />
           </span>
           <span class="ct-postcard-val">
-            {formatTemp(adj.adjustedHotC, lang)} warmest high{aridity != null ? ` · Aridity ${aridity.toFixed(2)}` : ''}
+            {adj
+              ? `${formatTemp(adj.adjustedHotC, lang)} warmest high${aridity != null ? ` · Aridity ${aridity.toFixed(2)}` : ''}`
+              : 'Read automatically from local climate tiles'}
           </span>
         </li>
         <li class="ct-postcard-row">
           <span class="ct-postcard-label">
-            Soil &amp; Subsoil
+            SOIL &amp; SUBSOIL
             <FieldTip
               label="Explain Soil and Subsoil"
               text="Regional baseline soil pH and texture from soil grids. Always verify with a local spade and pH test on your plot."
             />
           </span>
           <span class="ct-postcard-val">
-            {ph != null ? `pH ${ph.toFixed(1)}` : 'pH unrecorded'}
-            {tex ? ` · ${tex}` : ''}
+            {ph != null
+              ? `Topsoil pH ${ph.toFixed(1)}${tex ? ` · ${tex}` : ''}`
+              : 'Baseline soil grid · editable below'}
           </span>
         </li>
       </ul>
 
       {mildWinter && (
-        <p class="ct-postcard-foot" data-mild-winter-note>
-          Mild-winter site — frost-free or light-frost window; low-chill temperate trees perform best.
+        <p class="ct-postcard-mild" data-mild-winter-note>
+          <strong>❄ Mild-winter advantage:</strong> Nov–Mar stays frost-rare — sow cool-season species in autumn to build deep roots on winter rain.
         </p>
       )}
 
-      <details class="ct-micro" data-microclimate>
-        <summary>Microclimate adjustment (slope, aspect, landform)</summary>
+      <details class="ct-adv-figures" data-microclimate>
+        <summary class="ct-adv-summary">Tune canopi-climate readings &amp; microclimate (live updates)</summary>
         <div class="ct-micro-grid">
           <div class="ct-micro-field">
             <div class="ct-micro-field-head">
@@ -139,15 +159,16 @@ export function SitePostcard() {
             </select>
           </div>
         </div>
-        {hasMicroShift && (
+        {hasMicroShift && adj && (
           <p class="ct-micro-delta" data-microclimate-delta>
             Microclimate shift: {adj.coldDeltaC >= 0 ? '+' : ''}{adj.coldDeltaC}°C winter low · {adj.hotDeltaC >= 0 ? '+' : ''}{adj.hotDeltaC}°C summer high · {adj.falseSpringDeltaPct >= 0 ? '+' : ''}{adj.falseSpringDeltaPct}% false-spring risk
           </p>
         )}
+        {children}
       </details>
 
       <p class="ct-postcard-attr">
-        Terrain &amp; hydrology attribution (ODbL 1.0): COPERNICUS/DEM/GLO30_2024_1 · MERIT/Hydro/v1_0_1
+        Climate &amp; terrain: <strong>canopi-climate v0.7.0</strong> (COPERNICUS/DEM/GLO30 &amp; MERIT/Hydro, ODbL 1.0) · Plant data: <strong>canopi-data Schema 4.9</strong>
       </p>
     </section>
   );

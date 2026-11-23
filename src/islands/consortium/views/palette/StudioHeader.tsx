@@ -15,8 +15,10 @@ import { backToPlace, startOver } from '../../state/draft.ts';
 import { requestSuggest } from '../../state/suggest-wait.ts';
 import {
   autoSaveEnabled,
+  climateStress,
   cycleWateringMode,
   designDirty,
+  designEnvelope,
   designName,
   ensureStudioGuards,
   hasActiveFileHandle,
@@ -32,6 +34,7 @@ import {
   type StudioTab,
 } from '../../state/studio.ts';
 import { sunTierOf } from '../../rules/studio-filters.ts';
+import { evaluateClimate2050 } from '../../rules/studio-analysis.ts';
 import { placeWords } from '../location/shared.ts';
 import { zoneName } from '../kit/names.ts';
 import { FieldTip } from '../kit/field-tip.tsx';
@@ -76,13 +79,21 @@ export function StudioHeader() {
   const railVisible = poolOpen.value;
   const water = wateringMode.value;
 
+  const envelope = designEnvelope.value;
+  const stress = climateStress.value;
+  const catalog = store.fitPool.value ?? store.pool.value ?? [];
+
   const ribbon = useMemo(() => {
     const sunTiers = new Set(members.map((t) => sunTierOf(t))).size;
     const rolesFilled = new Set(members.flatMap((t) => jobsOf(t))).size;
     const roleSeasonSlots = Math.min(24, rolesFilled * 4);
     let thriving = memberCount;
     let risky = 0;
-    if (verdicts) {
+    if (curPeriod !== periodIds[0] && memberCount > 0) {
+      const rep = evaluateClimate2050(members, catalog, loc, curPeriod, envelope, stress);
+      thriving = rep.holdsStrong.length;
+      risky = rep.critical.length;
+    } else if (verdicts) {
       thriving = 0;
       for (const m of members) {
         const v = verdicts.get(m.id);
@@ -95,7 +106,7 @@ export function StudioHeader() {
     const mildWinter = coldC != null ? coldC > 0 : z === 'Mediterranean' || z === 'Subtropical' || z === 'Tropical';
     const planUnits = Math.max(memberCount, Math.round(cfg.plotAreaM2 * 0.25));
     return { sunTiers, roleSeasonSlots, thriving, risky, ph, mildWinter, planUnits };
-  }, [members, memberCount, verdicts, loc, z, cfg.plotAreaM2]);
+  }, [members, memberCount, verdicts, loc, z, cfg.plotAreaM2, curPeriod, catalog, envelope, stress]);
 
   const fileSlug = canopiFileName(designName.value.trim() || 'My Field Palette');
   const hLabel = curPeriod === periodIds[0] ? 'Today' : curPeriod === periodIds[1] ? '2050s' : '2080s';

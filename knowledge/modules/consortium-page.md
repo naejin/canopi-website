@@ -2,11 +2,11 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: antigravity/gemini, at: 2026-11-23T15:07:45Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T15:46:17Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:54Z }
-  - { by: antigravity/gemini, at: 2026-11-23T15:07:36Z }
+  - { by: antigravity/gemini, at: 2026-11-23T15:46:01Z }
 sources:
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
@@ -16,8 +16,8 @@ sources:
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
-    digest: sha256:db0dc259328e7353
-    last_modified: 2026-11-23T11:50:28Z
+    digest: sha256:c40ee8fe93f63c81
+    last_modified: 2026-11-23T15:35:23Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
@@ -106,8 +106,8 @@ sources:
   - id: start-tsx
     resource: ../../src/islands/consortium/views/place/Place.tsx
     title: src/islands/consortium/views/place/Place.tsx
-    digest: sha256:7961fb54dba72506
-    last_modified: 2026-11-23T15:01:27Z
+    digest: sha256:2cfe03db3164e8e9
+    last_modified: 2026-11-23T15:41:25Z
   - id: actions-tsx
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
@@ -201,8 +201,8 @@ sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
-    digest: sha256:793798093401743e
-    last_modified: 2026-11-23T14:51:22Z
+    digest: sha256:7b64c1fa58f990d4
+    last_modified: 2026-11-23T15:41:42Z
   - id: location-fixtures-mjs
     resource: ../../scripts/browser/location-fixtures.mjs
     title: scripts/browser/location-fixtures.mjs
