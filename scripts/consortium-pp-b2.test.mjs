@@ -136,8 +136,9 @@ async function kiambuStore() {
 // Re-run on r-4db8a127ab860011 (sand cherry pH back to 5.1–8.5): the same.
 // Re-run on r-bcc417fd89a3147c (schema 4.5 light span, 681 plants): the same; the 8 new plants are Arid only.
 // Re-run on r-255553893fa4f4b4 (schema 4.7, AI-estimate kinds; 13 placements moved): the same 305 of 515.
-test('PP-B (b1b countFits, real data): Kiambu, curated Subtropical list countFits matches release r-c02e074d45487fec', async () => {
-  assert.equal(index.release_id, 'r-c02e074d45487fec', 'the export the figure was read on');
+// Re-run on r-b5e142e37fa0deff (schema 4.11, trait_sources.quote + source_url): re-pinned for Stage 2A.
+test('PP-B (b1b countFits, real data): Kiambu, curated Subtropical list countFits matches release r-b5e142e37fa0deff', async () => {
+  assert.equal(index.release_id, 'r-b5e142e37fa0deff', 'the export the figure was read on');
   const store = await kiambuStore();
   const n = store.countFits.value;
   assert.equal(n.of, 480);

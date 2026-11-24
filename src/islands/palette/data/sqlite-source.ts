@@ -10,8 +10,8 @@
 // installer refuses an export below 4.7 (scripts/consortium-schema.mjs MIN_SCHEMA_MINOR,
 // REQUIRED_ADDITIONS; PP-C 0b and 0c, no backward compatibility). Open vocabularies: a row whose value the reader does not know is skipped, never the plant.
 import type {
-  ClimateRange, ClimateZone, Details, Dispute, DisputeField, EstimateKind, FrostFact, FunctionId, FunctionMethod, Image, Interaction, InvasiveAreaCode, InvasiveRecord, InvasiveScope, InvasiveSource, KoppenShare, Labels, LayerScope, LightNiche, LayerValue, Locale, Month, Placement,
-  PlantId, PlantNames, RangeBasis, RangeVariable, Reason, SchemaVersion, Severity, Source, SourceInfo, Stratum, Taxon, TaxonClimate, TaxonClimateExtremes, Text, ToxicCondition, ToxicityAudience, ToxicityLevel, ToxicityPart, ToxicPart, TraitSource, Traits,
+  ClimateRange, ClimateZone, Details, Dispute, DisputeField, EstimateKind, ExtremeStat, FrostFact, FunctionId, FunctionMethod, Image, Interaction, InvasiveAreaCode, InvasiveRecord, InvasiveScope, InvasiveSource, KoppenShare, Labels, LayerScope, LightNiche, LayerValue, Locale, Month, Placement,
+  PlantId, PlantNames, RangeBasis, RangeVariable, Reason, SchemaVersion, Severity, Source, SourceInfo, Stratum, Taxon, TaxonAreas, TaxonClimate, TaxonClimateExtremes, Text, ToxicCondition, ToxicityAudience, ToxicityLevel, ToxicityPart, ToxicPart, TraitSource, Traits,
 } from '../../../lib/palette/index.ts';
 import { defaultPlacementOf, firstPlaced, invasiveAreaCodes, invasiveSources, layerKinds, months, NEAREST_LISTS, phases, RANGE_VARIABLES, READ_ONLY_VARIABLES, severities, strata, toxicityLevels, traitFields } from '../../../lib/palette/index.ts';
 import type { PlantSource } from '../../../lib/palette/source.ts';
@@ -70,9 +70,20 @@ const audienceOf = (r: Row): ToxicityAudience[] => {
   return who && (r.level === null || level) ? [{ who, level, source: String(r.source) }] : [];
 };
 // A field this reader has no words for (open vocabulary) is skipped (review c0-4).
+// Schema 4.11 adds optional quote and source_url columns on trait_sources.
 const traitSourceOf = (r: Row): TraitSource[] => {
   const kind = oneOf(layerKinds, r.kind), field = oneOf(traitFields, r.field);
-  return kind && field ? [{ field, source: String(r.source), scope: str(r.scope_country), kind }] : [];
+  if (!kind || !field) return [];
+  const quote = str(r.quote);
+  const sourceUrl = str(r.source_url);
+  return [{
+    field,
+    source: String(r.source),
+    scope: str(r.scope_country),
+    kind,
+    ...(quote ? { quote } : {}),
+    ...(sourceUrl ? { sourceUrl } : {}),
+  }];
 };
 const frostOf = (r: Row): FrostFact[] => {
   const kind = oneOf(FROST_KINDS, r.kind), frostClass = r.class === null ? null : oneOf(FROST_CLASSES, r.class);
@@ -96,6 +107,83 @@ function group<K>(rows: Row[], key: (r: Row) => K): Map<K, Row[]> {
   const out = new Map<K, Row[]>();
   for (const r of rows) { const k = key(r); let list = out.get(k); if (!list) out.set(k, (list = [])); list.push(r); }
   return out;
+}
+
+function extremeStatOf(r: Row): ExtremeStat {
+  return {
+    low: num(r.low),
+    median: num(r.median),
+    high: num(r.high),
+    nCells: num(r.n_cells) ?? 0,
+    nBlocks: num(r.n_blocks) ?? 0,
+    weak: Number(r.weak) === 1,
+    source: str(r.source) ?? 'gbif_occurrences',
+  };
+}
+
+function extremesFromRows(rows: Row[] | undefined): TaxonClimateExtremes | null {
+  if (!rows?.length) return null;
+  // Schema 4.10/4.11 per-variable rows: variable IN ('tmin_extreme', 'tmax_extreme')
+  if (rows.some((r) => typeof r.variable === 'string')) {
+    let tminExtreme: ExtremeStat | null = null;
+    let tmaxExtreme: ExtremeStat | null = null;
+    for (const r of rows) {
+      if (r.variable === 'tmin_extreme') tminExtreme = extremeStatOf(r);
+      else if (r.variable === 'tmax_extreme') tmaxExtreme = extremeStatOf(r);
+    }
+    if (!tminExtreme && !tmaxExtreme) return null;
+    return {
+      coldTailC: tminExtreme?.low ?? null,
+      heatDomeC: tmaxExtreme?.high ?? null,
+      maxDryDays: null,
+      chillMinCP: null,
+      source: tminExtreme?.source ?? tmaxExtreme?.source ?? null,
+      tminExtreme,
+      tmaxExtreme,
+    };
+  }
+  // Legacy single-row fallback (4.9 fixture shape)
+  const er = rows[0];
+  return {
+    coldTailC: num(er.cold_tail_c ?? er.cold_limit_c),
+    heatDomeC: num(er.heat_dome_c ?? er.heat_limit_c),
+    maxDryDays: num(er.max_dry_days ?? er.cdd_max),
+    chillMinCP: num(er.chill_min_cp ?? er.chill_portions_min),
+    source: str(er.source),
+  };
+}
+
+function areasFromRows(rows: Row[] | undefined): TaxonAreas | null {
+  if (!rows?.length) return null;
+  const native: string[] = [];
+  const introduced: string[] = [];
+  for (const r of rows) {
+    const code = str(r.area);
+    if (!code) continue;
+    if (Number(r.introduced) === 1) introduced.push(code);
+    else native.push(code);
+  }
+  return { native, introduced };
+}
+
+function layerValueFromRow(r: Row, hasMonthsBasis: boolean, hasMonthsSeen: boolean): LayerValue {
+  const scope: LayerScope = {};
+  if (r.scope_climate !== null && r.scope_climate !== undefined) scope.climate = r.scope_climate as ClimateZone;
+  if (r.scope_country !== null && r.scope_country !== undefined) scope.country = String(r.scope_country);
+  if (r.scope_hemisphere !== null && r.scope_hemisphere !== undefined) scope.hemisphere = r.scope_hemisphere as 'N' | 'S';
+  if (r.scope_latitude !== null && r.scope_latitude !== undefined) scope.latitude = String(r.scope_latitude);
+  if (r.scope_region !== null && r.scope_region !== undefined) scope.region = r.scope_region as LayerScope['region'];
+  return {
+    field: r.field as LayerValue['field'],
+    months: r.months === null ? null : monthsOf(Number(r.months), Number(r.months_from ?? 0)),
+    flag: bool(r.flag),
+    climate: (r.climate_zone ?? null) as ClimateZone | null,
+    scope: Object.keys(scope).length ? scope : null,
+    source: String(r.source),
+    kind: r.kind as LayerValue['kind'],
+    ...(hasMonthsBasis ? { monthsBasis: str(r.months_basis) } : {}),
+    ...(hasMonthsSeen ? { monthsSeen: r.months_seen == null ? null : monthsOf(Number(r.months_seen), Number(r.months_from ?? 0)) } : {}),
+  };
 }
 
 function traitsOf(r: Row): Traits {
@@ -237,6 +325,18 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
     const images = new Map(db.selectObjects(`SELECT * FROM plant_images WHERE ${IN_CLIMATE}`, [c]).map((r) => [Number(r.plant), r]));
     const tox = group(db.selectObjects(`SELECT plant, source FROM toxicity_sources WHERE ${IN_CLIMATE} ORDER BY plant, ord`, [c]), (r) => Number(r.plant));
     const climates = climatesOf(db.selectArrays(CLIMATE_ROWS, [c]));
+    const extremesByPlant = hasExtremesTable
+      ? group(db.selectObjects(`SELECT * FROM plant_climate_extremes WHERE ${IN_CLIMATE}`, [c]), (r) => Number(r.plant))
+      : new Map<number, Row[]>();
+    const frostByPlant = frostRecorded
+      ? group(db.selectObjects(`SELECT * FROM plant_frost WHERE ${IN_CLIMATE} ORDER BY kind, variety, source`, [c]), (r) => Number(r.plant))
+      : new Map<number, Row[]>();
+    const areasByPlant = group(db.selectObjects(`SELECT plant, area, introduced FROM plant_areas WHERE ${IN_CLIMATE} ORDER BY area`, [c]), (r) => Number(r.plant));
+    const windByPlant = new Map<number, boolean>();
+    for (const wr of db.selectObjects(`SELECT plant, flag FROM layer_values WHERE field = 'tolerates_wind' AND flag IS NOT NULL AND (climate_zone IS NULL OR climate_zone = ?1) AND ${IN_CLIMATE}`, [c])) {
+      const pNum = Number(wr.plant);
+      if (!windByPlant.has(pNum) || Number(wr.flag) === 1) windByPlant.set(pNum, Number(wr.flag) === 1);
+    }
     return rows.map((r): Taxon => {
       const plant = Number(r.plant), id = String(r.id);
       const own = Object.fromEntries((names.get(plant) ?? []).map((n) => [n.locale, String(n.name)])) as Partial<Record<Locale, string>>;
@@ -250,6 +350,10 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
       const fallback = r.stratum === null && r.phase_start === null
         ? defaultPlacementOf({ role: r.role as Taxon['role'], light, traits })
         : null;
+      const extremes = hasExtremesTable ? extremesFromRows(extremesByPlant.get(plant)) : undefined;
+      const frost = frostRecorded ? (frostByPlant.get(plant) ?? []).flatMap(frostOf) : undefined;
+      const areas = areasFromRows(areasByPlant.get(plant));
+      const windTolerant = windByPlant.has(plant) ? windByPlant.get(plant)! : null;
       return {
         id,
         canonical_name: String(r.canonical_name),
@@ -274,6 +378,10 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
         areasKnown: r.wcvp_match !== null && r.wcvp_match !== undefined,
         // Schema 4.5 (light span): each end and the preferred level, null when unknown (never "no light needs").
         light,
+        ...(extremes !== undefined ? { extremes } : {}),
+        ...(frost !== undefined ? { frost } : {}),
+        ...(areas ? { areas } : {}),
+        ...(windTolerant !== null ? { windTolerant } : {}),
       };
     });
   }
@@ -392,25 +500,9 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
         return text ? [{ region: list[0].region as Reason['region'], text, source: String(list[0].source) }] : [];
       });
       // Schema 4: layer_values.field is an open vocabulary; a field the reader does not know is skipped.
-      const layerValues: LayerValue[] = db.selectObjects('SELECT * FROM layer_values WHERE plant = ?1 AND (climate_zone IS NULL OR climate_zone = ?2) ORDER BY layer_value', [plant, c]).filter((r) => oneOf(LAYER_FIELDS, r.field)).map((r) => {
-        const scope: LayerScope = {};
-        if (r.scope_climate !== null) scope.climate = r.scope_climate as ClimateZone;
-        if (r.scope_country !== null) scope.country = String(r.scope_country);
-        if (r.scope_hemisphere !== null) scope.hemisphere = r.scope_hemisphere as 'N' | 'S';
-        if (r.scope_latitude !== null) scope.latitude = String(r.scope_latitude);
-        if (r.scope_region !== null) scope.region = r.scope_region as LayerScope['region'];
-        return {
-          field: r.field as LayerValue['field'],
-          months: r.months === null ? null : monthsOf(Number(r.months), Number(r.months_from ?? 0)),
-          flag: bool(r.flag),
-          climate: (r.climate_zone ?? null) as ClimateZone | null,
-          scope: Object.keys(scope).length ? scope : null,
-          source: String(r.source),
-          kind: r.kind as LayerValue['kind'],
-          ...(hasMonthsBasis ? { monthsBasis: str(r.months_basis) } : {}),
-          ...(hasMonthsSeen ? { monthsSeen: r.months_seen == null ? null : monthsOf(Number(r.months_seen), Number(r.months_from ?? 0)) } : {}),
-        };
-      });
+      const layerValues: LayerValue[] = db.selectObjects('SELECT * FROM layer_values WHERE plant = ?1 AND (climate_zone IS NULL OR climate_zone = ?2) ORDER BY layer_value', [plant, c])
+        .filter((r) => oneOf(LAYER_FIELDS, r.field))
+        .map((r) => layerValueFromRow(r, hasMonthsBasis, hasMonthsSeen));
       const imageRow = db.selectObjects('SELECT * FROM plant_images WHERE plant = ?1', [plant])[0];
       const invasiveIn = invasiveOf(db.selectObjects('SELECT country, source FROM plant_invasive WHERE plant = ?1 ORDER BY country, source', [plant]));
       const toxicitySources = db.selectObjects('SELECT source FROM toxicity_sources WHERE plant = ?1 ORDER BY ord', [plant]).map((r) => String(r.source));
@@ -432,17 +524,9 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
       const fnSources = db.selectObjects('SELECT s.source FROM functions f JOIN function_sources s USING (function_id) WHERE f.plant = ?1', [plant]).map((r) => String(r.source));
       let extremes: TaxonClimateExtremes | null = null;
       if (hasExtremesTable) {
-        const er = db.selectObjects('SELECT * FROM plant_climate_extremes WHERE plant = ?1 LIMIT 1', [plant])[0];
-        if (er) {
-          extremes = {
-            coldTailC: num(er.cold_tail_c ?? er.cold_limit_c),
-            heatDomeC: num(er.heat_dome_c ?? er.heat_limit_c),
-            maxDryDays: num(er.max_dry_days ?? er.cdd_max),
-            chillMinCP: num(er.chill_min_cp ?? er.chill_portions_min),
-            source: str(er.source),
-          };
-        }
+        extremes = extremesFromRows(db.selectObjects('SELECT * FROM plant_climate_extremes WHERE plant = ?1', [plant]));
       }
+      const areas = areasFromRows(db.selectObjects('SELECT area, introduced FROM plant_areas WHERE plant = ?1 ORDER BY area', [plant]));
       let gallery: Details['gallery'];
       if (hasGalleryTable) {
         const localHero = options.images[id];
@@ -493,6 +577,7 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
         id, climate: c, reasons, layerValues, image: imageOf(id, imageRow), invasiveIn, toxicitySources, sources, placements, koppen, disputes, audiences, traitSources, frost, toxicityParts, invasiveAreas, gbifRecords, nameKinds,
         ...(hasExtremesTable ? { extremes } : {}),
         ...(hasGalleryTable ? { gallery } : {}),
+        ...(areas ? { areas } : {}),
       };
     },
     async labels(l) {
@@ -503,9 +588,26 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
       }
       return out;
     },
-    // PP-B commit 0 stub: no month values yet (PP-G writes the query with the `year` chunk).
-    async layerValues() {
-      return new Map();
+    async layerValues(ids, c) {
+      const out = new Map<PlantId, LayerValue[]>();
+      for (let i = 0; i < ids.length; i += 400) {
+        const chunk = ids.slice(i, i + 400);
+        if (!chunk.length) continue;
+        const rows = db.selectObjects(
+          `SELECT p.id AS pid, lv.* FROM layer_values lv JOIN plants p USING (plant)
+           WHERE p.id IN (${chunk.map(() => '?').join(',')}) AND (lv.climate_zone IS NULL OR lv.climate_zone = ?)
+           ORDER BY p.id, lv.layer_value`,
+          [...chunk, c],
+        );
+        for (const r of rows) {
+          if (!oneOf(LAYER_FIELDS, r.field)) continue;
+          const pid = String(r.pid);
+          let list = out.get(pid);
+          if (!list) out.set(pid, (list = []));
+          list.push(layerValueFromRow(r, hasMonthsBasis, hasMonthsSeen));
+        }
+      }
+      return out;
     },
   };
 }

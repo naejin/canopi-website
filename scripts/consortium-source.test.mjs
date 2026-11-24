@@ -583,14 +583,13 @@ test('names(): every plant of the release with its integer, its lists, en and th
   assert.deepEqual(all.find((p) => p.canonical === 'Castanea sativa').lists, ['Mediterranean', 'Temperate']);
 });
 
-// PP-C c2 unit row (disputes): none of the schema-4 facts changes a verdict, a filter or NextStep's
-// grouping, since they reach Details only: the pool's Taxon (which verdict.ts, Find's filters and
-// holes.ts fillers read) carries none of them.
-test('schema 4: disputes, audiences, trait sources and frost reach Details only, never the pool\'s Taxon', async () => {
+// PP-C c2 unit row (disputes): disputes, audiences, trait sources and toxicityParts reach Details only,
+// never the pool's Taxon. (Stage 2A intentionally exposes frost on Taxon for computeReport()'s extreme-cold check.)
+test('schema 4: disputes, audiences, trait sources and toxicityParts reach Details only, never the pool\'s Taxon', async () => {
   const pool = await source.pool('Mediterranean');
   const hedera = pool.find((t) => t.canonical_name === 'Hedera helix');
   assert.ok(hedera, 'the fixture places Hedera helix on the Mediterranean list');
-  for (const t of pool) for (const k of ['disputes', 'audiences', 'traitSources', 'frost', 'toxicityParts']) assert.equal(k in t, false, `${t.canonical_name}: no ${k} on the Taxon`);
+  for (const t of pool) for (const k of ['disputes', 'audiences', 'traitSources', 'toxicityParts']) assert.equal(k in t, false, `${t.canonical_name}: no ${k} on the Taxon`);
   assert.equal(hedera.warnings.toxicity?.level, 'Slight', 'the shipped level, not the disputed one');
   assert.ok((await source.details(hedera.id, 'Mediterranean', 'en')).disputes.length > 0, 'the dispute is on Details');
 });

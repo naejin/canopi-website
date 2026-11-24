@@ -258,7 +258,13 @@ export interface Taxon {
   // (sunniest to shadiest end, both or neither) and the level it is found mostly in (preferred). Each
   // null: unknown, never "no light needs" (the plant shows its single level).
   light: LightNiche;
+  // Schema 4.9/4.10/4.11 additive pool fields (optional; populated by sqlite-source.ts when present).
+  extremes?: TaxonClimateExtremes | null;
+  frost?: FrostFact[] | null;
+  areas?: TaxonAreas | null;
+  windTolerant?: boolean | null;
 }
+export interface TaxonAreas { native: string[]; introduced: string[] }
 export interface LightNiche { sunniest: Stratum | null; shadiest: Stratum | null; preferred: Stratum | null }
 
 export interface TaxonRef { name: string; rank: Rank }
@@ -294,13 +300,26 @@ export interface LayerValue {
   monthsSeen?: Month[] | null;
 }
 
-/** Schema 4.9 plant_climate_extremes additive record (optional; null on 4.7 exports). */
+/** Schema 4.10/4.11 per-variable row from plant_climate_extremes (tmin_extreme / tmax_extreme). */
+export interface ExtremeStat {
+  low: number | null;
+  median: number | null;
+  high: number | null;
+  nCells: number;
+  nBlocks: number;
+  weak: boolean;
+  source: string;
+}
+
+/** Schema 4.9/4.10/4.11 plant_climate_extremes additive record (optional; null on 4.7 exports). */
 export interface TaxonClimateExtremes {
   coldTailC: number | null;
   heatDomeC: number | null;
   maxDryDays: number | null;
   chillMinCP: number | null;
   source: string | null;
+  tminExtreme?: ExtremeStat | null;
+  tmaxExtreme?: ExtremeStat | null;
 }
 
 // What the details sheet shows for one plant in one climate and locale (PlantSource.details).
@@ -331,10 +350,10 @@ export interface Details {
   // Schema 4.7 plant_names.kind: the locales whose primary name rests only on an AI suggestion ('llm');
   // a locale absent here has a sourced or corrected primary, or none.
   nameKinds: Partial<Record<Locale, EstimateKind>>;
-  // Schema 4.9 additive table plant_climate_extremes (null when table absent or no row for this plant).
+  // Schema 4.9/4.10/4.11 additive tables
   extremes?: TaxonClimateExtremes | null;
-  // Schema 4.10 additive table plant_gallery (absent on 4.9 exports; ordered by rank).
   gallery?: GalleryImage[];
+  areas?: TaxonAreas | null;
 }
 
 // ---- Schema 4 records (format note tables; open vocabularies as strings: a value the reader does not
@@ -366,7 +385,15 @@ export const traitFields = [
   'sun_exposure_sunniest', 'sun_exposure_shadiest', 'sun_exposure_preferred',
 ] as const;
 export type TraitField = (typeof traitFields)[number];
-export interface TraitSource { field: TraitField; source: string; scope: string | null; kind: LayerKind }
+export interface TraitSource {
+  field: TraitField;
+  source: string;
+  scope: string | null;
+  kind: LayerKind;
+  // Schema 4.11 additive provenance columns (optional; absent when null or on <= 4.10 exports).
+  quote?: string;
+  sourceUrl?: string;
+}
 // A frost fact (plant_frost, empty until canopi-data D8; schema-4 format note, plant_frost). kind 'ktmp':
 // EcoCrop's killing temperature while growing (°C); 'ktmpr': EcoCrop's killing temperature at rest
 // (dormant, °C), shown apart with its own label and never merged with KTMP or part of the precedence;

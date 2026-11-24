@@ -21,7 +21,8 @@ test('S5e ships nothing in P5: no native or soil-likely module, slot or reader',
   assert.equal('likelyFor' in core, false);
   assert.doesNotMatch(view('place/Place.tsx'), /LikelySlot/);
   assert.doesNotMatch(view('details/Details.tsx'), /NativeSlot/);
-  assert.doesNotMatch(text('islands/palette/data/sqlite-source.ts'), /nativeIn|plant_areas/);
+  // Stage 2A (Palette North Star) reads plant_areas for WGSRPD L3 distribution; legacy nativeIn stub stays absent.
+  assert.doesNotMatch(text('islands/palette/data/sqlite-source.ts'), /nativeIn/);
   assert.doesNotMatch(text('lib/palette/source.ts'), /nativeIn/);
   // (marks.ts and its providers went in PP-C c2: no mark can carry nativeness.)
   assert.equal('loadMarkProviders' in core, false);
