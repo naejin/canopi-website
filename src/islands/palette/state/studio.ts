@@ -74,9 +74,23 @@ export function openPlantPool(preset: PlantPoolPreset = {}): void {
 }
 
 const WATERING_CYCLE: readonly WateringMode[] = ['Rain-fed', 'Occasional', 'Irrigated'];
+const WATERING_TO_EDIT: Record<WateringMode, 'rain' | 'first-years' | 'all-year'> = {
+  'Rain-fed': 'rain',
+  Occasional: 'first-years',
+  Irrigated: 'all-year',
+};
+const EDIT_TO_WATERING: Record<'rain' | 'first-years' | 'all-year', WateringMode> = {
+  rain: 'Rain-fed',
+  'first-years': 'Occasional',
+  'all-year': 'Irrigated',
+};
 export function cycleWateringMode(): void {
   const idx = WATERING_CYCLE.indexOf(wateringMode.peek());
-  wateringMode.value = WATERING_CYCLE[(idx + 1) % WATERING_CYCLE.length];
+  const next = WATERING_CYCLE[(idx + 1) % WATERING_CYCLE.length];
+  batch(() => {
+    wateringMode.value = next;
+    store.siteEdits.value = { ...store.siteEdits.peek(), watering: WATERING_TO_EDIT[next] };
+  });
 }
 export const designName = signal<string>('');
 export const designDirty = signal<boolean>(false);
@@ -311,6 +325,12 @@ export function ensureStudioGuards(): void {
         }
       }
       prevSig = sig;
+    });
+    effect(() => {
+      const w = store.siteEdits.value.watering;
+      if (w && EDIT_TO_WATERING[w] !== wateringMode.peek()) {
+        wateringMode.value = EDIT_TO_WATERING[w];
+      }
     });
   }
 

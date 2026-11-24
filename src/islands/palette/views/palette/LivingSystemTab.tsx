@@ -9,7 +9,17 @@ import { useMemo, useState } from 'preact/hooks';
 import { jobsOf, SUCCESSION_STAGES_6, type JobId, type Stratum, type Taxon } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
-import { microclimate, openFieldDossier, openPlantPool, studioTab } from '../../state/studio.ts';
+import {
+  climateStress,
+  designEnvelope,
+  microclimate,
+  openFieldDossier,
+  openPlantPool,
+  plantingConfig,
+  studioTab,
+  wateringMode,
+} from '../../state/studio.ts';
+import { evaluateStudioCatalog } from '../../rules/studio-fit.ts';
 import { nameOf } from '../kit/names.ts';
 import { SunIcon } from './SunIcon.tsx';
 import {
@@ -59,8 +69,29 @@ function primaryRoleCue(t: Taxon): string {
 
 export function LivingSystemTab() {
   const members = store.memberTaxa.value;
-  const pool = store.allFitPool.value.length ? store.allFitPool.value : (store.fitPool.value ?? store.pool.value ?? []);
-  const profile = siteClimateProfile(store.location.value, store.climate.value, microclimate.value, store.siteEdits.value);
+  const rawCatalog = store.allCatalog.value.length ? store.allCatalog.value : (store.fitPool.value ?? store.pool.value ?? []);
+  const loc = store.location.value;
+  const z = store.climate.value;
+  const mc = microclimate.value;
+  const edits = store.siteEdits.value;
+  const studioEval = useMemo(
+    () => evaluateStudioCatalog(rawCatalog, {
+      loc,
+      climate: z,
+      period: store.period.value,
+      envelope: designEnvelope.value,
+      stress: climateStress.value,
+      microclimate: mc,
+      siteEdits: edits,
+      wateringMode: wateringMode.value,
+      room: store.room.value,
+      plotAreaM2: plantingConfig.value.plotAreaM2,
+      baseVerdicts: store.allVerdicts.value ?? store.poolVerdicts.value,
+    }),
+    [rawCatalog, loc, z, store.period.value, designEnvelope.value, climateStress.value, mc, edits, wateringMode.value, store.room.value, plantingConfig.value.plotAreaM2, store.allVerdicts.value, store.poolVerdicts.value],
+  );
+  const pool = studioEval.fitPool.length ? studioEval.fitPool : rawCatalog;
+  const profile = siteClimateProfile(loc, z, mc, edits);
   const [roleMode, setRoleMode] = useState<RoleViewMode>('season');
   const [expandedSuns, setExpandedSuns] = useState<Record<string, boolean>>({});
   const [selectedRoleCell, setSelectedRoleCell] = useState<SelectedRoleCell | null>(null);

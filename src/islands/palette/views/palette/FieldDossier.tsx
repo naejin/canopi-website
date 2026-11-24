@@ -12,7 +12,20 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import { jobsOf, siteClimate as climateOf, SUCCESSION_STAGES_6, type Details, type GalleryImage, type Locale, type Stratum, type Taxon } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
 import { pageLang, T } from '../../strings.ts';
-import { closeFieldDossier, dossierId, dossierList, microclimate, openFieldDossier, stepFieldDossier, studioTab } from '../../state/studio.ts';
+import {
+  climateStress,
+  closeFieldDossier,
+  designEnvelope,
+  dossierId,
+  dossierList,
+  microclimate,
+  openFieldDossier,
+  plantingConfig,
+  stepFieldDossier,
+  studioTab,
+  wateringMode,
+} from '../../state/studio.ts';
+import { evaluateStudioCatalog } from '../../rules/studio-fit.ts';
 import { nameOf } from '../kit/names.ts';
 import { FieldTip } from '../kit/field-tip.tsx';
 import { SunIcon } from './SunIcon.tsx';
@@ -188,7 +201,21 @@ export function FieldDossier() {
     .map((m) => scoreCompanion(taxon, m))
     .sort((a, b) => b.score - a.score)
     .slice(0, 3);
-  const poolComps = (store.allFitPool.value.length ? store.allFitPool.value : (store.fitPool.value ?? store.pool.value ?? []))
+  const rawCatalog = store.allCatalog.value.length ? store.allCatalog.value : (store.fitPool.value ?? store.pool.value ?? []);
+  const dossierFitPool = evaluateStudioCatalog(rawCatalog, {
+    loc,
+    climate: store.climate.value,
+    period: store.period.value,
+    envelope: designEnvelope.value,
+    stress: climateStress.value,
+    microclimate: mc,
+    siteEdits: edits,
+    wateringMode: wateringMode.value,
+    room: store.room.value,
+    plotAreaM2: plantingConfig.value.plotAreaM2,
+    baseVerdicts: store.allVerdicts.value ?? store.poolVerdicts.value,
+  }).fitPool;
+  const poolComps = (dossierFitPool.length ? dossierFitPool : rawCatalog)
     .filter((c) => !memberSet.has(c.id) && c.id !== taxon.id)
     .map((c) => scoreCompanion(taxon, c))
     .sort((a, b) => b.score - a.score)

@@ -51,7 +51,7 @@ const clampPct = (v: number, lo: number, hi: number): number =>
 
 export function Climate2050Tab() {
   const members = store.memberTaxa.value;
-  const catalog = store.fitPool.value ?? store.pool.value ?? [];
+  const catalog = store.allCatalog.value.length ? store.allCatalog.value : (store.fitPool.value ?? store.pool.value ?? []);
   const loc = store.location.value;
   const period = store.period.value;
   const envelope = designEnvelope.value;

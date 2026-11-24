@@ -270,7 +270,13 @@ export function PlantingPlanTab() {
           <div class="plan-ledger-col">
             <span class="lk">{T('studio.plan.mWaves')}</span>
             <div class="lv">{T('studio.plan.wavesFrost', { n: waves.length })}</div>
-            <div class="ls">{waves[1]?.kicker ?? T('studio.plan.wavesDefault')}</div>
+            <div class="ls">
+              {waves[1]
+                ? (waves[1].params.mild
+                  ? T('studio.plan.wave.w2.kickerMild', { frost: !waves[1].params.firstAutumn || waves[1].params.firstAutumn === 'late autumn' ? T('studio.plan.frost.lateAutumn') : waves[1].params.firstAutumn })
+                  : T('studio.plan.wave.w2.kickerDorm'))
+                : T('studio.plan.wavesDefault')}
+            </div>
           </div>
           <div class="plan-ledger-col">
             <span class="lk">{T('studio.plan.mHarvest')}</span>
@@ -281,12 +287,32 @@ export function PlantingPlanTab() {
 
         {plan.notes.length > 0 && (
           <div class="plan-notes-footer" role="region" aria-label={T('studio.plan.notesAria')}>
-            {plan.notes.map((n, i) => (
-              <span key={i}>
-                {i > 0 ? <span style="color:var(--border-strong); margin:0 6px;" aria-hidden="true">·</span> : ''}
-                <strong>{n.label}:</strong> {n.text}
-              </span>
-            ))}
+            {plan.notes.map((n, i) => {
+              const label = n.kind === 'shade-timing'
+                ? T('studio.plan.note.shadeLabel')
+                : T('studio.plan.note.pollLabel');
+              const text = n.kind === 'shade-timing'
+                ? T('studio.plan.note.shadeText', {
+                  plants: (n.shadeNames ?? []).join(' & '),
+                  tree: n.treeName ?? '',
+                })
+                : (n.females ?? 0) > 0
+                ? T('studio.plan.note.pollText', {
+                  plant: n.speciesName ?? '',
+                  males: n.males ?? 1,
+                  females: n.females ?? 1,
+                })
+                : T('studio.plan.note.pollTextOne', {
+                  plant: n.speciesName ?? '',
+                  males: n.males ?? 1,
+                });
+              return (
+                <span key={i}>
+                  {i > 0 ? <span style="color:var(--border-strong); margin:0 6px;" aria-hidden="true">·</span> : ''}
+                  <strong>{label}:</strong> {text}
+                </span>
+              );
+            })}
           </div>
         )}
       </div>
@@ -500,7 +526,7 @@ export function PlantingPlanTab() {
                         </button>
                         <div style="display:flex; flex-wrap:wrap; gap:5px; align-items:center; margin-top:2px;">
                           <span class={`sun-badge ${SUN_CLS[item.sunBand]}`} style="font-size:10.5px; padding:1px 6px;">{T(`studio.sun.${item.sunBand}`)}</span>
-                          <span class="why-tag" style="font-size:10.5px;">{item.stageLabel}</span>
+                          <span class="why-tag" style="font-size:10.5px;">{T(`studio.stage.${item.stageId}`)}</span>
                         </div>
                       </div>
                     </div>
@@ -541,8 +567,8 @@ export function PlantingPlanTab() {
                   <td class="mob-kv">
                     <span class="mob-field-lbl">{T('studio.plan.colStock')}</span>
                     <div>
-                      <strong style="font-size:13px; color:var(--ink); white-space:nowrap;">{item.stockLabel}{item.seedGrams > 0 ? ` · ${item.seedGrams} g` : ''}</strong>
-                      <div style="font-size:11.5px; color:var(--ink-muted);">{item.orderWindow}</div>
+                      <strong style="font-size:13px; color:var(--ink); white-space:nowrap;">{T(`studio.plan.stock.${item.stockVariant}`)}{item.seedGrams > 0 ? ` · ${item.seedGrams} g` : ''}</strong>
+                      <div style="font-size:11.5px; color:var(--ink-muted);">{T(`studio.plan.orderWin.${item.stockKind}`)}</div>
                     </div>
                   </td>
                   <td class="mob-kv">
@@ -597,12 +623,20 @@ export function PlantingPlanTab() {
           </div>
           <div class="plan-ledger-col">
             <span class="lk">{T('studio.plan.matWater')}</span>
-            <div class="lv">{materials.wateringCadence}</div>
-            <div class="ls">{materials.wateringDetail}</div>
+            <div class="lv">
+              {materials.dryClimate
+                ? T('studio.plan.mat.waterDry', { days: materials.waterIntervalDays })
+                : T('studio.plan.mat.waterMild')}
+            </div>
+            <div class="ls">
+              {materials.awcMmPerM
+                ? T('studio.plan.mat.waterDetailMm', { awc: materials.awcDays, mm: materials.awcMmPerM, cdd: materials.cddDays })
+                : T('studio.plan.mat.waterDetail', { awc: materials.awcDays, cdd: materials.cddDays })}
+            </div>
           </div>
           <div class="plan-ledger-col">
             <span class="lk">{T('studio.plan.matEffort')}</span>
-            <div class="lv">{materials.effortLabel}</div>
+            <div class="lv">{T(`studio.plan.mat.effort.${materials.effortTier}`, { n: materials.effortValue })}</div>
             <div class="ls">{T('studio.plan.matEffortSub')}</div>
           </div>
         </div>
@@ -629,6 +663,28 @@ export function PlantingPlanTab() {
 
         <div class="wave-grid">
           {waves.map((w) => {
+            const p = w.params;
+            const waveKicker = w.id === 'w1'
+              ? T('studio.plan.wave.w1.kicker')
+              : w.id === 'w2'
+              ? (p.mild ? T('studio.plan.wave.w2.kickerMild', { frost: p.firstAutumn === 'late autumn' ? T('studio.plan.frost.lateAutumn') : (p.firstAutumn ?? T('studio.plan.frost.lateAutumn')) }) : T('studio.plan.wave.w2.kickerDorm'))
+              : w.id === 'w3'
+              ? (p.frostFree ? T('studio.plan.wave.w3.kickerFree') : T('studio.plan.wave.w3.kickerFrost', { frost: p.lastSpring === 'mid-spring' ? T('studio.plan.frost.midSpring') : (p.lastSpring ?? T('studio.plan.frost.midSpring')), pct: p.fsPct ?? 12 }))
+              : T('studio.plan.wave.w4.kicker');
+            const waveTitle = w.id === 'w1'
+              ? T('studio.plan.wave.w1.title')
+              : w.id === 'w2'
+              ? (p.mild ? T('studio.plan.wave.w2.titleMild') : T('studio.plan.wave.w2.titleDorm'))
+              : w.id === 'w3'
+              ? T('studio.plan.wave.w3.title')
+              : T('studio.plan.wave.w4.title');
+            const baseTasks = w.id === 'w1'
+              ? [T('studio.plan.wave.w1.t1', { area: p.netAreaM2 ?? plan.netAreaM2, pct: p.pathwaysPct ?? plan.pathwaysPct }), T('studio.plan.wave.w1.t2')]
+              : w.id === 'w2'
+              ? [T('studio.plan.wave.w2.t1', { n: p.winterCount ?? 0 }), T('studio.plan.wave.w2.t2')]
+              : w.id === 'w3'
+              ? [p.frostFree ? T('studio.plan.wave.w3.t1Free', { g: p.seedGrams ?? plan.totalSeedGrams }) : T('studio.plan.wave.w3.t1Frost', { frost: p.lastSpring === 'mid-spring' ? T('studio.plan.frost.midSpring') : (p.lastSpring ?? T('studio.plan.frost.midSpring')), g: p.seedGrams ?? plan.totalSeedGrams }), T('studio.plan.wave.w3.t2')]
+              : [T('studio.plan.wave.w4.t1', { temp: `${p.hotC ?? 32} °C` }), T('studio.plan.wave.w4.t2')];
             const extraTask = w.id === 'w1'
               ? T('studio.plan.waveTask1', { vol: `${effectiveMulchM3} m³`, compost: `${materials.compostL} L` })
               : w.id === 'w2'
@@ -636,15 +692,15 @@ export function PlantingPlanTab() {
               : w.id === 'w3'
               ? T('studio.plan.waveTask3')
               : T('studio.plan.waveTask4');
-            const allTasks = [...w.tasks, extraTask];
+            const allTasks = [...baseTasks, extraTask];
             const doneCount = allTasks.filter((_, idx) => waveChecks[`${w.id}-${idx}`]).length;
             const waveSpecies = plan.items.filter((it) => w.speciesIds.includes(it.taxon.id) && it.qty > 0);
             return (
               <article key={w.id} class="wave-card">
                 <div class="wave-head">
                   <div>
-                    <div class="wave-kicker">{w.kicker}</div>
-                    <h4 class="wave-title">{w.title}</h4>
+                    <div class="wave-kicker">{waveKicker}</div>
+                    <h4 class="wave-title">{waveTitle}</h4>
                   </div>
                   <span class="wave-prog">{T('studio.plan.waveDone', { done: doneCount, total: allTasks.length })}</span>
                 </div>

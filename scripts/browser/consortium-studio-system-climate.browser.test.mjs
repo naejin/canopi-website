@@ -91,5 +91,13 @@ test('2050 Climate: 4-layer Plant Triage, Climate Twin Swap & Undo, Opportunitie
   assert.ok(sections.triageCards >= 1, 'Plant Triage renders species cards');
   assert.match(sections.text, /thrives|needs care|at risk|opportunit/i, 'triage and opportunities sections render');
   assert.ok(sections.hasCheckTwin || /analogue|twin/i.test(sections.text), 'Climate Twin lookup control is present');
+
+  // Verify Heat dome (+3 C) stress preset live-updates StudioRail Coach active conditions indicator
+  const heatBtn = await page.waitForSelector('.sb-presets button:nth-child(2)');
+  await heatBtn.click();
+  assert.ok(await has(page, '[data-coach-active-conditions]', 4_000), 'StudioRail Coach shows active stress condition badge when Heat dome is activated');
+  const condText = await page.evaluate(() => document.querySelector('[data-coach-active-conditions]')?.textContent ?? '');
+  assert.match(condText, /\+3\s*°C/, `Coach active-conditions chip reflects +3 °C heat dome (${condText})`);
+
   assert.deepEqual(await pageErrorsOf(page), [], 'zero console/page errors');
 });

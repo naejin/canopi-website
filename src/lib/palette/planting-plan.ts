@@ -95,10 +95,12 @@ export interface PlantingClimateContext {
 }
 
 export type StockKind = 'bareroot' | 'pot' | 'bulb' | 'seed';
+export type StockVariant = 'seed' | 'bulb' | 'bareroot' | 'pot2l' | 'plug9cm';
 
 export interface PlantingPlanItem {
   taxon: Taxon;
   sunBand: Stratum;
+  stageId: SuccessionStage6['id'];
   stageLabel: string;
   spacingM: number;
   spacingLabel: string;
@@ -109,6 +111,7 @@ export interface PlantingPlanItem {
   isSeed: boolean;
   seedGrams: number;
   stockKind: StockKind;
+  stockVariant: StockVariant;
   stockLabel: string;
   orderWindow: string;
   phase: 'winter' | 'spring';
@@ -120,6 +123,11 @@ export interface AgronomyNote {
   kind: 'shade-timing' | 'pollination';
   label: string;
   text: string;
+  shadeNames?: string[];
+  treeName?: string;
+  speciesName?: string;
+  males?: number;
+  females?: number;
 }
 
 export interface StockSummary {
@@ -155,6 +163,13 @@ export interface FieldMaterialsSummary {
   wateringDetail: string;
   effortLabel: string;
   effortHours: number;
+  dryClimate: boolean;
+  waterIntervalDays: number;
+  awcDays: number;
+  awcMmPerM: number | null;
+  cddDays: number;
+  effortTier: 'hours' | 'days12' | 'days2';
+  effortValue: number;
 }
 
 export interface PlantingWave {
@@ -163,6 +178,18 @@ export interface PlantingWave {
   title: string;
   speciesIds: string[];
   tasks: string[];
+  params: {
+    netAreaM2?: number;
+    pathwaysPct?: number;
+    mild?: boolean;
+    firstAutumn?: string;
+    winterCount?: number;
+    frostFree?: boolean;
+    lastSpring?: string;
+    fsPct?: number;
+    seedGrams?: number;
+    hotC?: number;
+  };
 }
 
 function effectiveSunBand(t: Taxon): Stratum {
@@ -179,16 +206,17 @@ function isWoody(t: Taxon): boolean {
   return (t.traits.height_m?.max ?? 0) >= 2.0 && !isDirectSeed(t);
 }
 
-function stockFor(t: Taxon): { kind: StockKind; label: string; orderWindow: string } {
-  if (isDirectSeed(t)) return { kind: 'seed', label: 'Direct seed', orderWindow: 'order Jan–Feb' };
+function stockFor(t: Taxon): { kind: StockKind; variant: StockVariant; label: string; orderWindow: string } {
+  if (isDirectSeed(t)) return { kind: 'seed', variant: 'seed', label: 'Direct seed', orderWindow: 'order Jan–Feb' };
   const clonal = (t.traits.clonal_growth_form ?? '').toLowerCase();
   if (clonal.includes('bulb') || clonal.includes('rhizome') || clonal.includes('tuber')) {
-    return { kind: 'bulb', label: 'Bulb / division', orderWindow: 'order Sep' };
+    return { kind: 'bulb', variant: 'bulb', label: 'Bulb / division', orderWindow: 'order Sep' };
   }
   if (isWoody(t) && (t.traits.height_m?.max ?? 0) >= 3.0) {
-    return { kind: 'bareroot', label: 'Bare-root tree', orderWindow: 'order Sep–Oct' };
+    return { kind: 'bareroot', variant: 'bareroot', label: 'Bare-root tree', orderWindow: 'order Sep–Oct' };
   }
-  return { kind: 'pot', label: (t.traits.height_m?.max ?? 1) >= 1.2 ? '2 L pot' : '9 cm plug', orderWindow: 'order Feb' };
+  const bigPot = (t.traits.height_m?.max ?? 1) >= 1.2;
+  return { kind: 'pot', variant: bigPot ? 'pot2l' : 'plug9cm', label: bigPot ? '2 L pot' : '9 cm plug', orderWindow: 'order Feb' };
 }
 
 function formatSpacing(m: number): string {
@@ -200,10 +228,10 @@ function formatSpacing(m: number): string {
   return `${r} m × ${r} m`;
 }
 
-function stageLabelOf(t: Taxon): string {
-  if (!t.phases) return isDirectSeed(t) ? 'Placenta 1' : 'Secondary 1';
+function stageInfoOf(t: Taxon): SuccessionStage6 {
+  if (!t.phases) return SUCCESSION_STAGES_6[isDirectSeed(t) ? 0 : 2];
   const endOrd = phases.indexOf(t.phases.end) as PhaseOrd;
-  return SUCCESSION_STAGES_6[phaseToStageIndex(endOrd >= 0 ? endOrd : 3)].name;
+  return SUCCESSION_STAGES_6[phaseToStageIndex(endOrd >= 0 ? endOrd : 3)];
 }
 
 /**
@@ -266,10 +294,13 @@ export function computePlantingPlan(
 
     const phase: 'winter' | 'spring' = seed ? 'spring' : (isWoody(t) || stock.kind === 'bulb' || mildWinter) ? 'winter' : 'spring';
 
+    const stage = stageInfoOf(t);
+
     return {
       taxon: t,
       sunBand,
-      stageLabel: stageLabelOf(t),
+      stageId: stage.id,
+      stageLabel: stage.name,
       spacingM,
       spacingLabel: formatSpacing(spacingM),
       unitFootprintM2,
@@ -279,6 +310,7 @@ export function computePlantingPlan(
       isSeed: seed,
       seedGrams,
       stockKind: stock.kind,
+      stockVariant: stock.variant,
       stockLabel: stock.label,
       orderWindow: stock.orderWindow,
       phase,
@@ -298,10 +330,14 @@ export function computePlantingPlan(
   const shadeSpecies = items.filter((i) => i.sunBand === 'low' && i.qty > 0);
   const tallTrees = items.filter((i) => (i.sunBand === 'emergent' || i.sunBand === 'high') && isWoody(i.taxon) && i.qty > 0);
   if (shadeSpecies.length && tallTrees.length) {
+    const shadeNames = shadeSpecies.slice(0, 2).map((i) => i.taxon.canonical_name);
+    const treeName = tallTrees[0].taxon.canonical_name;
     notes.push({
       kind: 'shade-timing',
       label: 'Shade-timing note',
-      text: `${shadeSpecies.slice(0, 2).map((i) => i.taxon.canonical_name).join(' & ')} need dappled shade — tuck near existing walls/hedges now or plant once ${tallTrees[0].taxon.canonical_name} establishes.`,
+      text: `${shadeNames.join(' & ')} need dappled shade — tuck near existing walls/hedges now or plant once ${treeName} establishes.`,
+      shadeNames,
+      treeName,
     });
   }
   const dioecious = items.filter((i) => (i.taxon.traits.sexual_system ?? '').toLowerCase() === 'dioecious' && i.qty > 0);
@@ -312,6 +348,9 @@ export function computePlantingPlan(
       kind: 'pollination',
       label: 'Pollination note',
       text: `${d.taxon.canonical_name} is dioecious — order ${males} male pollinator${females > 0 ? ` + ${females} female fruiting trees` : ' + at least 1 female tree'} for reliable yield.`,
+      speciesName: d.taxon.canonical_name,
+      males,
+      females,
     });
   }
 
@@ -346,20 +385,44 @@ export function computeFieldMaterials(
   const tags = plan.items.filter((i) => i.qty > 0).length;
 
   const awcDays = climate.soilAwcDays ?? 10;
+  const awcMmPerM = climate.soilAwcMmPerM ?? null;
   const rainMm = climate.rainMm ?? 650;
   const cddDays = climate.cddDays ?? 35;
   const dryClimate = rainMm < 700 || cddDays >= 35;
+  const waterIntervalDays = Math.max(4, Math.min(14, awcDays));
   const wateringCadence = dryClimate
-    ? `~20 L / young tree every ${Math.max(4, Math.min(14, awcDays))} days`
+    ? `~20 L / young tree every ${waterIntervalDays} days`
     : `~15 L / young tree in dry spells`;
-  const wateringDetail = `~${awcDays}-day soil reserve${climate.soilAwcMmPerM ? ` (${climate.soilAwcMmPerM} mm/m)` : ''} vs ${cddDays}-day summer dry streak`;
+  const wateringDetail = `~${awcDays}-day soil reserve${awcMmPerM ? ` (${awcMmPerM} mm/m)` : ''} vs ${cddDays}-day summer dry streak`;
 
   const effortHours = Math.max(2, Math.round(plan.netAreaM2 / 25 + plan.totalTransplants * 0.18 + woodyCount * 0.35));
-  const effortLabel = effortHours <= 6 ? `~${effortHours} hours · 1 person`
-    : effortHours <= 16 ? `~${Math.round((effortHours / 8) * 2) / 2} days · 1–2 people`
-    : `~${Math.round(effortHours / 14)} days · 2 people`;
+  const effortTier: FieldMaterialsSummary['effortTier'] = effortHours <= 6 ? 'hours' : effortHours <= 16 ? 'days12' : 'days2';
+  const effortValue = effortTier === 'hours'
+    ? effortHours
+    : effortTier === 'days12'
+    ? Math.round((effortHours / 8) * 2) / 2
+    : Math.round(effortHours / 14);
+  const effortLabel = effortTier === 'hours' ? `~${effortValue} hours · 1 person`
+    : effortTier === 'days12' ? `~${effortValue} days · 1–2 people`
+    : `~${effortValue} days · 2 people`;
 
-  return { mulchM3, compostL, stakes, tags, wateringCadence, wateringDetail, effortLabel, effortHours };
+  return {
+    mulchM3,
+    compostL,
+    stakes,
+    tags,
+    wateringCadence,
+    wateringDetail,
+    effortLabel,
+    effortHours,
+    dryClimate,
+    waterIntervalDays,
+    awcDays,
+    awcMmPerM,
+    cddDays,
+    effortTier,
+    effortValue,
+  };
 }
 
 /**
@@ -374,6 +437,7 @@ export function computePlantingWaves(
   const lastSpring = climate.lastSpringFrost ?? 'mid-spring';
   const firstAutumn = climate.firstAutumnFrost ?? 'late autumn';
   const fsPct = climate.falseSpringPct ?? 12;
+  const hotC = climate.hotC ?? 32;
 
   const winterIds = plan.items.filter((i) => i.phase === 'winter' && i.qty > 0).map((i) => i.taxon.id);
   const springIds = plan.items.filter((i) => i.phase === 'spring' && i.qty > 0).map((i) => i.taxon.id);
@@ -388,6 +452,7 @@ export function computePlantingWaves(
         `Stake ${plan.netAreaM2} m² net planting beds with ${plan.pathwaysPct}% access paths.`,
         'Broadfork compacted zones without inverting topsoil and stage 10 cm woodchip mulch.',
       ],
+      params: { netAreaM2: plan.netAreaM2, pathwaysPct: plan.pathwaysPct },
     },
     {
       id: 'w2',
@@ -398,6 +463,7 @@ export function computePlantingWaves(
         `Plant ${winterIds.length} winter-hardy / bare-root species so winter rain settles roots deeply.`,
         'Install tree stakes, mulch rings, and weatherproof species tags.',
       ],
+      params: { mild, firstAutumn, winterCount: winterIds.length },
     },
     {
       id: 'w3',
@@ -410,6 +476,7 @@ export function computePlantingWaves(
           : `Wait until after ${lastSpring} last frost to direct-sow ~${plan.totalSeedGrams} g seed and set warm starts.`,
         'Keep seedbeds evenly moist until germination, then thin to recommended spacing.',
       ],
+      params: { frostFree, lastSpring, fsPct, seedGrams: plan.totalSeedGrams },
     },
     {
       id: 'w4',
@@ -417,9 +484,10 @@ export function computePlantingWaves(
       title: 'Summer Care, Mulch & First Harvests',
       speciesIds: plan.items.filter((i) => i.qty > 0).slice(0, 5).map((i) => i.taxon.id),
       tasks: [
-        `Top up 10 cm woodchip/straw mulch before peak heat (${climate.hotC ?? 32} °C).`,
+        `Top up 10 cm woodchip/straw mulch before peak heat (${hotC} °C).`,
         'Chop-and-drop biomass species and gather Year-1 harvests.',
       ],
+      params: { hotC },
     },
   ];
 }

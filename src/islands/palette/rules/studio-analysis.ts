@@ -119,37 +119,37 @@ export function buildRoleLedger(members: readonly Taxon[]): RoleLedgerRow[] {
   const specs: { id: string; label: string; target: number; match: (t: Taxon) => boolean }[] = [
     {
       id: 'nfix',
-      label: 'Nitrogen fixers',
+      label: fb(T('studio.sys.role.nfix'), 'Nitrogen fixers'),
       target: 2,
       match: (t) => (t.functions ?? []).some((f) => /nitrogen/i.test(f.function)) || jobsOf(t).includes('feeds_soil'),
     },
     {
       id: 'pollinators',
-      label: 'Pollinators & beneficials',
+      label: fb(T('studio.sys.role.helpers'), 'Pollinators & beneficials'),
       target: 3,
       match: (t) => jobsOf(t).includes('helpers'),
     },
     {
       id: 'biomass',
-      label: 'Biomass & mulch',
+      label: fb(T('studio.sys.role.biomass'), 'Biomass & mulch'),
       target: 2,
       match: (t) => jobsOf(t).includes('mulch'),
     },
     {
       id: 'accumulators',
-      label: 'Dynamic accumulators',
+      label: fb(T('studio.sys.role.ground'), 'Dynamic accumulators'),
       target: 2,
       match: (t) => jobsOf(t).includes('ground') || (t.functions ?? []).some((f) => /accumulator|mineral|soil/i.test(f.function)),
     },
     {
       id: 'food',
-      label: 'Food & harvest',
+      label: fb(T('studio.sys.role.food'), 'Food & harvest'),
       target: 3,
       match: (t) => jobsOf(t).includes('feeds_you'),
     },
     {
       id: 'shelter',
-      label: 'Windbreak & shelter',
+      label: fb(T('studio.sys.role.shelter'), 'Windbreak & shelter'),
       target: 2,
       match: (t) => jobsOf(t).includes('shelter'),
     },
@@ -227,6 +227,7 @@ export interface RoleFillerSuggestion {
   why: string;
 }
 
+const SEASON_IDS = ['winter', 'spring', 'summer', 'autumn'] as const;
 const SEASON_LABELS = ['Winter', 'Spring', 'Summer', 'Autumn'] as const;
 
 /**
@@ -265,15 +266,26 @@ export function suggestRoleFillers(
 
     const parts: string[] = [];
     if (mode === 'season') {
-      parts.push(exactMatch ? `Active in ${SEASON_LABELS[colIndex] ?? 'season'}` : 'Builds role backup');
+      const seasonId = SEASON_IDS[colIndex];
+      const seasonLbl = seasonId ? fb(T(`studio.season.${seasonId}`), SEASON_LABELS[colIndex] ?? 'season') : 'season';
+      parts.push(
+        exactMatch
+          ? fb(T('studio.sys.fillerActiveIn', { season: seasonLbl }), `Active in ${seasonLbl}`)
+          : fb(T('studio.sys.fillerBackup'), 'Builds role backup'),
+      );
     } else {
-      const stageName = SUCCESSION_STAGES_6[colIndex]?.name ?? 'stage';
-      parts.push(exactMatch ? `Covers ${stageName} (${span.label})` : `Covers ${span.label}`);
+      const st = SUCCESSION_STAGES_6[colIndex];
+      const stageName = st ? fb(T(`studio.stage.${st.id}`), st.name) : 'stage';
+      parts.push(
+        exactMatch
+          ? fb(T('studio.sys.fillerCoversStage', { stage: stageName, span: span.label }), `Covers ${stageName} (${span.label})`)
+          : fb(T('studio.sys.fillerCoversSpan', { span: span.label }), `Covers ${span.label}`),
+      );
     }
     if (ph?.min != null && ph?.max != null) {
       parts.push(`pH ${ph.min.toFixed(1)}–${ph.max.toFixed(1)}`);
     } else if (!coveredSuns.has(sun)) {
-      parts.push('fills open sun tier');
+      parts.push(fb(T('studio.sys.fillerOpenSun'), 'fills open sun tier'));
     }
 
     return {
@@ -320,21 +332,30 @@ export function buildGrowingYear(members: readonly Taxon[], focus: YearFocus): G
   }
 
   return MONTH_NAMES.map((short, i) => {
-    let brief = 'Observe soil moisture and mulch depth.';
+    let brief = fb(T('studio.gy.default'), 'Observe soil moisture and mulch depth.');
     if (focus === 'bloom') {
-      brief = i >= 2 && i <= 5 ? `${counts[i]} species flowering or opening nectar forage.` : 'Quiet bloom window; protect overwintering beneficials.';
+      brief = i >= 2 && i <= 5
+        ? fb(T('studio.gy.bloomActive', { n: counts[i] }), `${counts[i]} species flowering or opening nectar forage.`)
+        : fb(T('studio.gy.bloomQuiet'), 'Quiet bloom window; protect overwintering beneficials.');
     } else if (focus === 'harvest') {
-      brief = i >= 5 && i <= 9 ? `${Math.max(counts[i], Math.min(foodCount, 1))} food-bearing lines approaching pickable maturity.` : 'Store cured harvests and prepare beds for next cycle.';
+      const n = Math.max(counts[i], Math.min(foodCount, 1));
+      brief = i >= 5 && i <= 9
+        ? fb(T('studio.gy.harvActive', { n }), `${n} food-bearing lines approaching pickable maturity.`)
+        : fb(T('studio.gy.harvQuiet'), 'Store cured harvests and prepare beds for next cycle.');
     } else if (focus === 'prune') {
-      brief = i <= 1 || i === 11 ? `Dormant structural pruning window for ${woodyCount} woody species.` : i === 6 ? 'Light summer chop-and-drop to open light for mid-season crops.' : 'Hold heavy cuts until dormancy.';
+      brief = i <= 1 || i === 11
+        ? fb(T('studio.gy.pruneDormant', { n: woodyCount }), `Dormant structural pruning window for ${woodyCount} woody species.`)
+        : i === 6
+        ? fb(T('studio.gy.pruneSummer'), 'Light summer chop-and-drop to open light for mid-season crops.')
+        : fb(T('studio.gy.pruneHold'), 'Hold heavy cuts until dormancy.');
     } else {
-      if (i <= 1) brief = 'Dormant inspection, bare-root planting, and mulch top-up.';
-      else if (i <= 4) brief = 'Spring budbreak, direct sowing, and early pollinator forage.';
-      else if (i <= 7) brief = 'Peak sun growth, summer chop-and-drop, and deep watering check.';
-      else if (i <= 9) brief = 'Main harvest window and autumn cover-seed broadcast.';
-      else brief = 'Leaf-litter retention and frost-sensitive mulch collar check.';
+      if (i <= 1) brief = fb(T('studio.gy.allWinter'), 'Dormant inspection, bare-root planting, and mulch top-up.');
+      else if (i <= 4) brief = fb(T('studio.gy.allSpring'), 'Spring budbreak, direct sowing, and early pollinator forage.');
+      else if (i <= 7) brief = fb(T('studio.gy.allSummer'), 'Peak sun growth, summer chop-and-drop, and deep watering check.');
+      else if (i <= 9) brief = fb(T('studio.gy.allAutumn'), 'Main harvest window and autumn cover-seed broadcast.');
+      else brief = fb(T('studio.gy.allLate'), 'Leaf-litter retention and frost-sensitive mulch collar check.');
     }
-    return { monthIndex: i, short, initial: MONTH_INITIALS[i], count: counts[i], brief };
+    return { monthIndex: i, short: localMonthShort(i) || short, initial: MONTH_INITIALS[i], count: counts[i], brief };
   });
 }
 
@@ -456,26 +477,51 @@ export function evaluateClimate2050(
     const lim = estimateTaxonLimits(t);
     const code = evaluateTrajectory(lim, site);
     const breached: string[] = [];
-    if (hotFutureC > lim.maxHotC) breached.push(`Summer afternoons (${hotFutureC} °C avg) exceed ${lim.maxHotC} °C heat-dome limit`);
-    if (!lim.isAnnual && coldTail10yrC < lim.minColdC) breached.push(`Hard freeze (${freezeFutureC} °C 1-in-10-yr) dips below ${lim.minColdC} °C limit`);
-    if (chillFutureCP < lim.chillMinCP) breached.push(`Winter chill (${chillFutureCP} CP) drops below ${lim.chillMinCP} CP need`);
+    if (hotFutureC > lim.maxHotC) {
+      breached.push(fb(
+        T('studio.clim.breach.heat', { future: `${hotFutureC} °C`, limit: `${lim.maxHotC} °C` }),
+        `Summer afternoons (${hotFutureC} °C avg) exceed ${lim.maxHotC} °C heat-dome limit`,
+      ));
+    }
+    if (!lim.isAnnual && coldTail10yrC < lim.minColdC) {
+      breached.push(fb(
+        T('studio.clim.breach.freeze', { freeze: `${freezeFutureC} °C`, limit: `${lim.minColdC} °C` }),
+        `Hard freeze (${freezeFutureC} °C 1-in-10-yr) dips below ${lim.minColdC} °C limit`,
+      ));
+    }
+    if (chillFutureCP < lim.chillMinCP) {
+      breached.push(fb(
+        T('studio.clim.breach.chill', { future: `${chillFutureCP}`, need: `${lim.chillMinCP}` }),
+        `Winter chill (${chillFutureCP} CP) drops below ${lim.chillMinCP} CP need`,
+      ));
+    }
     if (dryPressure >= 30 && (!t.traits.drought_tolerance || !/high/i.test(t.traits.drought_tolerance))) {
-      breached.push(`Longest dry spell (${dryFutureDays}d without rain) strains moisture demand`);
+      breached.push(fb(
+        T('studio.clim.breach.dry', { days: dryFutureDays }),
+        `Longest dry spell (${dryFutureDays}d without rain) strains moisture demand`,
+      ));
     }
 
+    const rawDrought = (t.traits.drought_tolerance ?? '').toLowerCase();
+    const droughtLabel = rawDrought.includes('high')
+      ? fb(T('studio.clim.droughtHigh'), 'High')
+      : rawDrought.includes('low')
+      ? fb(T('studio.clim.droughtLow'), 'Low')
+      : fb(T('studio.clim.droughtMod'), 'Moderate');
+    const phSpan = t.traits.soil_ph ? `${t.traits.soil_ph.min}–${t.traits.soil_ph.max}` : '6.0–7.5';
     const allFiveLimits = [
-      `Hard-freeze limit ${lim.minColdC} °C (1-in-10-yr ~${freezeFutureC} °C)`,
-      `Heat-dome limit ${lim.maxHotC} °C (future avg ${hotFutureC} °C)`,
-      `Chill need ${lim.chillMinCP} CP (future ${chillFutureCP} CP)`,
-      `Drought tolerance ${t.traits.drought_tolerance ?? 'Moderate'} (${dryFutureDays}d dry spell)`,
-      `Soil pH ${t.traits.soil_ph ? `${t.traits.soil_ph.min}–${t.traits.soil_ph.max}` : '6.0–7.5'}`,
+      fb(T('studio.clim.limit.freeze', { limit: `${lim.minColdC} °C`, freeze: `${freezeFutureC} °C` }), `Hard-freeze limit ${lim.minColdC} °C (1-in-10-yr ~${freezeFutureC} °C)`),
+      fb(T('studio.clim.limit.heat', { limit: `${lim.maxHotC} °C`, future: `${hotFutureC} °C` }), `Heat-dome limit ${lim.maxHotC} °C (future avg ${hotFutureC} °C)`),
+      fb(T('studio.clim.limit.chill', { need: `${lim.chillMinCP}`, future: `${chillFutureCP}` }), `Chill need ${lim.chillMinCP} CP (future ${chillFutureCP} CP)`),
+      fb(T('studio.clim.limit.drought', { level: droughtLabel, days: dryFutureDays }), `Drought tolerance ${droughtLabel} (${dryFutureDays}d dry spell)`),
+      fb(T('studio.clim.limit.ph', { ph: phSpan }), `Soil pH ${phSpan}`),
     ].join(' · ');
 
     const fieldInsurance = code === 'ColdEstablishmentBarrier'
-      ? 'Plant on a warm mid-slope with 10 cm wood-chip collar and frost fleece for winters 1–2.'
+      ? fb(T('studio.clim.ins.cold'), 'Plant on a warm mid-slope with 10 cm wood-chip collar and frost fleece for winters 1–2.')
       : code === 'FutureMaturityRisk' || code === 'NovelClimate'
-      ? 'Pair with fast nitrogen-fixing shade nurse and deep 12 cm organic mulch to buffer soil heat.'
-      : 'Establish with autumn rain and maintain living mulch around the root zone.';
+      ? fb(T('studio.clim.ins.heat'), 'Pair with fast nitrogen-fixing shade nurse and deep 12 cm organic mulch to buffer soil heat.')
+      : fb(T('studio.clim.ins.std'), 'Establish with autumn rain and maintain living mulch around the root zone.');
 
     const item: PlantTriageItem = {
       taxon: t,
@@ -506,16 +552,19 @@ export function evaluateClimate2050(
 
   const verdictSeverity: 'resilient' | 'watch' | 'stressed' =
     critical.length > 0 ? 'stressed' : watch.length > 0 ? 'watch' : 'resilient';
+  const horizonTag = period === '2071-2099'
+    ? fb(T('studio.horizon.2080s'), '2080s')
+    : fb(T('studio.horizon.2050s'), '2050s');
   const verdictTitle =
     verdictSeverity === 'resilient'
-      ? 'Palette holds strong through mid-century'
+      ? fb(T('studio.clim.verdict.resilient'), 'Palette holds strong through mid-century')
       : verdictSeverity === 'watch'
-      ? `${watch.length} species need microclimate buffering`
-      : `${critical.length} species cross hard climate limits`;
+      ? fb(T('studio.clim.verdict.watch', { n: watch.length }), `${watch.length} species need microclimate buffering`)
+      : fb(T('studio.clim.verdict.stressed', { n: critical.length }), `${critical.length} species cross hard climate limits`);
   const verdictDetail =
     envelope === 'extreme10'
-      ? `Evaluated under the 1-in-10-year extreme envelope (${coldTail10yrC} °C cold tail to ${hotFutureC} °C heat dome).`
-      : `Evaluated under typical ${period === '2071-2099' ? '2080s' : '2050s'} conditions (${coldTodayC} °C winter to ${hotFutureC} °C summer).`;
+      ? fb(T('studio.clim.verdictDetail.extreme', { cold: `${coldTail10yrC} °C`, hot: `${hotFutureC} °C` }), `Evaluated under the 1-in-10-year extreme envelope (${coldTail10yrC} °C cold tail to ${hotFutureC} °C heat dome).`)
+      : fb(T('studio.clim.verdictDetail.typical', { horizon: horizonTag, cold: `${coldTodayC} °C`, hot: `${hotFutureC} °C` }), `Evaluated under typical ${horizonTag} conditions (${coldTodayC} °C winter to ${hotFutureC} °C summer).`);
 
   const forces = [
     {
@@ -612,9 +661,10 @@ export function computePlotLayout(plan: PlantingPlanSummary, pattern: LayoutPatt
   const areaM2 = isModule ? 100 : Math.max(12, plan.netAreaM2);
   const widthM = Math.round(Math.sqrt(areaM2 * 1.6) * 10) / 10;
   const heightM = Math.round((areaM2 / widthM) * 10) / 10;
+  const moduleCount = Math.max(1, Math.round(plan.netAreaM2 / 100));
   const moduleLabel = isModule
-    ? `Repeatable 10 m × 10 m field module (${Math.max(1, Math.round(plan.netAreaM2 / 100))}× modules across plot)`
-    : `${widthM} m × ${heightM} m net planting bed`;
+    ? fb(T('studio.plan.bpModule', { n: moduleCount }), `Repeatable 10 m × 10 m field module (${moduleCount}× modules across plot)`)
+    : fb(T('studio.plan.bpBed', { w: `${widthM} m`, h: `${heightM} m` }), `${widthM} m × ${heightM} m net planting bed`);
 
   const visibleItems = plan.items.filter((it) => it.qty > 0).slice(0, 18);
   const nodes: PlotLayoutNode[] = [];

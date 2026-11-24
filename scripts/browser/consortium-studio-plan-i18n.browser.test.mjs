@@ -74,6 +74,26 @@ test('Multi-locale & responsive invariants: /fr/palette/ French i18n, Light & Da
   assert.ok(frCheck.tabs.some((t) => /ma palette|système vivant|climat 2050|plan de plantation/i.test(t ?? '')), `French studio tabs render (${frCheck.tabs.join(', ')})`);
   assert.equal(frCheck.titles, 0, 'zero native [title] attributes on /fr/palette/');
   assert.ok((await horizontalOverflow(frPage)) <= 1, 'zero horizontal overflow at 1440px');
+
+  // Verify zero leaked English in French Planting Plan (Site Prep, waves, materials, notes, stock labels)
+  await clickStudioTab(frPage, 'Planting Plan');
+  assert.ok(await has(frPage, '[data-planting-plan-tab]', 4_000), 'French Planting Plan renders');
+  const frPlanText = await frPage.evaluate(() => document.querySelector('[data-planting-plan-tab]')?.innerText ?? '');
+  const leakedPlan = frPlanText.match(/Site Prep & Layout|Shade-timing note|Pollination note|Bare-root tree|Direct seed|Wave 1 ·|soil reserve|young tree every|Dormant Woody Root-In/i);
+  assert.equal(leakedPlan, null, `zero untranslated English in /fr/palette/ Planting Plan (found: ${leakedPlan?.[0]})`);
+
+  // Verify zero leaked English in French 2050 Climate ('5 limits' tooltip, field insurance, triage)
+  await clickStudioTab(frPage, '2050 Climate');
+  assert.ok(await has(frPage, '[data-climate-2050-tab]', 4_000), 'French 2050 Climate renders');
+  const frClimCheck = await frPage.evaluate(() => {
+    const root = document.querySelector('[data-climate-2050-tab]');
+    const text = root?.innerText ?? '';
+    const tips = [...(root?.querySelectorAll('[data-field-tip], .field-tip-pop, [role="tooltip"]') ?? [])].map((e) => e.textContent ?? '').join(' ');
+    return { text, tips };
+  });
+  const leakedClim = (frClimCheck.text + ' ' + frClimCheck.tips).match(/Hard-freeze limit|Heat-dome limit|Chill need|Drought tolerance|Pair with fast nitrogen-fixing|Establish with autumn rain|Plant on a warm mid-slope/i);
+  assert.equal(leakedClim, null, `zero untranslated English in /fr/palette/ 2050 Climate (found: ${leakedClim?.[0]})`);
+
   assert.deepEqual(await pageErrorsOf(frPage), [], 'zero console/page errors on /fr/palette/');
 
   // 2. Mobile 390px dark theme — zero overflow, >=44px interactive targets, zero botanical jargon

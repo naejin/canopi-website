@@ -5,8 +5,21 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import { jobsOf, type Taxon } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
-import { microclimate, openFieldDossier, openPlantPool, poolOpen, railPreset, railTab, requestPlantOpen } from '../../state/studio.ts';
+import {
+  climateStress,
+  designEnvelope,
+  microclimate,
+  openFieldDossier,
+  openPlantPool,
+  plantingConfig,
+  poolOpen,
+  railPreset,
+  railTab,
+  requestPlantOpen,
+  wateringMode,
+} from '../../state/studio.ts';
 import { formatFreezeTag, siteClimateProfile } from '../../rules/climate-words.ts';
+import { evaluateStudioCatalog } from '../../rules/studio-fit.ts';
 import { nameOf, zoneName } from '../kit/names.ts';
 import { placeWords } from '../location/shared.ts';
 import {
@@ -78,12 +91,53 @@ export function StudioRail() {
   const memberIds = useMemo(() => new Set(store.members.value), [store.members.value]);
   const members = store.memberTaxa.value;
   const searchCatalog = store.allCatalog.value.length ? store.allCatalog.value : (store.pool.value ?? []);
-  const coachPool = store.allFitPool.value.length ? store.allFitPool.value : (store.fitPool.value ?? store.pool.value ?? []);
-  const verdictMap = store.allVerdicts.value ?? store.poolVerdicts.value;
   const loc = store.location.value;
   const z = store.climate.value;
+  const period = store.period.value;
+  const envelope = designEnvelope.value;
+  const stress = climateStress.value;
+  const mc = microclimate.value;
+  const edits = store.siteEdits.value;
+  const water = wateringMode.value;
+  const roomVal = store.room.value;
+  const plotAreaM2 = plantingConfig.value.plotAreaM2;
+  const baseVerdicts = store.allVerdicts.value ?? store.poolVerdicts.value;
+
+  const studioEval = useMemo(
+    () => evaluateStudioCatalog(searchCatalog, {
+      loc,
+      climate: z,
+      period,
+      envelope,
+      stress,
+      microclimate: mc,
+      siteEdits: edits,
+      wateringMode: water,
+      room: roomVal,
+      plotAreaM2,
+      baseVerdicts,
+    }),
+    [searchCatalog, loc, z, period, envelope, stress, mc, edits, water, roomVal, plotAreaM2, baseVerdicts],
+  );
+
+  const coachPool = studioEval.fitPool.length ? studioEval.fitPool : (store.allFitPool.value.length ? store.allFitPool.value : searchCatalog);
+  const verdictMap = studioEval.fitMap;
+
+  const activeConditionTags = useMemo(() => {
+    const tags: string[] = [];
+    if (period === '2041-2070') tags.push(T('studio.horizon.2050s'));
+    else if (period === '2071-2099') tags.push(T('studio.horizon.2080s'));
+    if (envelope === 'extreme10') tags.push(T('studio.climExtreme'));
+    if (stress.heatDeltaC > 0) tags.push(`+${stress.heatDeltaC} °C`);
+    if (stress.droughtPct > 0) tags.push(`+${stress.droughtPct}%`);
+    if (stress.winterDeltaC < 0) tags.push(`${stress.winterDeltaC} °C`);
+    if (stress.falseSpringDeltaPct > 0) tags.push(`+${stress.falseSpringDeltaPct}%`);
+    if (stress.windExposure > 0) tags.push(`${stress.windExposure}/3`);
+    if (water !== 'Rain-fed') tags.push(T(water === 'Irrigated' ? 'studio.water.irrigated' : 'studio.water.occasional'));
+    return tags;
+  }, [period, envelope, stress, water]);
   const placeName = loc ? placeWords(loc) : z ? zoneName(z) : T('studio.common.yourSite');
-  const profile = siteClimateProfile(loc, z, microclimate.value, store.siteEdits.value);
+  const profile = siteClimateProfile(loc, z, mc, edits);
   const coachSiteMeta = [
     profile.coldFreeze10yrC != null
       ? T('studio.tuner.freezeFoot', { freeze: formatFreezeTag(profile.coldFreeze10yrC, profile.coldFreezeIsEst) })
@@ -159,9 +213,14 @@ export function StudioRail() {
       list.sort((a, b) => Number(memberIds.has(a.id)) - Number(memberIds.has(b.id)));
     } else if (verdictMap) {
       list.sort((a, b) => {
-        const ra = FIT_RANK[verdictMap.get(a.id)?.level ?? 'unknown'] ?? 2;
-        const rb = FIT_RANK[verdictMap.get(b.id)?.level ?? 'unknown'] ?? 2;
-        return ra !== rb ? ra - rb : nameOf(a).localeCompare(nameOf(b));
+        const fa = verdictMap.get(a.id);
+        const fb = verdictMap.get(b.id);
+        const ra = FIT_RANK[fa?.level ?? 'unknown'] ?? 2;
+        const rb = FIT_RANK[fb?.level ?? 'unknown'] ?? 2;
+        if (ra !== rb) return ra - rb;
+        const sa = fa?.score ?? 0;
+        const sb = fb?.score ?? 0;
+        return sa !== sb ? sb - sa : nameOf(a).localeCompare(nameOf(b));
       });
     }
     return list;
@@ -224,6 +283,11 @@ export function StudioRail() {
               <p style="margin:0 0 10px; font-size:13.5px; color:var(--ink-soft);">
                 {T('studio.rail.coachSub', { n: coachCards.length, place: placeName, meta: coachSiteMeta ? ` (${coachSiteMeta})` : '' })}
               </p>
+              {activeConditionTags.length > 0 && (
+                <div class="why-tag is-live" style="margin:0 0 10px; display:inline-flex; flex-wrap:wrap; gap:4px;" data-coach-active-conditions>
+                  {T('studio.rail.activeCond', { cond: activeConditionTags.join(' · ') })}
+                </div>
+              )}
               {coachCards.length > 0 && (
                 <button
                   type="button"
