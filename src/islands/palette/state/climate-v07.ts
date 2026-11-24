@@ -92,6 +92,13 @@ export function buildTier1V07(tier1: SiteTier1 | null | undefined): Pick<SiteV07
         futureTmaxExtremeC: p2050?.tmax_extreme_c ?? null,
         lateTminExtremeC: p2080?.tmin_extreme_c ?? null,
         lateTmaxExtremeC: p2080?.tmax_extreme_c ?? null,
+        periods: periods.map((p) => ({
+          period: p.period,
+          scenario: p.scenario,
+          tminExtremeC: p.tmin_extreme_c,
+          tmaxExtremeC: p.tmax_extreme_c,
+          usdaZone: p.usda_zone,
+        })),
       };
     }
   }
@@ -143,7 +150,7 @@ export function seedMicroclimateFromTerrain(v07: SiteV07 | null | undefined, for
 }
 
 /** Build Tier 2A SiteV07 slice using Rust WASM soilAwcWithRock + interpolateChillPortions. */
-async function buildTier2AV07(
+export async function buildTier2AV07(
   loc: SiteLocation,
   tier2A: SiteTier2A,
   existingV07?: SiteV07 | null,
@@ -246,7 +253,7 @@ async function buildTier2AV07(
 }
 
 /** Build Tier 2B monthly curves from monthly + monthly_precip tiles. */
-function buildMonthlyV07(data: SiteMonthly): SiteV07['monthly'] {
+export function buildMonthlyV07(data: SiteMonthly): SiteV07['monthly'] {
   const mPeriods = data.monthly?.periods ?? [];
   const pPeriods = data.monthlyPrecip?.periods ?? [];
   const mToday = mPeriods.find((p) => p.period === '1991-2020') ?? mPeriods[0];
@@ -258,9 +265,12 @@ function buildMonthlyV07(data: SiteMonthly): SiteV07['monthly'] {
   const pToday = pPeriods.find((p) => p.period === '1991-2020') ?? pPeriods[0] ?? null;
   const p2050 = pPeriods.find((p) => p.period === '2041-2070' && p.scenario === 'ssp245')
     ?? pPeriods.find((p) => p.period === '2041-2070') ?? pToday;
+  const p2080 = pPeriods.find((p) => p.period === '2071-2099' && p.scenario === 'ssp245')
+    ?? pPeriods.find((p) => p.period === '2071-2099') ?? null;
 
   const precipToday = pToday?.precip_mm.map((v) => Math.round(v)) ?? Array<number>(12).fill(50);
   const precip2050 = p2050?.precip_mm.map((v) => Math.round(v)) ?? precipToday;
+  const precip2080 = p2080?.precip_mm.map((v) => Math.round(v));
   const dryMonths = Array.from({ length: 12 }, (_, i) => ((mToday.dry_mask >> i) & 1) === 1);
   const frostMonths = mToday.tmin_c.map((t) => t <= 2.0);
 
@@ -271,6 +281,7 @@ function buildMonthlyV07(data: SiteMonthly): SiteV07['monthly'] {
     tmean2080C: m2080.tmean_c.map(r1),
     precipTodayMm: precipToday,
     precip2050Mm: precip2050,
+    ...(precip2080 ? { precip2080Mm: precip2080 } : {}),
     dryMonths,
     frostMonths,
     gddBase10Today: Math.round(mToday.gdd_base_10),

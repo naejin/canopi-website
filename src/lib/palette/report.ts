@@ -139,7 +139,8 @@ export function resolveEffectiveSite(
   const meta = REPORT_SCENARIOS.find((s) => s.id === horizon) ?? REPORT_SCENARIOS[0];
   const periods = lookup?.climate?.periods;
   const todaySlot = findPeriod(periods, '1991-2020', 'historical');
-  const activeSlot = findPeriod(periods, meta.period, meta.scenario) ?? todaySlot;
+  // Never silently fall back to Today when a requested SSP slot is missing from the tile.
+  const activeSlot = meta.kind === 'whatif' ? todaySlot : findPeriod(periods, meta.period, meta.scenario);
   const v07 = lookup?.v07 ?? null;
 
   const nightsShift = overrides.nightsShiftC ?? 0;
@@ -153,55 +154,47 @@ export function resolveEffectiveSite(
   const tmaxWarmC = activeSlot ? round1(activeSlot.tmaxWarmC + daysShift + heatDelta) : null;
   const tmeanColdC = activeSlot ? round1(activeSlot.tmeanColdC + nightsShift + freezeDelta) : null;
   const tmeanWarmC = activeSlot ? round1(activeSlot.tmeanWarmC + daysShift + heatDelta) : null;
-  const tmeanYearC = tmeanColdC !== null && tmeanWarmC !== null ? round1((tmeanColdC + tmeanWarmC) / 2) : null;
   const precipMm = activeSlot ? Math.round(activeSlot.precipMm * precipFactor) : null;
   const aridityIndex = activeSlot?.aridityIndex != null ? round1(activeSlot.aridityIndex * precipFactor) : null;
   const dryMonths = activeSlot ? Math.min(12, activeSlot.dryMonths + (horizon === 'drought' ? 2 : 0)) : null;
 
-  // 1-in-10 extremes: use real v0.7.0 extremesTail / extremes when available, delta-shift for other SSPs (marked est.)
-  const todayFreeze10 = v07?.extremesTail?.coldTail10yrC ?? v07?.extremes?.tminExtremeC ?? todaySlot?.tminColdC ?? null;
-  const todayHeat10 = v07?.extremesTail?.heatDome10yrC ?? v07?.extremes?.tmaxExtremeC ?? todaySlot?.tmaxWarmC ?? null;
-  const tminGap = v07?.extremesTail?.tminP10GapC ?? 0;
-  const tmaxGap = v07?.extremesTail?.tmaxP90GapC ?? 0;
+  // 1-in-10 extremes: use real v0.7.0 per-slot Tier-1 extremes + Today's P10/P90 gap (marked est. for futures).
+  // Never fall back to monthly-mean tminColdC/tmaxWarmC; return null (unknown) if extreme tiles are absent.
+  const tminGap = v07?.extremesTail?.tminP10GapC ?? null;
+  const tmaxGap = v07?.extremesTail?.tmaxP90GapC ?? null;
+  const todayFreeze10 = v07?.extremesTail?.coldTail10yrC
+    ?? (v07?.extremes?.tminExtremeC != null ? v07.extremes.tminExtremeC + (tminGap ?? 0) : null);
+  const todayHeat10 = v07?.extremesTail?.heatDome10yrC
+    ?? (v07?.extremes?.tmaxExtremeC != null ? v07.extremes.tmaxExtremeC + (tmaxGap ?? 0) : null);
 
   let freeze10C: number | null = null;
   let heat10C: number | null = null;
   let extremesEst = false;
 
-  if (horizon === 'today' || meta.kind === 'whatif') {
-    freeze10C = todayFreeze10 !== null ? round1(todayFreeze10 + nightsShift + freezeDelta) : null;
-    heat10C = todayHeat10 !== null ? round1(todayHeat10 + daysShift + heatDelta) : null;
-    extremesEst = meta.kind === 'whatif' || (v07?.extremesTail?.coldTail10yrC == null && todayFreeze10 !== null);
-  } else if (horizon === 'y2050') {
-    const f50 = v07?.extremesTail?.coldTail10yr2050C
-      ?? (v07?.extremes?.futureTminExtremeC != null ? v07.extremes.futureTminExtremeC + tminGap : null)
-      ?? (todayFreeze10 !== null && todaySlot && activeSlot ? todayFreeze10 + (activeSlot.tminColdC - todaySlot.tminColdC) : null);
-    const h50 = v07?.extremesTail?.heatDome10yr2050C
-      ?? (v07?.extremes?.futureTmaxExtremeC != null ? v07.extremes.futureTmaxExtremeC + tmaxGap : null)
-      ?? (todayHeat10 !== null && todaySlot && activeSlot ? todayHeat10 + (activeSlot.tmaxWarmC - todaySlot.tmaxWarmC) : null);
-    freeze10C = f50 !== null ? round1(f50 + nightsShift) : null;
-    heat10C = h50 !== null ? round1(h50 + daysShift) : null;
-    extremesEst = true;
-  } else {
-    // Other 5 shipped SSP slots: delta-shift from Today's 1-in-10 tail using real slot tminColdC/tmaxWarmC deltas (marked est.)
-    const dCold = activeSlot && todaySlot ? activeSlot.tminColdC - todaySlot.tminColdC : 0;
-    const dWarm = activeSlot && todaySlot ? activeSlot.tmaxWarmC - todaySlot.tmaxWarmC : 0;
-    const baseCold = horizon === 'y2080_ssp245' && v07?.extremes?.lateTminExtremeC != null
-      ? v07.extremes.lateTminExtremeC + tminGap
-      : (todayFreeze10 !== null ? todayFreeze10 + dCold : null);
-    const baseHeat = horizon === 'y2080_ssp245' && v07?.extremes?.lateTmaxExtremeC != null
-      ? v07.extremes.lateTmaxExtremeC + tmaxGap
-      : (todayHeat10 !== null ? todayHeat10 + dWarm : null);
-    freeze10C = baseCold !== null ? round1(baseCold + nightsShift) : null;
-    heat10C = baseHeat !== null ? round1(baseHeat + daysShift) : null;
-    extremesEst = true;
+  if (activeSlot !== null) {
+    if (horizon === 'today' || meta.kind === 'whatif') {
+      freeze10C = todayFreeze10 !== null ? round1(todayFreeze10 + nightsShift + freezeDelta) : null;
+      heat10C = todayHeat10 !== null ? round1(todayHeat10 + daysShift + heatDelta) : null;
+      extremesEst = meta.kind === 'whatif' || (v07?.extremesTail?.coldTail10yrC == null && todayFreeze10 !== null);
+    } else {
+      const slotExt = v07?.extremes?.periods?.find((p) => p.period === meta.period && p.scenario === meta.scenario) ?? null;
+      const slotTmin = slotExt?.tminExtremeC
+        ?? (horizon === 'y2050' ? (v07?.extremes?.futureTminExtremeC ?? null)
+          : horizon === 'y2080_ssp245' ? (v07?.extremes?.lateTminExtremeC ?? null) : null);
+      const slotTmax = slotExt?.tmaxExtremeC
+        ?? (horizon === 'y2050' ? (v07?.extremes?.futureTmaxExtremeC ?? null)
+          : horizon === 'y2080_ssp245' ? (v07?.extremes?.lateTmaxExtremeC ?? null) : null);
+      freeze10C = slotTmin !== null ? round1(slotTmin + (tminGap ?? 0) + nightsShift) : null;
+      heat10C = slotTmax !== null ? round1(slotTmax + (tmaxGap ?? 0) + daysShift) : null;
+      extremesEst = freeze10C !== null || heat10C !== null;
+    }
   }
 
-  // Monthly T/P curves: real tiles for Today & 2050s SSP2-4.5, delta-shifted for other SSPs/what-ifs, null if absent
+  // Monthly T/P curves: real tiles for Today, 2050s & 2080s SSP2-4.5; delta-shifted for other SSPs/what-ifs; null if slot missing
   let monthlyT: readonly number[] | null = null;
   let monthlyP: readonly number[] | null = null;
   let monthlyEst = false;
-  if (v07?.monthly) {
+  if (activeSlot !== null && v07?.monthly) {
     if (horizon === 'today') {
       monthlyT = v07.monthly.tmeanTodayC.map((t) => round1(t + (nightsShift + daysShift) / 2));
       monthlyP = v07.monthly.precipTodayMm;
@@ -212,14 +205,14 @@ export function resolveEffectiveSite(
       monthlyEst = false;
     } else if (horizon === 'y2080_ssp245' && v07.monthly.tmean2080C.length === 12) {
       monthlyT = v07.monthly.tmean2080C.map((t) => round1(t + (nightsShift + daysShift) / 2));
-      monthlyP = v07.monthly.precip2050Mm;
-      monthlyEst = true;
+      monthlyP = v07.monthly.precip2080Mm?.length === 12 ? v07.monthly.precip2080Mm : v07.monthly.precip2050Mm;
+      monthlyEst = v07.monthly.precip2080Mm?.length !== 12;
     } else {
-      const meanDelta = activeSlot && todaySlot
+      const meanDelta = todaySlot
         ? ((activeSlot.tmeanColdC - todaySlot.tmeanColdC) + (activeSlot.tmeanWarmC - todaySlot.tmeanWarmC)) / 2
         : 0;
       const shiftT = meanDelta + (nightsShift + daysShift) / 2 + (freezeDelta + heatDelta) / 2;
-      const pRatio = activeSlot && todaySlot && todaySlot.precipMm > 0
+      const pRatio = todaySlot && todaySlot.precipMm > 0
         ? (activeSlot.precipMm / todaySlot.precipMm) * precipFactor
         : precipFactor;
       monthlyT = v07.monthly.tmeanTodayC.map((t) => round1(t + shiftT));
@@ -227,6 +220,10 @@ export function resolveEffectiveSite(
       monthlyEst = true;
     }
   }
+
+  const tmeanYearC = monthlyT && monthlyT.length === 12
+    ? round1(monthlyT.reduce((sum, t) => sum + t, 0) / 12)
+    : (tmeanColdC !== null && tmeanWarmC !== null ? round1((tmeanColdC + tmeanWarmC) / 2) : null);
 
   const room: Room = overrides.room ?? 'unsure';
   const plotM2 = Math.max(1, Math.round(overrides.plotM2 ?? 150));
@@ -594,6 +591,7 @@ export function isWinterCrop(
   scopedSowing: readonly Month[],
   hemisphere: 'N' | 'S',
 ): boolean {
+  if (taxon.traits.frost_tender === true) return false;
   const agp = (taxon.traits.active_growth_period ?? '').toLowerCase();
   if (agp.includes('winter') || agp.includes('year round')) return true;
   const awSet = hemisphere === 'S' ? SH_AUTUMN_WINTER : NH_AUTUMN_WINTER;
@@ -701,20 +699,13 @@ export function computeCrownBudget(taxa: readonly Taxon[], plotM2: number): Crow
 
 export type SizeClass = 'tree' | 'shrub' | 'climber' | 'herb' | 'groundcover';
 
-const SIZE_ORDER: Record<SizeClass, number> = {
-  groundcover: 0,
-  herb: 1,
-  climber: 2,
-  shrub: 3,
-  tree: 4,
-};
-
 export function sizeClassOf(taxon: Taxon): SizeClass {
   const h = (taxon.traits.habit ?? '').toLowerCase();
   if (h.includes('tree')) return 'tree';
   if (h.includes('shrub') || h.includes('subshrub')) return 'shrub';
   if (h.includes('vine') || h.includes('climb') || h.includes('liana')) return 'climber';
-  if (jobsOf(taxon).includes('ground') && (taxon.traits.height_m?.max ?? 0.5) <= 0.6) return 'groundcover';
+  const maxH = taxon.traits.height_m?.max ?? null;
+  if (jobsOf(taxon).includes('ground') && maxH !== null && maxH <= 0.6) return 'groundcover';
   return 'herb';
 }
 
@@ -734,33 +725,41 @@ export function findCompatibleSwaps(
   limit = 6,
 ): SwapCandidate[] {
   const targetJobs = jobsOf(target);
-  const primaryJob = targetJobs[0] ?? null;
+  const primaryJob: JobId | null = targetJobs.includes('feeds_you') ? 'feeds_you' : (targetJobs[0] ?? null);
+  const targetHabit = (target.traits.habit ?? '').trim().toLowerCase();
   const targetSize = sizeClassOf(target);
-  const targetOrder = SIZE_ORDER[targetSize];
   const targetH = target.traits.height_m?.max ?? null;
 
   const candidates: SwapCandidate[] = [];
   for (const cand of pool) {
     if (cand.id === target.id || inPaletteIds.has(cand.id)) continue;
+
+    // Like-for-like habit match (exact habit when known, else same size class)
+    const candHabit = (cand.traits.habit ?? '').trim().toLowerCase();
     const candSize = sizeClassOf(cand);
-    const stepDiff = Math.abs(SIZE_ORDER[candSize] - targetOrder);
-    if (stepDiff > 1) continue;
-    // Height cap: if room limit exists or target has known height, avoid wildly taller swaps
+    if (targetHabit) {
+      if (candHabit !== targetHabit) continue;
+    } else if (candSize !== targetSize) {
+      continue;
+    }
+
+    // Height band: 0.35× to 2.2× of target height + respect room height cap
     const candH = cand.traits.height_m?.max ?? null;
     if (eff.roomLimitM !== null && candH !== null && candH > eff.roomLimitM) continue;
-    if (targetH !== null && candH !== null && candH > Math.max(targetH * 1.8, targetH + 4)) continue;
+    if (targetH !== null && targetH > 0 && candH !== null) {
+      if (candH < targetH * 0.35 || candH > targetH * 2.2) continue;
+    }
 
+    // Must preserve primary job (Feeds you first whenever target has it, else first job)
     const candJobs = jobsOf(cand);
+    if (primaryJob && !candJobs.includes(primaryJob)) continue;
     const sharedJobs = targetJobs.filter((j) => candJobs.includes(j));
-    if (primaryJob && !candJobs.includes(primaryJob) && sharedJobs.length === 0) continue;
 
     const verdict = evaluatePlantVerdict(cand, eff);
-    if (verdict.level === 'at_risk') continue;
+    if (verdict.level !== 'fits' && verdict.level !== 'check') continue;
 
     const score =
-      (verdict.level === 'fits' ? 100 : verdict.level === 'check' ? 40 : 10)
-      + (candSize === targetSize ? 25 : 0)
-      + (primaryJob && candJobs.includes(primaryJob) ? 20 : 0)
+      (verdict.level === 'fits' ? 100 : 40)
       + sharedJobs.length * 10
       + (cand.image ? 2 : 0);
 
@@ -926,9 +925,11 @@ export interface RobustnessReport {
   shockSurvivalOk: boolean;
   seasonalityOk: boolean;
   familyCount: number;
+  unknownFamilyCount: number;
   familiesSorted: readonly [string, number][];
   monocultureWarn: boolean;
   survivesAllCore: number;
+  unknownCoreCount: number;
   coreScenarioBreaks: ScenarioBreakStat[];
   allScenarioBreaks: ScenarioBreakStat[];
   worstScenario: ScenarioBreakStat | null;
@@ -1005,18 +1006,24 @@ export function computeReport(input: PaletteReportInput): PaletteReport {
   const noBackupJobs = jobStats.filter((j) => j.status === 'no_backup').map((j) => j.job);
   const coveredJobs = jobIds.length - missingJobs.length;
 
-  // Family diversity
+  // Family diversity (exclude NULL families from monoculture/familyCount; count them separately)
   const famCounts = new Map<string, number>();
+  let unknownFamilyCount = 0;
   for (const t of input.taxa) {
-    const fam = t.family ?? 'Unknown';
-    famCounts.set(fam, (famCounts.get(fam) ?? 0) + 1);
+    if (!t.family) {
+      unknownFamilyCount++;
+      continue;
+    }
+    famCounts.set(t.family, (famCounts.get(t.family) ?? 0) + 1);
   }
   const familiesSorted = [...famCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const knownFamilyPlants = input.taxa.length - unknownFamilyCount;
   const topFamilyCount = familiesSorted[0]?.[1] ?? 0;
-  const monocultureWarn = input.taxa.length >= 4 && topFamilyCount / input.taxa.length >= 0.4;
+  const monocultureWarn = knownFamilyPlants >= 4 && topFamilyCount / knownFamilyPlants >= 0.4;
 
-  // All 10 scenario breaks + 5 core shock survival
+  // All 10 scenario breaks + 5 core shock survival (unknown verdicts are tracked separately, never counted as survivors)
   const perPlantCoreBroken = new Map<PlantId, boolean>();
+  const perPlantCoreUnknown = new Map<PlantId, boolean>();
   const allScenarioBreaks: ScenarioBreakStat[] = REPORT_SCENARIOS.map((sc) => {
     const scEff = sc.id === horizon ? eff : sc.id === 'today' ? effToday : sc.id === 'y2050' ? eff2050 : resolveEffectiveSite(input.lookup, sc.id, overrides);
     let brokenCount = 0;
@@ -1028,13 +1035,16 @@ export function computeReport(input: PaletteReportInput): PaletteReport {
       else if (sv.level === 'check' || sv.level === 'at_risk') {
         brokenCount++;
         if (isCore) perPlantCoreBroken.set(t.id, true);
+      } else if (isCore) {
+        perPlantCoreUnknown.set(t.id, true);
       }
     }
     return { id: sc.id, short: sc.short, label: sc.label, fitsCount, brokenCount };
   });
 
   const coreScenarioBreaks = allScenarioBreaks.filter((s) => CORE_SHOCK_HORIZONS.includes(s.id));
-  const survivesAllCore = input.taxa.filter((t) => !perPlantCoreBroken.get(t.id)).length;
+  const survivesAllCore = input.taxa.filter((t) => !perPlantCoreBroken.get(t.id) && !perPlantCoreUnknown.get(t.id)).length;
+  const unknownCoreCount = input.taxa.filter((t) => !perPlantCoreBroken.get(t.id) && perPlantCoreUnknown.get(t.id)).length;
   const worstScenario = [...coreScenarioBreaks].sort((a, b) => b.brokenCount - a.brokenCount)[0] ?? null;
 
   // Growing Year (real site-scoped LayerValues; 0 fabricated months)
@@ -1079,9 +1089,11 @@ export function computeReport(input: PaletteReportInput): PaletteReport {
       shockSurvivalOk,
       seasonalityOk,
       familyCount: famCounts.size,
+      unknownFamilyCount,
       familiesSorted,
       monocultureWarn,
       survivesAllCore,
+      unknownCoreCount,
       coreScenarioBreaks,
       allScenarioBreaks,
       worstScenario: worstScenario && worstScenario.brokenCount > 0 ? worstScenario : null,

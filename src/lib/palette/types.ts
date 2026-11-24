@@ -518,6 +518,13 @@ export interface SitePeriod {
   precipMm: number; // annual precipitation (src/lib/climate/lookup.ts PeriodClimate.precipMm)
   dryMonths: number; // months drier than twice their mean temperature, 0–12 (lookup.ts dryMonths)
 }
+export interface SiteExtremeSlot {
+  period: string;
+  scenario: string;
+  tminExtremeC: number;
+  tmaxExtremeC: number;
+  usdaZone: string;
+}
 export interface SiteV07 {
   /** Tier 1 eager layers */
   extremes?: {
@@ -528,6 +535,8 @@ export interface SiteV07 {
     futureTmaxExtremeC?: number | null;
     lateTminExtremeC?: number | null;
     lateTmaxExtremeC?: number | null;
+    /** All shipped Tier-1 extreme slots (today + 2041-2070 / 2071-2099 × ssp126/245/370/585). */
+    periods?: readonly SiteExtremeSlot[];
   } | null;
   frostCalendar?: {
     lastSpringDoy: number | null;
@@ -589,6 +598,7 @@ export interface SiteV07 {
     tmean2080C: readonly number[];
     precipTodayMm: readonly number[];
     precip2050Mm: readonly number[];
+    precip2080Mm?: readonly number[];
     dryMonths: readonly boolean[];
     frostMonths: readonly boolean[];
     gddBase10Today: number | null;

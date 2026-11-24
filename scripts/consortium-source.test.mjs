@@ -584,7 +584,7 @@ test('names(): every plant of the release with its integer, its lists, en and th
 });
 
 // PP-C c2 unit row (disputes): disputes, audiences, trait sources and toxicityParts reach Details only,
-// never the pool's Taxon. (Stage 2A intentionally exposes frost on Taxon for computeReport()'s extreme-cold check.)
+// never the pool's Taxon. (Stage 2A intentionally exposes frost on Taxon for computeReport()'s frost hardiness reporting.)
 test('schema 4: disputes, audiences, trait sources and toxicityParts reach Details only, never the pool\'s Taxon', async () => {
   const pool = await source.pool('Mediterranean');
   const hedera = pool.find((t) => t.canonical_name === 'Hedera helix');
