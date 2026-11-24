@@ -31,7 +31,8 @@ export async function checkPoints(C, points, source) {
     }
     for (const layer of ['climate', 'soil']) if (p.expect[layer]) assert.deepEqual([p.expect[layer].lat, p.expect[layer].lon], [p.lat, p.lon], `${p.name}: the crate echoes the point`);
     const got = await C.lookupSite(p.lat, p.lon, source);
-    assert.deepEqual({ climate: got.climate, soil: got.soil, regions: got.regions }, fromCrate(p.expect), p.name);
+    const exp = fromCrate(p.expect);
+    assert.deepEqual({ climate: got.climate, soil: got.soil, regions: got.regions }, { climate: exp.climate, soil: exp.soil, regions: exp.regions }, p.name);
     counts.compared++;
     if (!p.own_tile) counts.crossTile++;
   }

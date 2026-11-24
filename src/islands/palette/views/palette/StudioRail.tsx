@@ -7,12 +7,13 @@ import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
 import {
   climateStress,
+  closePlantPool,
   designEnvelope,
   microclimate,
+  mobilePoolOpen,
   openFieldDossier,
   openPlantPool,
   plantingConfig,
-  poolOpen,
   railPreset,
   railTab,
   requestPlantOpen,
@@ -242,8 +243,24 @@ export function StudioRail() {
     low: 'var(--sun-shade)',
   };
 
+  const isMobileOpen = mobilePoolOpen.value;
+
+  useEffect(() => {
+    if (!isMobileOpen || typeof window === 'undefined') return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closePlantPool();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isMobileOpen]);
+
   return (
-    <aside class="studio-rail" data-studio-rail aria-label={T('studio.rail.aria')}>
+    <aside
+      class={`studio-rail${isMobileOpen ? ' mobile-open' : ''}`}
+      data-studio-rail
+      aria-label={T('studio.rail.aria')}
+    >
+      <div class="mobile-sheet-handle" aria-hidden="true" />
       <div class="rail-head">
         <div class="ink-seg" role="tablist" aria-label={T('studio.rail.tablistAria')}>
           <button
@@ -267,9 +284,10 @@ export function StudioRail() {
         </div>
         <button
           type="button"
-          class="btn-quiet"
+          class="btn-quiet rail-close-btn"
+          data-rail-close
           aria-label={T('studio.rail.closeAria')}
-          onClick={() => { poolOpen.value = false; }}
+          onClick={closePlantPool}
         >
           ✕
         </button>
@@ -345,14 +363,16 @@ export function StudioRail() {
           </>
         ) : (
           <>
-            <input
-              type="search"
-              class="field-input"
-              aria-label={T('studio.rail.searchAria')}
-              placeholder={T('studio.rail.searchPh')}
-              value={query}
-              onInput={(e) => setQuery((e.currentTarget as HTMLInputElement).value)}
-            />
+            <div class="rail-search-sticky">
+              <input
+                type="search"
+                class="field-input"
+                aria-label={T('studio.rail.searchAria')}
+                placeholder={T('studio.rail.searchPh')}
+                value={query}
+                onInput={(e) => setQuery((e.currentTarget as HTMLInputElement).value)}
+              />
+            </div>
 
             <div class="chip-row">
               {(['winter', 'gap', 'soil', 'early'] as const).map((id) => (

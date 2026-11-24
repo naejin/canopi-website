@@ -39,7 +39,7 @@ import { YourPlants } from './YourPlants.tsx';
 import { PlantSearch } from '../plants/Many.tsx';
 import { wide } from '../plants/state.ts';
 import { PaletteLimits } from '../figures/slots.tsx';
-import { dossierId, poolOpen, studioTab } from '../../state/studio.ts';
+import { closePlantPool, dossierId, mobilePoolOpen, openPlantPool, poolOpen, studioTab } from '../../state/studio.ts';
 import { lazyPart } from '../lazy.tsx';
 import { StudioHeader } from './StudioHeader.tsx';
 import { RequestPlantModal } from './RequestPlantModal.tsx';
@@ -135,6 +135,8 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
   const plantsBlock = <div key="plants" class="ct-many-right"><YourPlants rows={rows} /></div>;
   const activeTab = studioTab.value;
   const railVisible = poolOpen.value;
+  const mobileRailVisible = mobilePoolOpen.value;
+  const catalogCount = store.allCatalog.value.length || store.pool.value?.length || 0;
   return (
     <div class="ct-palette-page">
       <StudioHeader />
@@ -202,8 +204,36 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
             </>
           )}
         </div>
-        {railVisible && <StudioRail />}
+        {mobileRailVisible && (
+          <div
+            class="mobile-rail-backdrop"
+            data-mobile-rail-backdrop
+            aria-hidden="true"
+            onClick={closePlantPool}
+          />
+        )}
+        {(railVisible || mobileRailVisible) && <StudioRail />}
       </div>
+      {!mobileRailVisible && dossierId.value === null && (
+        <div class="mobile-bar" data-mobile-bar role="region" aria-label={T('studio.rail.aria')}>
+          <button
+            type="button"
+            class="btn btn-primary"
+            data-mobile-pool-btn
+            onClick={() => openPlantPool({ tab: 'all' })}
+          >
+            + {T('studio.railAll')}{catalogCount > 0 ? ` (${catalogCount})` : ''}
+          </button>
+          <button
+            type="button"
+            class="btn"
+            data-mobile-coach-btn
+            onClick={() => openPlantPool({ tab: 'coach' })}
+          >
+            {T('studio.railCoach')}
+          </button>
+        </div>
+      )}
       <RequestPlantModal />
       {dossierId.value !== null && <LazyFieldDossier.View />}
     </div>

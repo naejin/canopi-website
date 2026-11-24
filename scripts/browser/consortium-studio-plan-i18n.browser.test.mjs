@@ -121,6 +121,50 @@ test('Multi-locale & responsive invariants: /fr/palette/ French i18n, Light & Da
   assert.deepEqual(mobCheck.smallButtons, [], `all visible mobile buttons >= 44x44px (found small: ${mobCheck.smallButtons.join(', ')})`);
   assert.deepEqual(await pageErrorsOf(mobPage), [], 'zero console/page errors on mobile dark');
 
+  // 2b. Mobile 390px Plant Pool / Coach Sheet, Horizon Switcher, Full-DB Search ('mango'), In-Flow Filters, and All 4 Tabs + FieldDossier
+  assert.ok(await has(mobPage, '[data-mobile-bar]', 5_000), 'sticky mobile Plant Pool / Coach dock is visible');
+  assert.ok(await has(mobPage, '[data-mobile-horizon]', 5_000), 'mobile Today/2050s/2080s horizon switcher is visible');
+  await mobPage.locator('[data-mobile-pool-btn]').click();
+  assert.ok(await has(mobPage, '.studio-rail.mobile-open', 5_000), 'tapping Mobile Plant Pool button opens slide-up Plant Pool sheet');
+  assert.ok((await horizontalOverflow(mobPage)) <= 1, 'zero horizontal overflow with Mobile Plant Pool sheet open');
+
+  // Search 'mango' across full 700+ DB and open Filters in-flow with 0 horizontal clipping
+  const railSearch = mobPage.locator('.studio-rail.mobile-open input[type="search"]');
+  await railSearch.fill('mango');
+  await mobPage.waitForFunction(() => {
+    const items = [...document.querySelectorAll('.studio-rail.mobile-open .pool-item')];
+    return items.some((el) => /mango|mangifera/i.test(el.textContent ?? ''));
+  }, { timeout: 10_000 });
+  const filterTrigger = mobPage.locator('.studio-rail.mobile-open .filter-trigger-btn');
+  await filterTrigger.click();
+  const filterRect = await mobPage.evaluate(() => {
+    const p = document.querySelector('.studio-rail.mobile-open .palette-filter-popover');
+    if (!p) return null;
+    const r = p.getBoundingClientRect();
+    return { left: r.left, right: r.right, width: r.width };
+  });
+  assert.ok(filterRect && filterRect.left >= -1 && filterRect.right <= 391, `mobile rail FilterPanel renders in-flow without clipping (${JSON.stringify(filterRect)})`);
+  await filterTrigger.click();
+
+  // Add Mango from mobile sheet, close sheet, then verify all 4 tabs + FieldDossier at 0 overflow
+  const beforeCount = await mobPage.evaluate(() => document.querySelectorAll('#ct-root [data-plant-id]').length);
+  await mobPage.locator('.studio-rail.mobile-open .pool-item button.btn-primary').click();
+  await mobPage.locator('[data-rail-close]').click();
+  await mobPage.waitForFunction(() => !document.querySelector('.studio-rail.mobile-open'), { timeout: 5_000 });
+  const afterCount = await mobPage.evaluate(() => document.querySelectorAll('#ct-root [data-plant-id]').length);
+  assert.ok(afterCount > beforeCount, `adding Mango from Mobile Plant Pool increased palette count (${beforeCount} -> ${afterCount})`);
+
+  for (const tabId of ['system', 'climate', 'plan', 'palette']) {
+    await mobPage.locator(`[data-studio-tab="${tabId}"]`).click();
+    await new Promise((r) => setTimeout(r, 200));
+    assert.ok((await horizontalOverflow(mobPage)) <= 1, `mobile 390px tab=${tabId} has zero horizontal overflow`);
+  }
+  await mobPage.locator('#ct-root [data-plant-id]').click();
+  assert.ok(await has(mobPage, '[data-field-dossier] .dossier-drawer[role="dialog"]', 8_000), 'mobile FieldDossier opens cleanly');
+  assert.ok((await horizontalOverflow(mobPage)) <= 1, 'mobile FieldDossier has zero horizontal overflow');
+  await mobPage.keyboard.press('Escape');
+  assert.deepEqual(await pageErrorsOf(mobPage), [], 'zero console/page errors after full mobile walkthrough');
+
   // 3. Additional native locales (de, ja, ru) at 1440px light — zero overflow, zero errors, localized tabs
   for (const loc of [
     { path: '/de/palette/', tabRe: /meine palette|lebendes system|klima 2050|pflanzplan/i },

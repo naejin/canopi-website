@@ -630,7 +630,7 @@ export function PlantingPlanTab() {
             </div>
             <div class="ls">
               {materials.awcMmPerM
-                ? T('studio.plan.mat.waterDetailMm', { awc: materials.awcDays, mm: materials.awcMmPerM, cdd: materials.cddDays })
+                ? T('studio.plan.mat.waterDetailMm', { awc: materials.awcDays, mm: `${materials.awcMmPerM} mm/m`, cdd: materials.cddDays })
                 : T('studio.plan.mat.waterDetail', { awc: materials.awcDays, cdd: materials.cddDays })}
             </div>
           </div>
@@ -679,7 +679,7 @@ export function PlantingPlanTab() {
               ? T('studio.plan.wave.w3.title')
               : T('studio.plan.wave.w4.title');
             const baseTasks = w.id === 'w1'
-              ? [T('studio.plan.wave.w1.t1', { area: p.netAreaM2 ?? plan.netAreaM2, pct: p.pathwaysPct ?? plan.pathwaysPct }), T('studio.plan.wave.w1.t2')]
+              ? [T('studio.plan.wave.w1.t1', { area: `${p.netAreaM2 ?? plan.netAreaM2} m²`, pct: p.pathwaysPct ?? plan.pathwaysPct }), T('studio.plan.wave.w1.t2')]
               : w.id === 'w2'
               ? [T('studio.plan.wave.w2.t1', { n: p.winterCount ?? 0 }), T('studio.plan.wave.w2.t2')]
               : w.id === 'w3'

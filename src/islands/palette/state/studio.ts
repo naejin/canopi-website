@@ -64,13 +64,26 @@ export interface PlantPoolPreset {
 }
 
 export const railPreset = signal<PlantPoolPreset | null>(null);
+export const mobilePoolOpen = signal<boolean>(false);
 
 export function openPlantPool(preset: PlantPoolPreset = {}): void {
   batch(() => {
     poolOpen.value = true;
+    mobilePoolOpen.value = true;
     railTab.value = preset.tab ?? 'all';
     railPreset.value = preset;
   });
+}
+
+export function closePlantPool(): void {
+  if (typeof window !== 'undefined' && window.innerWidth < 960) {
+    mobilePoolOpen.value = false;
+  } else {
+    batch(() => {
+      poolOpen.value = false;
+      mobilePoolOpen.value = false;
+    });
+  }
 }
 
 const WATERING_CYCLE: readonly WateringMode[] = ['Rain-fed', 'Occasional', 'Irrigated'];
