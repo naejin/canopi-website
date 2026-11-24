@@ -53,12 +53,28 @@ const grid = [
   { id: 'natural-earth-map-units-50m', title: 'NE', citation: 'Made with Natural Earth', landing: null, licence: 'Public domain' },
   { id: 'wgsrpd-level3', title: 'WGSRPD', citation: 'Brummitt', landing: 'https://github.com/tdwg/wgsrpd', licence: 'Not declared' },
   { id: 'soilgrids-2.0', title: 'SoilGrids', citation: 'Poggio', landing: 'https://www.isric.org/explore/soilgrids', licence: 'CC BY 4.0' },
+  { id: 'era5-land', title: 'ERA5-Land', citation: 'ECMWF', landing: null, licence: 'CC BY 4.0' },
+  { id: 'nex-gddp-cmip6', title: 'NEX-GDDP-CMIP6', citation: 'NASA', landing: null, licence: 'CC0 1.0' },
+  { id: 'chelsa-v2.1-tasmin', title: 'CHELSA tasmin', citation: 'Karger', landing: null, licence: 'CC0 1.0' },
+  { id: 'era5-land-extremes-tail', title: 'ERA5-Land extremes tail', citation: 'ECMWF', landing: null, licence: 'CC BY 4.0' },
+  { id: 'era5-land-frost-calendar', title: 'ERA5-Land frost', citation: 'ECMWF', landing: null, licence: 'CC BY 4.0' },
+  { id: 'era5-land-phenology', title: 'ERA5-Land phenology', citation: 'ECMWF', landing: null, licence: 'CC BY 4.0' },
+  { id: 'terraclimate-water-balance', title: 'TerraClimate', citation: 'Abatzoglou', landing: null, licence: 'CC0 1.0' },
+  { id: 'era5-land-cdd', title: 'ERA5-Land CDD', citation: 'ECMWF', landing: null, licence: 'CC BY 4.0' },
+  { id: 'soilgrids-2.0-plus', title: 'SoilGrids Plus', citation: 'Poggio', landing: null, licence: 'CC BY 4.0' },
+  { id: 'copernicus-dem-glo30', title: 'Copernicus DEM', citation: 'ESA', landing: null, licence: 'Copernicus Data Policy' },
+  { id: 'merit-hydro-v1.0.1', title: 'MERIT Hydro', citation: 'Yamazaki', landing: null, licence: 'ODbL 1.0' },
 ];
 
-test('the tool credits: the grid, its five inputs, GBIF, OpenFreeMap and Nominatim, each once', () => {
-  const rows = credits.toolCredits(grid, 'v0.2.0');
-  assert.deepEqual(rows.map((r) => r.id), ['canopi-climate', 'chelsa', 'koppen-beck', 'soilgrids', 'wgsrpd', 'natural-earth', 'gbif', 'openfreemap', 'nominatim']);
-  assert.match(rows[0].name, /canopi-climate v0\.2\.0/);
+test('the tool credits: the grid, its v0.7.0 inputs, GBIF, OpenFreeMap and Nominatim, each once', () => {
+  const rows = credits.toolCredits(grid, 'v0.7.0');
+  assert.deepEqual(rows.map((r) => r.id), [
+    'canopi-climate', 'chelsa', 'koppen-beck', 'soilgrids', 'wgsrpd', 'natural-earth',
+    'era5-land', 'nex-gddp-cmip6', 'chelsa-tasmin', 'era5-extremes-tail', 'era5-frost-calendar',
+    'era5-phenology', 'terraclimate', 'era5-cdd', 'soilgrids-plus', 'copernicus-dem', 'merit-hydro',
+    'gbif', 'openfreemap', 'nominatim',
+  ]);
+  assert.match(rows[0].name, /canopi-climate v0\.7\.0/);
   assert.match(rows[0].licence, /AGPL-3\.0-or-later/);
   assert.equal(rows.find((r) => r.id === 'chelsa').licence, 'CC0 1.0', 'licences as the grid publishes them');
   for (const r of rows) assert.ok(r.line, `${r.id}: a citation or attribution`);

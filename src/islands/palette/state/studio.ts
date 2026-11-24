@@ -8,7 +8,7 @@
 import { batch, effect, signal } from '@preact/signals';
 import type { CanopiCustomPlant, DesignEnvelope, PlantId, PlantingPlanConfig, Taxon } from '../../../lib/palette/index.ts';
 import { canopiFile, canopiFileName, DEFAULT_PLANTING_PLAN_CONFIG, parseCanopiFile } from '../../../lib/palette/index.ts';
-import type { MicroAspect, MicroLandform } from '../../../lib/climate/v07.ts';
+import type { MicroAspect, MicroLandform } from '../rules/climate-compat.ts';
 import * as store from '../store.ts';
 
 export type StudioTab = 'palette' | 'system' | 'climate' | 'plan';

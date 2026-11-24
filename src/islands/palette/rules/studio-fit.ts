@@ -20,7 +20,7 @@ import type {
   SiteLocation,
   Taxon,
 } from '../../../lib/palette/index.ts';
-import type { MicroclimateParams } from '../../../lib/climate/v07.ts';
+import type { MicroclimateParams } from './climate-compat.ts';
 import type { ClimateStressState, WateringMode } from '../state/studio.ts';
 import { siteClimateProfile } from './climate-words.ts';
 

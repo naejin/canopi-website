@@ -4,7 +4,7 @@
 // Climate2050Tab, PlantingPlanTab, and FieldDossier.
 import type { ClimateZone, SiteEdits, SiteLocation } from '../../../lib/palette/index.ts';
 import { siteClimate } from '../../../lib/palette/index.ts';
-import { adjustMicroclimate, type MicroclimateParams } from '../../../lib/climate/v07.ts';
+import { adjustMicroclimate, type MicroclimateParams } from './climate-compat.ts';
 import { pageLang, T } from '../strings.ts';
 
 const fb = (v: string, d: string): string => (v.startsWith('studio.') ? d : v);

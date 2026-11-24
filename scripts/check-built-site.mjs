@@ -473,13 +473,21 @@ for (const gone of ['manifest.json', 'labels.json', 'SHA256SUMS', 'tropical.json
   const markers = readdirSync(root).filter((f) => /^__canopi-serve-/.test(f));
   assert.deepEqual(markers, [], `scripts/browser/serve.mjs marker files left in ${root} (a browser run was killed): delete them`);
 }
-// Review B4: the build ships exactly one sqlite wasm, and neither helper of sqlite-wasm's browser
-// build (the Worker #1 script, the OPFS proxy) that astro.config.mjs keeps Vite from emitting.
+// Review B4 + Goal #40: the build ships exactly two wasm files (sqlite3 + canopi_climate_bg),
+// with an explicit gzip size cap on canopi_climate_bg.wasm, and neither helper of sqlite-wasm's
+// browser build (the Worker #1 script, the OPFS proxy) that astro.config.mjs keeps Vite from emitting.
+const CLIMATE_WASM_GZIP_CAP = 200 * 1024;
 {
   const assets = readdirSync(join(root, '_astro'));
-  const wasm = assets.filter((f) => f.endsWith('.wasm'));
-  assert.equal(wasm.length, 1, `one wasm in the build: ${wasm.join(', ') || 'none'}`);
-  assert.match(wasm[0], /^sqlite3\.[\w-]+\.wasm$/, 'the one wasm is sqlite3');
+  const wasm = assets.filter((f) => f.endsWith('.wasm')).sort();
+  assert.equal(wasm.length, 2, `two wasm files in the build (sqlite3 + canopi_climate): ${wasm.join(', ') || 'none'}`);
+  const sqliteWasm = wasm.find((f) => /^sqlite3\.[\w-]+\.wasm$/.test(f));
+  const climateWasm = wasm.find((f) => /^canopi_climate_bg\.[\w-]+\.wasm$/.test(f));
+  assert.ok(sqliteWasm, `sqlite3 wasm missing from build: ${wasm.join(', ')}`);
+  assert.ok(climateWasm, `canopi_climate_bg wasm missing from build: ${wasm.join(', ')}`);
+  const climateWasmGz = gzipSync(readFileSync(join(root, '_astro', climateWasm)), { level: 9 }).length;
+  assert.ok(climateWasmGz <= CLIMATE_WASM_GZIP_CAP, `${climateWasm} is ${climateWasmGz} B gzip, over ${CLIMATE_WASM_GZIP_CAP} B cap`);
+  console.log(`Climate WASM: ${climateWasm} (${(climateWasmGz / 1024).toFixed(1)} KB gzip, cap ${CLIMATE_WASM_GZIP_CAP / 1024} KB).`);
   const helpers = [];
   const stack = [root];
   while (stack.length) {
@@ -542,6 +550,7 @@ const ROLE_CAPS = {
   verdict: 2.9 * KB, // measured 2,367 B (A14 max 12)
   figures: 1 * KB, // v14 0W: the stub (pf-d measures the panel; a reference, never a failure)
   studio: 12 * KB, // Phase 3 / Slice 3.4: lazy Field Studio tabs & Field Dossier drawer
+  climateWasm: 10 * KB, // Goal #40: lazy canopi-climate v0.7.0 wasm-bindgen JS glue
 };
 const LOCATION_BUDGET = 20 * KB;
 const MAPLIBRE_BUDGET = 330 * KB;
@@ -679,17 +688,18 @@ console.log(`Static assets: ${assetFiles} files in ${root} (limit ${MAX_ASSET_FI
   const gridProblem = consortiumGridProblem(consortiumIndex, climateIndex);
   assert.equal(gridProblem, null, `${CLIMATE_INDEX_PATH}: ${gridProblem}`);
   // #ct-climate (P5 commit 0, ConsortiumPage.astro): every tool page hands the island the base and each
-  // layer's tile names (src/data/climate-page-data.ts), no hashes, under 2 KB gzip.
-  const tileNames = Object.fromEntries(['climate', 'soil', 'regions'].map((l) => [l, { tiles: Object.keys(climateIndex.layers[l].tiles).sort() }]));
+  // installed layer's tile names (src/data/climate-page-data.ts), no hashes, under 2 KB gzip.
+  const tileNames = Object.fromEntries(Object.keys(climateIndex.layers).map((l) => [l, { tiles: Object.keys(climateIndex.layers[l].tiles).sort() }]));
+  const expectedPageClimate = { base: climateIndex.base, layers: tileNames, ...(climateIndex.analogues ? { analogues: true } : {}) };
   for (const lang of locales) {
     const path = consortiumPath(lang);
     const raw = readFileSync(join(root, path, 'index.html'), 'utf8').match(/<script type="application\/json" id="ct-climate">([\s\S]*?)<\/script>/)?.[1];
     assert.ok(raw, `${path}: #ct-climate is missing`);
-    assert.deepEqual(JSON.parse(raw), { base: climateIndex.base, layers: tileNames }, `${path}: #ct-climate names the installed tiles`);
+    assert.deepEqual(JSON.parse(raw), expectedPageClimate, `${path}: #ct-climate names the installed tiles`);
     assert.doesNotMatch(raw, /sha256|[0-9a-f]{64}/, `${path}: #ct-climate carries no hashes`);
     assert.ok(gzipSync(raw).length <= 2048, `${path}: #ct-climate is ${gzipSync(raw).length} B gzip, over 2048`);
   }
-  console.log(`Climate tiles: canopi-climate ${climateIndex.release.builder_version} under ${climateIndex.base}, ${counts.climate} climate, ${counts.soil} soil and ${counts.regions} regions tiles, each with its size.`);
+  console.log(`Climate tiles: canopi-climate ${climateIndex.release.builder_version} under ${climateIndex.base}, ${Object.entries(counts).map(([k, v]) => `${v} ${k}`).join(', ')}.`);
 }
 
 // ---------- Privacy (P5 S5f) ----------

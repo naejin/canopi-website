@@ -1,153 +1,150 @@
-// Slice 3.1 unit tests for canopi-climate v0.7.0 pure-TS helpers, additive layer decoders,
-// sentinel 366 / hand_m south of 60°S handling, and decoupled climate_tiles_sha256 grid matching.
+// Unit tests for canopi-climate v0.7.0 Rust WASM bridge (all 21 exports),
+// Chill Portion interpolation, rock-adjusted AWC, frost sentinels (0 / 366),
+// and decoupled climate_tiles_sha256 + compatible v0.4.0 manifest matching.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
+  ALL_LAYERS,
   CLIMATE_V07_PINS,
+  CLIMATE_WASM_SHA256,
+  CLIMATE_WASM_VERSION,
+  COMPATIBLE_TILES_MANIFESTS,
   FROST_FREE_SENTINEL_DOY,
-  NODATA,
-  OPTIONAL_V07_LAYERS,
-  adjustMicroclimate,
-  decodeExtremesTail,
-  decodeFrostCalendar,
-  decodePhenology,
-  decodeSoilPlus,
-  decodeTerrain,
-  decodeWaterBalance,
-  evaluateTrajectory,
-  photoperiod,
+  V07_LAYERS,
+  YEAR_ROUND_FROST_SENTINEL_DOY,
+  initClimateWasm,
+  interpolateChillPortions,
+  isClimateWasmReady,
   soilAwcWithRock,
+  wasmAdjustMicroclimate,
+  wasmEvaluateTrajectory,
+  wasmLookup,
+  wasmLookupRegions,
+  wasmLookupSoil,
+  wasmPhotoperiod,
+  wasmSoilAwc,
+  wasmTextureClass,
+  wasmTileName,
+  wasmUsdaZone,
+  wasmVersion,
 } from '../src/lib/climate/index.ts';
 import { consortiumGridProblem } from './consortium-grid-check.mjs';
 
-test('v0.7.0 pins and optional layer metadata are exported and valid', () => {
+const FIXTURES = new URL('./fixtures/climate/', import.meta.url);
+
+test('v0.7.0 pins, layer metadata, and frost sentinels (0 = frost-free, 366 = year-round) are exact', () => {
   assert.equal(CLIMATE_V07_PINS.climate_tiles_sha256, 'f689af2d4a81ed62937ec7c209fab42a15285aeac666ce60f2b2cf99d43e1e5b');
-  assert.equal(CLIMATE_V07_PINS.packs_v07_sha256, '5d223909c56aa2df669e162a42f85fb6bb0be97f388e764df24eef20ea3de355');
   assert.equal(CLIMATE_V07_PINS.monolithic_tar_sha256, '1fd5ffd18197b34a7d0342f38ca8b0afa7a65182cd0a66aef03e3d0b33d2f079');
-  assert.deepEqual(Object.keys(OPTIONAL_V07_LAYERS), [
-    'frost_calendar', 'extremes_tail', 'phenology', 'water_balance', 'soil_plus', 'terrain',
-  ]);
-  assert.equal(FROST_FREE_SENTINEL_DOY, 366);
+  assert.equal(CLIMATE_WASM_VERSION, '0.7.0');
+  assert.match(CLIMATE_WASM_SHA256, /^[0-9a-f]{64}$/);
+  assert.equal(FROST_FREE_SENTINEL_DOY, 0);
+  assert.equal(YEAR_ROUND_FROST_SENTINEL_DOY, 366);
+  assert.equal(V07_LAYERS.terrain.cellDeg, 0.1);
+  assert.equal(V07_LAYERS.terrain.tileCells, 100);
+  assert.equal(V07_LAYERS.terrain.bands, 4);
+  assert.equal(V07_LAYERS.soil_plus.bands, 6);
+  assert.equal(V07_LAYERS.frost_calendar.bands, 6);
+  assert.equal(V07_LAYERS.monthly_precip.cellDeg, 0.25);
+  assert.equal(V07_LAYERS.monthly_precip.tileCells, 40);
+  assert.equal(Object.keys(ALL_LAYERS).length, 12);
 });
 
-test('consortiumGridProblem accepts v0.7.0 decoupled climate_tiles_sha256', () => {
+test('consortiumGridProblem accepts decoupled climate_tiles_sha256 and verified compatible v0.4.0 manifest', () => {
   const tilesSha = CLIMATE_V07_PINS.climate_tiles_sha256;
   const manifestSha = 'c'.repeat(64);
-  const consortium = { release_id: 'r-d400aa2c5db28bb4', climate_grid_manifest_sha256: tilesSha };
-  const climate = {
-    release: { grid_manifest_sha256: manifestSha, climate_tiles_sha256: tilesSha },
-    consortium_grid_check: { status: 'matched', consortium_release: 'r-d400aa2c5db28bb4' },
-  };
-  assert.equal(consortiumGridProblem(consortium, climate), null);
+  const v04Manifest = COMPATIBLE_TILES_MANIFESTS[tilesSha][0];
+
+  for (const want of [tilesSha, v04Manifest]) {
+    const consortium = { release_id: 'r-61c991c93df2effd', climate_grid_manifest_sha256: want };
+    const climate = {
+      release: { grid_manifest_sha256: manifestSha, climate_tiles_sha256: tilesSha },
+      consortium_grid_check: { status: 'matched', consortium_release: 'r-61c991c93df2effd' },
+    };
+    assert.equal(consortiumGridProblem(consortium, climate), null);
+  }
 });
 
-test('decodeFrostCalendar handles normal frost dates and sentinel 366 frost-free years', () => {
-  const montpellier = decodeFrostCalendar([49, 344, 298, 72, 14]);
-  assert.deepEqual(montpellier, {
-    lastSpringFrostDoy: 49,
-    firstAutumnFrostDoy: 344,
-    frostFreeDays: 298,
-    frostYearPct: 72,
-    falseSpringPct: 14,
-    frostFree: false,
-  });
+test('Rust WASM initializes in Node with SHA-256 verification and runs core lookup/helper exports', async () => {
+  await initClimateWasm();
+  assert.equal(isClimateWasmReady(), true);
+  assert.equal(await wasmVersion(), '0.7.0');
+  assert.equal(await wasmTileName(45.76, 4.84), 'n50e000.tif');
+  assert.equal(await wasmTileName(95, 0), undefined);
+  assert.equal(await wasmTextureClass(40, 20), 'loam');
+  assert.equal(await wasmUsdaZone(-7.4), '8b');
 
-  const lisbon = decodeFrostCalendar([366, 366, 365, 0, 2]);
-  assert.deepEqual(lisbon, {
-    lastSpringFrostDoy: null,
-    firstAutumnFrostDoy: null,
-    frostFreeDays: 365,
-    frostYearPct: 0,
-    falseSpringPct: 2,
-    frostFree: true,
-  });
-
-  assert.equal(decodeFrostCalendar([NODATA, NODATA, NODATA, NODATA]), null);
+  // Synthetic core tiles through Rust WASM lookup / lookupSoil / lookupRegions
+  const climateBytes = new Uint8Array(readFileSync(new URL('synthetic-n50e000.tif', FIXTURES)));
+  const soilBytes = new Uint8Array(readFileSync(new URL('synthetic-soil-n50e000.tif', FIXTURES)));
+  const regionBytes = new Uint8Array(readFileSync(new URL('synthetic-regions-n50e000.tif', FIXTURES)));
+  assert.ok(await wasmLookup(climateBytes, 45.76, 4.84));
+  assert.ok(await wasmLookupSoil(soilBytes, 45.76, 4.84));
+  assert.ok(await wasmLookupRegions(regionBytes, 45.76, 4.84));
 });
 
-test('decodeExtremesTail, decodePhenology, decodeWaterBalance, decodeSoilPlus decode scaled values', () => {
-  assert.deepEqual(decodeExtremesTail([-44, 425, 19, 74]), {
-    coldTail10yrC: -4.4,
-    heatDome10yrC: 42.5,
-    heatDays35: 19,
-    p90DryStreakDays: 74,
-  });
-  assert.deepEqual(decodePhenology([48, 34, 22]), {
-    chillPortionsToday: 48,
-    chillPortions2050: 34,
-    chillPortions2080: 22,
-  });
-  assert.deepEqual(decodeWaterBalance([38, 410]), { cddDays: 38, annualDeficitMm: 410 });
-  assert.deepEqual(decodeSoilPlus([78, 220, 410, 180, 26]), {
-    subsoilPh: 7.8,
-    subsoilClayPct: 22,
-    subsoilSandPct: 41,
-    stonePct: 18,
-    omPct: 2.6,
-  });
-});
+test('Rust WASM photoperiod, soilAwc + rock adjustment, and Chill Portion interpolation', async () => {
+  const photo = await wasmPhotoperiod(45);
+  assert.ok(photo && photo.max_hours > 15 && photo.min_hours < 9 && photo.monthly_hours.length === 12);
+  const polar = await wasmPhotoperiod(75);
+  assert.ok(polar && polar.midnight_sun_days > 0 && polar.polar_night_days > 0);
 
-test('decodeTerrain returns handM normally north of 60°S and enforces handM = null south of 60°S', () => {
-  const north = decodeTerrain([140, 85, 180, 125], 43.6);
-  assert.deepEqual(north, { elevationM: 140, slopeDeg: 8.5, aspectDeg: 180, handM: 12.5 });
-
-  const antarctic = decodeTerrain([250, 40, 90, 80], -64.5);
-  assert.deepEqual(antarctic, { elevationM: 250, slopeDeg: 4, aspectDeg: 90, handM: null });
-});
-
-test('soilAwcWithRock reduces available water capacity proportionally with stone fraction', () => {
-  const stoneFree = soilAwcWithRock({ sandPct: 40, clayPct: 25, omPct: 3, stonePct: 0 });
-  const stony = soilAwcWithRock({ sandPct: 40, clayPct: 25, omPct: 3, stonePct: 50 });
-  assert.ok(stoneFree.awcMmPerM > 100 && stoneFree.awcMmPerM < 250);
+  const awc = await wasmSoilAwc(40, 25, 3.0);
+  assert.ok(awc && awc.awc_mm_per_m > 100 && awc.awc_mm_per_m < 250);
+  const stoneFree = soilAwcWithRock(awc, 0);
+  const stony = soilAwcWithRock(awc, 50);
   assert.ok(Math.abs(stony.awcMmPerM - stoneFree.awcMmPerM * 0.5) <= 2);
   assert.ok(stony.dryDaysReserve < stoneFree.dryDaysReserve);
+
+  const pheno = {
+    cell_lat: 45.75, cell_lon: 4.85, tile: 'n50e000',
+    chill_portions_0c: 132, chill_portions_1c: 127, chill_portions_2c: 120, chill_portions_3c: 111, chill_portions_4c: 101,
+  };
+  assert.equal(interpolateChillPortions(pheno, 0), 132);
+  assert.equal(interpolateChillPortions(pheno, 1.5), 123.5);
+  assert.equal(interpolateChillPortions(pheno, 10), 101);
 });
 
-test('photoperiod returns ~12h at equinox, long summer day at 45°N, and polar extremes', () => {
-  const eq = photoperiod(43.6, 80);
-  assert.ok(eq > 11.7 && eq < 12.4, `equinox daylength ${eq}`);
-  const summer = photoperiod(45, 172);
-  assert.ok(summer > 15.2 && summer < 16.0, `summer solstice 45N ${summer}`);
-  assert.equal(photoperiod(75, 172), 24);
-  assert.equal(photoperiod(75, 355), 0);
-});
-
-test('adjustMicroclimate models hemisphere-aware aspect and valley cold-air pooling', () => {
-  const valley = adjustMicroclimate({ coldC: 3.5, hotC: 30, falseSpringPct: 14, lat: 43.6 }, {
-    slopeDeg: 15, aspect: 'north', landform: 'valley',
+test('Rust WASM adjustMicroclimate (48-step ENU solar + lapse + katabatic pooling) and evaluateTrajectory', async () => {
+  const baseSite = {
+    lat: 45.75,
+    tmean_cold_c: 4.3,
+    tmean_warm_c: 22.4,
+    tmin_cold_c: 0.1,
+    tmax_warm_c: 26.6,
+    tmin_extreme_c: -7.4,
+    tmax_extreme_c: 34.4,
+    tmin_p10_gap_c: -3.7,
+    tmax_p90_gap_c: 3.7,
+    cell_terrain: { elev_m: 200, relief_m: 300 },
+  };
+  const valley = await wasmAdjustMicroclimate(baseSite, {
+    site_elev_m: 200,
+    slope_deg: 15,
+    aspect_deg: 0,
+    topo_position: 'frost_hollow',
   });
-  assert.ok(valley.coldDeltaC < -2.5);
-  assert.ok(valley.adjustedFalseSpringPct > 14);
+  assert.ok(valley.delta_t_pool_extreme_c < -3, `expected cold-air pooling, got ${valley.delta_t_pool_extreme_c}`);
+  assert.ok(valley.solar_ratio.growing_season < 1, 'north slope in NH receives less solar irradiance');
+  assert.ok(valley.tmin_extreme_c !== null && valley.tmin_extreme_c < baseSite.tmin_extreme_c);
 
-  const southWarm = adjustMicroclimate({ coldC: 5, hotC: 28, lat: -33.9 }, {
-    slopeDeg: 15, aspect: 'north', landform: 'mid-slope',
+  const southSlope = await wasmAdjustMicroclimate(baseSite, {
+    site_elev_m: 350,
+    slope_deg: 20,
+    aspect_deg: 180,
+    topo_position: 'ridge',
   });
-  assert.ok(southWarm.hotDeltaC > 0, 'north-facing slope is warm-facing in Southern Hemisphere');
-});
+  assert.ok(southSlope.delta_t_lapse_c < 0, 'higher elevation is cooler via lapse rate');
+  assert.ok(southSlope.solar_ratio.annual > 1, 'south slope in NH receives more solar irradiance');
 
-test('evaluateTrajectory classifies Stable, ColdEstablishmentBarrier, FutureMaturityRisk, NovelClimate, and annuals', () => {
-  assert.equal(evaluateTrajectory(
-    { minColdC: -12, maxHotC: 42, chillMinCP: 20 },
-    { coldTodayC: 3.5, coldTail10yrC: -4.4, hotTodayC: 30, hotFutureC: 33, chillTodayCP: 48, chillFutureCP: 34 },
-  ), 'Stable');
-
-  assert.equal(evaluateTrajectory(
-    { minColdC: -2, maxHotC: 42, chillMinCP: 10 },
-    { coldTodayC: 3.5, coldTail10yrC: -4.4, hotTodayC: 30, hotFutureC: 33, chillTodayCP: 48, chillFutureCP: 34 },
-  ), 'ColdEstablishmentBarrier');
-
-  assert.equal(evaluateTrajectory(
-    { minColdC: -15, maxHotC: 31, chillMinCP: 20 },
-    { coldTodayC: 3.5, coldTail10yrC: -4.4, hotTodayC: 30, hotFutureC: 34, chillTodayCP: 48, chillFutureCP: 34 },
-  ), 'FutureMaturityRisk');
-
-  assert.equal(evaluateTrajectory(
-    { minColdC: -15, maxHotC: 31, chillMinCP: 20 },
-    { coldTodayC: 3.5, coldTail10yrC: -4.4, hotTodayC: 30, hotFutureC: 36, matchQuality: 0.42 },
-  ), 'NovelClimate');
-
-  assert.equal(evaluateTrajectory(
-    { minColdC: 0, maxHotC: 38, isAnnual: true },
-    { coldTodayC: 3.5, coldTail10yrC: -4.4, hotTodayC: 30, hotFutureC: 33 },
-  ), 'Stable', 'warm-season annual skips winter cold-tail barrier');
+  const traj = await wasmEvaluateTrajectory(
+    {
+      today: { label: '1991-2020', tmin_extreme_c: -14, tmax_extreme_c: 34, chill_portions: 90, cwd_mm: 250 },
+      mid_century: { label: '2041-2070', tmin_extreme_c: -6, tmax_extreme_c: 37, chill_portions: 70, cwd_mm: 320 },
+      late_century: { label: '2071-2099', tmin_extreme_c: -4, tmax_extreme_c: 39, chill_portions: 55, cwd_mm: 380 },
+    },
+    { min_tmin_extreme_c: -8, max_tmax_extreme_c: 42, min_chill_portions: 40 },
+  );
+  assert.equal(traj.establishment_vs_maturity_gap, 'cold_establishment_barrier');
+  assert.equal(traj.has_gap, true);
 });

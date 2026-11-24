@@ -9,7 +9,7 @@ import {
   siteEditsOf,
   type SiteEdits,
 } from '../../../../lib/palette/index.ts';
-import type { MicroAspect, MicroLandform } from '../../../../lib/climate/v07.ts';
+import type { MicroAspect, MicroLandform } from '../../rules/climate-compat.ts';
 import {
   figureLine,
   location as siteLocation,

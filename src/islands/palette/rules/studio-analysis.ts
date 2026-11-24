@@ -18,7 +18,7 @@ import {
   jobsOf,
   SUCCESSION_STAGES_6,
 } from '../../../lib/palette/index.ts';
-import { evaluateTrajectory, type MicroclimateParams, type TrajectoryCode } from '../../../lib/climate/v07.ts';
+import { evaluateTrajectory, type MicroclimateParams, type TrajectoryCode } from './climate-compat.ts';
 import type { ClimateStressState } from '../state/studio.ts';
 import {
   activityMonthsOf,

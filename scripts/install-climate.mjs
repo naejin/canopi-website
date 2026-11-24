@@ -48,7 +48,7 @@ import { createHash } from 'node:crypto';
 import { closeSync, createWriteStream, existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { GRID_FORMAT, GRID_FORMAT_VERSION, LAYERS, REGION_BAND_SPECS, REGION_BANDS, SLOTS, SOIL_BAND_SPECS, SOIL_BANDS, TILE_NAME, VARIABLES } from '../src/lib/climate/model.js';
+import { ALL_LAYERS, COMPATIBLE_TILES_MANIFESTS, GRID_FORMAT, GRID_FORMAT_VERSION, LAYERS, REGION_BAND_SPECS, REGION_BANDS, SLOTS, SOIL_BAND_SPECS, SOIL_BANDS, TILE_NAME, V07_LAYERS, VARIABLES } from '../src/lib/climate/model.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const DEFAULT_OUT = join(ROOT, 'public', 'data', 'climate');
@@ -72,11 +72,13 @@ const SEMVER = /^\d+\.\d+\.\d+$/;
 const ARCHIVE_NAME = /^canopi-climate-grid-v(\d+\.\d+\.\d+)\.tar$/;
 const RELEASE_URL = 'https://github.com/opencanopi/canopi-climate/releases/download/';
 const META_FILES = ['manifest.json', 'build-report.json', 'ATTRIBUTION.md'];
-const TILE_PATH = /^(tiles|soil|regions)\/([ns]\d\d[ew]\d\d\d)\.tif$/;
-// Additive v0.4+ climate grid layers present in the monolithic archive; verified in SHA256SUMS, not served by the site.
-const EXTRA_LAYER_DIRS = ['monthly/', 'monthly_precip/', 'extremes/'];
-const EXTRA_TILE_PATH = /^(monthly|monthly_precip|extremes)\/([ns]\d\d[ew]\d\d\d)\.tif$/;
-const LAYER_IDS = Object.keys(LAYERS);
+const ANALOGUES_FILE = 'analogues.bin';
+const CORE_LAYER_IDS = Object.keys(LAYERS);
+const V07_LAYER_IDS = Object.keys(V07_LAYERS);
+const ALL_LAYER_IDS = Object.keys(ALL_LAYERS);
+const ALL_LAYER_DIRS = ALL_LAYER_IDS.map((id) => `${ALL_LAYERS[id].dir}/`);
+const TILE_PATH = new RegExp(`^(${ALL_LAYER_IDS.map((id) => ALL_LAYERS[id].dir).join('|')})\\/([ns]\\d\\d[ew]\\d\\d\\d)\\.tif$`);
+const LAYER_IDS = CORE_LAYER_IDS;
 
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -129,12 +131,12 @@ function archiveFiles(entries, maxFileBytes) {
     const name = e.name.replace(/^\.\//, '');
     if (e.name.startsWith('/') || e.name.includes('\\') || name.split('/').some((p) => p === '..') || /[\0-\x1f]/.test(name)) refuse(`unsafe path ${JSON.stringify(e.name)} in the archive.`);
     if (e.type === 'dir') {
-      if (!['', 'tiles/', 'soil/', 'regions/', ...EXTRA_LAYER_DIRS].includes(name)) refuse(`unexpected directory ${name} in the archive.`);
+      if (!['', ...ALL_LAYER_DIRS].includes(name)) refuse(`unexpected directory ${name} in the archive.`);
       continue;
     }
     if (e.type !== 'file') refuse(`${name} is not a regular file (${e.type}).`);
     if (files.has(name)) refuse(`${name} is in the archive twice.`);
-    if (!META_FILES.includes(name) && name !== 'SHA256SUMS' && !TILE_PATH.test(name) && !EXTRA_TILE_PATH.test(name)) refuse(`unexpected file ${name} in the archive.`);
+    if (!META_FILES.includes(name) && name !== 'SHA256SUMS' && name !== ANALOGUES_FILE && !TILE_PATH.test(name)) refuse(`unexpected file ${name} in the archive.`);
     if (e.data.length > maxFileBytes) refuse(`${name} is ${e.data.length} bytes, over the ${maxFileBytes}-byte limit of a static asset.`);
     files.set(name, e.data);
   }
@@ -148,7 +150,7 @@ function checkSums(files) {
     if (!line.trim()) continue;
     const m = /^([0-9a-f]{64}) [ *](.+)$/.exec(line);
     if (!m) refuse(`SHA256SUMS has a malformed line: ${line}`);
-    if (!META_FILES.includes(m[2]) && !TILE_PATH.test(m[2]) && !EXTRA_TILE_PATH.test(m[2])) refuse(`SHA256SUMS lists an unexpected path: ${m[2]}`);
+    if (!META_FILES.includes(m[2]) && m[2] !== ANALOGUES_FILE && !TILE_PATH.test(m[2])) refuse(`SHA256SUMS lists an unexpected path: ${m[2]}`);
     if (sums.has(m[2])) refuse(`SHA256SUMS lists ${m[2]} twice.`);
     sums.set(m[2], m[1]);
   }
@@ -196,16 +198,39 @@ export function manifestProblem(m) {
     }
     if (!Array.isArray(l.tiles)) return `manifest.json ${layer} tiles is not a list.`;
   }
+  for (const id of V07_LAYER_IDS) {
+    const l = Array.isArray(m.layers) ? m.layers.find((x) => x?.id === id) : null;
+    if (!l) continue;
+    const spec = V07_LAYERS[id];
+    if (l.directory !== spec.dir || l.cell_deg !== spec.cellDeg || l.tile_cells !== spec.tileCells) {
+      return `manifest.json ${id} layer does not match ${spec.cellDeg}-degree cells in ${spec.tileCells}-cell tiles under ${spec.dir}/.`;
+    }
+    if (!enc(l.encoding, spec.bands)) return `manifest.json ${id} encoding is not int16, nodata -32768, deflate, pixel-interleaved, ${spec.bands} bands.`;
+    if (!Array.isArray(l.tiles)) return `manifest.json ${id} tiles is not a list.`;
+  }
+  if (m.analogues !== undefined && m.analogues !== null) {
+    const a = m.analogues;
+    if (!isObject(a) || a.path !== ANALOGUES_FILE || !Number.isInteger(a.bytes) || a.bytes <= 0 || typeof a.sha256 !== 'string' || !HEX64.test(a.sha256)) {
+      return 'manifest.json analogues needs path analogues.bin, bytes and sha256.';
+    }
+  }
   return null;
 }
 
-// Every tile file against the manifest entries: Map layer -> Map name -> bytes.
+// Every tile file against the manifest entries: { tiles: Record<layer, Map name -> bytes>, analogues: Buffer | null }.
 function checkTiles(m, files) {
   const lists = { climate: m.tiles, soil: m.layers.find((l) => l.id === 'soil').tiles, regions: m.layers.find((l) => l.id === 'regions').tiles };
   const tiles = { climate: new Map(), soil: new Map(), regions: new Map() };
+  for (const id of V07_LAYER_IDS) {
+    const l = m.layers.find((x) => x?.id === id);
+    if (l) {
+      lists[id] = l.tiles;
+      tiles[id] = new Map();
+    }
+  }
   const listed = new Set();
-  for (const layer of LAYER_IDS) {
-    const dir = LAYERS[layer].dir;
+  for (const layer of Object.keys(tiles)) {
+    const dir = ALL_LAYERS[layer].dir;
     for (const t of lists[layer]) {
       if (!isObject(t) || typeof t.name !== 'string' || !validTileName(t.name)) refuse(`manifest.json ${layer} tile ${JSON.stringify(t?.name)} is not a tile name.`);
       if (t.path !== `${dir}/${t.name}.tif`) refuse(`manifest.json ${layer} tile ${t.name} has the path ${JSON.stringify(t.path)}, not ${dir}/${t.name}.tif.`);
@@ -219,7 +244,16 @@ function checkTiles(m, files) {
     }
   }
   for (const path of files.keys()) if (TILE_PATH.test(path) && !listed.has(path)) refuse(`${path} is not in the manifest.`);
-  return tiles;
+  let analogues = null;
+  if (m.analogues) {
+    const bytes = files.get(ANALOGUES_FILE) ?? refuse(`${ANALOGUES_FILE} is in the manifest but not in the archive.`);
+    if (bytes.length !== m.analogues.bytes) refuse(`${ANALOGUES_FILE} is ${bytes.length} bytes, the manifest says ${m.analogues.bytes}.`);
+    if (sha256(bytes) !== m.analogues.sha256) refuse(`${ANALOGUES_FILE} does not match the manifest's sha256.`);
+    analogues = bytes;
+  } else if (files.has(ANALOGUES_FILE)) {
+    refuse(`${ANALOGUES_FILE} is in the archive but not in the manifest.`);
+  }
+  return { tiles, analogues };
 }
 
 /**
@@ -241,8 +275,8 @@ export async function loadTiffModule({ native = true } = {}) {
 // check; loaded here only, so importing this module needs no TypeScript).
 async function checkHeaders(tiles) {
   const { readTileHeader } = await loadTiffModule();
-  for (const layer of LAYER_IDS) {
-    const spec = LAYERS[layer];
+  for (const layer of Object.keys(tiles)) {
+    const spec = ALL_LAYERS[layer];
     for (const [name, bytes] of tiles[layer]) {
       const path = `${spec.dir}/${name}.tif`;
       let h;
@@ -273,22 +307,23 @@ function consortiumCheck(path, manifestSha, log, climateTilesSha = null) {
     return { status: 'unchecked', consortium_release: release, reason: 'the consortium index\'s climate_grid_manifest_sha256 is empty (unknown grid)' };
   }
   if (typeof want !== 'string' || !HEX64.test(want)) refuse(`the consortium index (${release}) climate_grid_manifest_sha256 ${JSON.stringify(want)} is not a sha256 (64 lowercase hex).`);
-  const matchesTiles = typeof climateTilesSha === 'string' && HEX64.test(climateTilesSha) && want === climateTilesSha;
+  const matchesTiles = typeof climateTilesSha === 'string' && HEX64.test(climateTilesSha)
+    && (want === climateTilesSha || (COMPATIBLE_TILES_MANIFESTS[climateTilesSha]?.includes(want) ?? false));
   if (want !== manifestSha && !matchesTiles) refuse(`the consortium export ${release} was sampled from the grid ${String(want).slice(0, 12)}…, this archive is ${manifestSha.slice(0, 12)}…: refused (install the matching grid, or the matching consortium export).`);
   return { status: 'matched', consortium_release: release };
 }
 
 /** The index the site reads (plain data, stable key order). */
-export function buildIndex({ manifest, manifestSha, tiles, archive, archiveSha, check }) {
+export function buildIndex({ manifest, manifestSha, tiles, analogues = null, archive, archiveSha, check }) {
   const dir = installDirName(manifest.builder_version, manifestSha);
   const layer = (id) => ({
-    dir: LAYERS[id].dir, cell_deg: LAYERS[id].cellDeg, tile_cells: LAYERS[id].tileCells, bands: LAYERS[id].bands,
+    dir: ALL_LAYERS[id].dir, cell_deg: ALL_LAYERS[id].cellDeg, tile_cells: ALL_LAYERS[id].tileCells, bands: ALL_LAYERS[id].bands,
     tiles: Object.fromEntries([...tiles[id]].sort(([a], [b]) => (a < b ? -1 : 1)).map(([name, bytes]) => [name, bytes.length])),
     sha256: Object.fromEntries([...tiles[id]].sort(([a], [b]) => (a < b ? -1 : 1)).map(([name, bytes]) => [name, sha256(bytes)])),
   });
   const credits = new Map();
   for (const s of [...manifest.sources, ...manifest.layers.flatMap((l) => (Array.isArray(l.sources) ? l.sources : []))]) {
-    if (isObject(s) && !credits.has(s.id)) credits.set(s.id, { id: s.id, title: s.title, citation: s.citation ?? null, landing: s.landing ?? null, licence: s.licence });
+    if (isObject(s) && typeof s.id === 'string' && !credits.has(s.id)) credits.set(s.id, { id: s.id, title: s.title, citation: s.citation ?? null, landing: s.landing ?? null, licence: s.licence });
   }
   const release = {
     builder_version: manifest.builder_version,
@@ -298,12 +333,17 @@ export function buildIndex({ manifest, manifestSha, tiles, archive, archiveSha, 
     archive,
     archive_sha256: archiveSha,
   };
+  const layers = Object.fromEntries(ALL_LAYER_IDS.filter((id) => tiles[id]).map((id) => [id, layer(id)]));
+  const analoguesEntry = analogues && manifest.analogues
+    ? { path: ANALOGUES_FILE, bytes: analogues.length, sha256: sha256(analogues), records: manifest.analogues.records ?? null }
+    : undefined;
   return {
     format: INDEX_FORMAT,
     format_version: INDEX_FORMAT_VERSION,
     release,
     base: `${PUBLIC_BASE}${dir}/`,
-    layers: { climate: layer('climate'), soil: layer('soil'), regions: layer('regions') },
+    layers,
+    ...(analoguesEntry ? { analogues: analoguesEntry } : {}),
     variables: VARIABLES.map((v) => ({ ...v })),
     slots: SLOTS.map((s) => ({ ...s })),
     soil_bands: [...SOIL_BANDS],
@@ -320,13 +360,23 @@ export function climateIndexProblem(index) {
   const sha = index.release?.grid_manifest_sha256;
   if (!HEX64.test(sha ?? '') || !SEMVER.test(index.release?.builder_version ?? '')) return 'the climate index release has no version or manifest sha256.';
   if (index.base !== `${PUBLIC_BASE}${installDirName(index.release.builder_version, sha)}/`) return `the climate index base ${JSON.stringify(index.base)} is not ${PUBLIC_BASE}<version>-<12 hex>/.`;
-  for (const id of LAYER_IDS) {
-    const l = index.layers?.[id];
-    if (!isObject(l) || l.dir !== LAYERS[id].dir || !isObject(l.tiles)) return `the climate index has no ${id} layer.`;
+  if (!isObject(index.layers)) return 'the climate index has no layers.';
+  for (const id of LAYER_IDS) if (!isObject(index.layers[id])) return `the climate index has no ${id} layer.`;
+  for (const id of Object.keys(index.layers)) {
+    const spec = ALL_LAYERS[id];
+    if (!spec) return `the climate index names unknown layer ${JSON.stringify(id)}.`;
+    const l = index.layers[id];
+    if (!isObject(l) || l.dir !== spec.dir || !isObject(l.tiles)) return `the climate index has no ${id} layer.`;
     for (const [name, bytes] of Object.entries(l.tiles)) if (!validTileName(name) || !Number.isInteger(bytes) || bytes <= 0 || bytes > MAX_FILE_BYTES) return `the climate index ${id} tile ${JSON.stringify(name)} is not a tile with its size.`;
     if (!isObject(l.sha256) || !same(Object.keys(l.sha256), Object.keys(l.tiles)) || !Object.values(l.sha256).every((h) => HEX64.test(h))) return `the climate index ${id} layer has no sha256 for each tile.`;
   }
   if (!Object.keys(index.layers.climate.tiles).length) return 'the climate index lists no climate tile.';
+  if (index.analogues !== undefined) {
+    const a = index.analogues;
+    if (!isObject(a) || a.path !== ANALOGUES_FILE || !Number.isInteger(a.bytes) || a.bytes <= 0 || a.bytes > MAX_FILE_BYTES || !HEX64.test(a.sha256 ?? '')) {
+      return 'the climate index analogues entry is invalid.';
+    }
+  }
   return null;
 }
 
@@ -344,9 +394,10 @@ export function verifyClimateInstall(dir, index) {
   if (!existsSync(dir)) broken('the directory is missing: `astro build` installs the grid (`npm run install:climate` alone).');
   const stray = readdirSync(dir).filter((n) => n !== version);
   if (stray.length) broken(`entries other than ${version}: ${stray.join(', ')}.`);
+  const installedIds = Object.keys(index.layers);
   const counts = {};
   const extra = [];
-  for (const id of LAYER_IDS) {
+  for (const id of installedIds) {
     const { dir: sub, tiles, sha256: hashes } = index.layers[id];
     const at = join(dir, version, sub);
     const present = existsSync(at) ? readdirSync(at) : [];
@@ -360,7 +411,17 @@ export function verifyClimateInstall(dir, index) {
     for (const f of present) if (!Object.hasOwn(tiles, f.replace(/\.tif$/, '')) || !f.endsWith('.tif')) extra.push(`${sub}/${f}`);
     counts[id] = Object.keys(tiles).length;
   }
-  const others = readdirSync(join(dir, version)).filter((n) => !LAYER_IDS.some((id) => LAYERS[id].dir === n));
+  if (index.analogues) {
+    const file = join(dir, version, ANALOGUES_FILE);
+    if (!existsSync(file)) broken(`${ANALOGUES_FILE} is missing.`);
+    const size = statSync(file).size;
+    if (size !== index.analogues.bytes) broken(`${ANALOGUES_FILE} is ${size} bytes, the index says ${index.analogues.bytes}.`);
+    if (sha256(readFileSync(file)) !== index.analogues.sha256) broken(`${ANALOGUES_FILE} does not match the index's sha256.`);
+    counts.analogues = 1;
+  }
+  const allowedTop = new Set(installedIds.map((id) => ALL_LAYERS[id].dir));
+  if (index.analogues) allowedTop.add(ANALOGUES_FILE);
+  const others = readdirSync(join(dir, version)).filter((n) => !allowedTop.has(n));
   if (extra.length || others.length) broken(`tiles the index does not name: ${[...extra, ...others].slice(0, 5).join(', ')}.`);
   return counts;
 }
@@ -423,12 +484,12 @@ export async function installClimate({ archive, release = null, outDir = DEFAULT
   const problem = manifestProblem(manifest);
   if (problem) refuse(problem);
   if (manifest.builder_version !== version) refuse(`${name} names version ${version}, its manifest ${manifest.builder_version}.`);
-  const tiles = checkTiles(manifest, files);
+  const { tiles, analogues } = checkTiles(manifest, files);
   await checkHeaders(tiles);
   const manifestSha = sha256(manifestBytes);
   if (release && manifestSha !== release.grid_manifest_sha256) refuse(`the manifest sha256 is ${manifestSha}, the pinned release says ${release.grid_manifest_sha256}.`);
   const check = consortiumCheck(consortiumIndexPath, manifestSha, log, manifest.climate_tiles_sha256 ?? null);
-  const index = buildIndex({ manifest, manifestSha, tiles, archive: name, archiveSha, check });
+  const index = buildIndex({ manifest, manifestSha, tiles, analogues, archive: name, archiveSha, check });
   const indexBytes = Buffer.from(`${JSON.stringify(index, null, 2)}\n`);
   const dir = installDirName(manifest.builder_version, manifestSha);
 
@@ -439,10 +500,15 @@ export async function installClimate({ archive, release = null, outDir = DEFAULT
   try {
     const tmp = join(staging, 'new'), old = join(staging, 'old'), stagedIndex = join(staging, 'index.json');
     let count = 0;
-    for (const layer of LAYER_IDS) {
-      const at = join(tmp, dir, LAYERS[layer].dir);
+    const installedIds = Object.keys(tiles);
+    for (const layer of installedIds) {
+      const at = join(tmp, dir, ALL_LAYERS[layer].dir);
       mkdirSync(at, { recursive: true });
       for (const [tile, b] of tiles[layer]) { writeFileSync(join(at, `${tile}.tif`), b); count++; }
+    }
+    if (analogues) {
+      writeFileSync(join(tmp, dir, ANALOGUES_FILE), analogues);
+      count++;
     }
     writeFileSync(stagedIndex, indexBytes);
     let previousIndex = null;
@@ -460,8 +526,9 @@ export async function installClimate({ archive, release = null, outDir = DEFAULT
       if (hadOut) renameSync(old, out);
       throw err;
     }
-    const sizes = Object.fromEntries(LAYER_IDS.map((l) => [l, [...tiles[l].values()].reduce((n, b) => n + b.length, 0)]));
-    log(`Installed canopi-climate ${manifest.builder_version} (manifest ${manifestSha.slice(0, 12)}): ${LAYER_IDS.map((l) => `${tiles[l].size} ${l} tiles (${(sizes[l] / 1e6).toFixed(1)} MB)`).join(', ')} in ${join(out, dir)}.`);
+    const sizes = Object.fromEntries(installedIds.map((l) => [l, [...tiles[l].values()].reduce((n, b) => n + b.length, 0)]));
+    if (analogues) sizes.analogues = analogues.length;
+    log(`Installed canopi-climate ${manifest.builder_version} (manifest ${manifestSha.slice(0, 12)}): ${installedIds.map((l) => `${tiles[l].size} ${l} (${(sizes[l] / 1e6).toFixed(1)} MB)`).join(', ')}${analogues ? `, ${ANALOGUES_FILE} (${(analogues.length / 1e3).toFixed(0)} KB)` : ''} in ${join(out, dir)}.`);
     log(`Index: ${indexPath}. Consortium grid check: ${check.status}.`);
     return { out: join(out, dir), index: indexPath, files: count, bytes: sizes, check };
   } finally {

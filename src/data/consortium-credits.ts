@@ -34,11 +34,20 @@ export const SERVED_ONLY = new Set(['soilgrids', 'wgsrpd']);
 export const GRID_SOURCES: ReadonlyArray<readonly [string, string]> = [
   ['chelsa-v2.1', 'chelsa'],
   ['beck2023', 'koppen-beck'],
-  // SoilGrids and WGSRPD tiles are fetched by the site lookup but no P5 feature reads them (the soil
-  // offer and the native line moved to P5.2, owner 2026-11-11): credited as served with the grid.
   ['soilgrids-2.0', 'soilgrids'],
   ['wgsrpd-level3', 'wgsrpd'],
   ['natural-earth-map-units-50m', 'natural-earth'],
+  ['era5-land', 'era5-land'],
+  ['nex-gddp-cmip6', 'nex-gddp-cmip6'],
+  ['chelsa-v2.1-tasmin', 'chelsa-tasmin'],
+  ['era5-land-extremes-tail', 'era5-extremes-tail'],
+  ['era5-land-frost-calendar', 'era5-frost-calendar'],
+  ['era5-land-phenology', 'era5-phenology'],
+  ['terraclimate-water-balance', 'terraclimate'],
+  ['era5-land-cdd', 'era5-cdd'],
+  ['soilgrids-2.0-plus', 'soilgrids-plus'],
+  ['copernicus-dem-glo30', 'copernicus-dem'],
+  ['merit-hydro-v1.0.1', 'merit-hydro'],
 ];
 
 export const CLIMATE_REPO = 'https://github.com/opencanopi/canopi-climate';

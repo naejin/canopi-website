@@ -32,7 +32,11 @@ function withoutPreloadLists(code) {
 // '/_astro/x.js' paths of a chunk's imports (static and import()), resolved against its own path.
 export function importsOf(code, from = '/_astro/entry.js') {
   const out = new Set();
-  for (const [, spec] of withoutPreloadLists(code).matchAll(JS_LITERAL)) {
+  const clean = withoutPreloadLists(code);
+  for (const m of clean.matchAll(JS_LITERAL)) {
+    // Skip wasm-bindgen import-object namespace keys like `"./canopi_climate_bg.js":{...}`.
+    if (/^\s*:\s*\{/.test(clean.slice(m.index + m[0].length))) continue;
+    const spec = m[1];
     let path;
     if (spec.startsWith('./') || spec.startsWith('../')) path = posix.join(posix.dirname(from), spec);
     else if (spec.startsWith('/_astro/')) path = spec;
@@ -175,6 +179,8 @@ export const ROLE_ENTRIES = {
   figures: { entry: /\/src\/islands\/palette\/views\/figures\/Figures\.tsx$/, chunks: 1 },
   // Phase 3 / Slice 3.4: on-demand Field Studio tabs & Field Dossier drawer (lazy-loaded from Palette.tsx).
   studio: { entry: /\/src\/islands\/palette\/views\/palette\/(FieldDossier|LivingSystemTab|Climate2050Tab|PlantingPlanTab)\.tsx$/, chunks: 4 },
+  // Goal #40: canopi-climate v0.7.0 Rust WASM glue (lazy-loaded on demand by wasm-bridge.ts).
+  climateWasm: { entry: /\/src\/lib\/climate\/wasm\/canopi_climate\.js$/, chunks: 1 },
 };
 const MAPLIBRE_MODULE = /\/node_modules\/maplibre-gl\//;
 // The browser-test hook (main.ts imports it with import() under __CT_TEST_HOOK__ and awaits it before

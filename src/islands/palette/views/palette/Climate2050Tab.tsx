@@ -7,7 +7,7 @@
 // - Section 4: 12-Month Climate Shift & Stress Windows (12 monthly column cards with paired Today vs 2050s
 //              bars, rainfall mm bars, seasonal window tags, active plant counts + 2 bottom summary callouts)
 import { useMemo, useState } from 'preact/hooks';
-import type { ClimateAnalogue, AnalogueLoader } from '../../../../lib/climate/v07.ts';
+import type { ClimateAnalogue, AnalogueLoader } from '../../rules/climate-compat.ts';
 import { siteClimate as climateOf, type PlantId } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';

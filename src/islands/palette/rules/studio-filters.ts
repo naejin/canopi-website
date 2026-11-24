@@ -3,7 +3,7 @@
 // Zero botanical-layer jargon; uses W1 t.light, unified 6-stage succession, and v0.7.0 photoperiod().
 import type { Details, JobId, Month, PhaseOrd, SiteEdits, SiteLocation, Stratum, Taxon } from '../../../lib/palette/index.ts';
 import { jobsOf, months, phases, phaseToStageIndex, SUCCESSION_STAGES_6 } from '../../../lib/palette/index.ts';
-import { photoperiod, type MicroclimateParams } from '../../../lib/climate/v07.ts';
+import { photoperiod, type MicroclimateParams } from './climate-compat.ts';
 import { T } from '../strings.ts';
 import { siteClimateProfile } from './climate-words.ts';
 

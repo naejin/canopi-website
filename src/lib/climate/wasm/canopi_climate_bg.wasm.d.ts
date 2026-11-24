@@ -1,0 +1,32 @@
+/* tslint:disable */
+/* eslint-disable */
+export const memory: WebAssembly.Memory;
+export const adjustMicroclimate: (a: any, b: any) => [number, number, number];
+export const evaluateTrajectory: (a: any, b: any) => [number, number, number];
+export const findAnalogues: (a: number, b: number, c: any, d: any) => [number, number, number];
+export const lookup: (a: number, b: number, c: number, d: number) => [number, number, number];
+export const lookupExtremes: (a: number, b: number, c: number, d: number) => [number, number, number];
+export const lookupExtremesTail: (a: number, b: number, c: number, d: number) => [number, number, number];
+export const lookupFrostCalendar: (a: number, b: number, c: number, d: number) => [number, number, number];
+export const lookupMonthly: (a: number, b: number, c: number, d: number) => [number, number, number];
+export const lookupMonthlyPrecip: (a: number, b: number, c: number, d: number) => [number, number, number];
+export const lookupPhenology: (a: number, b: number, c: number, d: number) => [number, number, number];
+export const lookupRegions: (a: number, b: number, c: number, d: number) => [number, number, number];
+export const lookupSoil: (a: number, b: number, c: number, d: number) => [number, number, number];
+export const lookupSoilPlus: (a: number, b: number, c: number, d: number) => [number, number, number];
+export const lookupTerrain: (a: number, b: number, c: number, d: number) => [number, number, number];
+export const lookupWaterBalance: (a: number, b: number, c: number, d: number) => [number, number, number];
+export const photoperiod: (a: number) => [number, number, number];
+export const soilAwc: (a: number, b: number, c: number, d: number) => [number, number, number];
+export const textureClass: (a: number, b: number) => [number, number];
+export const tileName: (a: number, b: number) => [number, number];
+export const usdaZone: (a: number) => [number, number];
+export const version: () => [number, number];
+export const __wbindgen_malloc: (a: number, b: number) => number;
+export const __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
+export const __wbindgen_free: (a: number, b: number, c: number) => void;
+export const __wbindgen_exn_store: (a: number) => void;
+export const __externref_table_alloc: () => number;
+export const __wbindgen_externrefs: WebAssembly.Table;
+export const __externref_table_dealloc: (a: number) => void;
+export const __wbindgen_start: () => void;
