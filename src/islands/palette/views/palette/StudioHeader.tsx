@@ -131,6 +131,40 @@ export function StudioHeader() {
     }
   };
 
+  const renderOpenMenuItems = () => (
+    <>
+      <button type="button" class="tb-menu-item" role="menuitem" onClick={() => fileInputRef.current?.click()}>
+        <strong>{T('studio.header.chooseFile')}</strong>
+        <span>{T('studio.header.chooseFileSub')}</span>
+      </button>
+      <button type="button" class="tb-menu-item" role="menuitem" onClick={() => { setOpenMenu(null); void requestSuggest(); }}>
+        <strong>{T('studio.header.loadExample')}</strong>
+        <span>{T('studio.header.loadExampleSub')}</span>
+      </button>
+    </>
+  );
+
+  const renderHorizonToggle = (mobile = false) => (
+    <div
+      class={mobile ? 'ink-seg mobile-horizon-seg' : 'ink-seg'}
+      data-mobile-horizon={mobile ? '' : undefined}
+      role="group"
+      aria-label={T('studio.header.horizonAria')}
+    >
+      {HORIZONS.map((h) => (
+        <button
+          key={h.id}
+          type="button"
+          class="ink-seg-btn"
+          aria-pressed={curPeriod === h.id ? 'true' : 'false'}
+          onClick={() => { store.period.value = h.id; }}
+        >
+          {T(`studio.horizon.${h.key}`)}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <header ref={headerRef} data-studio-header data-view-heading="" tabIndex={-1}>
       <input
@@ -194,14 +228,7 @@ export function StudioHeader() {
               </button>
               {openMenu === 'open' && (
                 <div class="tb-menu-panel" role="menu">
-                  <button type="button" class="tb-menu-item" role="menuitem" onClick={() => fileInputRef.current?.click()}>
-                    <strong>{T('studio.header.chooseFile')}</strong>
-                    <span>{T('studio.header.chooseFileSub')}</span>
-                  </button>
-                  <button type="button" class="tb-menu-item" role="menuitem" onClick={() => { setOpenMenu(null); void requestSuggest(); }}>
-                    <strong>{T('studio.header.loadExample')}</strong>
-                    <span>{T('studio.header.loadExampleSub')}</span>
-                  </button>
+                  {renderOpenMenuItems()}
                   <button type="button" class="tb-menu-item" role="menuitem" onClick={() => { setOpenMenu(null); requestPlantOpen.value = true; }}>
                     <strong>{T('studio.requestPlant')}</strong>
                     <span>{T('studio.header.requestSub')}</span>
@@ -297,14 +324,7 @@ export function StudioHeader() {
               </button>
               {openMenu === 'mobile' && (
                 <div class="tb-menu-panel" role="menu">
-                  <button type="button" class="tb-menu-item" role="menuitem" onClick={() => fileInputRef.current?.click()}>
-                    <strong>{T('studio.header.chooseFile')}</strong>
-                    <span>{T('studio.header.chooseFileSub')}</span>
-                  </button>
-                  <button type="button" class="tb-menu-item" role="menuitem" onClick={() => { setOpenMenu(null); void requestSuggest(); }}>
-                    <strong>{T('studio.header.loadExample')}</strong>
-                    <span>{T('studio.header.loadExampleSub')}</span>
-                  </button>
+                  {renderOpenMenuItems()}
                   <div class="tb-menu-sep" />
                   <button type="button" class="tb-menu-item" role="menuitem" onClick={() => { setOpenMenu(null); if (typeof window !== 'undefined') window.print(); }}>
                     <strong>{T('studio.printPdf')}</strong>
@@ -340,19 +360,7 @@ export function StudioHeader() {
           </nav>
 
           <div class="nav-bar-right">
-            <div class="ink-seg" role="group" aria-label={T('studio.header.horizonAria')}>
-              {HORIZONS.map((h) => (
-                <button
-                  key={h.id}
-                  type="button"
-                  class="ink-seg-btn"
-                  aria-pressed={curPeriod === h.id ? 'true' : 'false'}
-                  onClick={() => { store.period.value = h.id; }}
-                >
-                  {T(`studio.horizon.${h.key}`)}
-                </button>
-              ))}
-            </div>
+            {renderHorizonToggle(false)}
             <button
               type="button"
               class="btn-quiet"
@@ -368,19 +376,7 @@ export function StudioHeader() {
       <div class="health-ribbon" data-health-ribbon role="region" aria-label={T('studio.header.ribbonAria')}>
         <div class="health-ribbon-inner">
           <div class="health-items">
-            <div class="ink-seg mobile-horizon-seg" data-mobile-horizon role="group" aria-label={T('studio.header.horizonAria')}>
-              {HORIZONS.map((h) => (
-                <button
-                  key={h.id}
-                  type="button"
-                  class="ink-seg-btn"
-                  aria-pressed={curPeriod === h.id ? 'true' : 'false'}
-                  onClick={() => { store.period.value = h.id; }}
-                >
-                  {T(`studio.horizon.${h.key}`)}
-                </button>
-              ))}
-            </div>
+            {renderHorizonToggle(true)}
             <button type="button" class="health-item" onClick={() => selectTab('system')}>
               <span class={`status-dot ${ribbon.sunTiers >= 4 ? 'dot-good' : 'dot-warn'}`} aria-hidden="true" />
               <span>{T('studio.ribbon.sunlight')} <strong>{ribbon.sunTiers}/4</strong>{ribbon.sunTiers < 4 ? ` · ${T('studio.ribbon.gapCount', { n: 4 - ribbon.sunTiers })}` : ' ✓'}</span>

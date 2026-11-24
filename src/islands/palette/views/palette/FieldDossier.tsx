@@ -13,19 +13,15 @@ import { jobsOf, siteClimate as climateOf, SUCCESSION_STAGES_6, type Details, ty
 import * as store from '../../store.ts';
 import { pageLang, T } from '../../strings.ts';
 import {
-  climateStress,
   closeFieldDossier,
-  designEnvelope,
   dossierId,
   dossierList,
   microclimate,
   openFieldDossier,
-  plantingConfig,
   stepFieldDossier,
   studioTab,
-  wateringMode,
 } from '../../state/studio.ts';
-import { evaluateStudioCatalog } from '../../rules/studio-fit.ts';
+import { evaluateLiveStudioCatalog } from './studio-catalog-eval.ts';
 import { nameOf } from '../kit/names.ts';
 import { FieldTip } from '../kit/field-tip.tsx';
 import { SunIcon } from './SunIcon.tsx';
@@ -202,19 +198,7 @@ export function FieldDossier() {
     .sort((a, b) => b.score - a.score)
     .slice(0, 3);
   const rawCatalog = store.allCatalog.value.length ? store.allCatalog.value : (store.fitPool.value ?? store.pool.value ?? []);
-  const dossierFitPool = evaluateStudioCatalog(rawCatalog, {
-    loc,
-    climate: store.climate.value,
-    period: store.period.value,
-    envelope: designEnvelope.value,
-    stress: climateStress.value,
-    microclimate: mc,
-    siteEdits: edits,
-    wateringMode: wateringMode.value,
-    room: store.room.value,
-    plotAreaM2: plantingConfig.value.plotAreaM2,
-    baseVerdicts: store.allVerdicts.value ?? store.poolVerdicts.value,
-  }).fitPool;
+  const dossierFitPool = evaluateLiveStudioCatalog(rawCatalog).fitPool;
   const poolComps = (dossierFitPool.length ? dossierFitPool : rawCatalog)
     .filter((c) => !memberSet.has(c.id) && c.id !== taxon.id)
     .map((c) => scoreCompanion(taxon, c))

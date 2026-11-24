@@ -10,16 +10,12 @@ import { jobsOf, SUCCESSION_STAGES_6, type JobId, type Stratum, type Taxon } fro
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
 import {
-  climateStress,
-  designEnvelope,
   microclimate,
   openFieldDossier,
   openPlantPool,
-  plantingConfig,
   studioTab,
-  wateringMode,
 } from '../../state/studio.ts';
-import { evaluateStudioCatalog } from '../../rules/studio-fit.ts';
+import { evaluateLiveStudioCatalog } from './studio-catalog-eval.ts';
 import { nameOf } from '../kit/names.ts';
 import { SunIcon } from './SunIcon.tsx';
 import {
@@ -74,22 +70,7 @@ export function LivingSystemTab() {
   const z = store.climate.value;
   const mc = microclimate.value;
   const edits = store.siteEdits.value;
-  const studioEval = useMemo(
-    () => evaluateStudioCatalog(rawCatalog, {
-      loc,
-      climate: z,
-      period: store.period.value,
-      envelope: designEnvelope.value,
-      stress: climateStress.value,
-      microclimate: mc,
-      siteEdits: edits,
-      wateringMode: wateringMode.value,
-      room: store.room.value,
-      plotAreaM2: plantingConfig.value.plotAreaM2,
-      baseVerdicts: store.allVerdicts.value ?? store.poolVerdicts.value,
-    }),
-    [rawCatalog, loc, z, store.period.value, designEnvelope.value, climateStress.value, mc, edits, wateringMode.value, store.room.value, plantingConfig.value.plotAreaM2, store.allVerdicts.value, store.poolVerdicts.value],
-  );
+  const studioEval = evaluateLiveStudioCatalog(rawCatalog);
   const pool = studioEval.fitPool.length ? studioEval.fitPool : rawCatalog;
   const profile = siteClimateProfile(loc, z, mc, edits);
   const [roleMode, setRoleMode] = useState<RoleViewMode>('season');
