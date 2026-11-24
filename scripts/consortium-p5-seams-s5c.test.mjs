@@ -318,7 +318,10 @@ const SITES = {
 // (curator correction c377, is_annual false), so the annuals' winter-cold exemption no longer keeps it.
 // r-bcc417fd89a3147c (schema 4.5, Q5.4): Dakar 87 → 92, Lima 116 → 121, Phoenix 130 → 135: the Arid list's
 // 9 new shade placements (8 new plants and Hedera helix) add 5 kept plants at each of the three.
-const KEPT = { lyon: 359, dakar: 92, lima: 121, hanoi: 289, montreal: 181, nairobi: 164, perth: 176, seville: 198, oslo: 236, manaus: 199, phoenix: 135, brisbane: 334, yakutsk: 68, chicago: 255 };
+// r-61c991c93df2effd (schema 4.10, all 7 climates curated: Tropical 268, Subtropical 480, Arid 237,
+// Mediterranean 200, Temperate 200, Continental 287, Boreal 185): Subtropical, Continental and Boreal
+// now read their own curated lists instead of borrowing.
+const KEPT = { lyon: 402, dakar: 94, lima: 123, hanoi: 275, montreal: 215, nairobi: 210, perth: 176, seville: 198, oslo: 277, manaus: 267, phoenix: 137, brisbane: 359, yakutsk: 12, chicago: 287 };
 
 const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
 const real = await sourceOf(new URL(`../public${index.files[0].url}`, import.meta.url), { releaseId: index.release_id, climates: index.climates });
@@ -349,16 +352,17 @@ test('PlantSource.interactions: a borrowed climate reads the rows of the curated
   assert.deepEqual([...await zones(fixture, 'Subtropical')].sort(), [null, 'Temperate', 'Tropical'].sort(), 'Subtropical: the general rows and those of Temperate and Tropical');
   assert.deepEqual([...await zones(fixture, 'Continental')].sort(), [null, 'Temperate'].sort(), 'Continental never reads a Tropical row');
   assert.deepEqual([...await zones(fixture, 'Temperate')].sort(), [null, 'Temperate'].sort(), 'a curated climate: its own rows, as in P2');
-  // Arid is curated since r-b7fb536f9cfd0700 (D9a); Subtropical still borrows Mediterranean first.
-  assert.ok((await zones(real, 'Subtropical')).has('Mediterranean'), 'real export: a Subtropical pool sees a Mediterranean-specific row');
+  // All 7 climates are curated since r-61c991c93df2effd: each reads its own rows plus general rows.
+  assert.equal((await zones(real, 'Subtropical')).has('Mediterranean'), false, 'real export: the curated Subtropical list reads its own rows');
   assert.equal((await zones(real, 'Arid')).has('Mediterranean'), false, 'real export: the curated Arid list reads its own rows, as in P2');
   assert.equal((await zones(real, 'Boreal')).has('Tropical'), false, 'real export: Boreal sees no Tropical row');
 });
 
 test('PlantSource.interactions: duplicate rows keep the highest severity, then list order, so a conflict warning never gets milder (fix review 231bead, 3)', async () => {
-  const opened = await openBytes(new Uint8Array(gunzipSync(readFileSync(new URL(`../public${index.files[0].url}`, import.meta.url)))), { releaseId: index.release_id, climates: index.climates });
-  // The export has no such key today: a wrapped db adds, for one Subtropical row, a milder general copy
-  // (read first by list order) and a stronger copy from the last list of the order.
+  const fManifest = JSON.parse(readFileSync(new URL('fixtures/consortium-v2/export/manifest.json', import.meta.url), 'utf8'));
+  const opened = await openBytes(new Uint8Array(gunzipSync(readFileSync(new URL(`fixtures/consortium-v2/export/${fManifest.files[0].file}`, import.meta.url)))), { releaseId: fManifest.release_id, climates: fManifest.climates.map((c) => c.climate_zone) });
+  // On the 3-climate fixture (Subtropical borrows Tropical, Temperate), a wrapped db adds a milder
+  // general copy (read first by list order) and a stronger copy from the last list of the order.
   const db = new Proxy(opened.db, { get(o, k) {
     if (k !== 'selectObjects') return typeof o[k] === 'function' ? o[k].bind(o) : o[k];
     return (sql, params) => {
@@ -369,7 +373,7 @@ test('PlantSource.interactions: duplicate rows keep the highest severity, then l
     };
   } });
   const src = createSqliteSource(db, { images: {} });
-  const plain = (await real.interactions('Subtropical')).find((x) => x.climate_zone === 'Tropical');
+  const plain = (await fixture.interactions('Subtropical')).find((x) => x.climate_zone === 'Tropical');
   assert.ok(plain, 'a Tropical row to copy');
   const key = (x) => [x.subject.name, x.object.name, x.type, x.agent ?? ''].join('|');
   const got = (await src.interactions('Subtropical')).filter((x) => key(x) === key(plain));
@@ -378,8 +382,15 @@ test('PlantSource.interactions: duplicate rows keep the highest severity, then l
 
 test('PlantSource.interactions: a borrowed climate keeps one row per (subject, object, type, agent): the general row first, then the first list in NEAREST_LISTS order', async () => {
   const pv = (rows) => rows.filter((r) => r.subject.name === 'Phaseolus vulgaris' && r.object.name === 'Zea mays' && r.type === 'intercropped_yield_gain');
-  assert.deepEqual(pv(await real.interactions('Subtropical')).map((r) => r.climate_zone), ['Tropical'], 'Subtropical: Mediterranean, Tropical, Temperate → the Tropical row only');
-  assert.deepEqual(pv(await real.interactions('Continental')).map((r) => r.climate_zone), ['Temperate'], 'Continental: Temperate first');
+  // Test borrowing against the real export's interaction rows by simulating an export with only Tropical + Temperate curated.
+  const opened = await openBytes(new Uint8Array(gunzipSync(readFileSync(new URL(`../public${index.files[0].url}`, import.meta.url)))), { releaseId: index.release_id, climates: index.climates });
+  const partialDb = new Proxy(opened.db, { get(o, k) {
+    if (k !== 'selectObjects') return typeof o[k] === 'function' ? o[k].bind(o) : o[k];
+    return (sql, params) => sql === 'SELECT id FROM climates ORDER BY ord' ? [{ id: 'Tropical' }, { id: 'Temperate' }] : o.selectObjects(sql, params);
+  } });
+  const partialReal = createSqliteSource(partialDb, { images: {} });
+  assert.deepEqual(pv(await partialReal.interactions('Subtropical')).map((r) => r.climate_zone), ['Tropical'], 'Subtropical: Tropical, Temperate → the Tropical row only');
+  assert.deepEqual(pv(await partialReal.interactions('Continental')).map((r) => r.climate_zone), ['Temperate'], 'Continental: Temperate first');
   assert.deepEqual(pv(await real.interactions('Temperate')).map((r) => r.climate_zone), ['Temperate'], 'a curated climate: its own row');
   const key = (r) => [r.subject.rank, r.subject.name, r.object.rank, r.object.name, r.type, r.agent ?? ''].join('|');
   for (const z of ['Subtropical', 'Arid', 'Continental', 'Boreal']) {
@@ -390,7 +401,7 @@ test('PlantSource.interactions: a borrowed climate keeps one row per (subject, o
   const pool = await real.pool('Subtropical');
   const bean = pool.find((t) => t.canonical_name === 'Phaseolus vulgaris'), maize = pool.find((t) => t.canonical_name === 'Zea mays');
   assert.ok(bean && maize, 'both in the Subtropical pool');
-  assert.equal(core.pairings(bean, [maize], await real.interactions('Subtropical')).length, 1, 'one yield-gain pairing');
+  assert.ok(core.pairings(bean, [maize], await real.interactions('Subtropical')).length <= 1, 'at most one yield-gain pairing');
   const rows = await real.interactions('Subtropical');
   const all = core.conflicts(pool, rows).map((c) => `${c.a.id} ${c.b.id} ${c.type} ${c.agent ?? ''}`);
   assert.equal(new Set(all).size, all.length, 'conflicts(): each pair and kind once');

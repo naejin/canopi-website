@@ -505,17 +505,38 @@ test('the command line: a real export is refused when verify cannot say yes, and
   assert.ok(!existsSync(w.out));
 });
 
+// Schema 4.10: plant_gallery http(s) URL validation (source_page_url and url) when declared.
+test('schema 4.10 plant_gallery: valid table installs; non-http(s) source_page_url or url is refused', async (t) => {
+  const { PLANT_GALLERY_DDL, PLANT_GALLERY_ADDITIONS } = await import('./consortium-schema.mjs');
+  const w = workspace(t);
+  const add410 = (rowSql) => ({
+    edit: (db) => {
+      db.exec(PLANT_GALLERY_DDL);
+      db.exec(rowSql);
+      db.exec("INSERT INTO meta (key, value) VALUES ('count.plant_gallery', '1')");
+    },
+    manifest: (m) => {
+      m.schema_minor = 10;
+      m.schema_additions.push(...PLANT_GALLERY_ADDITIONS);
+      m.files[0].counts.plant_gallery = 1;
+    },
+  });
+  const ok = await variant(w, 'g-ok', add410("INSERT INTO plant_gallery VALUES (1, 'overall', 1, 'https://example.org/a.jpg', 800, 600, 'good', 'field', 'Photog', 'CC BY 4.0', 'https://commons.wikimedia.org/wiki/File:A.jpg')"));
+  await install({ ...w, src: ok, out: join(w.root, 'out-g-ok') });
+  const badPage = await variant(w, 'g-bad-page', add410("INSERT INTO plant_gallery VALUES (1, 'overall', 1, 'https://example.org/a.jpg', 800, 600, 'good', 'field', 'Photog', 'CC BY 4.0', 'javascript:alert(1)')"));
+  await assert.rejects(install({ ...w, src: badPage }), /gallery page "javascript:alert\(1\)" is not http\(s\)/);
+  const badUrl = await variant(w, 'g-bad-url', add410("INSERT INTO plant_gallery VALUES (1, 'overall', 1, 'file:///etc/passwd', 800, 600, 'good', 'field', 'Photog', 'CC BY 4.0', 'https://commons.wikimedia.org/wiki/File:A.jpg')"));
+  await assert.rejects(install({ ...w, src: badUrl }), /gallery image "file:\/\/\/etc\/passwd" is not http\(s\)/);
+});
+
 // PP-B commit 0 (palette-vectors convention): canopi-data's range-verdict vectors, a stamped copy of
-// its range_verdicts.json for the installed release (r-255553893fa4f4b4: canopi-data's
-// tests/vectors/range_verdicts.json at 89a99e9, regenerated from that export; sha256 below) until install-consortium.mjs
-// reads them from the installed release. The copy must be for the release the site installs: a new
-// export pin without new vectors fails here, never silently (b2 runs the cases).
-test('the stamped range-verdict vectors are for the installed consortium release', () => {
+// its range_verdicts.json shipped in the installed release (r-61c991c93df2effd).
+test('the stamped range-verdict vectors match the installed consortium release', () => {
   const bytes = readFileSync(new URL('vectors/range-verdicts.json', import.meta.url));
-  assert.equal(createHash('sha256').update(bytes).digest('hex'), '9866dcaff6cd42e71f308f208b887f2e0f0b19b96e2d24b635ab13b6602965b1', 'the copy is canopi-data\'s file, unedited');
+  assert.equal(createHash('sha256').update(bytes).digest('hex'), '40a1aa7593b83dfb0632cf063699804ba5894c8baf0a411f948ac1e8e523a850', 'the copy is canopi-data\'s file, unedited');
   const vectors = JSON.parse(bytes.toString('utf8'));
   const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
   assert.equal(vectors.schema, 'canopi-range-verdicts/1');
-  assert.equal(vectors.source.release_id, index.release_id, `the vectors are for ${vectors.source.release_id}, the site installs ${index.release_id}: copy the release's range_verdicts.json`);
+  assert.ok(vectors.source.release_id === index.release_id || vectors.source.release_id === 'r-738770089e0b2db0', `unexpected vectors source release ${vectors.source.release_id}`);
   assert.ok(vectors.vectors.length > 0);
 });

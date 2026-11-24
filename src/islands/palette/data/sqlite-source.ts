@@ -26,6 +26,18 @@ export interface SourceOptions { images: Record<string, string> }
 const str = (v: unknown): string | null => (v === null || v === undefined ? null : String(v));
 const num = (v: unknown): number | null => (v === null || v === undefined ? null : Number(v));
 const bool = (v: unknown): boolean | null => (v === null || v === undefined ? null : Number(v) === 1);
+// Thumbnail-friendly remote URL for Schema 4.10 plant_gallery role photos (leaf, flower, fruit, cone, sori):
+// Wikimedia Commons originals -> 960px standard thumbnail; iNaturalist originals -> 500px medium.
+export function galleryDisplayUrl(url: string): string {
+  const inat = /^https?:\/\/inaturalist-open-data\.s3\.amazonaws\.com\/photos\/(\d+)\/original\.([A-Za-z]+)$/.exec(url);
+  if (inat) return `https://inaturalist-open-data.s3.amazonaws.com/photos/${inat[1]}/medium.${inat[2]}`;
+  const wm = /^https?:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/([0-9a-f])\/(\1[0-9a-f])\/([^/?#]+)$/.exec(url);
+  if (!wm) return url;
+  const [, h, hh, file] = wm;
+  const ext = file.split('.').pop()?.toLowerCase() ?? '';
+  const suffix = ext === 'svg' ? '.png' : ext === 'tif' || ext === 'tiff' ? '.jpg' : '';
+  return `https://upload.wikimedia.org/wikipedia/commons/thumb/${h}/${hh}/${file}/960px-${file}${suffix}`;
+}
 const range = (min: unknown, max: unknown) => (min === null && max === null ? null : { min: num(min), max: num(max) });
 const oneOf = <T extends string>(list: readonly T[], v: unknown): T | null => (list as readonly unknown[]).includes(v) ? (v as T) : null;
 // Schemas 4.6 and 4.7: functions.kind and plant_names.kind, 'llm' or NULL (the CHECK allows nothing else).
@@ -433,14 +445,23 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
       }
       let gallery: Details['gallery'];
       if (hasGalleryTable) {
+        const localHero = options.images[id];
+        const heroRemoteUrl = imageRow ? str(imageRow.url) : null;
         gallery = db
           .selectObjects(
-            'SELECT role, rank, url, width, height, quality, setting, credit, licence, source_page_url FROM plant_gallery WHERE plant = ?1 ORDER BY rank ASC, role ASC',
+            `SELECT role, rank, url, width, height, quality, setting, credit, licence, source_page_url
+             FROM plant_gallery
+             WHERE plant = ?1
+             ORDER BY CASE role
+               WHEN 'overall' THEN 0 WHEN 'leaf' THEN 1 WHEN 'flower' THEN 2
+               WHEN 'cone' THEN 3 WHEN 'sori' THEN 4 WHEN 'fruit' THEN 5
+               ELSE 6 END, rank ASC`,
             [plant],
           )
           .flatMap((gr) => {
-            const url = str(gr.url);
-            if (!url) return [];
+            const rawUrl = str(gr.url);
+            if (!rawUrl) return [];
+            const url = localHero && heroRemoteUrl && rawUrl === heroRemoteUrl ? localHero : galleryDisplayUrl(rawUrl);
             return [{
               url,
               role: str(gr.role) ?? 'overall',

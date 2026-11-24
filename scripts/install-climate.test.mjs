@@ -297,14 +297,14 @@ test('the command line and the site defaults', () => {
 
 // --- The pinned release, fetched at build (owner decision 2026-11-11) ---
 
-test('the pinned release names the v0.2.0 grid on GitHub with its size and checksums', () => {
+test('the pinned release names the v0.4.0 grid on GitHub with its size and checksums', () => {
   const r = readRelease(RELEASE_PATH);
-  assert.equal(r.tag, 'v0.2.0');
-  assert.equal(r.file, 'canopi-climate-grid-v0.2.0.tar');
-  assert.equal(r.url, 'https://github.com/opencanopi/canopi-climate/releases/download/v0.2.0/canopi-climate-grid-v0.2.0.tar');
-  assert.equal(r.bytes, 99194880);
-  assert.equal(r.sha256, '56f717f1e2618bbdffe8462bc221186729dad419e58073afb58ac239ba8a26d5');
-  assert.equal(r.grid_manifest_sha256, '04ec85f4603f29c5add8eada88c79599d044a61732b518a095f91b68e64b0e4c');
+  assert.equal(r.tag, 'v0.4.0');
+  assert.equal(r.file, 'canopi-climate-grid-v0.4.0.tar');
+  assert.equal(r.url, 'https://github.com/opencanopi/canopi-climate/releases/download/v0.4.0/canopi-climate-grid-v0.4.0.tar');
+  assert.equal(r.bytes, 179517440);
+  assert.equal(r.sha256, '79c16a41afdd9dd6395569559932f208e8877f761ccf6678d584f95fe28028fd');
+  assert.equal(r.grid_manifest_sha256, 'c6c82ecc7cf5e153eafe2afa9ac32db248d96264356965cb3ad447e6392ee548');
   assert.equal(releaseProblem({ ...r, url: 'http://example.com/x.tar' }) !== null, true);
   assert.equal(releaseProblem({ ...r, sha256: 'abc' }) !== null, true);
   assert.equal(releaseProblem({ ...r, bytes: 0 }) !== null, true);

@@ -466,6 +466,28 @@ export const LLM_KIND_ADDITIONS = [
   { table: 'functions', column: 'kind', since: 6 },
   { table: 'plant_names', column: 'kind', since: 7 },
 ];
+
+// Schema 4.10 (canopi-data docs/website-handoff/2026-11-23-schema-4.10-plant-gallery.md):
+// plant_gallery, an additive declared table holding credited multi-role photos per plant.
+export const PLANT_GALLERY_DDL = String.raw`CREATE TABLE plant_gallery (
+  plant INTEGER NOT NULL REFERENCES plants (plant),
+  role TEXT NOT NULL CHECK (role IN ('overall', 'leaf', 'flower', 'fruit', 'cone', 'sori')),
+  rank INTEGER NOT NULL CHECK (rank >= 1),
+  url TEXT NOT NULL CHECK (url <> ''),
+  width INTEGER CHECK (width IS NULL OR width > 0),
+  height INTEGER CHECK (height IS NULL OR height > 0),
+  quality TEXT CHECK (quality IS NULL OR quality IN ('good', 'adequate', 'poor')),
+  setting TEXT CHECK (setting IS NULL OR setting IN ('field', 'garden', 'potted', 'indoor', 'unknown')),
+  credit TEXT NOT NULL CHECK (credit <> ''),
+  licence TEXT NOT NULL CHECK (licence <> ''),
+  source_page_url TEXT NOT NULL CHECK (source_page_url <> ''),
+  PRIMARY KEY (plant, role, rank)
+) WITHOUT ROWID;
+`;
+export const PLANT_GALLERY_ADDITIONS = [
+  { table: 'meta', column: 'key', value: 'count.plant_gallery', since: 10 },
+  { table: 'plant_gallery', since: 10 },
+];
 // The full schema the reader reads: the base statements and every required addition, in canopi-data's
 // order (scripts/consortium-p5-ranges.test.mjs compares it with the installed export, statement by statement).
 export const DDL_READ = DDL_4 + TOXICITY_PARTS_DDL + INVASIVE_AREAS_DDL + '\n' + LIGHT_SPAN_DDL + LLM_KIND_DDL;

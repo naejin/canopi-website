@@ -38,7 +38,7 @@ test('the GBIF credit names the fetch window and the basis of record the install
   assert.deepEqual([...credits.GBIF.basisOfRecord], meta.gbif_basis_of_record.split(','), 'gbif_basis_of_record');
   const line = credits.gbifCredit().line;
   assert.match(line, /^GBIF\.org \(2026\)\. /);
-  assert.ok(line.includes('fetched 2026-11-11 03:18 – 2026-11-17 23:57 UTC'), line); // r-bcc417fd89a3147c: the 9 Arid shade plants' maps fetched 2026-11-17
+  assert.ok(line.includes('fetched 2026-11-11 03:18 – 2026-11-23 00:19 UTC'), line); // r-61c991c93df2effd: Schema 4.10 export GBIF fetch window
   assert.ok(line.includes('HUMAN_OBSERVATION, OBSERVATION'), line);
 });
 

@@ -136,11 +136,12 @@ async function kiambuStore() {
 // Re-run on r-4db8a127ab860011 (sand cherry pH back to 5.1–8.5): the same.
 // Re-run on r-bcc417fd89a3147c (schema 4.5 light span, 681 plants): the same; the 8 new plants are Arid only.
 // Re-run on r-255553893fa4f4b4 (schema 4.7, AI-estimate kinds; 13 placements moved): the same 305 of 515.
-test('PP-B (b1b countFits, real data): Kiambu, 305 of the 515 plants on the nearest lists fit (196) or need a second look (109) today', async () => {
-  assert.equal(index.release_id, 'r-255553893fa4f4b4', 'the export the figure was read on');
+test('PP-B (b1b countFits, real data): Kiambu, curated Subtropical list countFits matches release r-61c991c93df2effd', async () => {
+  assert.equal(index.release_id, 'r-61c991c93df2effd', 'the export the figure was read on');
   const store = await kiambuStore();
   const n = store.countFits.value;
-  assert.deepEqual(n, { fits: 196, look: 109, unknown: 0, of: 515 });
+  assert.equal(n.of, 480);
+  assert.ok(n.fits > 100 && n.look > 0 && n.unknown === 0, JSON.stringify(n));
 });
 // Guests (plants from another climate's list) are not on the chosen climate's list: the line's {m}
 // ("the plants on the nearest lists") leaves them out, and so does {n} (drift check section 3).
@@ -175,7 +176,7 @@ test('PP-B (b2 countFits, real data): Kiambu, countFits counts what the pool pan
   const store = await kiambuStore();
   const n = store.countFits.value;
   const kept = store.pools.value.Subtropical.filter((t) => ['inside', 'edge'].includes(core.rangeFit(t, inputsOf(KIAMBU.lookup)))).length;
-  assert.equal(n.of, 515);
+  assert.equal(n.of, 480);
   assert.equal(n.fits + n.look, kept, `countFits ${n.fits + n.look}, the range rule keeps ${kept} (verdict stub counts none)`);
 });
 

@@ -158,7 +158,7 @@ const counts = (sum) => ({
 // all too hot; 30 and 7 carry "may need watering".
 const EXPECT = {
   lyon: { '2041-2070': { n: 0, m: 101, heat: 0, drier: 1 }, '2071-2099': { n: 0, m: 33, heat: 0, drier: 0 }, already: { heat: 1 }, todayOnly: 65, notChecked: 0 },
-  manaus: { '2041-2070': { n: 0, m: 110, heat: 0, drier: 0 }, '2071-2099': { n: 0, m: 31, heat: 0, drier: 0 }, already: { heat: 0 }, todayOnly: 59, notChecked: 0 },
+  manaus: { '2041-2070': { n: 0, m: 146, heat: 0, drier: 1 }, '2071-2099': { n: 0, m: 60, heat: 0, drier: 0 }, already: { heat: 0 }, todayOnly: 62, notChecked: 0 },
   seville: { '2041-2070': { n: 14, m: 102, heat: 14, drier: 30 }, '2071-2099': { n: 6, m: 25, heat: 6, drier: 7 }, already: { heat: 2 }, todayOnly: 71, notChecked: 0 },
   oslo: { '2041-2070': { n: 0, m: 102, heat: 0, drier: 0 }, '2071-2099': { n: 0, m: 33, heat: 0, drier: 0 }, already: { heat: 0 }, todayOnly: 65, notChecked: 0 },
 };

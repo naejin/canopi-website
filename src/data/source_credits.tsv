@@ -47,6 +47,7 @@ canopi_rules	dq-fix;gap-fill;try-autonym	Canopi rules	Values derived by Canopi's
 canopi_strata	human-verified	Canopi curated sun exposure	Sun exposure and succession phases from Canopi's reviewed consortium roles (data/curated/consortium_roles.tsv)		none		internal
 model_output	llm;ai-generated	Model output	Common names and classifications written by a language model		none		internal
 canopi-light-span	canopi-light-span	Canopi rule: light span and preferred sun exposure	The light span derived by Canopi's rule from the sun and shade tolerance of the sources above, and the preferred sun exposure from their Ellenberg light value		none		internal
+canopi-niche-axes	canopi-niche-axes	Canopi rule: season, soil pH/moisture and rooting depth	Deterministic Q6-Q8 niche axes derived by Canopi's rules from the sources above (season months/words, Ellenberg R/F, PFAF moisture and root prose, USDA soil depth needed and TRY rooting depth)		none		internal
 llm-knowledge	llm-knowledge	AI estimate, no source	A language model's estimate from its own knowledge, with no passage cited		none		internal
 curated_names	curated	Canopi curated names	Common names added by Canopi's curators (data/curated/common_names.tsv)		none		internal
 unrecorded	unknown	Source not recorded	Common names whose source was not recorded when they were loaded		none		internal

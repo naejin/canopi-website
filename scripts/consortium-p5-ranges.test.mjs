@@ -301,13 +301,14 @@ test('month layers: every PFAF month row of the export carries its source region
 // ---- review of 619e6a7 ----
 
 // PP-C 0b: the schema the reader reads (consortium-schema.mjs DDL_READ: the base statements and every
-// required 4.2 to 4.5 addition) against the installed export, table by table and statement by statement.
-test('schema module: every table, column and statement, in order, as the installed export holds them (the fixture is built from the same DDL)', async () => {
+// required 4.2 to 4.7 addition) against the installed export, allowing declared additive-tier extensions
+// (4.8–4.10+ tables and trailing columns declared in index.schema_additions).
+test('schema module: every base table, column and statement matches the installed export; extras are declared in schema_additions', async () => {
   const { DDL_READ } = await import('./consortium-schema.mjs');
   const { DatabaseSync } = await import('node:sqlite');
   const mem = new DatabaseSync(':memory:');
   mem.exec(DDL_READ);
-  const cols = (db) => Object.fromEntries(db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").all().map(({ name }) => [name, db.prepare('SELECT name, "notnull" FROM pragma_table_info(?)').all(name).map((c) => `${c.name}${c.notnull ? '!' : ''}`).join(',')]));
+  const cols = (db) => Object.fromEntries(db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").all().map(({ name }) => [name, db.prepare('SELECT name, "notnull" FROM pragma_table_info(?)').all(name).map((c) => `${c.name}${c.notnull ? '!' : ''}`)]));
   const ours = cols(mem);
   const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
   const { tmpdir } = await import('node:os');
@@ -318,11 +319,21 @@ test('schema module: every table, column and statement, in order, as the install
   const expSql = Object.fromEntries(installed.prepare('SELECT name, sql FROM sqlite_master WHERE sql IS NOT NULL ORDER BY name').all().map((r) => [r.name, r.sql]));
   installed.close();
   rmSync(dir, { recursive: true });
-  assert.deepEqual(ours, exp);
-  // And every statement as SQLite stores it (CHECK lists included: a new variable shows here).
+  const declaredTables = new Set((index.schema_additions ?? []).filter((a) => !a.column && !a.index && a.value === undefined).map((a) => a.table));
+  const declaredCols = new Set((index.schema_additions ?? []).filter((a) => a.column && a.value === undefined).map((a) => `${a.table}.${a.column}`));
   const sqlOf = (db) => Object.fromEntries(db.prepare('SELECT name, sql FROM sqlite_master WHERE sql IS NOT NULL ORDER BY name').all().map((r) => [r.name, r.sql]));
-  assert.deepEqual(sqlOf(mem), expSql);
-  assert.ok(ours.plants.endsWith(',grown_as_annual!,sun_exposure_sunniest,sun_exposure_shadiest,sun_exposure_preferred'), 'grown_as_annual last of the base plants columns, NOT NULL (canopi-data consortium_sqlite.py), then 4.5\'s three nullable light columns');
+  const memSql = sqlOf(mem);
+  for (const [table, wantCols] of Object.entries(ours)) {
+    assert.ok(table in exp, `installed export has table ${table}`);
+    assert.deepEqual(exp[table].slice(0, wantCols.length), wantCols, `${table} base columns match in order`);
+    const extraCols = exp[table].slice(wantCols.length);
+    for (const c of extraCols) assert.ok(declaredCols.has(`${table}.${c.replace(/!$/, '')}`), `${table}.${c} is declared in schema_additions`);
+    if (!extraCols.length) assert.equal(expSql[table], memSql[table], `${table} statement matches DDL_READ`);
+  }
+  for (const table of Object.keys(exp)) {
+    if (!(table in ours)) assert.ok(declaredTables.has(table), `extra table ${table} is declared in schema_additions`);
+  }
+  assert.ok(ours.plants.join(',').endsWith(',grown_as_annual!,sun_exposure_sunniest,sun_exposure_shadiest,sun_exposure_preferred'), 'grown_as_annual last of the base plants columns, NOT NULL (canopi-data consortium_sqlite.py), then 4.5\'s three nullable light columns');
 });
 
 // ---- the summer-warmth bound for annuals (canopi-data, schema 3 tmean_warm low; coordinator 2026-11-12) ----

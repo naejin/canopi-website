@@ -623,3 +623,57 @@ test('plant_aliases: a schema-4 export holding rows opens; the source offers no 
   assert.equal('aliases' in source, false);
   assert.ok(opened.db.selectObjects('SELECT COUNT(*) AS n FROM plant_aliases')[0].n > 0, 'the fixture ships alias rows');
 });
+
+// Schema 4.10 (plant_gallery): exact handoff role ordering (overall -> leaf -> flower -> cone -> sori -> fruit,
+// then rank ASC), local-first hero URL substitution when a gallery row matches plant_images.url, and
+// thumbnail-friendly remote URLs for Wikimedia Commons / iNaturalist role photos.
+test('schema 4.10 plant_gallery: exact role order, local-first hero substitution, and galleryDisplayUrl', async () => {
+  const { galleryDisplayUrl } = await import('../src/islands/palette/data/sqlite-source.ts');
+  const { PLANT_GALLERY_DDL } = await import('./consortium-schema.mjs');
+  assert.equal(
+    galleryDisplayUrl('https://upload.wikimedia.org/wikipedia/commons/a/a5/Walnut_forest.jpg'),
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Walnut_forest.jpg/960px-Walnut_forest.jpg',
+  );
+  assert.equal(
+    galleryDisplayUrl('https://upload.wikimedia.org/wikipedia/commons/1/12/Diagram.svg'),
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Diagram.svg/960px-Diagram.svg.png',
+  );
+  assert.equal(
+    galleryDisplayUrl('https://inaturalist-open-data.s3.amazonaws.com/photos/123456/original.jpeg'),
+    'https://inaturalist-open-data.s3.amazonaws.com/photos/123456/medium.jpeg',
+  );
+  assert.equal(galleryDisplayUrl('https://example.org/photo.jpg'), 'https://example.org/photo.jpg');
+
+  const path = join(oracleDir, 'gallery-410.sqlite');
+  writeFileSync(path, gunzipSync(gz));
+  const rw = new DatabaseSync(path);
+  rw.exec(PLANT_GALLERY_DDL);
+  const chestnutId = idOf('Castanea sativa');
+  const plantRow = rw.prepare('SELECT plant FROM plants WHERE id = ?').get(chestnutId);
+  const heroRow = rw.prepare('SELECT url FROM plant_images WHERE plant = ?').get(plantRow.plant);
+  const ins = rw.prepare('INSERT INTO plant_gallery (plant, role, rank, url, width, height, quality, setting, credit, licence, source_page_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  // Insert intentionally out of canonical role order to verify SQL CASE role ordering + rank ASC.
+  ins.run(plantRow.plant, 'fruit', 1, 'https://inaturalist-open-data.s3.amazonaws.com/photos/999/original.jpg', 1200, 900, 'good', 'field', 'Fruit Photog', 'CC BY 4.0', 'https://www.inaturalist.org/observations/1');
+  ins.run(plantRow.plant, 'sori', 1, 'https://example.org/sori.jpg', 800, 600, 'adequate', 'garden', 'Sori Photog', 'CC BY-SA 4.0', 'https://commons.wikimedia.org/wiki/File:Sori.jpg');
+  ins.run(plantRow.plant, 'cone', 1, 'https://example.org/cone.jpg', 800, 600, 'good', 'field', 'Cone Photog', 'CC BY-SA 4.0', 'https://commons.wikimedia.org/wiki/File:Cone.jpg');
+  ins.run(plantRow.plant, 'flower', 1, 'https://upload.wikimedia.org/wikipedia/commons/c/ce/Flower.jpg', 3000, 2000, 'good', 'field', 'Flower Photog', 'CC BY-SA 4.0', 'https://commons.wikimedia.org/wiki/File:Flower.jpg');
+  ins.run(plantRow.plant, 'leaf', 2, 'https://upload.wikimedia.org/wikipedia/commons/3/33/Leaf2.jpg', 1600, 1200, 'adequate', 'garden', 'Leaf 2', 'CC BY 4.0', 'https://commons.wikimedia.org/wiki/File:Leaf2.jpg');
+  ins.run(plantRow.plant, 'leaf', 1, 'https://upload.wikimedia.org/wikipedia/commons/3/33/Leaf1.jpg', 1600, 1200, 'good', 'field', 'Leaf 1', 'CC BY 4.0', 'https://commons.wikimedia.org/wiki/File:Leaf1.jpg');
+  ins.run(plantRow.plant, 'overall', 1, heroRow.url, 2048, 1536, 'good', 'field', 'Hero Photog', 'CC BY-SA 4.0', 'https://commons.wikimedia.org/wiki/File:Hero.jpg');
+  rw.close();
+
+  const copy = await openBytes(new Uint8Array(readFileSync(path)), expected);
+  const d = await createSqliteSource(copy.db, { images }).details(chestnutId, 'Temperate', 'en');
+  assert.ok(Array.isArray(d.gallery), 'gallery is returned when plant_gallery exists');
+  assert.deepEqual(
+    d.gallery.map((g) => `${g.role}:${g.rank}`),
+    ['overall:1', 'leaf:1', 'leaf:2', 'flower:1', 'cone:1', 'sori:1', 'fruit:1'],
+    'exact handoff role ordering (overall -> leaf -> flower -> cone -> sori -> fruit, then rank ASC)',
+  );
+  assert.equal(d.gallery[0].url, images[chestnutId], 'local-first hero substitution when gallery url matches plant_images.url');
+  assert.equal(d.gallery[1].url, 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Leaf1.jpg/960px-Leaf1.jpg', 'Wikimedia remote role photo uses 960px thumb');
+  assert.equal(d.gallery[6].url, 'https://inaturalist-open-data.s3.amazonaws.com/photos/999/medium.jpg', 'iNaturalist remote role photo uses medium');
+  assert.equal(d.gallery[0].setting, 'field');
+  assert.equal(d.gallery[0].quality, 'good');
+  assert.equal(d.gallery[0].credit, 'Hero Photog');
+});

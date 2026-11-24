@@ -468,6 +468,10 @@ export async function readDatabase(path, entry, manifest) {
     // prepush m1: the page links these, so only http(s) (the page's safeHref is the second wall).
     for (const r of all('SELECT id, url FROM sources WHERE url IS NOT NULL')) if (!isHttpUrl(r.url)) return { problem: `${entry.file}: source ${r.id} has the url ${JSON.stringify(r.url)}, not http(s).` };
     for (const r of all('SELECT p.canonical_name, i.source_page_url u FROM plant_images i JOIN plants p USING (plant) WHERE i.source_page_url IS NOT NULL')) if (!isHttpUrl(r.u)) return { problem: `${entry.file}: ${r.canonical_name}'s photo page ${JSON.stringify(r.u)} is not http(s).` };
+    if (declared.tables.has('plant_gallery')) {
+      for (const r of all('SELECT p.canonical_name, g.source_page_url u FROM plant_gallery g JOIN plants p USING (plant) WHERE g.source_page_url IS NOT NULL')) if (!isHttpUrl(r.u)) return { problem: `${entry.file}: ${r.canonical_name}'s gallery page ${JSON.stringify(r.u)} is not http(s).` };
+      for (const r of all('SELECT p.canonical_name, g.url u FROM plant_gallery g JOIN plants p USING (plant) WHERE g.url IS NOT NULL')) if (!isHttpUrl(r.u)) return { problem: `${entry.file}: ${r.canonical_name}'s gallery image ${JSON.stringify(r.u)} is not http(s).` };
+    }
     // The page's "not checked, never none" rests on it.
     const unchecked = one('SELECT p.canonical_name name, v.country FROM plant_invasive v JOIN plants p USING (plant) JOIN countries c ON c.code = v.country WHERE c.invasive_checked = 0');
     if (unchecked) return { problem: `${entry.file}: ${unchecked.name} is invasive in ${unchecked.country}, a country GRIIS did not check.` };
@@ -811,13 +815,62 @@ async function download(url, { fetchImpl, delayMs, backoffMs }) {
   throw new Error(last ?? `no URL for ${url}`);
 }
 
+// Reuses verified local hero images from an existing install when the plant's remote URL is unchanged,
+// avoiding redundant network hits while still verifying SHA-256 integrity of every reused file.
+async function loadReusablePhotos(outDir, listDir, work) {
+  const reusable = new Map();
+  const idxPath = join(listDir ?? outDir, INDEX_FILE);
+  if (!existsSync(idxPath) || !existsSync(join(outDir, 'images'))) return reusable;
+  try {
+    const prevIdx = JSON.parse(readFileSync(idxPath, 'utf8'));
+    if (!Array.isArray(prevIdx?.files) || !prevIdx.files[0]?.file || !isObject(prevIdx?.images)) return reusable;
+    const dbGzPath = join(outDir, prevIdx.files[0].file);
+    if (!existsSync(dbGzPath)) return reusable;
+    const tmpDb = join(work, 'prev-reuse.sqlite');
+    writeFileSync(tmpDb, gunzipSync(readFileSync(dbGzPath), { maxOutputLength: MAX_FILE_BYTES + 1 }));
+    const { DatabaseSync } = await import('node:sqlite');
+    const db = new DatabaseSync(tmpDb, { readOnly: true });
+    let rows = [];
+    try {
+      rows = db.prepare('SELECT p.id, i.url FROM plant_images i JOIN plants p USING (plant)').all();
+    } finally {
+      db.close();
+      rmSync(tmpDb, { force: true });
+    }
+    for (const r of rows) {
+      const id = String(r.id), url = String(r.url);
+      const localPath = prevIdx.images[id];
+      if (typeof localPath !== 'string' || !localPath.startsWith(IMAGE_BASE)) continue;
+      const name = localPath.slice(IMAGE_BASE.length);
+      const full = join(outDir, 'images', name);
+      if (!existsSync(full)) continue;
+      const bytes = readFileSync(full);
+      if (!bytes.length || bytes.length > MAX_IMAGE_BYTES) continue;
+      const m = /^([^.]+)\.([0-9a-f]{12})\.([a-z]+)$/.exec(name);
+      if (!m || m[1] !== id || m[2] !== sha256(bytes).slice(0, 12)) continue;
+      reusable.set(id, { url, name, bytes });
+    }
+  } catch {
+    // Best-effort cache: any failure simply falls back to fresh download.
+  }
+  return reusable;
+}
+
 // Downloads every photo once per plant. A url that is not http(s) is never fetched (no photo).
-// Returns { files: Map(uuid -> { name, bytes }), failed, total }.
-async function fetchImages(images, { fetchImpl, delayMs, backoffMs, log, maxFailedShare }) {
+// Returns { files: Map(uuid -> { name, bytes }), failed, total, reused }.
+async function fetchImages(images, { fetchImpl, delayMs, backoffMs, log, maxFailedShare, reusable = new Map() }) {
   const wanted = [...images.values()].filter((img) => isHttpUrl(img.url));
   const files = new Map(), failed = [];
-  for (const [i, { id, name, url }] of wanted.entries()) {
-    if (i) await sleep(delayMs);
+  let fetched = 0, reused = 0;
+  for (const { id, name, url } of wanted) {
+    const cached = reusable.get(id);
+    if (cached && cached.url === url) {
+      files.set(id, { name: cached.name, bytes: cached.bytes });
+      reused++;
+      continue;
+    }
+    if (fetched) await sleep(delayMs);
+    fetched++;
     try {
       const { bytes, ext } = await download(url, { fetchImpl, delayMs, backoffMs });
       // The digest in the name lets public/_headers cache the photo forever: new bytes, new url.
@@ -829,7 +882,7 @@ async function fetchImages(images, { fetchImpl, delayMs, backoffMs, log, maxFail
   }
   if (wanted.length && failed.length / wanted.length > maxFailedShare)
     refuse(`${failed.length} of ${wanted.length} photos failed (more than ${maxFailedShare * 100}%): ${failed.slice(0, 5).map((f) => f.name).join(', ')}…`);
-  return { files, failed, total: wanted.length, skipped: images.size - wanted.length };
+  return { files, failed, total: wanted.length, skipped: images.size - wanted.length, reused };
 }
 
 export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixture = false, images = true, fetchImpl = globalThis.fetch, delayMs = 500, backoffMs = 5000, maxFailedShare = MAX_FAILED_SHARE, stagingDir = null, dataDir = null, releaseCheck = releaseVerifyProblem, siteDir = DEFAULT_OUT, log = console.log } = {}) {
@@ -850,7 +903,8 @@ export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixtu
     }
     // dataDir stands in for src/data/ in tests; a fixture never writes there.
     const listDir = fixture ? null : dataDir ?? dataDirFor(out, fixture);
-    const photos = images ? await fetchImages(facts.images, { fetchImpl, delayMs, backoffMs, log, maxFailedShare }) : { files: new Map(), failed: [], total: 0, skipped: 0 };
+    const reusable = images && !fixture ? await loadReusablePhotos(out, listDir, staging) : new Map();
+    const photos = images ? await fetchImages(facts.images, { fetchImpl, delayMs, backoffMs, log, maxFailedShare, reusable }) : { files: new Map(), failed: [], total: 0, skipped: 0, reused: 0 };
     const index = buildIndex(manifest, facts, photos.files);
     const indexBytes = Buffer.from(`${JSON.stringify(index, null, 2)}\n`);
 

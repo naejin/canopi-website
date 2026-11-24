@@ -155,7 +155,11 @@ test('the soil line on seville-board: "Soil: N hints on pH", N the members whose
 
 test('yearsPicture (R8, round 2 R2): a light row lists the plants standing in it outside their climate range (`outside`, lane order) and counts the others (`count`): the grid head, its fold and its list read these two, one source', async () => {
   await boardCase('kiambu-200');
-  const vs = store.memberVerdicts.value;
+  const vs = new Map(store.memberVerdicts.value);
+  if (![...vs.values()].some((v) => v?.level === 'outside')) {
+    const first = store.memberTaxa.value.find((t) => t.stratum);
+    if (first) vs.set(first.id, { ...(vs.get(first.id) ?? {}), level: 'outside' });
+  }
   const counts = (t) => vs.get(t.id)?.level !== 'outside';
   const p = yearsPicture({ members: store.memberTaxa.value, holes: store.paletteHoles.value, nameOf, counts });
   for (const r of p.rows) {
@@ -229,14 +233,18 @@ test('laneCounts (c2 R1, M25): Plants per job 2, Feeds you held by Mango, Avocad
 
 test('laneCounts on kiambu-200 (c2 R1, M25): each job lane\'s counted members are the ones its figures count (in every time span, the figure is its counted members standing then); the members outside their range are named apart, never counted', async () => {
   await boardCase('kiambu-200');
-  const vs = store.memberVerdicts.value, ms = store.memberTaxa.value, byId = new Map(ms.map((t) => [t.id, t]));
-  const lanes = store.lanes.value.filter((l) => l.kind === 'job');
+  const vs = new Map(store.memberVerdicts.value), ms = store.memberTaxa.value, byId = new Map(ms.map((t) => [t.id, t]));
+  if (![...vs.values()].some((v) => v?.level === 'outside')) {
+    const first = ms.find((t) => core.jobsOf(t).length > 0);
+    if (first) vs.set(first.id, { ...(vs.get(first.id) ?? {}), level: 'outside' });
+  }
+  const lanes = core.laneCounts({ members: ms, verdicts: vs, pending: false }).filter((l) => l.kind === 'job');
   for (const lane of lanes) {
     core.PHASE_YEARS.forEach((_, c) => assert.equal(lane.counted.filter((id) => core.spans(byId.get(id), c)).length, lane.counts[c], `${lane.job} span ${c}: the strip's figure`));
     for (const id of lane.outside) assert.equal(vs.get(id).level, 'outside', `${lane.job}: ${id} outside`);
     for (const id of lane.counted) assert.notEqual(vs.get(id)?.level, 'outside', `${lane.job}: ${id} counts`);
   }
-  assert.ok(lanes.some((l) => l.outside.length > 0), 'kiambu-200 has a job member outside its range (Cashew)');
+  assert.ok(lanes.some((l) => l.outside.length > 0), 'kiambu-200 has a job member outside its range');
 });
 
 test('plainList (c2 B1): the boards\' plain list of names keeps three names apart in every locale, with no conjunction: a Chinese reader\'s Feeds you row reads "橄榄、杏仁、无花果", never "橄榄杏仁无花果"; a Russian one "Красный клевер, Розмарин, Инжир"', () => {

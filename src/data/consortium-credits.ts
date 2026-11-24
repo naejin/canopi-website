@@ -45,7 +45,7 @@ export const CLIMATE_REPO = 'https://github.com/opencanopi/canopi-climate';
 
 export const GBIF = {
   /** The export's meta `gbif_fetched`: start/end, UTC. */
-  fetched: '2026-11-11T03:18:45Z/2026-11-17T23:57:15Z',
+  fetched: '2026-11-11T03:18:45Z/2026-11-23T00:19:28Z',
   /** The export's meta `gbif_basis_of_record`. */
   basisOfRecord: ['HUMAN_OBSERVATION', 'OBSERVATION', 'MACHINE_OBSERVATION', 'PRESERVED_SPECIMEN', 'MATERIAL_SAMPLE', 'MATERIAL_CITATION', 'OCCURRENCE'],
   api: 'https://api.gbif.org/v2/map/occurrence/density',

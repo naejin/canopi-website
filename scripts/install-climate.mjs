@@ -73,6 +73,9 @@ const ARCHIVE_NAME = /^canopi-climate-grid-v(\d+\.\d+\.\d+)\.tar$/;
 const RELEASE_URL = 'https://github.com/opencanopi/canopi-climate/releases/download/';
 const META_FILES = ['manifest.json', 'build-report.json', 'ATTRIBUTION.md'];
 const TILE_PATH = /^(tiles|soil|regions)\/([ns]\d\d[ew]\d\d\d)\.tif$/;
+// Additive v0.4+ climate grid layers present in the monolithic archive; verified in SHA256SUMS, not served by the site.
+const EXTRA_LAYER_DIRS = ['monthly/', 'monthly_precip/', 'extremes/'];
+const EXTRA_TILE_PATH = /^(monthly|monthly_precip|extremes)\/([ns]\d\d[ew]\d\d\d)\.tif$/;
 const LAYER_IDS = Object.keys(LAYERS);
 
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -126,12 +129,12 @@ function archiveFiles(entries, maxFileBytes) {
     const name = e.name.replace(/^\.\//, '');
     if (e.name.startsWith('/') || e.name.includes('\\') || name.split('/').some((p) => p === '..') || /[\0-\x1f]/.test(name)) refuse(`unsafe path ${JSON.stringify(e.name)} in the archive.`);
     if (e.type === 'dir') {
-      if (!['', 'tiles/', 'soil/', 'regions/'].includes(name)) refuse(`unexpected directory ${name} in the archive.`);
+      if (!['', 'tiles/', 'soil/', 'regions/', ...EXTRA_LAYER_DIRS].includes(name)) refuse(`unexpected directory ${name} in the archive.`);
       continue;
     }
     if (e.type !== 'file') refuse(`${name} is not a regular file (${e.type}).`);
     if (files.has(name)) refuse(`${name} is in the archive twice.`);
-    if (!META_FILES.includes(name) && name !== 'SHA256SUMS' && !TILE_PATH.test(name)) refuse(`unexpected file ${name} in the archive.`);
+    if (!META_FILES.includes(name) && name !== 'SHA256SUMS' && !TILE_PATH.test(name) && !EXTRA_TILE_PATH.test(name)) refuse(`unexpected file ${name} in the archive.`);
     if (e.data.length > maxFileBytes) refuse(`${name} is ${e.data.length} bytes, over the ${maxFileBytes}-byte limit of a static asset.`);
     files.set(name, e.data);
   }
@@ -145,7 +148,7 @@ function checkSums(files) {
     if (!line.trim()) continue;
     const m = /^([0-9a-f]{64}) [ *](.+)$/.exec(line);
     if (!m) refuse(`SHA256SUMS has a malformed line: ${line}`);
-    if (!META_FILES.includes(m[2]) && !TILE_PATH.test(m[2])) refuse(`SHA256SUMS lists an unexpected path: ${m[2]}`);
+    if (!META_FILES.includes(m[2]) && !TILE_PATH.test(m[2]) && !EXTRA_TILE_PATH.test(m[2])) refuse(`SHA256SUMS lists an unexpected path: ${m[2]}`);
     if (sums.has(m[2])) refuse(`SHA256SUMS lists ${m[2]} twice.`);
     sums.set(m[2], m[1]);
   }

@@ -316,7 +316,7 @@ export function FieldDossier() {
                       src={activePlate.url}
                       alt={`${nameOf(taxon)} (${taxon.canonical_name}) — ${roleLabel}`}
                       class="dossier-plate-img"
-                      loading="lazy"
+                      loading="eager"
                       decoding="async"
                       referrerPolicy="no-referrer"
                       onError={() => setFailedUrls((cur) => ({ ...cur, [activePlate.url]: true }))}
@@ -367,6 +367,7 @@ export function FieldDossier() {
                 {plates.length > 1 && (
                   <div class="dossier-id-strip" data-dossier-id-strip role="group" aria-label={T('studio.dossier.idViewsAria')}>
                     {plates.map((p, idx) => {
+                      if (failedUrls[p.url] && idx !== safeIdx) return null;
                       const pRole = plateRoleLabel(p.role);
                       const isCur = idx === safeIdx;
                       return (
@@ -383,6 +384,7 @@ export function FieldDossier() {
                             loading="lazy"
                             decoding="async"
                             referrerPolicy="no-referrer"
+                            onError={() => setFailedUrls((cur) => ({ ...cur, [p.url]: true }))}
                           />
                           <span class="dossier-id-thumb-lbl">{pRole}</span>
                         </button>

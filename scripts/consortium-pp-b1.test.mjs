@@ -514,13 +514,27 @@ test('b1a2-4: ownLocation with a location already set clears locationAtStart', a
 // b1a2-2 (fix round 1): a borrowed list not fitted to a place offers nothing to suggest or swap from.
 test('b1a2-2: with a borrowed climate and no location, the pool the palette offers from is empty', async () => {
   await mine(5);
-  await store.loadPool('Subtropical');
-  persist.quietly(() => { store.climate.value = 'Subtropical'; });
-  store.location.value = null;
-  assert.ok(store.pool.peek()?.length, 'the borrowed list is read');
-  assert.deepEqual(store.offerPool.peek(), [], 'the borrowed list is offered without a place');
-  persist.quietly(() => { store.climate.value = 'Temperate'; });
-  assert.ok(store.offerPool.peek()?.length, 'a curated list is offered');
+  // All 7 climates are curated since r-61c991c93df2effd; simulate an uncurated Subtropical climate to verify borrowed offerPool gating.
+  const partialDb = new Proxy(real.db, { get(o, k) {
+    if (k !== 'selectObjects') return typeof o[k] === 'function' ? o[k].bind(o) : o[k];
+    return (sql, params) => sql === 'SELECT id FROM climates ORDER BY ord'
+      ? o.selectObjects(sql, params).filter((r) => r.id !== 'Subtropical')
+      : o.selectObjects(sql, params);
+  } });
+  const partialSource = createSqliteSource(partialDb, { images: {} });
+  try {
+    store.setSource(partialSource);
+    await store.loadPool('Subtropical');
+    persist.quietly(() => { store.climate.value = 'Subtropical'; });
+    store.location.value = null;
+    assert.ok(store.pool.peek()?.length, 'the borrowed list is read');
+    assert.equal(store.offerPool.peek().length, 0, 'the borrowed list is offered without a place');
+    await store.loadPool('Temperate');
+    persist.quietly(() => { store.climate.value = 'Temperate'; });
+    assert.ok(store.offerPool.peek()?.length, 'a curated list is offered');
+  } finally {
+    store.setSource(realSource);
+  }
 });
 
 // A reload while a link's place waits: the page forgets its location (the address and history.state
