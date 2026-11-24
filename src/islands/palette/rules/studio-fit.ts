@@ -24,7 +24,7 @@ import type { MicroclimateParams } from '../../../lib/climate/v07.ts';
 import type { ClimateStressState, WateringMode } from '../state/studio.ts';
 import { siteClimateProfile } from './climate-words.ts';
 
-export type StudioFitLevel = 'fits' | 'look' | 'outside' | 'unknown';
+type StudioFitLevel = 'fits' | 'look' | 'outside' | 'unknown';
 
 export interface StudioFitInputs {
   loc: SiteLocation | null;
@@ -40,7 +40,7 @@ export interface StudioFitInputs {
   baseVerdicts?: ReadonlyMap<PlantId, PlantVerdict> | null;
 }
 
-export interface StudioFitResult {
+interface StudioFitResult {
   level: StudioFitLevel;
   score: number;
   hotMarginC: number | null;
@@ -68,7 +68,7 @@ const LEVEL_RANK: Record<StudioFitLevel, number> = {
   outside: 3,
 };
 
-export function hasActiveClimateStress(stress: ClimateStressState): boolean {
+function hasActiveClimateStress(stress: ClimateStressState): boolean {
   return (
     stress.heatDeltaC !== 0
     || stress.droughtPct !== 0
