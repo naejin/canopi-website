@@ -5,7 +5,7 @@
 // - 2 · Six Key Ecological Roles & Redundancy (By Season | Across 60+ Years table + pips + Fill/Backup + progress bar)
 // - 3 · Your Growing Year — Sow, Winter, Bloom & Harvest (filter pills, 12-mo stacked bar chart + Hungry gap,
 //       Monthly Field Brief, and searchable + sun-filterable 12-mo 4-track Gantt timeline)
-import { useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useState } from 'preact/hooks';
 import { jobsOf, SUCCESSION_STAGES_6, type JobId, type Stratum, type Taxon } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
@@ -15,6 +15,7 @@ import {
   openPlantPool,
   studioTab,
 } from '../../state/studio.ts';
+import { loadSiteMonthly, wasmMicro } from '../../state/climate-v07.ts';
 import { evaluateLiveStudioCatalog } from './studio-catalog-eval.ts';
 import { nameOf } from '../kit/names.ts';
 import { SunIcon } from './SunIcon.tsx';
@@ -72,7 +73,12 @@ export function LivingSystemTab() {
   const edits = store.siteEdits.value;
   const studioEval = evaluateLiveStudioCatalog(rawCatalog);
   const pool = studioEval.fitPool.length ? studioEval.fitPool : rawCatalog;
-  const profile = siteClimateProfile(loc, z, mc, edits);
+  const locKey = loc ? `${loc.lat.toFixed(3)},${loc.lon.toFixed(3)}` : '';
+  useEffect(() => {
+    if (loc?.lookup?.climate) void loadSiteMonthly(loc);
+  }, [locKey]);
+  const profile = siteClimateProfile(loc, z, mc, edits, wasmMicro.value);
+  const v07Mo = loc?.lookup?.v07?.monthly ?? null;
   const [roleMode, setRoleMode] = useState<RoleViewMode>('season');
   const [expandedSuns, setExpandedSuns] = useState<Record<string, boolean>>({});
   const [selectedRoleCell, setSelectedRoleCell] = useState<SelectedRoleCell | null>(null);
@@ -873,6 +879,27 @@ export function LivingSystemTab() {
               </tr>
             </thead>
             <tbody>
+              {v07Mo && (() => {
+                const maxRain = Math.max(1, ...v07Mo.precip2050Mm);
+                return (
+                  <tr class="gy-spark-row" data-gy-climate-sparkline>
+                    <td style="font-size:11.5px; color:var(--ink-muted); font-weight:600;">
+                      {T('studio.v07.gySparkLabel')}
+                    </td>
+                    {monthLabels.map((_, i) => {
+                      const rain = v07Mo.precip2050Mm[i] ?? 0;
+                      const hPx = Math.max(4, Math.round((rain / maxRain) * 20));
+                      const bg = v07Mo.dryMonths[i] ? 'var(--warn-bg)' : v07Mo.frostMonths[i] ? 'var(--winter-bg)' : 'transparent';
+                      return (
+                        <td key={i} style={{ background: bg }}>
+                          <div class="gy-spark-temp">{Math.round(v07Mo.tmean2050C[i])}°</div>
+                          <div class="gy-spark-rain" style={{ height: `${hPx}px` }} aria-label={`${rain} mm`} />
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })()}
               {filteredCalendar.map(({ taxon, tracks, sun }) => (
                 <tr key={taxon.id} style="cursor:pointer;" onClick={() => openFieldDossier(taxon.id, memberIds)}>
                   <td>

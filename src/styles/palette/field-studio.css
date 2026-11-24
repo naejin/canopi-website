@@ -3095,3 +3095,196 @@
   .ct .ct-loading-mark, .ct .ct-loading-bar::after { animation: none; }
   .ct .ct-loading-bar::after { width: 60%; transform: translateX(30%); }
 }
+
+/* =========================================================================
+   v0.7.0 GROWER INTELLIGENCE SURFACES (1:1 mechanical extract from Stage 1 Mockup)
+   Zero raw hex colours — 100% design tokens across Light & Dark themes.
+   ========================================================================= */
+.ct .pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  border: 1px solid var(--border); background: var(--bg); color: var(--ink-soft);
+  white-space: nowrap;
+}
+.ct .pill.is-ochre { background: var(--ochre-tint); border-color: var(--ochre-border); color: var(--accent-ink); }
+.ct .pill.is-green { background: var(--plant-green-bg); border-color: var(--plant-green-line); color: var(--plant-green); }
+.ct .pill.is-warn { background: var(--warn-bg); border-color: var(--warn-line); color: var(--warn-ink); }
+.ct .pill.is-risk { background: var(--risk-bg); border-color: var(--risk-line); color: var(--risk-ink); }
+.ct .pill.is-winter { background: var(--winter-bg); border-color: var(--winter-line); color: var(--winter-ink); }
+
+.ct .whisper { font-size: 12.5px; color: var(--ink-muted); font-style: italic; }
+.ct .sc-inline { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+
+/* Engine 1: Root-Zone Water Tank Visual Bar */
+.ct .tank-box {
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; margin-top: 6px;
+}
+.ct .tank-head {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 10px;
+  font-size: 13px;
+}
+.ct .tank-track {
+  position: relative; height: 9px; border-radius: 999px;
+  background: var(--surface-alt); border: 1px solid var(--border); overflow: hidden;
+}
+.ct .tank-fill {
+  position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px;
+  background: var(--cal-winter); transition: width 0.2s ease;
+}
+.ct .tank-gap {
+  position: absolute; top: 0; bottom: 0;
+  background: repeating-linear-gradient(45deg, var(--warn-bg), var(--warn-bg) 4px, transparent 4px, transparent 8px);
+  border-left: 1.5px dashed var(--warn-ink);
+}
+.ct .tank-caption { font-size: 12.5px; color: var(--ink-soft); }
+
+/* Engine 2 & 3: Subsoil Trap & Cold-Air Frost Pocket Callouts */
+.ct .callout {
+  padding: 9px 12px; border-radius: var(--radius-sm); font-size: 13px; line-height: 1.45;
+  border: 1px solid var(--border); border-left-width: 3px;
+  background: var(--bg); color: var(--ink-soft); margin-top: 6px;
+}
+.ct .callout.is-warn { background: var(--warn-bg); border-color: var(--warn-line); border-left-color: var(--warn-ink); color: var(--ink); }
+.ct .callout.is-winter { background: var(--winter-bg); border-color: var(--winter-line); border-left-color: var(--winter-ink); color: var(--ink); }
+.ct .callout.is-risk { background: var(--risk-bg); border-color: var(--risk-line); border-left-color: var(--risk-ink); color: var(--ink); }
+.ct .callout.is-green { background: var(--plant-green-bg); border-color: var(--plant-green-line); border-left-color: var(--plant-green); color: var(--ink); }
+.ct .callout strong { font-weight: 600; color: var(--ink); }
+
+/* Surface 2: Climate Analogue, 4-Tile Strip & Walter-Lieth 12-Month Curve */
+.ct .analogue-card {
+  display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 14px 20px;
+  padding: 14px 16px; border-radius: var(--radius-sm);
+  background: var(--bg); border: 1px solid var(--border);
+  align-items: center; margin-top: 10px;
+}
+.ct .analogue-card.is-novel { background: var(--warn-bg); border-color: var(--warn-line); }
+.ct .analogue-stats {
+  display: flex; flex-wrap: wrap; gap: 8px 14px; justify-content: flex-end;
+  font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums;
+}
+.ct .metrics-strip {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 12px;
+}
+.ct .metric-tile {
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px 14px; display: flex; flex-direction: column; gap: 5px;
+}
+.ct .metric-tile-lbl {
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted);
+}
+.ct .metric-tile-val {
+  font-family: var(--font-display); font-size: 16.5px; font-weight: 600; color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.ct .metric-tile-sub { font-size: 12.5px; color: var(--ink-soft); line-height: 1.35; }
+
+.ct .wl-wrap {
+  border-top: 1px solid var(--border); padding-top: 16px; margin-top: 14px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.ct .wl-head {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 16px;
+}
+.ct .wl-head h4 { font-size: 16px; margin: 0; font-family: var(--font-display); }
+.ct .wl-legend {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; font-size: 12px; color: var(--ink-soft);
+}
+.ct .wl-leg-item { display: inline-flex; align-items: center; gap: 5px; }
+.ct .wl-sw { display: inline-block; width: 14px; height: 3px; border-radius: 2px; }
+.ct .wl-sw.is-today { border-top: 2px dashed var(--ink-muted); height: 0; }
+.ct .wl-sw.is-2050 { background: var(--accent); }
+.ct .wl-sw.is-rain { width: 10px; height: 10px; background: var(--cal-winter); opacity: 0.45; border-radius: 2px; }
+.ct .wl-sw.is-dry { width: 12px; height: 10px; background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 2px; }
+.ct .wl-sw.is-frost { width: 12px; height: 10px; background: var(--winter-bg); border: 1px solid var(--winter-line); border-radius: 2px; }
+.ct .wl-svg-box {
+  width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px 12px 6px;
+}
+.ct .wl-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.ct .wl-month-hit { cursor: pointer; fill: transparent; transition: fill 0.12s; }
+.ct .wl-month-hit:hover, .ct .wl-month-hit.is-selected { fill: var(--ochre-tint); }
+.ct .wl-brief {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px;
+  padding: 10px 14px; border-radius: var(--radius-sm);
+  background: var(--surface-alt); border: 1px solid var(--border);
+  font-size: 13.5px; color: var(--ink);
+}
+
+/* Surface 3: Growing Year Climate Sparkline & Planting Plan Soil-Rock / Tank Cards */
+.ct .gy-spark-row td {
+  padding: 6px 4px 8px; background: var(--bg); border-bottom: 1px solid var(--border); vertical-align: bottom;
+}
+.ct .gy-spark-temp { font-size: 10.5px; color: var(--accent-ink); font-weight: 600; margin-bottom: 2px; text-align: center; }
+.ct .gy-spark-rain { width: 12px; margin: 0 auto; border-radius: 2px; background: var(--cal-winter); opacity: 0.55; }
+.ct .plan-v07-grid {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 12px 0;
+}
+.ct .plan-wave-card {
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 14px 16px; display: flex; flex-direction: column; gap: 8px;
+}
+.ct .plan-wave-card h4 { font-size: 15px; margin: 0; font-family: var(--font-display); }
+.ct .plan-list {
+  margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px;
+  font-size: 13.5px; color: var(--ink-soft);
+}
+.ct .plan-list strong { color: var(--ink); font-weight: 600; }
+
+/* Surface 4: Field Dossier Dual-Marker Topsoil vs Subsoil pH Track & Margin Cards */
+.ct .dual-ph-card {
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;
+}
+.ct .dual-ph-head {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 12px;
+  font-size: 13.5px;
+}
+.ct .dual-track-wrap { position: relative; padding: 28px 0 30px; margin: 4px 4px 0; }
+.ct .dual-track-rail {
+  position: relative; height: 10px; border-radius: 999px;
+  background: var(--surface-alt); border: 1px solid var(--border);
+}
+.ct .dual-comfort-band {
+  position: absolute; top: -1px; bottom: -1px; border-radius: 999px;
+  background: var(--plant-green-bg); border: 1.5px solid var(--plant-green);
+}
+.ct .dual-marker {
+  position: absolute; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 3px; white-space: nowrap;
+}
+.ct .dual-marker.is-top { top: 0; }
+.ct .dual-marker.is-bottom { bottom: 0; flex-direction: column-reverse; }
+.ct .dual-marker-tag {
+  font-size: 11.5px; font-weight: 600; padding: 1px 7px; border-radius: 999px;
+  border: 1px solid var(--border-strong); background: var(--surface); color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.ct .dual-marker.is-risk .dual-marker-tag { background: var(--risk-bg); border-color: var(--risk-line); color: var(--risk-ink); }
+.ct .dual-marker.is-green .dual-marker-tag { background: var(--plant-green-bg); border-color: var(--plant-green-line); color: var(--plant-green); }
+.ct .dual-marker-dot {
+  width: 11px; height: 11px; border-radius: 50%;
+  border: 2px solid var(--surface); background: var(--ink);
+  box-shadow: 0 0 0 1px var(--border-strong);
+}
+.ct .dual-marker.is-risk .dual-marker-dot { background: var(--risk-ink); }
+.ct .dual-marker.is-green .dual-marker-dot { background: var(--plant-green); }
+.ct .dual-scale { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--ink-muted); }
+
+.ct .margin-badges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.ct .margin-card {
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 11px 13px; display: flex; flex-direction: column; gap: 4px;
+}
+.ct .margin-card-lbl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); }
+.ct .margin-card-val { font-size: 14px; font-weight: 600; color: var(--ink); }
+.ct .margin-card-sub { font-size: 12.5px; color: var(--ink-soft); }
+
+@media (max-width: 639px) {
+  .ct .analogue-card, .ct .metrics-strip, .ct .margin-badges, .ct .plan-v07-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ct .analogue-stats { justify-content: flex-start; }
+  .ct .wl-svg-box { padding: 8px 6px 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .ct .wl-svg { min-width: 520px; }
+}

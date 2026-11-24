@@ -491,22 +491,95 @@ export interface SitePeriod {
   precipMm: number; // annual precipitation (src/lib/climate/lookup.ts PeriodClimate.precipMm)
   dryMonths: number; // months drier than twice their mean temperature, 0–12 (lookup.ts dryMonths)
 }
+export interface SiteV07 {
+  /** Tier 1 eager layers */
+  extremes?: {
+    tminExtremeC: number;
+    tmaxExtremeC: number;
+    usdaZone: string;
+    futureTminExtremeC?: number | null;
+    futureTmaxExtremeC?: number | null;
+    lateTminExtremeC?: number | null;
+    lateTmaxExtremeC?: number | null;
+  } | null;
+  frostCalendar?: {
+    lastSpringDoy: number | null;
+    lastSpringP90Doy: number | null;
+    firstAutumnDoy: number | null;
+    frostFreeDays: number;
+    frostYearPct: number;
+    falseSpringPct: number;
+    frostFree: boolean;
+    yearRoundFrost: boolean;
+  } | null;
+  terrain?: {
+    elevM: number;
+    reliefM: number | null;
+    slopeDeg: number | null;
+    handM: number | null;
+    landform: 'ridge' | 'mid-slope' | 'valley';
+    frostPocket: boolean;
+  } | null;
+  /** Tier 2A idle-prefetched layers */
+  extremesTail?: {
+    coldTail10yrC: number | null;
+    heatDome10yrC: number | null;
+    coldTail10yr2050C: number | null;
+    heatDome10yr2050C: number | null;
+    tminP10GapC: number | null;
+    tmaxP90GapC: number | null;
+    heatDays35: number | null;
+    recentTrendC: number | null;
+    p90DryStreakDays: number | null;
+  } | null;
+  phenology?: {
+    chillPortionsToday: number | null;
+    chillPortions2050: number | null;
+    chillPortions2080: number | null;
+    chillCurve: readonly number[];
+  } | null;
+  waterBalance?: {
+    cwdMm: number | null;
+    cwdP90Mm: number | null;
+    cddDays: number | null;
+    vpdSummerKpa: number | null;
+    annualDeficitMm: number | null;
+  } | null;
+  soilPlus?: {
+    ph30_100: number | null;
+    clay30_100: number | null;
+    cfvo0_30: number | null;
+    cfvo30_100: number | null;
+    om0_30Pct: number | null;
+    awcMmPerM: number | null;
+    dryDaysReserve: number | null;
+  } | null;
+  /** Tier 2B on-demand monthly curves (12 months) */
+  monthly?: {
+    tmeanTodayC: readonly number[];
+    tminTodayC: readonly number[];
+    tmean2050C: readonly number[];
+    tmean2080C: readonly number[];
+    precipTodayMm: readonly number[];
+    precip2050Mm: readonly number[];
+    dryMonths: readonly boolean[];
+    frostMonths: readonly boolean[];
+    gddBase10Today: number | null;
+    gddBase10_2050: number | null;
+  } | null;
+}
+
 export interface SiteLookup {
   lat: number;
   lon: number;
   // null: no complete cell within 2 cells (open sea): "pick a point on land".
   climate: { cellLat: number; cellLon: number; distanceCells: number; periods: SitePeriod[] } | null;
   // null: no soil within 2 layer cells (sea, ice, a coast), or not read (the location step until P5.2).
-  soil: { phH2o: number; texture: string | null; filled: boolean; fillDistanceCells: number; distanceCells: number } | null;
+  soil: { phH2o: number; sandPct?: number; clayPct?: number; texture: string | null; filled: boolean; fillDistanceCells: number; distanceCells: number } | null;
   // codes null offshore (a coast: climate from the nearest cell, no country).
   regions: { wgsrpdL3: string | null; isoA2: string | null };
   // Optional additive canopi-climate v0.7.0 layers when present on the lookup.
-  v07?: {
-    frostCalendar?: { frostFreeDays: number; falseSpringPct: number; frostFree: boolean } | null;
-    extremesTail?: { coldTail10yrC: number | null; heatDome10yrC: number | null; heatDays35: number | null; p90DryStreakDays: number | null } | null;
-    phenology?: { chillPortionsToday: number | null; chillPortions2050: number | null; chillPortions2080: number | null } | null;
-    waterBalance?: { cddDays: number | null; annualDeficitMm: number | null } | null;
-  } | null;
+  v07?: SiteV07 | null;
 }
 // Where the reader says the site is (store.location; S5b writes it, S5c, S5d and S5e read it): from the
 // device's location, a place search, a map pick, or a shared link's `o=` cell centre (approximate).

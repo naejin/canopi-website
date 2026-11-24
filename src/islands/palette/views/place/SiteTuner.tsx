@@ -9,7 +9,6 @@ import {
   siteEditsOf,
   type SiteEdits,
 } from '../../../../lib/palette/index.ts';
-import type { MicroAspect, MicroLandform } from '../../rules/climate-compat.ts';
 import {
   figureLine,
   location as siteLocation,
@@ -17,7 +16,13 @@ import {
   siteEdits,
 } from '../../store.ts';
 import { T } from '../../strings.ts';
-import { microclimate, setMicroclimate } from '../../state/studio.ts';
+import { microclimate, setMicroclimate, type MicroAspect, type MicroLandform } from '../../state/studio.ts';
+import {
+  elevClampOf,
+  seedMicroclimateFromTerrain,
+  syncWasmMicroclimate,
+  wasmMicro,
+} from '../../state/climate-v07.ts';
 import {
   formatFreezeTag,
   formatHeatPeakTag,
@@ -56,17 +61,30 @@ export function SiteTuner() {
   const z = climate.value;
   const mc = microclimate.value;
   const edits = siteEdits.value;
-  const profile = siteClimateProfile(loc, z, mc, edits);
+  const profile = siteClimateProfile(loc, z, mc, edits, wasmMicro.value);
 
-  // Reset site overrides & microclimate cleanly when switching to a different location (e.g. Montpellier -> Lyon)
+  const resetAll = () => {
+    siteEdits.value = NO_EDITS;
+    if (loc?.lookup?.v07?.terrain) {
+      seedMicroclimateFromTerrain(loc.lookup.v07, true);
+    } else {
+      setMicroclimate({ slopeDeg: 0, aspect: 'flat', landform: 'mid-slope', elevOffsetM: 0, editedSlope: false, editedAspect: false, editedLandform: false, editedElev: false });
+    }
+  };
+
+  // Reset site overrides & re-seed microclimate cleanly when switching to a different location
   const locKey = loc ? `${loc.lat.toFixed(2)},${loc.lon.toFixed(2)}` : null;
   useEffect(() => {
     if (lastLoadedLocKey !== null && locKey !== null && lastLoadedLocKey !== locKey) {
-      siteEdits.value = NO_EDITS;
-      setMicroclimate({ slopeDeg: 0, aspect: 'flat', landform: 'mid-slope' });
+      resetAll();
     }
     if (locKey !== null) lastLoadedLocKey = locKey;
   }, [locKey]);
+
+  // Keep Rust WASM adjustMicroclimate() synced whenever site or microclimate changes
+  useEffect(() => {
+    void syncWasmMicroclimate(loc, mc);
+  }, [locKey, mc.slopeDeg, mc.aspect, mc.landform, mc.elevOffsetM]);
 
   // Honor store.openFigure('soilPh' | 'nights' | 'days' | 'rain' | ...)
   const targetLine = figureLine.value;
@@ -121,7 +139,10 @@ export function SiteTuner() {
   const curDrainage = edits.drainage ?? 'drains';
   const curPots = edits.pots === true;
 
-  const isMicroModified = mc.slopeDeg !== 0 || mc.aspect !== 'flat' || mc.landform !== 'mid-slope';
+  const hasTerrain = Boolean(loc?.lookup?.v07?.terrain);
+  const maxElevOff = elevClampOf(profile.reliefM);
+  const isMicroModified = Boolean(mc.editedSlope || mc.editedAspect || mc.editedLandform || mc.editedElev)
+    || (!hasTerrain && (mc.slopeDeg !== 0 || mc.aspect !== 'flat' || mc.landform !== 'mid-slope' || mc.elevOffsetM !== 0));
   const overrideCount =
     (nightsShift !== 0 ? 1 : 0)
     + (daysShift !== 0 ? 1 : 0)
@@ -139,11 +160,6 @@ export function SiteTuner() {
       if (merged[k] === undefined) delete merged[k];
     }
     siteEdits.value = siteEditsOf(merged);
-  };
-
-  const resetAll = () => {
-    siteEdits.value = NO_EDITS;
-    setMicroclimate({ slopeDeg: 0, aspect: 'flat', landform: 'mid-slope' });
   };
 
   return (
@@ -164,7 +180,7 @@ export function SiteTuner() {
           <div class="tuner-head-right">
             <span class={`tuner-status-pill${overrideCount > 0 ? ' is-active' : ''}`} data-tuner-status>
               {overrideCount === 0
-                ? T('studio.tuner.statusBaseline')
+                ? (hasTerrain ? T('studio.v07.fromTerrain') : T('studio.tuner.statusBaseline'))
                 : T('studio.tuner.statusActive', { n: overrideCount })}
             </span>
             {overrideCount > 0 && (
@@ -174,7 +190,7 @@ export function SiteTuner() {
                 data-tuner-reset-all
                 onClick={resetAll}
               >
-                {T('studio.tuner.resetAll')}
+                {hasTerrain ? T('studio.v07.resetToV07') : T('studio.tuner.resetAll')}
               </button>
             )}
           </div>
@@ -444,7 +460,14 @@ export function SiteTuner() {
           <div class="micro-slope-row">
             <div class="tune-box-head">
               <label for="ct-micro-slope" class="tune-box-label">{T('studio.tuner.slopeAngle')}</label>
-              <span class="micro-slope-val">{slopeLabel(mc.slopeDeg)}</span>
+              <div class="sc-inline">
+                <span class="micro-slope-val">{slopeLabel(mc.slopeDeg)}</span>
+                {hasTerrain && (
+                  <span class={`pill${mc.editedSlope ? ' is-ochre' : ''}`}>
+                    {mc.editedSlope ? T('studio.v07.yourEdit') : 'v0.7.0'}
+                  </span>
+                )}
+              </div>
             </div>
             <input
               id="ct-micro-slope"
@@ -452,11 +475,43 @@ export function SiteTuner() {
               type="range"
               min="0"
               max="35"
-              step="1"
+              step="0.5"
               value={mc.slopeDeg}
-              onInput={(e) => setMicroclimate({ slopeDeg: Number((e.currentTarget as HTMLInputElement).value) })}
+              onInput={(e) => setMicroclimate({ slopeDeg: Number((e.currentTarget as HTMLInputElement).value), editedSlope: true })}
             />
           </div>
+
+          {hasTerrain && (
+            <div class="micro-slope-row">
+              <div class="tune-box-head">
+                <label for="ct-micro-elev" class="tune-box-label">{T('studio.v07.elevOffset')}</label>
+                <div class="sc-inline">
+                  <span class="micro-slope-val">
+                    {profile.elevTotalM ?? 0} m ({mc.elevOffsetM >= 0 ? '+' : ''}{mc.elevOffsetM} m)
+                  </span>
+                  <span class={`pill${mc.editedElev ? ' is-ochre' : ''}`}>
+                    {mc.editedElev ? T('studio.v07.yourEdit') : 'v0.7.0'}
+                  </span>
+                </div>
+              </div>
+              <input
+                id="ct-micro-elev"
+                class="tune-slider"
+                type="range"
+                min={-maxElevOff}
+                max={maxElevOff}
+                step="5"
+                value={mc.elevOffsetM}
+                onInput={(e) => setMicroclimate({ elevOffsetM: Number((e.currentTarget as HTMLInputElement).value), editedElev: true })}
+              />
+              <div class="tuner-hint">
+                {T('studio.v07.elevLapseHint', {
+                  lapse: `${profile.lapseC >= 0 ? '+' : ''}${profile.lapseC.toFixed(1)} °C`,
+                  clamp: `${maxElevOff} m`,
+                })}
+              </div>
+            </div>
+          )}
 
           <div class="micro-pills-grid">
             <div>
@@ -469,7 +524,7 @@ export function SiteTuner() {
                     class="filter-chip"
                     data-micro-aspect={a}
                     aria-pressed={mc.aspect === a ? 'true' : 'false'}
-                    onClick={() => setMicroclimate({ aspect: a })}
+                    onClick={() => setMicroclimate({ aspect: a, editedAspect: true })}
                   >
                     {T(`studio.tuner.aspect.${a}`)}
                   </button>
@@ -486,7 +541,7 @@ export function SiteTuner() {
                     class="filter-chip"
                     data-micro-landform={l}
                     aria-pressed={mc.landform === l ? 'true' : 'false'}
-                    onClick={() => setMicroclimate({ landform: l })}
+                    onClick={() => setMicroclimate({ landform: l, editedLandform: true })}
                   >
                     {T(`studio.tuner.landform.${l}`)}
                   </button>
@@ -494,6 +549,28 @@ export function SiteTuner() {
               </div>
             </div>
           </div>
+
+          {profile.hasLive && profile.dryDaysReserve != null && (
+            <div class="tank-box" data-tuner-tank-live>
+              <div class="tank-head">
+                <strong>{T('studio.v07.tunerTankTitle')}</strong>
+                <span class={`pill ${(profile.droughtGapDays ?? 0) > 0 ? 'is-warn' : 'is-green'}`}>
+                  {T('studio.v07.tunerTankBadge', {
+                    reserve: profile.dryDaysReserve,
+                    status: (profile.droughtGapDays ?? 0) > 0
+                      ? T('studio.v07.tankGapBadge', { days: profile.droughtGapDays ?? 0 })
+                      : T('studio.v07.tankBufferedBadge'),
+                  })}
+                </span>
+              </div>
+              <div class="tank-caption">
+                {T('studio.v07.tunerTankShift', {
+                  winter: fmtShift(profile.coldDeltaC, '°C'),
+                  summer: fmtShift(profile.hotDeltaC, '°C'),
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Section D — Compact 1-line Collapsible Methodology Micro-Footer */}

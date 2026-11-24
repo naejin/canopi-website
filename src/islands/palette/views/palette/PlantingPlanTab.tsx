@@ -43,6 +43,7 @@ import {
   localMonthLong,
   siteClimateProfile,
 } from '../../rules/climate-words.ts';
+import { wasmMicro } from '../../state/climate-v07.ts';
 
 type OrderSort = 'sun' | 'phase' | 'qty';
 type CalActionFilter = 'all' | 'plant' | 'sow' | 'prune' | 'harvest' | 'winter';
@@ -66,7 +67,7 @@ export function PlantingPlanTab() {
   const members = store.memberTaxa.value;
   const cfg = plantingConfig.value;
   const loc = store.location.value;
-  const profile = siteClimateProfile(loc, store.climate.value, microclimate.value, store.siteEdits.value);
+  const profile = siteClimateProfile(loc, store.climate.value, microclimate.value, store.siteEdits.value, wasmMicro.value);
   const coldC = profile.typicalColdNightC ?? undefined;
   const hotC = profile.typicalWarmHighC ?? undefined;
 
@@ -660,6 +661,48 @@ export function PlantingPlanTab() {
             </span>
           </label>
         </div>
+
+        {/* Engine 1 & 2: Soil-Rock (cfvo), Subsoil Chemistry & Water-Tank Wave 1 Notes */}
+        {profile.hasLive && (profile.cfvoTopPct != null || profile.subsoilPh != null || profile.dryDaysReserve != null) && (
+          <div class="plan-v07-grid" data-plan-v07-notes>
+            <div class="plan-wave-card">
+              <h4>{T('studio.v07.planSoilTitle')}</h4>
+              <ul class="plan-list">
+                {profile.cfvoTopPct != null && (
+                  <li>
+                    <strong>{T('studio.v07.planStonesLbl', { top: profile.cfvoTopPct, sub: profile.cfvoSubPct ?? profile.cfvoTopPct })}:</strong>{' '}
+                    {profile.cfvoTopPct >= 20 ? T('studio.v07.planStonesHigh') : T('studio.v07.planStonesLow')}
+                  </li>
+                )}
+                {profile.subsoilPh != null && (
+                  <li>
+                    <strong>{T('studio.v07.planSubsoilLbl', { ph: profile.subsoilPh.toFixed(1), clay: profile.subsoilClayPct ?? 0 })}:</strong>{' '}
+                    {profile.subsoilTrap ? T('studio.v07.planSubsoilTrap') : T('studio.v07.planSubsoilClean')}
+                  </li>
+                )}
+              </ul>
+            </div>
+            <div class="plan-wave-card">
+              <h4>{T('studio.v07.planWave1Title')}</h4>
+              <ul class="plan-list">
+                {profile.dryDaysReserve != null && profile.dryStreakDays != null && (
+                  <li>
+                    <strong>{T('studio.v07.planTankLbl', { reserve: profile.dryDaysReserve, cdd: profile.dryStreakDays })}:</strong>{' '}
+                    {(profile.droughtGapDays ?? 0) > 0
+                      ? T('studio.v07.planTankGap', { gap: profile.droughtGapDays ?? 0 })
+                      : T('studio.v07.planTankBuf')}
+                  </li>
+                )}
+                {profile.lateFrostP90Label && (
+                  <li>
+                    <strong>{T('studio.v07.planFrostLbl')}:</strong>{' '}
+                    {T('studio.v07.planFrostBody', { date: profile.lateFrostP90Label })}
+                  </li>
+                )}
+              </ul>
+            </div>
+          </div>
+        )}
 
         <div class="wave-grid">
           {waves.map((w) => {

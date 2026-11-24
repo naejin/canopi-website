@@ -3,9 +3,8 @@
 // Zero botanical-layer jargon; uses W1 t.light, unified 6-stage succession, and v0.7.0 photoperiod().
 import type { Details, JobId, Month, PhaseOrd, SiteEdits, SiteLocation, Stratum, Taxon } from '../../../lib/palette/index.ts';
 import { jobsOf, months, phases, phaseToStageIndex, SUCCESSION_STAGES_6 } from '../../../lib/palette/index.ts';
-import { photoperiod, type MicroclimateParams } from './climate-compat.ts';
 import { T } from '../strings.ts';
-import { siteClimateProfile } from './climate-words.ts';
+import { photoperiodHours, siteClimateProfile, type MicroclimateParams } from './climate-words.ts';
 
 const fb = (v: string, d: string): string => (v.startsWith('studio.') ? d : v);
 
@@ -363,7 +362,7 @@ export function buildDossierSpec(
   }
 
   const photoperiodInfo = loc
-    ? { summerH: photoperiod(loc.lat, 172), winterH: photoperiod(loc.lat, 355), lat: loc.lat }
+    ? { summerH: photoperiodHours(loc.lat, 172), winterH: photoperiodHours(loc.lat, 355), lat: loc.lat }
     : null;
 
   return {

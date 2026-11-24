@@ -39,6 +39,14 @@ import { chooseClimate } from './draft.ts';
 import { locationAtStart } from './restore.ts';
 import { noteForget } from './save.ts';
 import { line, liveLookup, looking, nextLookup, unlessReplaced, unread, type Line } from './lookups.ts';
+import {
+  buildTier1V07,
+  clearSiteV07Caches,
+  scheduleTier2APrefetch,
+  seedMicroclimateFromTerrain,
+  syncWasmMicroclimate,
+} from './climate-v07.ts';
+import { microclimate } from './studio.ts';
 
 // ---- the step's own state (pf-c) ----
 // What the step is asking, while line is 'loading': the device ('geo', "Waiting for your device…"),
@@ -137,8 +145,12 @@ async function read(lat: number, lon: number): Promise<SiteLookup | null> {
   const ms = typeof __CT_TEST_HOOK__ !== 'undefined' && __CT_TEST_HOOK__ ? Number((globalThis as { __ctTimeouts?: { read?: number } }).__ctTimeouts?.read) || READ_TIMEOUT_MS : READ_TIMEOUT_MS;
   try {
     return await Promise.race([
-      // No soil here: the place never waits on an optional layer (R1); soilLater() adds it.
-      lookupSite(lat, lon, tileSource(), DEFAULT_RADIUS, { soil: false }),
+      // No soil here: the place never waits on an optional layer (R1); soilLater() adds it + Tier 2A.
+      // Tier 1 v0.7.0 layers (extremes, frost_calendar, terrain) load eagerly when present in the index.
+      lookupSite(lat, lon, tileSource(), DEFAULT_RADIUS, { soil: false, tier1: true }).then((l) => {
+        if (!l.tier1) return l;
+        return { ...l, v07: buildTier1V07(l.tier1) };
+      }),
       new Promise<never>((_, reject) => { timer = window.setTimeout(() => reject(new Error(`no answer in ${ms / 1000} s`)), ms); }),
     ]);
   } catch (err) {
@@ -156,10 +168,30 @@ async function read(lat: number, lon: number): Promise<SiteLookup | null> {
 function soilLater(site: SiteLocation): void {
   const was = site.lookup;
   if (!was) return;
-  lookupSite(site.lat, site.lon, tileSource(), DEFAULT_RADIUS, { soil: true }).then((l) => {
+  const src = tileSource();
+  // Auto-seed SiteTuner slope/landform from v0.7.0 terrain and kick off Rust WASM microclimate.
+  if (was.v07?.terrain) seedMicroclimateFromTerrain(was.v07, false);
+  void syncWasmMicroclimate(site, microclimate.peek());
+
+  lookupSite(site.lat, site.lon, src, DEFAULT_RADIUS, { soil: true, tier1: false }).then((l) => {
     const now = store.location.peek();
-    if (!l.soil || !now || now.lookup !== was) return;
-    quietly(() => { store.location.value = { ...now, lookup: { ...was, soil: l.soil } }; });
+    if (!now || now.lat !== site.lat || now.lon !== site.lon || !now.lookup) return;
+    if (l.soil) {
+      quietly(() => { store.location.value = { ...now, lookup: { ...now.lookup!, soil: l.soil } }; });
+    }
+    const updated = store.location.peek();
+    if (!updated) return;
+    scheduleTier2APrefetch(updated, src, (v07Patch) => {
+      const cur = store.location.peek();
+      if (!cur?.lookup || cur.lat !== site.lat || cur.lon !== site.lon) return;
+      quietly(() => {
+        store.location.value = {
+          ...cur,
+          lookup: { ...cur.lookup!, v07: { ...(cur.lookup!.v07 ?? {}), ...v07Patch } },
+        };
+      });
+      void syncWasmMicroclimate(store.location.peek(), microclimate.peek());
+    });
   }, (err: unknown) => { console.error(`Consortium: the site's soil could not be read: ${(err as Error).message}`); });
 }
 
@@ -201,10 +233,12 @@ async function locateNow(lat: number, lon: number, source: LocationSource, name:
   // even one that reads the same climate. A shared link's place is never the grower's own "before".
   const was = store.location.peek();
   const sameCell = !!was?.lookup && was.source !== 'link' && store.cellKey(was.lookup.climate) === store.cellKey(lookup.climate);
+  if (!sameCell) clearSiteV07Caches();
   siteFound(() => {
     // Another climate cell clears the grower's own values (A7: store.placeAt), the ones a link's
     // waiting place set aside too (persist.ts placeAt).
     placeAt(loc);
+    if (!sameCell && loc.lookup?.v07?.terrain) seedMicroclimateFromTerrain(loc.lookup.v07, true);
     acts.value++;
     line.value = { state: sc.state, ...extra };
   }, lookup.regions.isoA2);

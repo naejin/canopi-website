@@ -8,6 +8,7 @@ import type {
   DesignEnvelope,
   JobId,
   LayoutPattern,
+  PlantId,
   PlantingPlanSummary,
   SiteEdits,
   SiteLocation,
@@ -18,7 +19,7 @@ import {
   jobsOf,
   SUCCESSION_STAGES_6,
 } from '../../../lib/palette/index.ts';
-import { evaluateTrajectory, type MicroclimateParams, type TrajectoryCode } from './climate-compat.ts';
+import type { TrajectoryResult } from '../../../lib/climate/wasm-bridge.ts';
 import type { ClimateStressState } from '../state/studio.ts';
 import {
   activityMonthsOf,
@@ -26,7 +27,13 @@ import {
   stageSpanOf,
   SUN_TIER_OPTIONS,
 } from './studio-filters.ts';
-import { localMonthShort, signedTemp1, siteClimateProfile } from './climate-words.ts';
+import {
+  localMonthShort,
+  signedTemp1,
+  siteClimateProfile,
+  type MicroclimateParams,
+  type TrajectoryCode,
+} from './climate-words.ts';
 import { T } from '../strings.ts';
 
 const fb = (v: string, d: string): string => (v.startsWith('studio.') ? d : v);
@@ -406,6 +413,32 @@ function estimateTaxonLimits(t: Taxon) {
   return { minColdC, maxHotC, chillMinCP, isAnnual };
 }
 
+function fallbackTrajectoryCode(
+  plant: { minColdC: number; maxHotC: number; chillMinCP: number; isAnnual: boolean },
+  site: { coldTodayC: number; coldTail10yrC: number; hotTodayC: number; hotFutureC: number; chillTodayCP: number; chillFutureCP: number; matchQuality: number },
+): TrajectoryCode {
+  const chillTodayOk = site.chillTodayCP >= plant.chillMinCP;
+  const chillFutureOk = site.chillFutureCP >= plant.chillMinCP;
+  const hotTodayOk = site.hotTodayC <= plant.maxHotC;
+  const hotFutureOk = site.hotFutureC <= plant.maxHotC;
+  const coldTodayOk = plant.isAnnual || site.coldTodayC >= plant.minColdC;
+  const coldTailOk = plant.isAnnual || site.coldTail10yrC >= plant.minColdC;
+  if (site.matchQuality < 0.55 && (!hotFutureOk || !chillFutureOk)) return 'NovelClimate';
+  if (!coldTailOk && hotFutureOk && chillFutureOk) return 'ColdEstablishmentBarrier';
+  if (hotTodayOk && chillTodayOk && (!hotFutureOk || !chillFutureOk)) return 'FutureMaturityRisk';
+  if (!coldTodayOk || !hotTodayOk || !hotFutureOk || !chillFutureOk) return 'OutOfRange';
+  return 'Stable';
+}
+
+function mapWasmTrajectoryCode(res: TrajectoryResult, novelClimate: boolean): TrajectoryCode {
+  if (novelClimate && res.trajectory_class === 'unsuitable') return 'NovelClimate';
+  if (res.establishment_vs_maturity_gap === 'cold_establishment_barrier') return 'ColdEstablishmentBarrier';
+  if (res.establishment_vs_maturity_gap === 'future_maturity_risk' || res.establishment_vs_maturity_gap === 'both') return 'FutureMaturityRisk';
+  if (res.trajectory_class === 'unsuitable') return 'OutOfRange';
+  if (res.trajectory_class === 'declining' || res.trajectory_class === 'transitional') return 'FutureMaturityRisk';
+  return 'Stable';
+}
+
 export function evaluateClimate2050(
   members: readonly Taxon[],
   catalog: readonly Taxon[],
@@ -415,6 +448,8 @@ export function evaluateClimate2050(
   stress: ClimateStressState,
   mc?: MicroclimateParams,
   edits?: SiteEdits | null,
+  wasmTrajectories?: ReadonlyMap<PlantId, TrajectoryResult> | null,
+  analogueNovel?: boolean | null,
 ): Climate2050Report {
   const profile = siteClimateProfile(loc, null, mc, edits);
   const baseColdToday = profile.typicalColdNightC ?? -3;
@@ -450,7 +485,7 @@ export function evaluateClimate2050(
     baseDryDays + 2,
     Math.round(baseDryDays * (1 + futureDeltaWarm * 0.08 + stress.droughtPct / 100 + (envelope === 'extreme10' ? 0.25 : 0))),
   );
-  const novelClimate = hotFutureC >= 41 || (chillFutureCP < 15 && stress.heatDeltaC >= 2.5);
+  const novelClimate = analogueNovel === true || hotFutureC >= 41 || (chillFutureCP < 15 && stress.heatDeltaC >= 2.5);
   const matchQuality = novelClimate ? 0.45 : 0.82;
 
   const site = { coldTodayC, coldTail10yrC, hotTodayC, hotFutureC, chillTodayCP, chillFutureCP, matchQuality };
@@ -463,7 +498,7 @@ export function evaluateClimate2050(
       if (memberIds.has(c.id) || c.id === t.id) continue;
       if (preferredSunOf(c) !== sun) continue;
       if (jobs.length && !jobsOf(c).some((j) => jobs.includes(j))) continue;
-      const code = evaluateTrajectory(estimateTaxonLimits(c), site);
+      const code = fallbackTrajectoryCode(estimateTaxonLimits(c), site);
       if (code === 'Stable') return c;
     }
     return null;
@@ -475,7 +510,8 @@ export function evaluateClimate2050(
 
   for (const t of members) {
     const lim = estimateTaxonLimits(t);
-    const code = evaluateTrajectory(lim, site);
+    const wasmRes = wasmTrajectories?.get(t.id);
+    const code = wasmRes ? mapWasmTrajectoryCode(wasmRes, novelClimate) : fallbackTrajectoryCode(lim, site);
     const breached: string[] = [];
     if (hotFutureC > lim.maxHotC) {
       breached.push(fb(
@@ -543,7 +579,7 @@ export function evaluateClimate2050(
     if (memberIds.has(c.id)) continue;
     const lim = estimateTaxonLimits(c);
     if (lim.maxHotC >= hotFutureC + 1 && lim.minColdC >= baseColdToday - 1 && lim.minColdC <= coldTodayC + 2) {
-      if (evaluateTrajectory(lim, site) === 'Stable') {
+      if (fallbackTrajectoryCode(lim, site) === 'Stable') {
         opportunities.push(c);
         if (opportunities.length >= 4) break;
       }
@@ -593,21 +629,27 @@ export function evaluateClimate2050(
     },
   ];
 
-  // 12-month Today vs Future curve (pure sinusoidal approximation anchored to site cold/hot).
+  // 12-month Today vs Future curve: prefer real v0.7.0 monthly tile data, fallback to sinusoidal.
+  const v07Mo = loc?.lookup?.v07?.monthly ?? null;
   const midToday = (baseHotToday + baseColdToday) / 2;
   const ampToday = Math.max(4, (baseHotToday - baseColdToday) / 2);
   const midFut = (hotFutureC + coldTodayC) / 2;
   const ampFut = Math.max(4, (hotFutureC - coldTodayC) / 2);
   const monthlyShift = Array.from({ length: 12 }, (_, i) => {
-    const wave = -Math.cos(((i) / 12) * Math.PI * 2);
-    const todayC = Math.round((midToday + ampToday * wave) * 10) / 10;
-    const futureC = Math.round((midFut + ampFut * wave) * 10) / 10;
+    const wave = -Math.cos((i / 12) * Math.PI * 2);
+    const todayC = v07Mo
+      ? Math.round(v07Mo.tmeanTodayC[i] * 10) / 10
+      : Math.round((midToday + ampToday * wave) * 10) / 10;
+    const futBase = v07Mo
+      ? (period === '2071-2099' ? v07Mo.tmean2080C[i] : v07Mo.tmean2050C[i])
+      : (midFut + ampFut * wave);
+    const futureC = Math.round((futBase + (v07Mo ? stress.heatDeltaC : 0)) * 10) / 10;
     return {
       month: localMonthShort(i),
       todayC,
       futureC,
       heatStress: futureC >= 32,
-      dryStress: dryPressure >= 25 && i >= 5 && i <= 8,
+      dryStress: v07Mo ? Boolean(v07Mo.dryMonths[i]) : (dryPressure >= 25 && i >= 5 && i <= 8),
     };
   });
 

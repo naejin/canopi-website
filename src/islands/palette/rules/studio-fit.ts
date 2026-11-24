@@ -20,9 +20,8 @@ import type {
   SiteLocation,
   Taxon,
 } from '../../../lib/palette/index.ts';
-import type { MicroclimateParams } from './climate-compat.ts';
 import type { ClimateStressState, WateringMode } from '../state/studio.ts';
-import { siteClimateProfile } from './climate-words.ts';
+import { isDeepRootedTaxon, siteClimateProfile, type MicroclimateParams } from './climate-words.ts';
 
 type StudioFitLevel = 'fits' | 'look' | 'outside' | 'unknown';
 
@@ -108,10 +107,14 @@ export function evaluateStudioCatalog(
     ? 20
     : 0;
   const baseDryPct = Math.round((1 - Math.min(1, baseAridity)) * 35);
+  // Engine 1: Root-Zone Water Tank gap adds drought pressure when CDD exceeds rock-adjusted reserve.
+  const tankGapPenalty = profile.droughtGapDays != null && profile.droughtGapDays > 0
+    ? Math.min(25, Math.round(profile.droughtGapDays * 0.9))
+    : 0;
   const rainRelief = inputs.stress.extremeRainPct > 0 ? Math.round(inputs.stress.extremeRainPct * 0.3) : Math.round(-inputs.stress.extremeRainPct * 0.4);
   const effectiveDroughtPct = Math.max(
     0,
-    Math.min(100, baseDryPct + Math.round(futureDeltaWarm * 4) + inputs.stress.droughtPct + (inputs.envelope === 'extreme10' ? 15 : 0) + rainRelief - wateringBuffer),
+    Math.min(100, baseDryPct + tankGapPenalty + Math.round(futureDeltaWarm * 4) + inputs.stress.droughtPct + (inputs.envelope === 'extreme10' ? 15 : 0) + rainRelief - wateringBuffer),
   );
 
   // Wind exposure from Extremes Lab + ridge landform
@@ -176,14 +179,18 @@ export function evaluateStudioCatalog(
       level = 'look';
     }
 
-    // 3. Soil pH fit (from siteEdits.soilPh or soil map)
+    // 3. Engine 2: Topsoil (0-30 cm) vs Subsoil (30-100 cm) pH fit
     const ph = t.traits.soil_ph;
     let phFits: boolean | null = null;
     if (sitePh != null && ph != null && (ph.min != null || ph.max != null)) {
       const lo = ph.min ?? 3.5;
       const hi = ph.max ?? 9.5;
-      phFits = sitePh >= lo - 0.3 && sitePh <= hi + 0.3;
-      if (sitePh < lo - 1.0 || sitePh > hi + 1.0) {
+      const topOk = sitePh >= lo - 0.3 && sitePh <= hi + 0.3;
+      const deep = isDeepRootedTaxon(t);
+      const subPh = deep ? profile.subsoilPh : null;
+      const subOk = subPh == null || (subPh >= lo - 0.3 && subPh <= hi + 0.3);
+      phFits = topOk && subOk;
+      if (sitePh < lo - 1.0 || sitePh > hi + 1.0 || (subPh != null && (subPh < lo - 0.8 || subPh > hi + 0.8))) {
         if (level === 'fits') level = 'look';
       }
     }

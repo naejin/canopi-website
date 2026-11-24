@@ -4,12 +4,14 @@
 // - Planting plan config synced with Onboarding Step 2 & store.plot
 // - Interactive microclimate sliders (slope, aspect, landform)
 // - Request a Plant modal toggle & .canopi v9 open/save helpers
-// Layer rule (L1-L9): lives in state/, imports only store, lib/palette, lib/climate/v07. Never imports views/.
+// Layer rule (L1-L9): lives in state/, imports only store, lib/palette. Never imports views/.
 import { batch, effect, signal } from '@preact/signals';
 import type { CanopiCustomPlant, DesignEnvelope, PlantId, PlantingPlanConfig, Taxon } from '../../../lib/palette/index.ts';
 import { canopiFile, canopiFileName, DEFAULT_PLANTING_PLAN_CONFIG, parseCanopiFile } from '../../../lib/palette/index.ts';
-import type { MicroAspect, MicroLandform } from '../rules/climate-compat.ts';
 import * as store from '../store.ts';
+
+export type MicroAspect = 'flat' | 'south' | 'east' | 'west' | 'north';
+export type MicroLandform = 'ridge' | 'mid-slope' | 'valley';
 
 export type StudioTab = 'palette' | 'system' | 'climate' | 'plan';
 export type PaletteViewMode = 'cards' | 'compact';
@@ -39,12 +41,19 @@ export interface MicroclimateState {
   slopeDeg: number;
   aspect: MicroAspect;
   landform: MicroLandform;
+  elevOffsetM: number;
+  /** True for each field once the user explicitly edits it; false = auto-seeded from v0.7.0 terrain. */
+  editedSlope?: boolean;
+  editedAspect?: boolean;
+  editedLandform?: boolean;
+  editedElev?: boolean;
 }
 
 const DEFAULT_MICROCLIMATE: MicroclimateState = {
   slopeDeg: 0,
   aspect: 'flat',
   landform: 'mid-slope',
+  elevOffsetM: 0,
 };
 
 export const studioTab = signal<StudioTab>('palette');

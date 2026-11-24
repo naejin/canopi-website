@@ -32,7 +32,13 @@ import {
   sunTierLabel,
   sunTierOf,
 } from '../../rules/studio-filters.ts';
-import { localMonthInitial, phReactionLabel } from '../../rules/climate-words.ts';
+import {
+  isDeepRootedTaxon,
+  localMonthInitial,
+  phReactionLabel,
+  siteClimateProfile,
+} from '../../rules/climate-words.ts';
+import { wasmMicro } from '../../state/climate-v07.ts';
 
 function scoreCompanion(p: Taxon, other: Taxon): { plant: Taxon; score: number; reason: string } {
   let score = 0;
@@ -209,20 +215,25 @@ export function FieldDossier() {
   const sun = sunTierOf(taxon);
   const sunSky = T(`studio.sunSky.${sun}`);
   const sc = loc?.lookup ? climateOf(loc.lookup) : null;
+  const profile = siteClimateProfile(loc, store.climate.value, mc, edits, wasmMicro.value);
   const placeName = loc?.label ?? T('studio.common.yourSite');
   const monthLetters = Array.from({ length: 12 }, (_, i) => localMonthInitial(i));
   const sitePh = spec.phTrack.sitePh;
+  const subsoilPh = profile.subsoilPh;
+  const deepRooted = isDeepRootedTaxon(taxon);
   const siteFreezeC = spec.tempTrack.siteFreezeC;
   const warmMonth = spec.tempTrack.warmMonth;
   const siteHot2050 = spec.tempTrack.siteHotC != null ? Math.round((spec.tempTrack.siteHotC + 2.1) * 10) / 10 : null;
   const phFits = sitePh == null || (sitePh >= spec.phTrack.min - 0.2 && sitePh <= spec.phTrack.max + 0.2);
-  const hasDanger = spec.breakingPoints.some((b) => b.severity === 'danger');
-  const hasWarn = spec.breakingPoints.length > 0;
+  const subPhFits = subsoilPh == null || (subsoilPh >= spec.phTrack.min - 0.2 && subsoilPh <= spec.phTrack.max + 0.2);
+  const hasDanger = spec.breakingPoints.some((b) => b.severity === 'danger') || (deepRooted && !subPhFits);
+  const hasWarn = spec.breakingPoints.length > 0 || (deepRooted && !subPhFits);
   const verdictTone = hasDanger ? 'danger' : hasWarn ? 'warn' : 'good';
 
   const phBarLeft = clampPct(spec.phTrack.min, 4.0, 9.0);
   const phBarRight = clampPct(spec.phTrack.max, 4.0, 9.0);
   const phSitePct = sitePh != null ? clampPct(sitePh, 4.0, 9.0) : null;
+  const phSubPct = subsoilPh != null ? clampPct(subsoilPh, 4.0, 9.0) : null;
 
   const tBarLeft = clampPct(spec.tempTrack.minC, -20, 44);
   const tBarRight = clampPct(spec.tempTrack.maxC, -20, 44);
@@ -440,32 +451,112 @@ export function FieldDossier() {
               </div>
             </div>
 
-            {/* Soil pH Range Gauge (verbatim .gauge-card) */}
-            <div class="gauge-card">
-              <div class="gauge-head">
-                <strong>{T('studio.dossier.phTitle')}</strong>
-                <span style={{ color: phFits ? 'var(--plant-green)' : 'var(--warn-ink)', fontWeight: 600 }}>
-                  {T('studio.dossier.phPlant', { min: spec.phTrack.min.toFixed(1), max: spec.phTrack.max.toFixed(1) })}
-                  {sitePh != null ? (phFits ? ` · ${T('studio.dossier.phFits', { ph: sitePh.toFixed(1) })}` : ` · ${T('studio.dossier.phOutside', { ph: sitePh.toFixed(1) })}`) : ''}
-                </span>
-              </div>
-              <div class="gauge-track-wrap">
-                {phSitePct != null && (
-                  <span class={`gauge-pin-lbl ${phPinCls}`} style={{ left: `${Math.max(12, Math.min(88, phSitePct))}%` }}>
-                    {T('studio.dossier.yourSoil', { ph: sitePh!.toFixed(1) })}
+            {/* Soil pH Range Gauge — Dual-Marker Topsoil (0-30 cm) vs Subsoil (30-100 cm) when v0.7.0 soil_plus is loaded */}
+            {subsoilPh != null && phSitePct != null && phSubPct != null ? (
+              <div class="dual-ph-card" data-dossier-dual-ph>
+                <div class="dual-ph-head">
+                  <strong>{T('studio.v07.dualPhTitle')}</strong>
+                  <span>
+                    {T('studio.dossier.phPlant', { min: spec.phTrack.min.toFixed(1), max: spec.phTrack.max.toFixed(1) })}
+                    {' · '}
+                    <span class={`pill ${subPhFits ? 'is-green' : 'is-risk'}`}>
+                      {subPhFits ? T('studio.v07.deepRootsFit') : T('studio.v07.subsoilExceeds')}
+                    </span>
                   </span>
-                )}
-                <div class="gauge-track">
-                  <div class="gauge-band" style={{ left: `${phBarLeft}%`, width: `${Math.max(8, phBarRight - phBarLeft)}%` }} />
-                  {phSitePct != null && <div class={`gauge-pin ${phPinCls}`} style={{ left: `${phSitePct}%` }} />}
+                </div>
+                <div class="dual-track-wrap">
+                  <div class="dual-track-rail">
+                    <div class="dual-comfort-band" style={{ left: `${phBarLeft}%`, width: `${Math.max(8, phBarRight - phBarLeft)}%` }} />
+                  </div>
+                  <div class={`dual-marker is-top ${phFits ? 'is-green' : 'is-risk'}`} style={{ left: `${Math.max(14, Math.min(86, phSitePct))}%` }}>
+                    <span class="dual-marker-tag">{T('studio.v07.topsoilPhTag', { ph: sitePh!.toFixed(1) })}</span>
+                    <span class="dual-marker-dot" />
+                  </div>
+                  <div class={`dual-marker is-bottom ${subPhFits ? 'is-green' : 'is-risk'}`} style={{ left: `${Math.max(14, Math.min(86, phSubPct))}%` }}>
+                    <span class="dual-marker-tag">{T('studio.v07.subsoilPhTag', { ph: subsoilPh.toFixed(1) })}</span>
+                    <span class="dual-marker-dot" />
+                  </div>
+                </div>
+                <div class="dual-scale">
+                  <span>{T('studio.dossier.phAcidic')}</span>
+                  <span>5.5</span>
+                  <span>{T('studio.dossier.phNeutral')}</span>
+                  <span>8.0</span>
+                  <span>{T('studio.dossier.phAlkaline')}</span>
                 </div>
               </div>
-              <div class="gauge-scale">
-                <span>{T('studio.dossier.phAcidic')}</span>
-                <span>{T('studio.dossier.phNeutral')}</span>
-                <span>{T('studio.dossier.phAlkaline')}</span>
+            ) : (
+              <div class="gauge-card">
+                <div class="gauge-head">
+                  <strong>{T('studio.dossier.phTitle')}</strong>
+                  <span style={{ color: phFits ? 'var(--plant-green)' : 'var(--warn-ink)', fontWeight: 600 }}>
+                    {T('studio.dossier.phPlant', { min: spec.phTrack.min.toFixed(1), max: spec.phTrack.max.toFixed(1) })}
+                    {sitePh != null ? (phFits ? ` · ${T('studio.dossier.phFits', { ph: sitePh.toFixed(1) })}` : ` · ${T('studio.dossier.phOutside', { ph: sitePh.toFixed(1) })}`) : ''}
+                  </span>
+                </div>
+                <div class="gauge-track-wrap">
+                  {phSitePct != null && (
+                    <span class={`gauge-pin-lbl ${phPinCls}`} style={{ left: `${Math.max(12, Math.min(88, phSitePct))}%` }}>
+                      {T('studio.dossier.yourSoil', { ph: sitePh!.toFixed(1) })}
+                    </span>
+                  )}
+                  <div class="gauge-track">
+                    <div class="gauge-band" style={{ left: `${phBarLeft}%`, width: `${Math.max(8, phBarRight - phBarLeft)}%` }} />
+                    {phSitePct != null && <div class={`gauge-pin ${phPinCls}`} style={{ left: `${phSitePct}%` }} />}
+                  </div>
+                </div>
+                <div class="gauge-scale">
+                  <span>{T('studio.dossier.phAcidic')}</span>
+                  <span>{T('studio.dossier.phNeutral')}</span>
+                  <span>{T('studio.dossier.phAlkaline')}</span>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Engine 1 & 4: Fishman Chill, 1-in-10 Freeze Margin & Root-Zone Water Tank Badges */}
+            {profile.hasLive && (profile.chillTodayCP != null || profile.dryDaysReserve != null || siteFreezeC != null) && (() => {
+              const chillNeed = details?.extremes?.chillMinCP ?? (isAnnual || isEvergreen ? 10 : 35);
+              const chillMarginToday = profile.chillTodayCP != null ? profile.chillTodayCP - chillNeed : null;
+              const chillMargin2050 = profile.chill2050CP != null ? profile.chill2050CP - chillNeed : null;
+              const freezeMargin = siteFreezeC != null ? Math.round((siteFreezeC - spec.tempTrack.minC) * 10) / 10 : null;
+              return (
+                <div class="margin-badges" data-dossier-v07-margins>
+                  <div class="margin-card">
+                    <div class="margin-card-lbl">{T('studio.v07.tileChill')}</div>
+                    <div class="margin-card-val">{T('studio.v07.needsCp', { n: chillNeed })}</div>
+                    <div class="margin-card-sub">
+                      {profile.chillTodayCP != null
+                        ? `${T('studio.horizon.today')} ${profile.chillTodayCP} CP (${(chillMarginToday ?? 0) >= 0 ? '✓ +' : '⚠ '}${chillMarginToday})${profile.chill2050CP != null ? ` · ${T('studio.horizon.2050s')} ${profile.chill2050CP} CP (${(chillMargin2050 ?? 0) >= 0 ? '✓ +' : '⚠ '}${chillMargin2050})` : ''}`
+                        : '—'}
+                    </div>
+                  </div>
+                  <div class="margin-card">
+                    <div class="margin-card-lbl">{T('studio.v07.freezeMarginLbl')}</div>
+                    <div class="margin-card-val">
+                      {freezeMargin != null
+                        ? (freezeMargin >= 0 ? T('studio.v07.freezeSafe', { d: `+${freezeMargin.toFixed(1)} °C` }) : T('studio.v07.freezeRisk', { d: `${freezeMargin.toFixed(1)} °C` }))
+                        : '—'}
+                    </div>
+                    <div class="margin-card-sub">
+                      {T('studio.v07.freezeVsSite', { limit: `${Math.round(spec.tempTrack.minC)} °C`, site: siteFreezeC != null ? `${siteFreezeC.toFixed(1)} °C` : '—' })}
+                    </div>
+                  </div>
+                  <div class="margin-card">
+                    <div class="margin-card-lbl">{T('studio.v07.waterTankTitle')}</div>
+                    <div class="margin-card-val">
+                      {profile.dryDaysReserve != null
+                        ? `${profile.dryDaysReserve}d / ${profile.dryStreakDays ?? '—'}d`
+                        : `${profile.dryStreakDays ?? '—'}d`}
+                    </div>
+                    <div class="margin-card-sub">
+                      {profile.droughtGapDays != null && profile.droughtGapDays > 0
+                        ? T('studio.v07.tankGapBadge', { days: profile.droughtGapDays })
+                        : T('studio.v07.tankBufferedBadge')}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Winter Cold & 2050s Heat Gauge (verbatim .gauge-card) */}
             <div class="gauge-card">

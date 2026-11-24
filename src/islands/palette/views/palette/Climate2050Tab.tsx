@@ -6,8 +6,7 @@
 //              inline Climate Twin swap box) + Collapsible Holds Strong + 3-col Newly Thriving Opportunities
 // - Section 4: 12-Month Climate Shift & Stress Windows (12 monthly column cards with paired Today vs 2050s
 //              bars, rainfall mm bars, seasonal window tags, active plant counts + 2 bottom summary callouts)
-import { useMemo, useState } from 'preact/hooks';
-import type { ClimateAnalogue, AnalogueLoader } from '../../rules/climate-compat.ts';
+import { useEffect, useMemo, useState } from 'preact/hooks';
 import { siteClimate as climateOf, type PlantId } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
@@ -20,7 +19,16 @@ import {
   openPlantPool,
   studioTab,
 } from '../../state/studio.ts';
-import { nameOf } from '../kit/names.ts';
+import {
+  analogueStatus,
+  loadSiteAnalogues,
+  loadSiteMonthly,
+  siteAnalogue,
+  syncWasmTrajectories,
+  wasmMicro,
+  wasmTrajectories,
+} from '../../state/climate-v07.ts';
+import { countryName, nameOf } from '../kit/names.ts';
 import { FieldTip } from '../kit/field-tip.tsx';
 import {
   evaluateClimate2050,
@@ -31,20 +39,6 @@ import { activityMonthsOf, sunTierLabel, sunTierOf } from '../../rules/studio-fi
 import { formatFreezeTag, signedTemp1, siteClimateProfile } from '../../rules/climate-words.ts';
 
 type TriageFilter = 'all' | 'risk' | 'care' | 'fit';
-
-const lazyAnalogueLoader: AnalogueLoader = {
-  async lookup(lat, lon, period, scenario): Promise<ClimateAnalogue | null> {
-    if (typeof fetch !== 'function') return null;
-    try {
-      const res = await fetch(`/data/climate/analogues.json?lat=${lat.toFixed(2)}&lon=${lon.toFixed(2)}&p=${period}&s=${scenario}`);
-      if (!res.ok) return null;
-      const data = await res.json() as ClimateAnalogue | null;
-      return data && typeof data.name === 'string' ? data : null;
-    } catch {
-      return null;
-    }
-  },
-};
 
 const clampPct = (v: number, lo: number, hi: number): number =>
   Math.max(2, Math.min(98, Math.round(((v - lo) / (hi - lo)) * 100)));
@@ -62,16 +56,33 @@ export function Climate2050Tab() {
   const [labOpen, setLabOpen] = useState(false);
   const [holdsOpen, setHoldsOpen] = useState(false);
   const [activePreset, setActivePreset] = useState('baseline');
-  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(6);
   const [triageFilter, setTriageFilter] = useState<TriageFilter>('all');
   const [triageQuery, setTriageQuery] = useState('');
   const [lastSwap, setLastSwap] = useState<{ from: PlantId; to: PlantId; fromName: string; toName: string } | null>(null);
-  const [analogueState, setAnalogueState] = useState<'idle' | 'loading' | 'done'>('idle');
-  const [analogue, setAnalogue] = useState<ClimateAnalogue | null>(null);
 
+  const targetHorizon: '2041-2070' | '2071-2099' = period === '2071-2099' ? '2071-2099' : '2041-2070';
+  const locKey = loc ? `${loc.lat.toFixed(3)},${loc.lon.toFixed(3)}` : '';
+  const liveAnalogue = siteAnalogue.value;
+  const liveAnalogueStatus = analogueStatus.value;
+  const liveTrajs = wasmTrajectories.value;
+
+  // Tier 2B on-demand monthly curves + analogues.bin + Rust WASM evaluateTrajectory()
+  useEffect(() => {
+    if (!loc?.lookup?.climate) return;
+    void loadSiteMonthly(loc);
+    void loadSiteAnalogues(loc, targetHorizon);
+  }, [locKey, targetHorizon]);
+
+  useEffect(() => {
+    if (!loc?.lookup?.climate || !members.length) return;
+    void syncWasmTrajectories(members, loc, stress.winterDeltaC, stress.heatDeltaC);
+  }, [locKey, members, stress.winterDeltaC, stress.heatDeltaC]);
+
+  const analogueNovel = liveAnalogue?.result.novel_climate ?? null;
   const report = useMemo(
-    () => evaluateClimate2050(members, catalog, loc, period, envelope, stress, mc, edits),
-    [members, catalog, loc, period, envelope, stress, mc, edits],
+    () => evaluateClimate2050(members, catalog, loc, period, envelope, stress, mc, edits, liveTrajs, analogueNovel),
+    [members, catalog, loc, period, envelope, stress, mc, edits, liveTrajs, analogueNovel],
   );
   const memberIds = useMemo(() => members.map((m) => m.id), [members]);
 
@@ -94,7 +105,7 @@ export function Climate2050Tab() {
   }
 
   const sc = loc?.lookup ? climateOf(loc.lookup) : null;
-  const profile = siteClimateProfile(loc, store.climate.value, mc, edits);
+  const profile = siteClimateProfile(loc, store.climate.value, mc, edits, wasmMicro.value);
   const coldC = profile.typicalColdNightC ?? 0;
   const hotTodayC = profile.typicalWarmHighC ?? 29;
   const hotFutureC = Math.round((hotTodayC + (period === '2071-2099' ? 3.4 : 2.1) + (envelope === 'extreme10' ? 2.5 : 0) + stress.heatDeltaC) * 10) / 10;
@@ -104,7 +115,16 @@ export function Climate2050Tab() {
     : `~${(coldC - 8.5).toFixed(1)} °C`;
   const placeName = loc?.label ?? T('studio.common.yourSite');
   const horizonLabel = period === '2071-2099' ? T('studio.horizon.2080s') : T('studio.horizon.2050s');
-  const matchPct = report.novelClimate ? null : analogue ? Math.round(analogue.matchQuality * 100) : 88;
+  const bestMatch = liveAnalogue?.result.matches[0] ?? null;
+  const bestSigma = liveAnalogue?.result.best_sigma ?? bestMatch?.sigma ?? null;
+  const matchPct = report.novelClimate
+    ? null
+    : bestSigma != null
+      ? Math.max(55, Math.min(99, Math.round(100 - bestSigma * 18)))
+      : 88;
+  const bestTwinLabel = bestMatch
+    ? `${bestMatch.iso_a2 ? countryName(bestMatch.iso_a2) : bestMatch.koppen} (${bestMatch.lat.toFixed(1)}°, ${bestMatch.lon.toFixed(1)}° · ${bestMatch.koppen})`
+    : null;
 
   const totalCount = members.length;
   const fitCount = report.holdsStrong.length;
@@ -153,10 +173,7 @@ export function Climate2050Tab() {
 
   const loadClimateTwin = async () => {
     if (!loc) return;
-    setAnalogueState('loading');
-    const res = await lazyAnalogueLoader.lookup(loc.lat, loc.lon, period, 'ssp245');
-    setAnalogue(res);
-    setAnalogueState('done');
+    await loadSiteAnalogues(loc, targetHorizon);
   };
 
   const renderTriageCard = (item: PlantTriageItem, tone: 'danger' | 'warn') => {
@@ -166,7 +183,15 @@ export function Climate2050Tab() {
     const futurePinPct = clampPct(hotFutureC, 18, 44);
     const sun = sunTierOf(item.taxon);
     const maxDry = item.taxon.traits.drought_tolerance && /high/i.test(item.taxon.traits.drought_tolerance) ? 60 : 32;
-    const badgeLabel = margin < 0 ? T('studio.clim.crossesHeat') : T('studio.clim.nearLimit');
+    const badgeLabel = item.code === 'ColdEstablishmentBarrier'
+      ? T('studio.v07.trajCold')
+      : item.code === 'FutureMaturityRisk'
+        ? T('studio.v07.trajFuture')
+        : item.code === 'NovelClimate'
+          ? T('studio.v07.trajNovel')
+          : margin < 0
+            ? T('studio.clim.crossesHeat')
+            : T('studio.clim.nearLimit');
 
     const SUN_CLS: Record<string, string> = {
       emergent: 'sun-full',
@@ -253,15 +278,23 @@ export function Climate2050Tab() {
     low: 'sun-shade',
   };
 
+  const v07Mo = loc?.lookup?.v07?.monthly ?? null;
   const baseRain = sc?.today?.aridityIndex != null ? Math.round(Math.max(300, Math.min(1200, sc.today.aridityIndex * 650))) : 620;
   const rainWeights = [0.09, 0.08, 0.07, 0.08, 0.07, 0.04, 0.02, 0.03, 0.1, 0.15, 0.14, 0.13];
-  const monthRainToday = rainWeights.map((w) => Math.round(baseRain * w));
-  const monthRainFuture = rainWeights.map((w, i) => {
-    const isWarmDry = i >= 4 && i <= 8;
-    const droughtFactor = isWarmDry ? Math.max(0.2, 1 - stress.droughtPct / 100) : Math.max(0.45, 1 - (stress.droughtPct * 0.4) / 100);
-    const rainShift = isWarmDry ? 1 : Math.max(0.5, 1 + stress.extremeRainPct / 100);
-    return Math.max(2, Math.round(baseRain * w * droughtFactor * rainShift));
-  });
+  const monthRainToday = v07Mo ? [...v07Mo.precipTodayMm] : rainWeights.map((w) => Math.round(baseRain * w));
+  const monthRainFuture = v07Mo
+    ? v07Mo.precip2050Mm.map((mm, i) => {
+        const isWarmDry = i >= 4 && i <= 8;
+        const droughtFactor = isWarmDry ? Math.max(0.2, 1 - stress.droughtPct / 100) : Math.max(0.45, 1 - (stress.droughtPct * 0.4) / 100);
+        const rainShift = isWarmDry ? 1 : Math.max(0.5, 1 + stress.extremeRainPct / 100);
+        return Math.max(2, Math.round(mm * droughtFactor * rainShift));
+      })
+    : rainWeights.map((w, i) => {
+        const isWarmDry = i >= 4 && i <= 8;
+        const droughtFactor = isWarmDry ? Math.max(0.2, 1 - stress.droughtPct / 100) : Math.max(0.45, 1 - (stress.droughtPct * 0.4) / 100);
+        const rainShift = isWarmDry ? 1 : Math.max(0.5, 1 + stress.extremeRainPct / 100);
+        return Math.max(2, Math.round(baseRain * w * droughtFactor * rainShift));
+      });
   const maxMonthTemp = Math.max(38, ...report.monthlyShift.map((m) => m.futureC));
   const maxMonthRain = Math.max(40, ...monthRainToday, ...monthRainFuture);
 
@@ -315,15 +348,15 @@ export function Climate2050Tab() {
             <span class={report.novelClimate ? 'novel-pill' : 'match-pill'}>
               {report.novelClimate ? T('studio.clim.novelPill') : T('studio.clim.matchPill', { pct: matchPct ?? 88 })}
             </span>
-            {!analogue && !report.novelClimate && (
+            {!bestTwinLabel && !report.novelClimate && (
               <button
                 type="button"
                 class="link-btn"
                 style="font-size:12px; padding:1px 6px;"
-                disabled={analogueState === 'loading' || !loc}
+                disabled={liveAnalogueStatus === 'loading' || !loc}
                 onClick={() => void loadClimateTwin()}
               >
-                {analogueState === 'loading' ? T('studio.clim.checkingTwin') : analogueState === 'done' ? T('studio.clim.noTwin') : T('studio.clim.checkTwin')}
+                {liveAnalogueStatus === 'loading' ? T('studio.clim.checkingTwin') : liveAnalogueStatus === 'unavailable' ? T('studio.clim.noTwin') : T('studio.clim.checkTwin')}
               </button>
             )}
           </div>
@@ -354,9 +387,97 @@ export function Climate2050Tab() {
           {T('studio.clim.headline', {
             horizon: horizonLabel,
             place: placeName,
-            twin: analogue ? `${analogue.name}, ${analogue.country}` : report.novelClimate ? T('studio.clim.novelRegime') : T('studio.clim.warmerAnalogue'),
+            twin: bestTwinLabel ?? (report.novelClimate ? T('studio.clim.novelRegime') : T('studio.clim.warmerAnalogue')),
           })}
         </h2>
+
+        {/* Engine 4: Real in-browser analogues.bin Climate Twin Card */}
+        {(liveAnalogue || report.novelClimate) && (
+          <div class={`analogue-card${report.novelClimate ? ' is-novel' : ''}`} data-climate-analogue-card>
+            <div>
+              <div class="sc-inline" style="margin-bottom:4px;">
+                {report.novelClimate ? (
+                  <>
+                    <span class="pill is-warn">⚠ {T('studio.v07.novelBadge', { sigma: bestSigma != null ? `${bestSigma.toFixed(2)}σ` : '> 2.0σ' })}</span>
+                    <strong>{T('studio.v07.novelHead')}</strong>
+                  </>
+                ) : (
+                  <>
+                    <span class="pill is-green">✓ {T('studio.clim.matchPill', { pct: matchPct ?? 88 })}</span>
+                    <strong>{horizonLabel} SSP2-4.5 → {bestTwinLabel}</strong>
+                  </>
+                )}
+              </div>
+              <div style="font-size:13px; color:var(--ink-soft);">
+                {report.novelClimate
+                  ? T('studio.v07.novelDesc')
+                  : bestMatch
+                    ? T('studio.v07.analogueDesc', { km: `${Math.round(bestMatch.distance_km)} km`, koppen: bestMatch.koppen })
+                    : ''}
+              </div>
+            </div>
+            <div class="analogue-stats">
+              {bestSigma != null && <span>{T('studio.v07.analogueDist')} <strong>{bestSigma.toFixed(2)}σ</strong></span>}
+              <span>{T('studio.v07.analogueIndex')} <strong>analogues.bin</strong></span>
+              {liveAnalogue && <span>{T('studio.v07.analogueQuery')} <strong>{liveAnalogue.queryMs} ms</strong></span>}
+            </div>
+          </div>
+        )}
+
+        {/* Engine 4: 4-Tile Fishman Chill & v0.7.0 Extremes Strip */}
+        {profile.hasLive && (
+          <div class="metrics-strip" data-v07-metrics-strip>
+            <div class="metric-tile">
+              <div class="metric-tile-lbl">{T('studio.v07.tileChill')}</div>
+              <div class="metric-tile-val">
+                {profile.chillTodayCP != null
+                  ? `${profile.chillTodayCP} → ${profile.chill2050CP ?? '—'} → ${profile.chill2080CP ?? '—'} CP`
+                  : '—'}
+              </div>
+              <div class="metric-tile-sub">
+                {profile.chill2050CP != null && profile.chill2050CP < 45
+                  ? T('studio.v07.chillLowAdvice')
+                  : T('studio.v07.chillFullAdvice')}
+              </div>
+            </div>
+            <div class="metric-tile">
+              <div class="metric-tile-lbl">{T('studio.v07.tileHeat')}</div>
+              <div class="metric-tile-val">
+                {profile.heatPeak10yrC != null
+                  ? `${profile.heatPeak10yrC.toFixed(1)} → ${(loc?.lookup?.v07?.extremesTail?.heatDome10yr2050C ?? (profile.heatPeak10yrC + 2.4)).toFixed(1)} °C`
+                  : `${hotTodayC.toFixed(1)} → ${hotFutureC.toFixed(1)} °C`}
+              </div>
+              <div class="metric-tile-sub">
+                {profile.heatDays35 != null
+                  ? T('studio.v07.heatDays35', { n: profile.heatDays35.toFixed(1) })
+                  : T('studio.clim.forcePeak')}
+              </div>
+            </div>
+            <div class="metric-tile">
+              <div class="metric-tile-lbl">{T('studio.v07.tileWater')}</div>
+              <div class="metric-tile-val">
+                {profile.cwdP90Mm != null ? `CWD ${profile.cwdP90Mm} mm` : `${profile.dryStreakDays ?? '—'} d`}
+              </div>
+              <div class="metric-tile-sub">
+                {profile.vpdSummerKpa != null
+                  ? `VPD ${profile.vpdSummerKpa.toFixed(2)} kPa · ${profile.dryStreakDays ?? '—'}d`
+                  : T('studio.clim.forceDry')}
+              </div>
+            </div>
+            <div class="metric-tile">
+              <div class="metric-tile-lbl">{T('studio.v07.tileFreeze')}</div>
+              <div class="metric-tile-val">
+                {profile.coldFreeze10yrC != null
+                  ? `${profile.coldFreeze10yrC.toFixed(1)} → ${(loc?.lookup?.v07?.extremesTail?.coldTail10yr2050C ?? (profile.coldFreeze10yrC + 1.8)).toFixed(1)} °C`
+                  : freezeTodayTag}
+              </div>
+              <div class="metric-tile-sub">
+                {profile.falseSpringPct != null ? `${T('studio.postcard.falseSpring', { pct: profile.falseSpringPct })}` : profile.winterClass}
+                {profile.lastSpringFrostLabel ? ` · ${profile.lastSpringFrostLabel}` : ''}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div class="cb-verdict-grid">
           <div class="cb-verdict-col">
@@ -520,6 +641,114 @@ export function Climate2050Tab() {
             <span class="legend-item"><span class="legend-swatch" style="background:var(--winter-bg); border:1px solid var(--winter-line);" />{T('studio.clim.legWinWin')}</span>
             <span class="legend-item"><span class="legend-swatch" style="background:var(--risk-bg); border:1px solid var(--risk-ink);" />{T('studio.clim.legSumWin')}</span>
           </div>
+
+          {/* Clickable 12-Month Walter-Lieth SVG Climate Curve (Today vs Future + Rain + Gaussen Dry & Frost) */}
+          {(() => {
+            const W = 860, H = 220, padL = 44, padR = 44, padT = 18, padB = 34;
+            const plotW = W - padL - padR, plotH = H - padT - padB;
+            const colW = plotW / 12;
+            const allT = [...report.monthlyShift.map((m) => m.todayC), ...report.monthlyShift.map((m) => m.futureC)];
+            const minT = Math.min(-5, Math.floor(Math.min(...allT) / 5) * 5);
+            const maxT = Math.max(32, Math.ceil(Math.max(...allT) / 5) * 5);
+            const maxR = Math.max(120, Math.ceil(Math.max(...monthRainFuture) / 20) * 20);
+            const yTemp = (t: number) => padT + plotH - ((t - minT) / Math.max(1, maxT - minT)) * plotH;
+            const yRain = (r: number) => padT + plotH - (Math.min(r, maxR) / maxR) * plotH;
+            const xMid = (i: number) => padL + i * colW + colW / 2;
+            const ptsToday = report.monthlyShift.map((m, i) => `${xMid(i).toFixed(1)},${yTemp(m.todayC).toFixed(1)}`).join(' ');
+            const ptsFut = report.monthlyShift.map((m, i) => `${xMid(i).toFixed(1)},${yTemp(m.futureC).toFixed(1)}`).join(' ');
+            const selIdx = selectedMonth ?? 6;
+            const selM = report.monthlyShift[selIdx];
+            const isSelDry = v07Mo ? Boolean(v07Mo.dryMonths[selIdx]) : Boolean(selM?.dryStress);
+            const isSelFrost = v07Mo ? Boolean(v07Mo.frostMonths[selIdx]) : (selIdx <= 2 || selIdx >= 10);
+
+            return (
+              <div class="wl-wrap" data-walter-lieth>
+                <div class="wl-head">
+                  <h4>{T('studio.v07.wlTitle', { horizon: horizonLabel })}</h4>
+                  <div class="wl-legend">
+                    <span class="wl-leg-item"><span class="wl-sw is-today" />{T('studio.v07.wlToday')}</span>
+                    <span class="wl-leg-item"><span class="wl-sw is-2050" />{T('studio.v07.wlFuture', { horizon: horizonLabel })}</span>
+                    <span class="wl-leg-item"><span class="wl-sw is-rain" />{T('studio.v07.wlRain')}</span>
+                    <span class="wl-leg-item"><span class="wl-sw is-dry" />{T('studio.v07.wlDry')}</span>
+                    <span class="wl-leg-item"><span class="wl-sw is-frost" />{T('studio.v07.wlFrost')}</span>
+                  </div>
+                </div>
+                <div class="wl-svg-box">
+                  <svg class="wl-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={T('studio.v07.wlTitle', { horizon: horizonLabel })}>
+                    {[0, 10, 20, 30].filter((t) => t >= minT && t <= maxT).map((t) => {
+                      const y = yTemp(t);
+                      return (
+                        <g key={t}>
+                          <line x1={padL} y1={y} x2={W - padR} y2={y} stroke="var(--rule-hairline)" stroke-width="1" />
+                          <text x={padL - 8} y={y + 4} text-anchor="end" font-size="11" fill="var(--ink-muted)">{t}°</text>
+                        </g>
+                      );
+                    })}
+                    {[0, Math.round(maxR / 2), maxR].map((r) => {
+                      const y = yRain(r);
+                      return (
+                        <text key={r} x={W - padR + 8} y={y + 4} text-anchor="start" font-size="11" fill="var(--cal-winter)">{r}mm</text>
+                      );
+                    })}
+                    {report.monthlyShift.map((m, i) => {
+                      const x = padL + i * colW;
+                      const isDry = v07Mo ? Boolean(v07Mo.dryMonths[i]) : m.dryStress;
+                      const isFrost = v07Mo ? Boolean(v07Mo.frostMonths[i]) : (i <= 2 || i >= 10);
+                      const ry = yRain(monthRainFuture[i]);
+                      const rh = Math.max(2, padT + plotH - ry);
+                      const bw = colW * 0.44;
+                      return (
+                        <g key={i}>
+                          {isDry ? (
+                            <rect x={x} y={padT} width={colW} height={plotH} fill="var(--warn-bg)" />
+                          ) : isFrost ? (
+                            <rect x={x} y={padT} width={colW} height={plotH} fill="var(--winter-bg)" />
+                          ) : null}
+                          <rect x={x + (colW - bw) / 2} y={ry} width={bw} height={rh} rx="2.5" fill="var(--cal-winter)" opacity="0.42" />
+                        </g>
+                      );
+                    })}
+                    <polyline fill="none" stroke="var(--ink-muted)" stroke-width="2" stroke-dasharray="4 3" points={ptsToday} />
+                    <polyline fill="none" stroke="var(--accent)" stroke-width="2.5" points={ptsFut} />
+                    {report.monthlyShift.map((m, i) => {
+                      const cx = xMid(i);
+                      const cy = yTemp(m.futureC);
+                      const isSel = i === selIdx;
+                      return (
+                        <g key={i}>
+                          <circle cx={cx} cy={cy} r={isSel ? 5 : 3.2} fill="var(--accent)" stroke="var(--surface)" stroke-width="1.5" />
+                          <text x={cx} y={H - 12} text-anchor="middle" font-size="12" font-weight={isSel ? '600' : '400'} fill={isSel ? 'var(--accent-ink)' : 'var(--ink-soft)'}>{m.month}</text>
+                          <rect
+                            class={`wl-month-hit${isSel ? ' is-selected' : ''}`}
+                            x={padL + i * colW}
+                            y={padT}
+                            width={colW}
+                            height={plotH + 26}
+                            onClick={() => setSelectedMonth(i)}
+                          />
+                        </g>
+                      );
+                    })}
+                  </svg>
+                </div>
+                {selM && (
+                  <div class="wl-brief" data-wl-brief>
+                    <div class="sc-inline">
+                      <strong>{T('studio.clim.monthBriefTitle', { month: selM.month })}:</strong>
+                      <span>{T('studio.horizon.today')} {selM.todayC} °C → {horizonLabel} <strong>{selM.futureC} °C</strong></span>
+                      <span>·</span>
+                      <span>{T('studio.v07.wlRainShort')} <strong>{monthRainFuture[selIdx]} mm</strong></span>
+                      <span>·</span>
+                      <span>{T('studio.clim.activeCount', { n: activeByMonth[selIdx] })}</span>
+                      <span class={`pill ${isSelDry ? 'is-warn' : isSelFrost ? 'is-winter' : 'is-green'}`}>
+                        {isSelDry ? T('studio.v07.wlDry') : isSelFrost ? T('studio.v07.wlFrost') : T('studio.v07.wlActiveWin')}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           <div class="cshift-wrap">
             <div class="cshift-chart" role="group" aria-label={T('studio.clim.shiftChartAria')}>

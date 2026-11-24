@@ -1,13 +1,13 @@
 {
   "format_version": 4,
   "schema_version": 4,
-  "release_id": "r-61c991c93df2effd",
-  "generated_at": "2026-11-24T03:24:26Z",
-  "canopi_db_sha256": "9fd4fa01a962e9333b3f112107cfa956c90a6da9a7024cb2f664fd3df2422ec2",
+  "release_id": "r-c02e074d45487fec",
+  "generated_at": "2026-11-24T17:35:43Z",
+  "canopi_db_sha256": "2a5dae15634c3aff5b9e7ed74c5186bde52f199d25b3a9d8449f8c9a07639f28",
   "files": [
     {
-      "file": "consortium-v4.r-61c991c93df2effd.b5e2e7861c30.sqlite.gz",
-      "url": "/data/consortium/consortium-v4.r-61c991c93df2effd.b5e2e7861c30.sqlite.gz",
+      "file": "consortium-v4.r-c02e074d45487fec.5c0557251c87.sqlite.gz",
+      "url": "/data/consortium/consortium-v4.r-c02e074d45487fec.5c0557251c87.sqlite.gz",
       "climate_zones": [
         "Tropical",
         "Subtropical",
@@ -17,10 +17,10 @@
         "Continental",
         "Boreal"
       ],
-      "sha256": "e3708958e5d73a9635bf04b0c595eff6df1199615f8238187762388b36bccfcb",
-      "bytes": 1121099,
-      "raw_sha256": "b5e2e7861c304da55ce8f76b79c3a3400dfdb3bc3c193319098c7bb9d6c1f674",
-      "raw_bytes": 4710400
+      "sha256": "a0a57afddf71c9a2fde71d1016f619ea99d4411a46d5536ca700f68345b8d5cb",
+      "bytes": 1140099,
+      "raw_sha256": "5c0557251c87f2f4ae0a1c1381b2ada2a363e5e489d369d92e5f18ff46c40b40",
+      "raw_bytes": 4755456
     }
   ],
   "climates": [
@@ -3336,11 +3336,11 @@
     }
   ],
   "search_names": {
-    "file": "names.r-61c991c93df2effd.6028c4517668.tsv.gz",
-    "url": "/data/consortium/names.r-61c991c93df2effd.6028c4517668.tsv.gz",
-    "sha256": "2e07a8f0d89f8d35e990b72ac38b594069bc7a128c830e1f3f0c1cbfc701b082",
-    "bytes": 237065,
-    "raw_sha256": "6028c4517668779aa800ac3b0912b3dea9580a1bb8670375bb132907ed099e3f",
-    "raw_bytes": 749595
+    "file": "names.r-c02e074d45487fec.904c30c18c2a.tsv.gz",
+    "url": "/data/consortium/names.r-c02e074d45487fec.904c30c18c2a.tsv.gz",
+    "sha256": "7263f5b091d47583a157e92f3cffd62e93cab0e659f42ad69d8bbbd3bfb189d3",
+    "bytes": 221892,
+    "raw_sha256": "904c30c18c2a530fe8e68f7174e29f29c5150c3fb1cc85f76ec8b068861bf2ff",
+    "raw_bytes": 702877
   }
 }
