@@ -2,7 +2,7 @@
 // Verbatim 1:1 port of mockup-v73.html renderArrival (L2459) onto live SQLite + canopi-climate v0.7.0.
 import { useEffect, useState } from 'preact/hooks';
 import type { ClimateZone } from '../../../../lib/palette/index.ts';
-import { evaluatePlantVerdict, resolveEffectiveSite } from '../../../../lib/palette/index.ts';
+import { evaluatePlantVerdict, formatCountryName, isStructuralVine, resolveEffectiveSite, vineSupportTree } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
 import { findPlaces, placeName } from '../../state/location.ts';
 import { T } from '../../strings.ts';
@@ -13,11 +13,13 @@ import {
   fmtNum,
   freezeText,
   heatText,
+  pollinationShortWarn,
   shortSiteName,
   taxCommonName,
   verdictSymbolLabel,
 } from './ns-helpers.ts';
 import {
+  currentLocale,
   effectiveOverrides,
   launchEmpty,
   launchWithStarter,
@@ -25,6 +27,7 @@ import {
   nsSiteLoading,
   pickCoordinates,
   siteAnalogueLabel,
+  startNsWatchers,
   starterPreview,
 } from './ns-state.ts';
 
@@ -58,8 +61,10 @@ export function NorthStarArrival() {
   const starter = starterPreview.value;
   const analogue = siteAnalogueLabel.value;
 
-  // Auto-load default Montpellier site on clean first arrival so live climate & 8-plant starter appear immediately
+  // Start session watchers (restoring any session site from language switch / reload),
+  // otherwise auto-load default Montpellier site on clean first arrival.
   useEffect(() => {
+    startNsWatchers();
     if (!store.location.value && !nsSiteLoading.value) {
       const def = NS_PRESETS[0];
       void pickCoordinates(def.lat, def.lon, def.label, def.zone, def.country);
@@ -79,6 +84,11 @@ export function NorthStarArrival() {
   const dryMo50 = eff2050.dryMonths;
   const frostCal = loc?.lookup?.v07?.frostCalendar ?? null;
   const springP90Date = doyToDateLabel(frostCal?.lastSpringP90Doy);
+  const isHydrating = !loc?.lookup || loading || starter.length === 0;
+  const countryCode = effToday.country;
+  const countryInvasiveUnchecked = !isHydrating && !!countryCode
+    && store.source.value?.countries().get(countryCode)?.invasiveChecked === false;
+  const countryName = countryCode ? formatCountryName(countryCode, currentLocale()) : null;
 
   async function onSearchSubmit(e: Event) {
     e.preventDefault();
@@ -243,87 +253,147 @@ export function NorthStarArrival() {
         {NS_PRESETS.map((p) => renderPresetChip(p, false))}
       </div>
 
-      <section class="arrival-card" aria-label={T('ns.arrival.placeCardAria')}>
+      <section class="arrival-card" aria-label={T('ns.arrival.placeCardAria')} aria-busy={isHydrating ? 'true' : undefined}>
         <div>
           <p class="pulse-kicker">
-            {effToday.koppen || zone || '—'} → {eff2050.koppen || effToday.koppen || '—'} (2050s)
-            {effToday.usdaZone ? ` · USDA ${effToday.usdaZone}` : ''}
+            {isHydrating ? (
+              <span class="ns-skel ns-skel-kicker" aria-hidden="true" />
+            ) : (
+              <>
+                {effToday.koppen || zone || '—'} → {eff2050.koppen || effToday.koppen || '—'} (2050s)
+                {effToday.usdaZone ? ` · USDA ${effToday.usdaZone}` : ''}
+              </>
+            )}
           </p>
           <h2 style={{ fontSize: '26px', marginTop: '4px' }}>
-            {loading ? T('ns.loadingPlants') : siteLabel}
+            {isHydrating ? siteLabel : siteLabel}
           </h2>
           <p class="muted" style={{ marginTop: '6px' }}>
-            {allFit
-              ? T('ns.arrival.allFit', { ph: fmtNum(effToday.soilPh) })
-              : T('ns.arrival.someFit', { ok: starterThrives, total: starter.length })}
+            {isHydrating ? (
+              <span class="ns-skel ns-skel-sub" aria-hidden="true" />
+            ) : allFit ? (
+              T('ns.arrival.allFit', { ph: fmtNum(effToday.soilPh) })
+            ) : (
+              T('ns.arrival.someFit', { ok: starterThrives, total: starter.length })
+            )}
           </p>
         </div>
 
         <div class="arrival-shift-line">
-          <strong>{T('ns.brief.shift2050')}:</strong>{' '}
-          {T('ns.land.freeze10')} {freezeText(effToday)} → {freezeText(eff2050)} ·{' '}
-          {T('ns.land.heat10')} {heatText(effToday)} → {heatText(eff2050)}
-          {dryMoT != null && dryMo50 != null ? ` · ${T('ns.arrival.dryMonths', { a: dryMoT, b: dryMo50 })}` : ''}
-          {analogue ? <> · <strong>{T('ns.arrival.resembles', { place: analogue })}</strong></> : null}
+          {isHydrating ? (
+            <span class="ns-skel ns-skel-line" aria-hidden="true" />
+          ) : (
+            <>
+              <strong>{T('ns.brief.shift2050')}:</strong>{' '}
+              {T('ns.land.freeze10')} {freezeText(effToday)} → {freezeText(eff2050)} ·{' '}
+              {T('ns.land.heat10')} {heatText(effToday)} → {heatText(eff2050)}
+              {dryMoT != null && dryMo50 != null ? ` · ${T('ns.arrival.dryMonths', { a: dryMoT, b: dryMo50 })}` : ''}
+              {analogue ? <> · <strong>{T('ns.arrival.resembles', { place: analogue })}</strong></> : null}
+            </>
+          )}
         </div>
 
         <div class="arrival-metrics">
           <div class="metric-box">
             <div class="metric-k">{T('ns.arrival.coldCard')}</div>
-            <div class="metric-v">{freezeText(effToday)}</div>
+            <div class="metric-v">
+              {isHydrating ? <span class="ns-skel ns-skel-val" aria-hidden="true" /> : freezeText(effToday)}
+            </div>
             <div class="metric-sub">
-              {frostCal?.frostFree
-                ? T('ns.arrival.frostFreeDays', { n: 365 })
-                : springP90Date
-                  ? T('ns.arrival.lateSpringFrost', { date: springP90Date })
-                  : frostCal?.frostFreeDays != null
-                    ? T('ns.arrival.frostFreeDays', { n: frostCal.frostFreeDays })
-                    : T('ns.unknown')}
+              {isHydrating ? (
+                <span class="ns-skel ns-skel-meta" aria-hidden="true" />
+              ) : frostCal?.frostFree ? (
+                T('ns.arrival.frostFreeDays', { n: 365 })
+              ) : springP90Date ? (
+                T('ns.arrival.lateSpringFrost', { date: springP90Date })
+              ) : frostCal?.frostFreeDays != null ? (
+                T('ns.arrival.frostFreeDays', { n: frostCal.frostFreeDays })
+              ) : (
+                T('ns.unknown')
+              )}
             </div>
           </div>
           <div class="metric-box">
             <div class="metric-k">{T('ns.arrival.heatCard')}</div>
-            <div class="metric-v">{heatText(effToday)}</div>
+            <div class="metric-v">
+              {isHydrating ? <span class="ns-skel ns-skel-val" aria-hidden="true" /> : heatText(effToday)}
+            </div>
             <div class="metric-sub">
-              {effToday.tmaxWarmC != null
-                ? T('ns.arrival.heatAvgMax', { t: `${fmtNum(effToday.tmaxWarmC)} °C` })
-                : T('ns.unknown')}
+              {isHydrating ? (
+                <span class="ns-skel ns-skel-meta" aria-hidden="true" />
+              ) : effToday.tmaxWarmC != null ? (
+                T('ns.arrival.heatAvgMax', { t: `${fmtNum(effToday.tmaxWarmC)} °C` })
+              ) : (
+                T('ns.unknown')
+              )}
             </div>
           </div>
           <div class="metric-box">
             <div class="metric-k">{T('ns.arrival.soilWaterCard')}</div>
-            <div class="metric-v">pH {fmtNum(effToday.soilPh)} · {texture}</div>
+            <div class="metric-v">
+              {isHydrating ? <span class="ns-skel ns-skel-val" aria-hidden="true" /> : <>pH {fmtNum(effToday.soilPh)} · {texture}</>}
+            </div>
             <div class="metric-sub">
-              {effToday.tankDays != null && effToday.cddDays != null
-                ? T('ns.arrival.waterTankSub', { tank: effToday.tankDays, cdd: effToday.cddDays, d: T('ns.days') })
-                : T('ns.unknown')}
+              {isHydrating ? (
+                <span class="ns-skel ns-skel-meta" aria-hidden="true" />
+              ) : effToday.tankDays != null && effToday.cddDays != null ? (
+                T('ns.arrival.waterTankSub', { tank: effToday.tankDays, cdd: effToday.cddDays, d: T('ns.days') })
+              ) : (
+                T('ns.unknown')
+              )}
             </div>
           </div>
         </div>
 
         <div class="starter-preview">
-          {starter.map((p) => {
-            const v = starterVerdicts.get(p.id);
-            return (
-              <div key={p.id} class="starter-mini">
-                <PlantThumb taxon={p} size={44} />
+          {isHydrating ? (
+            Array.from({ length: 8 }, (_, i) => (
+              <div key={`skel-${i}`} class="starter-mini is-skel" aria-hidden="true">
+                <span class="ns-skel ns-skel-thumb" />
                 <div class="starter-mini-txt">
-                  <div class="starter-mini-name">{taxCommonName(p)}</div>
-                  <div class="starter-mini-bot">{v ? verdictSymbolLabel(v.level) : p.canonical_name}</div>
+                  <span class="ns-skel ns-skel-name" />
+                  <span class="ns-skel ns-skel-bot" />
                 </div>
               </div>
-            );
-          })}
+            ))
+          ) : (
+            starter.map((p) => {
+              const v = starterVerdicts.get(p.id);
+              const isVine = isStructuralVine(p);
+              const support = isVine ? vineSupportTree(p, starter) : null;
+              const climbNote = isVine
+                ? (support ? T('ns.vine.climbsTree', { tree: taxCommonName(support) }) : T('ns.vine.needsTrellis'))
+                : null;
+              const pollWarn = pollinationShortWarn(p);
+              return (
+                <div key={p.id} class="starter-mini">
+                  <PlantThumb taxon={p} size={44} />
+                  <div class="starter-mini-txt">
+                    <div class="starter-mini-name">{taxCommonName(p)}</div>
+                    <div class="starter-mini-bot">
+                      {climbNote ?? (pollWarn || (v ? verdictSymbolLabel(v.level) : p.canonical_name))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
+
+        {countryInvasiveUnchecked && countryName && (
+          <p class="small muted">{T('ns.arrival.invasiveUnknown', { country: countryName })}</p>
+        )}
 
         <div class="place-actions">
           <button
             type="button"
             class="btn-primary"
-            disabled={loading || starter.length === 0}
+            disabled={isHydrating}
             onClick={launchWithStarter}
           >
-            {shortName ? T('ns.arrival.openPalette', { place: shortName }) : T('ns.arrival.startCta')}
+            {isHydrating
+              ? T('ns.arrival.preparing')
+              : (shortName ? T('ns.arrival.openPalette', { place: shortName }) : T('ns.arrival.startCta'))}
           </button>
           <button type="button" class="btn-ghost" onClick={launchEmpty}>
             {T('ns.arrival.scratchCta')}

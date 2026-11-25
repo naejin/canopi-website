@@ -27,6 +27,7 @@ import {
 import * as store from '../../store.ts';
 import { buildMonthlyV07, buildTier1V07, buildTier2AV07, loadSiteAnalogues, siteAnalogue } from '../../state/climate-v07.ts';
 import { pageLang } from '../../strings.ts';
+import type { LightKey } from './ns-helpers.ts';
 
 export function currentLocale(): Locale {
   const raw = pageLang();
@@ -35,11 +36,64 @@ export function currentLocale(): Locale {
 
 export type NsSurface = 'design' | 'plan';
 export type NsViewMode = 'job' | 'matrix' | 'grid';
+type NsReturnTarget =
+  | { kind: 'picker'; job: JobId | 'all' }
+  | { kind: 'atlas'; tab?: 'climate' | 'swaps'; swapFor?: PlantId };
 export type NsDrawer =
   | { kind: 'picker'; job: JobId | 'all' }
   | { kind: 'atlas'; tab?: 'climate' | 'swaps'; swapFor?: PlantId }
-  | { kind: 'dossier'; id: PlantId }
+  | { kind: 'dossier'; id: PlantId; returnTo?: NsReturnTarget }
   | null;
+
+export interface PickerFilterState {
+  job: JobId | 'all';
+  sun: LightKey | 'all';
+  habit: string;
+  phaseIdx: number | null;
+  fillsGap: boolean;
+  thrivesToday: boolean;
+  thrives2050: boolean;
+  survivesExtremes: boolean;
+  droughtAdapted: boolean;
+  winterCrop: boolean;
+  windTolerant: boolean;
+  windbreak: boolean;
+  nonToxic: boolean;
+  fitsPh: boolean;
+  selfFertile: boolean;
+  edible: boolean;
+  nitrogenFixer: boolean;
+  fitsRoom: boolean;
+  annual: boolean;
+  inBloomNow: boolean;
+}
+
+export type PickerSortBy = 'fit' | 'gaps' | 'height' | 'az';
+
+function defaultPickerFilters(job: JobId | 'all' = 'all'): PickerFilterState {
+  return {
+    job,
+    sun: 'all',
+    habit: 'all',
+    phaseIdx: null,
+    fillsGap: false,
+    thrivesToday: false,
+    thrives2050: false,
+    survivesExtremes: false,
+    droughtAdapted: false,
+    winterCrop: false,
+    windTolerant: false,
+    windbreak: false,
+    nonToxic: false,
+    fitsPh: false,
+    selfFertile: false,
+    edible: false,
+    nitrogenFixer: false,
+    fitsRoom: false,
+    annual: false,
+    inBloomNow: false,
+  };
+}
 
 export interface NsPresetSite {
   id: string;
@@ -62,6 +116,39 @@ export const NS_PRESETS: readonly NsPresetSite[] = [
 
 const EXISTING_KEY = 'canopi-ns-existing';
 const CHECKED_KEY = 'canopi-ns-checked';
+const NS_SESSION_KEY = 'canopi-ns-session';
+
+interface NsSessionSnapshot {
+  surface?: NsSurface;
+  viewMode?: NsViewMode;
+  scenario?: ReportHorizonId;
+  overrides?: ReportSiteOverrides;
+  qtyById?: Record<string, number>;
+  pathPct?: number;
+  kidsPets?: boolean;
+  drawer?: NsDrawer;
+  pickerQuery?: string;
+  pickerFilters?: PickerFilterState;
+  pickerMoreOpen?: boolean;
+  pickerSort?: PickerSortBy;
+  pickerScrollTop?: number;
+  pickerFocusId?: PlantId | null;
+  site?: { lat: number; lon: number; label: string; zone?: ClimateZone; country?: string };
+}
+
+function readNsSession(): NsSessionSnapshot {
+  try {
+    if (typeof sessionStorage === 'undefined') return {};
+    const raw = sessionStorage.getItem(NS_SESSION_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? (parsed as NsSessionSnapshot) : {};
+  } catch {
+    return {};
+  }
+}
+
+const initialSession = readNsSession();
 
 function readIdSet(key: string): ReadonlySet<PlantId> {
   try {
@@ -79,19 +166,72 @@ function writeIdSet(key: string, set: ReadonlySet<PlantId>): void {
   } catch { /* ignore storage quota */ }
 }
 
-export const nsSurface = signal<NsSurface>('design');
-export const nsViewMode = signal<NsViewMode>('job');
-export const nsScenario = signal<ReportHorizonId>('today');
-export const nsKidsPets = signal<boolean>(false);
+export const nsSurface = signal<NsSurface>(initialSession.surface ?? 'design');
+export const nsViewMode = signal<NsViewMode>(initialSession.viewMode ?? 'job');
+export const nsScenario = signal<ReportHorizonId>(initialSession.scenario ?? 'today');
+export const nsKidsPets = signal<boolean>(initialSession.kidsPets ?? false);
 export const nsLandOpen = signal<boolean>(true);
 export const nsTuneOpen = signal<boolean>(false);
 export const nsMoreOpen = signal<boolean>(false);
-export const nsDrawer = signal<NsDrawer>(null);
+export const nsDrawer = signal<NsDrawer>(initialSession.drawer ?? null);
 export const nsActivePairKey = signal<string | null>(null);
 export const nsSearch = signal<string>('');
-export const nsPathPct = signal<number>(20);
-export const nsQtyById = signal<Record<string, number>>({});
-export const nsOverrides = signal<ReportSiteOverrides>({});
+export const nsPathPct = signal<number>(initialSession.pathPct ?? 20);
+export const nsQtyById = signal<Record<string, number>>(initialSession.qtyById ?? {});
+export const nsOverrides = signal<ReportSiteOverrides>(initialSession.overrides ?? {});
+export const nsPickerQuery = signal<string>(initialSession.pickerQuery ?? '');
+export const nsPickerFilters = signal<PickerFilterState>(
+  initialSession.pickerFilters ? { ...defaultPickerFilters(), ...initialSession.pickerFilters } : defaultPickerFilters(),
+);
+export const nsPickerMoreOpen = signal<boolean>(initialSession.pickerMoreOpen ?? false);
+export const nsPickerSort = signal<PickerSortBy>(initialSession.pickerSort ?? 'fit');
+export const nsPickerScrollTop = signal<number>(initialSession.pickerScrollTop ?? 0);
+export const nsPickerFocusId = signal<PlantId | null>(initialSession.pickerFocusId ?? null);
+
+export function resetPickerFilters(): void {
+  batch(() => {
+    nsPickerQuery.value = '';
+    nsPickerFilters.value = defaultPickerFilters('all');
+    nsPickerSort.value = 'fit';
+    nsPickerScrollTop.value = 0;
+    nsPickerFocusId.value = null;
+  });
+}
+
+function writeNsSessionSnapshot(): void {
+  try {
+    if (typeof sessionStorage === 'undefined') return;
+    const loc = store.location.peek();
+    const snap: NsSessionSnapshot = {
+      surface: nsSurface.peek(),
+      viewMode: nsViewMode.peek(),
+      scenario: nsScenario.peek(),
+      overrides: nsOverrides.peek(),
+      qtyById: nsQtyById.peek(),
+      pathPct: nsPathPct.peek(),
+      kidsPets: nsKidsPets.peek(),
+      drawer: nsDrawer.peek(),
+      pickerQuery: nsPickerQuery.peek(),
+      pickerFilters: nsPickerFilters.peek(),
+      pickerMoreOpen: nsPickerMoreOpen.peek(),
+      pickerSort: nsPickerSort.peek(),
+      pickerScrollTop: nsPickerScrollTop.peek(),
+      pickerFocusId: nsPickerFocusId.peek(),
+      ...(loc && loc.label
+        ? {
+            site: {
+              lat: loc.lat,
+              lon: loc.lon,
+              label: loc.label,
+              zone: store.climate.peek() ?? undefined,
+              country: store.country.peek().code ?? undefined,
+            },
+          }
+        : initialSession.site ? { site: initialSession.site } : {}),
+    };
+    sessionStorage.setItem(NS_SESSION_KEY, JSON.stringify(snap));
+  } catch { /* ignore private-mode quota */ }
+}
 const nsExistingIds = signal<ReadonlySet<PlantId>>(readIdSet(EXISTING_KEY));
 export const nsCheckedIds = signal<ReadonlySet<PlantId>>(readIdSet(CHECKED_KEY));
 export const nsLayerValues = signal<ReadonlyMap<PlantId, readonly LayerValue[]>>(new Map());
@@ -191,14 +331,40 @@ export const nsReport = computed<PaletteReport>(() => {
 export const starterPreview = computed<readonly Taxon[]>(() => {
   const pool = activePool.value;
   if (!pool.length) return [];
-  const eff = resolveEffectiveSite(store.location.value?.lookup ?? null, 'today', effectiveOverrides.value);
-  return selectStarterPalette(pool, eff, { maxPlants: 8 });
+  const lookup = store.location.value?.lookup ?? null;
+  const ov = effectiveOverrides.value;
+  const eff = resolveEffectiveSite(lookup, 'today', ov);
+  const eff2050 = resolveEffectiveSite(lookup, 'y2050', ov);
+  return selectStarterPalette(pool, eff, { maxPlants: 8, eff2050 });
 });
 
 let watcherStarted = false;
 export function startNsWatchers(): void {
   if (watcherStarted) return;
   watcherStarted = true;
+  // Restore session site (e.g. after language switch or reload) preserving Tune-site overrides.
+  if (initialSession.site && !store.location.peek()?.lookup && !nsSiteLoading.peek()) {
+    const s = initialSession.site;
+    void pickCoordinates(s.lat, s.lon, s.label, s.zone, s.country, true);
+  }
+  effect(() => {
+    void nsSurface.value;
+    void nsViewMode.value;
+    void nsScenario.value;
+    void nsOverrides.value;
+    void nsQtyById.value;
+    void nsPathPct.value;
+    void nsKidsPets.value;
+    void nsDrawer.value;
+    void nsPickerQuery.value;
+    void nsPickerFilters.value;
+    void nsPickerMoreOpen.value;
+    void nsPickerSort.value;
+    void nsPickerScrollTop.value;
+    void nsPickerFocusId.value;
+    void store.location.value;
+    writeNsSessionSnapshot();
+  });
   effect(() => {
     const src = store.source.value;
     const z = store.climate.value;
@@ -277,6 +443,7 @@ export async function pickCoordinates(
   label: string,
   fallbackZone?: ClimateZone,
   fallbackCountry?: string,
+  preserveOverrides = false,
 ): Promise<void> {
   nsSiteLoading.value = true;
   try {
@@ -319,15 +486,18 @@ export async function pickCoordinates(
     const country = lookup?.regions?.isoA2 ?? fallbackCountry ?? null;
 
     batch(() => {
-      const prevOv = nsOverrides.peek();
-      nsOverrides.value = {
-        ...(prevOv.room !== undefined ? { room: prevOv.room } : {}),
-        ...(prevOv.plotM2 !== undefined ? { plotM2: prevOv.plotM2 } : {}),
-      };
+      if (!preserveOverrides) {
+        const prevOv = nsOverrides.peek();
+        nsOverrides.value = {
+          ...(prevOv.room !== undefined ? { room: prevOv.room } : {}),
+          ...(prevOv.plotM2 !== undefined ? { plotM2: prevOv.plotM2 } : {}),
+        };
+      }
       store.location.value = { lat, lon, source: 'search', label, placeLevel: true, lookup };
       store.climate.value = zone;
       if (country) store.country.value = { code: country, source: 'location' };
     });
+    writeNsSessionSnapshot();
   } finally {
     nsSiteLoading.value = false;
   }

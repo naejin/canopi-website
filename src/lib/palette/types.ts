@@ -263,6 +263,7 @@ export interface Taxon {
   frost?: FrostFact[] | null;
   areas?: TaxonAreas | null;
   windTolerant?: boolean | null;
+  koppen?: KoppenShare[];
 }
 export interface TaxonAreas { native: string[]; introduced: string[] }
 export interface LightNiche { sunniest: Stratum | null; shadiest: Stratum | null; preferred: Stratum | null }

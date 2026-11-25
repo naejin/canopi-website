@@ -18,17 +18,20 @@ import {
   findCompatibleSwaps,
   formatAreaName,
   formatCountryName,
+  isStructuralVine,
   jobIds,
   jobsOf,
   months as MONTHS,
   preferredFrostC,
   toxicityStatusOf,
+  vineSupportTree,
 } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
 import { Glyph } from '../kit/Glyph.tsx';
 import { PlantThumb, ScaleRootSvg, WalterLiethSvg } from './GuildVisuals.tsx';
 import { computeTrackCaps, localizedMonthLabels, MiniYearRibbon } from './PhenologyRibbon.tsx';
+import { licenceUrlFor, PhotoLightbox, safeHttpHref, type LightboxPhoto } from './PhotoLightbox.tsx';
 import {
   doyToDateLabel,
   fmtNum,
@@ -58,7 +61,6 @@ import {
   verdictBadgeClass,
   verdictStampText,
   verdictSymbolLabel,
-  type LightKey,
 } from './ns-helpers.ts';
 import {
   activePool,
@@ -71,11 +73,21 @@ import {
   nsDrawer,
   nsGuestZoneById,
   nsLayerValues,
+  nsPickerFilters,
+  nsPickerFocusId,
+  nsPickerMoreOpen,
+  nsPickerQuery,
+  nsPickerScrollTop,
+  nsPickerSort,
   nsScenario,
   removePlantFromPalette,
+  resetPickerFilters,
+  showNsToast,
   siteAnalogueLabel,
   swapPlantInPalette,
   toggleExisting,
+  type PickerFilterState,
+  type PickerSortBy,
 } from './ns-state.ts';
 
 function localizedHabit(habit: string | null | undefined): string {
@@ -99,54 +111,6 @@ function toxDossierText(t: Taxon, details: Details | null = null): string {
   const parts = details?.toxicityParts?.map((tp) => tp.part.replace(/_/g, ' ')) ?? [];
   const uniq = [...new Set(parts)];
   return `${tx.level ?? T('ns.tox.caution')}${uniq.length ? ` (${uniq.slice(0, 3).join(', ')})` : ''}`;
-}
-
-interface PickerFilterState {
-  job: JobId | 'all';
-  sun: LightKey | 'all';
-  habit: string;
-  phaseIdx: number | null;
-  fillsGap: boolean;
-  thrivesToday: boolean;
-  thrives2050: boolean;
-  survivesExtremes: boolean;
-  droughtAdapted: boolean;
-  winterCrop: boolean;
-  windTolerant: boolean;
-  windbreak: boolean;
-  nonToxic: boolean;
-  fitsPh: boolean;
-  selfFertile: boolean;
-  edible: boolean;
-  nitrogenFixer: boolean;
-  fitsRoom: boolean;
-  annual: boolean;
-  inBloomNow: boolean;
-}
-
-function defaultPickerFilters(initialJob: JobId | 'all'): PickerFilterState {
-  return {
-    job: initialJob,
-    sun: 'all',
-    habit: 'all',
-    phaseIdx: null,
-    fillsGap: false,
-    thrivesToday: false,
-    thrives2050: false,
-    survivesExtremes: false,
-    droughtAdapted: false,
-    winterCrop: false,
-    windTolerant: false,
-    windbreak: false,
-    nonToxic: false,
-    fitsPh: false,
-    selfFertile: false,
-    edible: false,
-    nitrogenFixer: false,
-    fitsRoom: false,
-    annual: false,
-    inBloomNow: false,
-  };
 }
 
 function isWinterCrop(t: Taxon): boolean {
@@ -228,12 +192,41 @@ function SwapDiffTable({ curPlant, candPlant, rep }: { curPlant: Taxon; candPlan
   );
 }
 
-/** Verbatim port of mockup-v73.html Picker Drawer (L3815-4032) over ALL 761 catalog species with live facet counts. */
+/** Verbatim port of mockup-v73.html Picker Drawer (L3815-4032) over ALL 761 catalog species with live facet counts & remembered filters (Wave 5 N11). */
 function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: JobId | 'all' }) {
-  const [query, setQuery] = useState('');
-  const [f, setF] = useState<PickerFilterState>(() => defaultPickerFilters(initialJob));
-  const [moreOpen, setMoreOpen] = useState(false);
-  const [sortBy, setSortBy] = useState<'fit' | 'gaps' | 'height' | 'az'>('fit');
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const query = nsPickerQuery.value;
+  const f = nsPickerFilters.value;
+  const moreOpen = nsPickerMoreOpen.value;
+  const sortBy = nsPickerSort.value;
+
+  const setQuery = (next: string) => { nsPickerQuery.value = next; };
+  const setF = (next: PickerFilterState | ((prev: PickerFilterState) => PickerFilterState)) => {
+    nsPickerFilters.value = typeof next === 'function' ? next(nsPickerFilters.peek()) : next;
+  };
+  const setMoreOpen = (next: boolean) => { nsPickerMoreOpen.value = next; };
+  const setSortBy = (next: PickerSortBy) => { nsPickerSort.value = next; };
+
+  // Gap CTA sets only the target job while preserving remembered query & other filters.
+  useEffect(() => {
+    if (initialJob !== 'all' && nsPickerFilters.peek().job !== initialJob) {
+      nsPickerFilters.value = { ...nsPickerFilters.peek(), job: initialJob };
+    }
+  }, [initialJob]);
+
+  // Restore scroll position and focus to the previously opened plant row when returning from Dossier.
+  useLayoutEffect(() => {
+    const el = bodyRef.current;
+    if (el && nsPickerScrollTop.peek() > 0) {
+      el.scrollTop = nsPickerScrollTop.peek();
+    }
+    const focusId = nsPickerFocusId.peek();
+    if (el && focusId) {
+      nsPickerFocusId.value = null;
+      const btn = el.querySelector<HTMLButtonElement>(`button[data-picker-plant-id="${focusId}"]`);
+      if (btn) btn.focus();
+    }
+  }, []);
 
   useEffect(() => {
     void ensureAllNamesLoaded();
@@ -428,12 +421,15 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
     + boolLabels.filter((b) => Boolean(f[b.key])).length;
 
   function clearFilters() {
-    setQuery('');
-    setF(defaultPickerFilters('all'));
+    resetPickerFilters();
   }
 
   return (
-    <div class="drawer-body">
+    <div
+      ref={bodyRef}
+      class="drawer-body"
+      onScroll={(e) => { nsPickerScrollTop.value = (e.currentTarget as HTMLDivElement).scrollTop; }}
+    >
       <label class="sr-only" for="picker-search">{T('ns.picker.searchPlaceholder', { n: catalog.length })}</label>
       <input
         id="picker-search"
@@ -607,7 +603,12 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
                 <button
                   type="button"
                   class="picker-row-open"
-                  onClick={() => { nsDrawer.value = { kind: 'dossier', id: p.id }; }}
+                  data-picker-plant-id={p.id}
+                  onClick={() => {
+                    if (bodyRef.current) nsPickerScrollTop.value = bodyRef.current.scrollTop;
+                    nsPickerFocusId.value = p.id;
+                    nsDrawer.value = { kind: 'dossier', id: p.id, returnTo: { kind: 'picker', job: f.job } };
+                  }}
                 >
                   <PlantThumb taxon={p} size={44} />
                   <div style={{ minWidth: 0 }}>
@@ -1129,25 +1130,49 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
   const inPalette = useMemo(() => new Set(store.members.value), [store.members.value]);
   const swapCand = useMemo(() => findCompatibleSwaps(taxon, activePool.value, rep.eff, inPalette, 1)[0]?.taxon ?? null, [taxon, activePool.value, rep.eff, inPalette]);
 
-  // Photo gallery switcher (overall + Schema 4.10 gallery roles) + photo credit
+  // Photo gallery switcher (local-only URLs: zero third-party requests; Wave 5 N8-N9) + photo credit
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const zoomBtnRef = useRef<HTMLButtonElement>(null);
   const galleryItems = useMemo(() => {
-    const out: { role: string; url: string | null; credit: string | null; licence: string | null }[] = [];
-    if (taxon.image?.url) {
-      out.push({ role: 'overall', url: taxon.image.url, credit: taxon.image.credit, licence: taxon.image.licence });
+    const out: { role: string; url: string | null; credit: string | null; licence: string | null; sourcePageUrl: string | null }[] = [];
+    if (taxon.image?.url && taxon.image.url.startsWith('/')) {
+      out.push({
+        role: 'overall',
+        url: taxon.image.url,
+        credit: taxon.image.credit,
+        licence: taxon.image.licence,
+        sourcePageUrl: taxon.image.source_page_url,
+      });
     }
     if (details?.gallery?.length) {
       for (const g of details.gallery) {
-        if (!out.some((x) => x.role === g.role)) {
-          out.push({ role: g.role, url: g.url, credit: g.credit, licence: g.licence });
+        if (g.url && g.url.startsWith('/') && !out.some((x) => x.role === g.role)) {
+          out.push({
+            role: g.role,
+            url: g.url,
+            credit: g.credit,
+            licence: g.licence,
+            sourcePageUrl: g.source_page_url,
+          });
         }
       }
     }
     if (!out.length) {
-      out.push({ role: 'overall', url: null, credit: null, licence: null });
+      out.push({ role: 'overall', url: null, credit: null, licence: null, sourcePageUrl: null });
     }
     return out;
   }, [taxon.image, details?.gallery]);
   const activePhoto = galleryItems[roleIdx] ?? galleryItems[0];
+  const lightboxItems: LightboxPhoto[] = useMemo(
+    () => galleryItems.filter((g): g is LightboxPhoto => typeof g.url === 'string' && g.url.length > 0),
+    [galleryItems],
+  );
+  const activeSourceHref = safeHttpHref(activePhoto.sourcePageUrl);
+  const activeLicHref = licenceUrlFor(activePhoto.licence);
+  const vineSupport = isStructuralVine(taxon) ? vineSupportTree(taxon, rep.taxa) : null;
+  const vineNote = isStructuralVine(taxon)
+    ? (vineSupport ? T('ns.vine.climbsTree', { tree: taxCommonName(vineSupport) }) : T('ns.vine.needsTrellis'))
+    : null;
 
   const pct = (val: number, min: number, max: number) => Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100));
   const coldMin = -35, coldMax = 15, heatMin = 15, heatMax = 50;
@@ -1226,12 +1251,21 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
 
   return (
     <div class="drawer-body">
-      {/* Plant Passport Hero — Herbarium Photo Plate (1 px ink keyline + margin credit) */}
+      {/* Plant Passport Hero — Herbarium Photo Plate (1 px ink keyline + margin credit + Botanical Lightbox) */}
       <div class="dossier-hero">
         <figure class="herbarium-plate">
           <div class="herbarium-frame">
             {activePhoto.url ? (
-              <img class="dossier-img" src={activePhoto.url} width={112} height={112} alt={`${taxCommonName(taxon)} (${activePhoto.role})`} />
+              <button
+                ref={zoomBtnRef}
+                type="button"
+                class="herbarium-zoom-btn"
+                aria-label={T('ns.lightbox.openAria', { plant: taxCommonName(taxon) })}
+                onClick={() => setLightboxOpen(true)}
+              >
+                <img class="dossier-img" src={activePhoto.url} width={112} height={112} alt={`${taxCommonName(taxon)} (${activePhoto.role})`} />
+                <span class="herbarium-zoom-cue" aria-hidden="true">⤢</span>
+              </button>
             ) : (
               <span class="dossier-img plant-thumb-fb" aria-hidden="true">
                 <Glyph
@@ -1246,10 +1280,37 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
               ? T('ns.dossier.photoCredit', { author: activePhoto.credit })
               : T('ns.dossier.sourceCurated')}
             {activePhoto.licence && (
-              <> <span class="nowrap">({activePhoto.licence})</span></>
+              <>
+                {' '}
+                {activeLicHref ? (
+                  <a class="herbarium-credit-link nowrap" href={activeLicHref} target="_blank" rel="noopener noreferrer">
+                    ({activePhoto.licence})
+                  </a>
+                ) : (
+                  <span class="nowrap">({activePhoto.licence})</span>
+                )}
+              </>
+            )}
+            {activeSourceHref && (
+              <>
+                {' '}
+                <a class="herbarium-credit-link nowrap" href={activeSourceHref} target="_blank" rel="noopener noreferrer">
+                  {T('ns.lightbox.sourceLink')} ↗
+                </a>
+              </>
             )}
           </figcaption>
         </figure>
+        {lightboxOpen && lightboxItems.length > 0 && (
+          <PhotoLightbox
+            items={lightboxItems}
+            initialIdx={Math.min(roleIdx, lightboxItems.length - 1)}
+            taxonName={taxCommonName(taxon)}
+            canonicalName={taxon.canonical_name}
+            onClose={() => setLightboxOpen(false)}
+            returnFocusTo={zoomBtnRef.current}
+          />
+        )}
         <div style={{ display: 'grid', gap: '8px', flex: 1, minWidth: '200px' }}>
           <div class="passport-dials">
             <div class="passport-dial" data-lvl={vToday.level}>
@@ -1279,6 +1340,7 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
             {tox && <span class={`badge ${tox.cls}`}>{tox.text}</span>}
             {invasiveHere && countryName && <span class="badge badge-warn">{T('ns.dossier.invasiveHere', { country: countryName })}</span>}
             {pollWarn && <span class="badge badge-warn">{pollWarn}</span>}
+            {vineNote && <span class="badge">{vineNote}</span>}
             {nativeStatus === 'native' && areaName && <span class="badge badge-ok">{T('ns.dossier.nativeHere', { area: areaName })}</span>}
             {nativeStatus === 'introduced' && areaName && <span class="badge">{T('ns.dossier.introducedHere', { area: areaName })}</span>}
             <button
@@ -1643,7 +1705,14 @@ export function Drawers({ rep }: { rep: PaletteReport }) {
     }
     closeBtnRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') nsDrawer.value = null;
+      if (e.key === 'Escape') {
+        const cur = nsDrawer.peek();
+        if (cur?.kind === 'dossier' && cur.returnTo) {
+          nsDrawer.value = cur.returnTo;
+        } else {
+          nsDrawer.value = null;
+        }
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => {
@@ -1681,6 +1750,12 @@ export function Drawers({ rep }: { rep: PaletteReport }) {
       ? siteLabel
       : dossierTaxon ? taxCommonName(dossierTaxon) : T('ns.dossier.title');
 
+  const dossierInPalette = dossierTaxon ? store.members.value.includes(dossierTaxon.id) : false;
+  const dossierGuestZone = dossierTaxon ? nsGuestZoneById.value.get(dossierTaxon.id) : undefined;
+  const returnLabel = drawer.kind === 'dossier' && drawer.returnTo
+    ? (drawer.returnTo.kind === 'picker' ? T('ns.dossier.backToSearch') : T('ns.dossier.backToAtlas'))
+    : null;
+
   void nsLayerValues.value;
 
   return (
@@ -1694,11 +1769,19 @@ export function Drawers({ rep }: { rep: PaletteReport }) {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        onKeyDown={(e) => { if (e.key === 'Escape') nsDrawer.value = null; }}
       >
         <div class="drawer-handle" />
         <header class="drawer-head">
-          <div>
+          <div style={{ minWidth: 0 }}>
+            {drawer.kind === 'dossier' && drawer.returnTo && returnLabel && (
+              <button
+                type="button"
+                class="drawer-back-btn"
+                onClick={() => { nsDrawer.value = drawer.returnTo!; }}
+              >
+                ← {returnLabel}
+              </button>
+            )}
             {kicker && (
               drawer.kind === 'dossier'
                 ? <p class="herbarium-label">{kicker}</p>
@@ -1707,15 +1790,35 @@ export function Drawers({ rep }: { rep: PaletteReport }) {
             <h2 style={{ fontSize: '24px', marginTop: '2px' }}>{title}</h2>
             {dossierTaxon && <p class="muted" style={{ fontStyle: 'italic' }}>{dossierTaxon.canonical_name}</p>}
           </div>
-          <button
-            ref={closeBtnRef}
-            type="button"
-            class="drawer-close"
-            aria-label={T('ns.close')}
-            onClick={() => { nsDrawer.value = null; }}
-          >
-            {T('ns.close')}
-          </button>
+          <div class="drawer-head-acts">
+            {drawer.kind === 'dossier' && dossierTaxon && (
+              <button
+                type="button"
+                class={dossierInPalette ? 'btn-ghost drawer-add-btn is-added' : 'btn-primary drawer-add-btn'}
+                aria-pressed={dossierInPalette ? 'true' : 'false'}
+                onClick={() => {
+                  if (dossierInPalette) {
+                    removePlantFromPalette(dossierTaxon.id);
+                    showNsToast(T('ns.dossier.removedToast', { plant: taxCommonName(dossierTaxon) }));
+                  } else {
+                    addPlantToPalette(dossierTaxon.id, dossierGuestZone);
+                    showNsToast(T('ns.dossier.addedToast', { plant: taxCommonName(dossierTaxon) }));
+                  }
+                }}
+              >
+                {dossierInPalette ? `✓ ${T('ns.picker.inPalette')}` : `+ ${T('ns.picker.add')}`}
+              </button>
+            )}
+            <button
+              ref={closeBtnRef}
+              type="button"
+              class="drawer-close"
+              aria-label={T('ns.close')}
+              onClick={() => { nsDrawer.value = null; }}
+            >
+              {T('ns.close')}
+            </button>
+          </div>
         </header>
         {drawer.kind === 'picker' && <PickerDrawer rep={rep} initialJob={drawer.job} />}
         {drawer.kind === 'atlas' && <AtlasDrawer rep={rep} swapFor={drawer.swapFor} />}

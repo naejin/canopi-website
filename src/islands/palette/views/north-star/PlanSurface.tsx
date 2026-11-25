@@ -1,10 +1,12 @@
 /** @jsxImportSource preact */
 // Verbatim 1:1 port of mockup-v73.html renderPlan (L3308).
+import { useRef, useState } from 'preact/hooks';
 import type { PaletteReport, Taxon } from '../../../../lib/palette/index.ts';
 import { buildSilhouetteGeometry, classifyHabitSilhouette } from '../../../../lib/botanical-silhouettes.ts';
 import * as store from '../../store.ts';
 import { P, T } from '../../strings.ts';
 import { PlantThumb } from './GuildVisuals.tsx';
+import { PhotoLightbox } from './PhotoLightbox.tsx';
 import {
   defaultQtyFor,
   downloadCanopiJson,
@@ -28,6 +30,8 @@ import {
 } from './ns-state.ts';
 
 export function PlanSurface({ rep }: { rep: PaletteReport }) {
+  const [lightboxTaxon, setLightboxTaxon] = useState<Taxon | null>(null);
+  const lightboxTriggerRef = useRef<HTMLElement | null>(null);
   const checked = nsCheckedIds.value;
   const qtyMap = nsQtyById.value;
   const pathPct = nsPathPct.value;
@@ -350,7 +354,21 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
                       onChange={() => toggleChecked(p.id)}
                     />
                   </label>
-                  <PlantThumb taxon={p} size={44} />
+                  {p.image?.url && p.image.url.startsWith('/') ? (
+                    <button
+                      type="button"
+                      class="thumb-zoom-btn"
+                      aria-label={T('ns.lightbox.openAria', { plant: fullName })}
+                      onClick={(e) => {
+                        lightboxTriggerRef.current = e.currentTarget;
+                        setLightboxTaxon(p);
+                      }}
+                    >
+                      <PlantThumb taxon={p} size={44} />
+                    </button>
+                  ) : (
+                    <PlantThumb taxon={p} size={44} />
+                  )}
                   <div class="nursery-meta">
                     <div>
                       <strong>{fullName}</strong>{' '}
@@ -429,6 +447,21 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
           </details>
         )}
       </section>
+      {lightboxTaxon && lightboxTaxon.image?.url && (
+        <PhotoLightbox
+          items={[{
+            role: 'overall',
+            url: lightboxTaxon.image.url,
+            credit: lightboxTaxon.image.credit,
+            licence: lightboxTaxon.image.licence,
+            sourcePageUrl: lightboxTaxon.image.source_page_url,
+          }]}
+          taxonName={taxCommonName(lightboxTaxon)}
+          canonicalName={lightboxTaxon.canonical_name}
+          onClose={() => setLightboxTaxon(null)}
+          returnFocusTo={lightboxTriggerRef.current}
+        />
+      )}
     </div>
   );
 }

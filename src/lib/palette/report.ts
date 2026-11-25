@@ -744,7 +744,9 @@ export function crownAreaM2(taxon: Taxon): number | null {
   const w = taxon.traits.width_max_m;
   if (w === null || !Number.isFinite(w) || w <= 0) return null;
   const r = w / 2;
-  return Math.PI * r * r;
+  const area = Math.PI * r * r;
+  // Climbers/vines grow vertically on a tree or trellis rather than occupying a flat horizontal circle of their vine length.
+  return sizeClassOf(taxon) === 'climber' ? Math.min(area, 2.5) : area;
 }
 
 export function computeCrownBudget(taxa: readonly Taxon[], plotM2: number): CrownBudget {
@@ -855,11 +857,98 @@ export function findCompatibleSwaps(
 export interface StarterOptions {
   maxPlants?: number;
   existingIds?: ReadonlySet<PlantId>;
+  eff2050?: EffectiveSiteClimate | null;
+}
+
+const TRAILING_GROUND_GENERA = new Set(['Ipomoea', 'Cucurbita', 'Citrullus', 'Cucumis']);
+
+/** True for structural climbing vines (excludes low trailing/sprawling ground crops like sweet potato or melons). */
+export function isStructuralVine(taxon: Taxon): boolean {
+  if (sizeClassOf(taxon) !== 'climber') return false;
+  if (TRAILING_GROUND_GENERA.has(taxon.genus)) return false;
+  const maxH = taxon.traits.height_m?.max ?? null;
+  if (maxH !== null && maxH < 1.8 && isAnnualTaxon(taxon)) return false;
+  return true;
+}
+
+/** Returns the canopy tree a vine can climb in the guild, or null when it needs a trellis. */
+export function vineSupportTree(taxon: Taxon, guild: readonly Taxon[]): Taxon | null {
+  if (!isStructuralVine(taxon)) return null;
+  return guild.find((t) => t.id !== taxon.id && sizeClassOf(t) === 'tree') ?? null;
+}
+
+function isEdibleRootCrop(taxon: Taxon): boolean {
+  const sc = sizeClassOf(taxon);
+  if (sc === 'tree' || sc === 'shrub') return false;
+  if ((taxon.traits.edibility_rating ?? 0) < 3) return false;
+  const rs = (taxon.traits.root_system_type ?? '').toLowerCase();
+  const cg = (taxon.traits.clonal_growth_form ?? '').toLowerCase();
+  const h = (taxon.traits.habit ?? '').toLowerCase();
+  return rs.includes('tuber') || rs.includes('bulb') || rs.includes('taproot') || rs.includes('corm')
+    || cg.includes('tuber') || cg.includes('bulb') || cg.includes('corm')
+    || h.includes('geophyte');
+}
+
+function siteKoppenScore(taxon: Taxon, eff: EffectiveSiteClimate): number {
+  const kList = taxon.koppen;
+  if (!eff.koppen || !kList?.length) return 0;
+  const siteK = eff.koppen.toLowerCase();
+  const exact = kList.find((k) => k.code.toLowerCase() === siteK);
+  if (exact) return Math.min(36, exact.share * 120);
+  const prefix2 = siteK.slice(0, 2);
+  const groupShare = kList.filter((k) => k.code.toLowerCase().startsWith(prefix2)).reduce((s, k) => s + k.share, 0);
+  if (groupShare > 0) return Math.min(10, groupShare * 20);
+  return -10;
+}
+
+function siteMoistureScore(taxon: Taxon, eff: EffectiveSiteClimate): number {
+  const cl = taxon.climate;
+  let score = 0;
+  if (cl && eff.precipMm != null && cl.precip?.low != null && cl.precip?.high != null) {
+    const { low, high, median } = cl.precip;
+    const mid = median ?? (low + high) / 2;
+    if (eff.precipMm < low || eff.precipMm > high) {
+      score -= 45;
+    } else if (eff.precipMm < mid * 0.45 || eff.precipMm > mid * 2.2) {
+      // Outside the plant's typical central moisture band (prevents wet-seep ferns in arid starters).
+      score -= 35;
+    } else {
+      const centralHalf = Math.max(120, (high - low) * 0.35);
+      const dist = Math.min(1, Math.abs(eff.precipMm - mid) / centralHalf);
+      score += 18 * (1 - dist * 0.85);
+    }
+  }
+  if (cl && eff.aridityIndex != null && cl.aridity?.low != null && cl.aridity?.high != null) {
+    const { low, high, median } = cl.aridity;
+    const mid = median ?? (low + high) / 2;
+    if (eff.aridityIndex < low || eff.aridityIndex > high || eff.aridityIndex < mid * 0.45) {
+      score -= 25;
+    } else {
+      const centralHalf = Math.max(0.15, (high - low) * 0.35);
+      const dist = Math.min(1, Math.abs(eff.aridityIndex - mid) / centralHalf);
+      score += 12 * (1 - dist * 0.85);
+    }
+  }
+  if (eff.dryMonths != null && eff.dryMonths >= 4 && (taxon.traits.drought_tolerance ?? '').toLowerCase() === 'low') {
+    score -= 18;
+  }
+  return score;
+}
+
+function sitePhScore(taxon: Taxon, eff: EffectiveSiteClimate): number {
+  const ph = taxon.traits.soil_ph;
+  if (eff.soilPh == null || ph?.min == null || ph?.max == null) return 0;
+  const mid = (ph.min + ph.max) / 2;
+  const half = Math.max(0.5, (ph.max - ph.min) / 2);
+  const dist = Math.min(1.5, Math.abs(eff.soilPh - mid) / half);
+  return 8 * (1 - dist * 0.65);
 }
 
 /**
- * Picks a balanced starter guild strictly from plants that `fits` (0 outside climate/extremes/pH)
- * while keeping total measured crown area <= eff.netPlotM2.
+ * Picks a balanced, per-site layered starter guild strictly from plants that `fits`
+ * (0 outside climate/extremes/pH) while keeping total measured crown area <= eff.netPlotM2.
+ * Never excludes toxic or invasive species (inform, don't block); ranks down severe toxicity
+ * and local invasives softly while preferring regional staples, moisture/Koppen fit, and 2050 resilience.
  */
 export function selectStarterPalette(
   pool: readonly Taxon[],
@@ -867,18 +956,55 @@ export function selectStarterPalette(
   options: StarterOptions = {},
 ): Taxon[] {
   const maxPlants = options.maxPlants ?? 8;
+  const eff2050 = options.eff2050 ?? null;
   const nicheStratumOf = (t: Taxon): string => t.stratum?.value ?? t.light.preferred ?? t.light.sunniest ?? '';
+  const isSevereTox = (t: Taxon): boolean => (t.warnings.toxicity?.level ?? '').toLowerCase() === 'severe';
+  const isInvasiveHere = (t: Taxon): boolean =>
+    !!eff.country && (t.warnings.invasive_in?.some((r) => r.country === eff.country) ?? false);
+
   const fitsPool = pool
-    .map((t) => ({
-      taxon: t,
-      verdict: evaluatePlantVerdict(t, eff, options.existingIds),
-      jobs: jobsOf(t),
-      area: crownAreaM2(t) ?? 0,
-      sizeClass: sizeClassOf(t),
-      stratum: nicheStratumOf(t),
-      perennial: t.traits.is_annual !== true,
-      edibility: t.traits.edibility_rating ?? 0,
-    }))
+    .map((t) => {
+      const verdict = evaluatePlantVerdict(t, eff, options.existingIds);
+      const verdict2050 = eff2050 ? evaluatePlantVerdict(t, eff2050, options.existingIds) : null;
+      const jobs = jobsOf(t);
+      const area = crownAreaM2(t) ?? 0;
+      const sizeClass = sizeClassOf(t);
+      const stratum = nicheStratumOf(t);
+      const perennial = !isAnnualTaxon(t);
+      const edibility = t.traits.edibility_rating ?? 0;
+      const kScore = siteKoppenScore(t, eff);
+      const mScore = siteMoistureScore(t, eff);
+      const pScore = sitePhScore(t, eff);
+      const v50Score = verdict2050 ? (verdict2050.level === 'fits' ? 16 : verdict2050.level === 'check' ? 4 : -18) : 0;
+      const maxH = t.traits.height_m?.max ?? null;
+      const giantPenalty = eff.room === 'unsure' && sizeClass === 'tree' && maxH !== null && maxH > 18 ? 40 : 0;
+      const baseScore =
+        kScore + mScore + pScore + v50Score
+        + (perennial ? 12 : 0)
+        + edibility * 3.0
+        + (t.image ? 3 : 0)
+        + jobs.length * 1.5
+        - giantPenalty
+        - (isInvasiveHere(t) ? 120 : 0)
+        - (isSevereTox(t) ? 60 : 0)
+        - (t.warnings.weed_potential ? 16 : 0)
+        - (t.warnings.allelopathic ? 10 : 0)
+        - (verdict.notes.includes('few_records') ? 6 : 0);
+      return {
+        taxon: t,
+        verdict,
+        jobs,
+        area,
+        sizeClass,
+        stratum,
+        perennial,
+        edibility,
+        kScore,
+        baseScore,
+        isClimber: isStructuralVine(t),
+        isRoot: isEdibleRootCrop(t),
+      };
+    })
     .filter((x) => x.verdict.level === 'fits' && x.jobs.length > 0 && !x.verdict.subsoilPhTrap)
     .filter((x) => eff.roomLimitM === null || eff.roomLimitM > 2 || x.taxon.traits.height_m?.max == null || x.taxon.traits.height_m.max <= eff.roomLimitM);
 
@@ -888,6 +1014,7 @@ export function selectStarterPalette(
   const usedStrata = new Set<string>();
   let usedArea = 0;
 
+  const nFixCount = (): number => chosen.filter((t) => jobsOf(t).includes('feeds_soil')).length;
   const canAdd = (item: (typeof fitsPool)[number]): boolean =>
     !chosenIds.has(item.taxon.id) && usedArea + item.area <= eff.netPlotM2;
 
@@ -900,78 +1027,117 @@ export function selectStarterPalette(
     return true;
   };
 
-  const isSevereTox = (t: Taxon): boolean =>
-    (t.warnings.toxicity?.level ?? '').toLowerCase() === 'severe';
-
-  const compareTieBreak = (a: (typeof fitsPool)[number], b: (typeof fitsPool)[number]): number =>
-    ((isSevereTox(a.taxon) ? 1 : 0) - (isSevereTox(b.taxon) ? 1 : 0))
-    || ((b.perennial ? 1 : 0) - (a.perennial ? 1 : 0))
-    || (((b.taxon.family && !usedFamilies.has(b.taxon.family)) ? 1 : 0) - ((a.taxon.family && !usedFamilies.has(a.taxon.family)) ? 1 : 0))
-    || (((b.stratum && !usedStrata.has(b.stratum)) ? 1 : 0) - ((a.stratum && !usedStrata.has(a.stratum)) ? 1 : 0))
-    || ((b.taxon.image ? 1 : 0) - (a.taxon.image ? 1 : 0))
-    || (b.jobs.length - a.jobs.length)
-    || (b.edibility - a.edibility)
-    || (a.area - b.area)
-    || a.taxon.canonical_name.localeCompare(b.taxon.canonical_name);
+  const dynScore = (
+    item: (typeof fitsPool)[number],
+    bonusFn?: (x: (typeof fitsPool)[number]) => number,
+  ): number => {
+    let s = item.baseScore;
+    if (item.taxon.family && !usedFamilies.has(item.taxon.family)) s += 8;
+    if (item.stratum && !usedStrata.has(item.stratum)) s += 5;
+    if (nFixCount() >= 2 && item.jobs.includes('feeds_soil')) s -= 20;
+    if (bonusFn) s += bonusFn(item);
+    return s;
+  };
 
   const pickBest = (
     pred: (item: (typeof fitsPool)[number]) => boolean,
-    extraSort?: (a: (typeof fitsPool)[number], b: (typeof fitsPool)[number]) => number,
+    bonusFn?: (x: (typeof fitsPool)[number]) => number,
   ): boolean => {
     const cands = fitsPool
       .filter((x) => canAdd(x) && pred(x))
-      .sort((a, b) => (extraSort ? extraSort(a, b) : 0) || compareTieBreak(a, b));
+      .sort((a, b) => dynScore(b, bonusFn) - dynScore(a, bonusFn) || a.taxon.canonical_name.localeCompare(b.taxon.canonical_name));
     return cands[0] ? addItem(cands[0]) : false;
   };
 
-  const pickBestForJob = (job: JobId, preferSmall = false): boolean => {
-    const maxSingleArea = eff.netPlotM2 * 0.35;
-    return pickBest(
-      (x) => x.jobs.includes(job),
-      (a, b) => {
-        const aBig = a.area > maxSingleArea ? 1 : 0;
-        const bBig = b.area > maxSingleArea ? 1 : 0;
-        if (aBig !== bBig) return aBig - bBig;
-        if (preferSmall && a.area !== b.area) return a.area - b.area;
-        return 0;
-      },
-    );
-  };
-
-  // Pass 0: build true multi-strata agroecological structure (tree canopy + shrub + perennial N-fixer)
+  // Layer 1: Fruit or nut canopy tree sized for the room (weight yield/edibility above raw Koppen share)
   if ((eff.roomLimitM === null || eff.roomLimitM >= 3) && eff.netPlotM2 >= 25 && chosen.length < maxPlants) {
-    const maxTreeArea = eff.netPlotM2 * 0.40;
+    const maxTreeArea = eff.netPlotM2 * 0.65;
+    const isUnsureRoom = eff.room === 'unsure';
     pickBest(
       (x) => x.sizeClass === 'tree' && x.area <= maxTreeArea,
-      (a, b) => {
-        const aSev = isSevereTox(a.taxon) ? 1 : 0;
-        const bSev = isSevereTox(b.taxon) ? 1 : 0;
-        const aSensible = (a.taxon.traits.height_m?.max ?? 99) <= 20 ? 0 : 1;
-        const bSensible = (b.taxon.traits.height_m?.max ?? 99) <= 20 ? 0 : 1;
-        return (aSev - bSev)
-          || (aSensible - bSensible)
-          || ((b.jobs.includes('feeds_you') ? 1 : 0) - (a.jobs.includes('feeds_you') ? 1 : 0))
-          || (b.edibility - a.edibility);
+      (x) => {
+        const h = x.taxon.traits.height_m?.max ?? 10;
+        let b = -x.kScore * 0.4;
+        if (x.jobs.includes('feeds_you')) b += 40 + x.edibility * 11;
+        else b -= 35;
+        if (isUnsureRoom) {
+          if (h >= 5 && h <= 16.5) b += 22;
+          else if (h >= 3.5 && h < 5) b += 6;
+          else if (h > 18) b -= 35;
+        } else if (eff.roomLimitM !== null && h <= eff.roomLimitM) {
+          b += 15;
+        }
+        return b;
       },
     );
   }
+
+  // Layer 2: Fruit or support shrub
   if ((eff.roomLimitM === null || eff.roomLimitM >= 1.5) && eff.netPlotM2 >= 12 && chosen.length < maxPlants) {
     const maxShrubArea = eff.netPlotM2 * 0.25;
     pickBest(
       (x) => x.sizeClass === 'shrub' && x.area <= maxShrubArea,
-      (a, b) => ((isSevereTox(a.taxon) ? 1 : 0) - (isSevereTox(b.taxon) ? 1 : 0))
-        || ((b.jobs.includes('feeds_you') || b.jobs.includes('helpers') ? 1 : 0) - (a.jobs.includes('feeds_you') || a.jobs.includes('helpers') ? 1 : 0)),
+      (x) => (x.jobs.includes('feeds_you') && x.edibility >= 3 ? 14 : 0) + (x.jobs.includes('helpers') ? 6 : 0),
     );
   }
-  if (chosen.length < maxPlants && !chosen.some((t) => jobsOf(t).includes('feeds_soil'))) {
-    pickBest((x) => x.jobs.includes('feeds_soil') && x.area <= eff.netPlotM2 * 0.25);
+
+  // Layer 3: Structural perennial edible climber (excludes low trailing ground crops)
+  if (chosen.length < maxPlants) {
+    pickBest(
+      (x) => x.isClimber && x.area <= eff.netPlotM2 * 0.25,
+      (x) => {
+        const h = x.taxon.traits.height_m?.max ?? 2;
+        let b = 0;
+        if (x.perennial) b += 24;
+        if (h >= 3) b += 20;
+        else if (h < 2.2) b -= 22;
+        if (x.jobs.includes('feeds_you') && x.edibility >= 4) b += 34;
+        else if (x.jobs.includes('feeds_you') && x.edibility >= 3) b += 22;
+        else if (!x.jobs.includes('feeds_you') || x.edibility < 2) b -= 24;
+        if (!x.jobs.includes('feeds_soil')) b += 6;
+        return b;
+      },
+    );
   }
 
-  // Pass 1: cover all 6 canonical jobs
+  // Layer 4: Nitrogen-fixer (skip if already covered)
+  if (chosen.length < maxPlants && !chosen.some((t) => jobsOf(t).includes('feeds_soil'))) {
+    pickBest(
+      (x) => x.jobs.includes('feeds_soil') && x.area <= eff.netPlotM2 * 0.25,
+      (x) => (x.sizeClass === 'shrub' || x.sizeClass === 'herb' ? 8 : 0),
+    );
+  }
+
+  // Layer 5: Herb / pollinator plant
+  if (chosen.length < maxPlants) {
+    pickBest(
+      (x) => x.sizeClass === 'herb' && x.jobs.includes('helpers') && x.area <= eff.netPlotM2 * 0.15,
+      (x) => (x.perennial ? 8 : 0) + (x.jobs.includes('shelter') ? 6 : 0),
+    );
+  }
+
+  // Layer 6: Groundcover / living mulch (skip if already covered)
+  if (chosen.length < maxPlants && !chosen.some((t) => jobsOf(t).includes('ground'))) {
+    pickBest(
+      (x) => (x.sizeClass === 'groundcover' || ((x.taxon.traits.height_m?.max ?? 9) <= 0.8 && (x.jobs.includes('ground') || x.jobs.includes('mulch'))))
+        && x.area <= eff.netPlotM2 * 0.15,
+      (x) => (x.jobs.includes('ground') ? 10 : 0) + (x.jobs.includes('mulch') ? 8 : 0),
+    );
+  }
+
+  // Layer 7: True root or tuber crop (only when database traits confirm root/tuber/bulb + edible)
+  if (chosen.length < maxPlants) {
+    pickBest(
+      (x) => x.isRoot && x.jobs.includes('feeds_you') && x.area <= eff.netPlotM2 * 0.15,
+      (x) => (x.edibility >= 4 ? 10 : 0) + (x.perennial ? 6 : 0),
+    );
+  }
+
+  // Pass 1: ensure all 6 canonical jobs are covered
   for (const job of jobIds) {
     if (chosen.length >= maxPlants) break;
     if (chosen.some((t) => jobsOf(t).includes(job))) continue;
-    pickBestForJob(job, false);
+    pickBest((x) => x.jobs.includes(job) && x.area <= eff.netPlotM2 * 0.3);
   }
 
   // Pass 2: reinforce single-species jobs with diverse perennial backups
@@ -979,10 +1145,10 @@ export function selectStarterPalette(
     if (chosen.length >= maxPlants) break;
     const count = chosen.filter((t) => jobsOf(t).includes(job)).length;
     if (count >= 2) continue;
-    pickBestForJob(job, true);
+    pickBest((x) => x.jobs.includes(job) && x.area <= eff.netPlotM2 * 0.25);
   }
 
-  // Pass 3: fill remaining slots up to maxPlants (default 8) with diverse families & strata
+  // Pass 3: fill remaining slots up to maxPlants with diverse high-fit species
   while (chosen.length < maxPlants) {
     if (!pickBest((x) => x.area <= eff.netPlotM2 * 0.25)) {
       if (!pickBest(() => true)) break;

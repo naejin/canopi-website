@@ -75,12 +75,13 @@ function LoadingLine() {
   const busy = !ready.value;
   const [placed, setPlaced] = useState(false);
   useEffect(() => setPlaced(true), []);
-  // "You can already give your place." only beside the Place form, never while a palette restores (R15).
+  // Placeholder and NorthStarArrival render their own integrated loading states (Wave 5 N10);
+  // keep a single empty live region here when those own the visual, avoiding duplicate raw text.
+  const ownedByShell = restoring.value || step.value === 'palette' || view.value === 'start';
   const canGive = view.value === 'start' && !opening.value;
   const p = loadProgress.value;
-  // Board Loading: "Still loading: the connection is slow. Keep going; your answers are kept. 0.8 of 1.4 MB."
   const bytes = p && p.total > 0 ? ` ${T('load.progress', { got: formatNumber(Math.min(p.got, p.total) / 1e6, pageLang(), 1), total: formatMegabytes(p.total / 1e6, pageLang()) })}` : '';
-  return <p class="status-line" role="status" aria-busy={busy ? 'true' : undefined}>{busy && placed ? (slow.value ? `${T('load.slow')}${bytes}` : canGive ? `${T('load.plants')} ${T('load.canGive')}` : T('load.plants')) : ''}</p>;
+  return <p class="status-line" role="status" aria-busy={busy ? 'true' : undefined}>{busy && placed && !ownedByShell ? (slow.value ? `${T('load.slow')}${bytes}` : canGive ? `${T('load.plants')} ${T('load.canGive')}` : T('load.plants')) : ''}</p>;
 }
 function PlaceOrPlaceholder() {
   return restoring.value ? <Placeholder /> : slot(Place);

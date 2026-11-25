@@ -135,6 +135,20 @@ if (root && data) {
     if (f && s?.ct === f) adoptEntry(s);
     else if (f && f !== currentFragment()) forgetEntries();
   });
+  // Preserve active palette (owned or held shared link) across header language switches without
+  // touching Header.astro or writing canopi-consortium localStorage (Wave 5 N11).
+  document.addEventListener('click', (e) => {
+    const target = e.target instanceof Element ? e.target.closest<HTMLAnchorElement>('[data-lang-menu] a[href], .nav-panel-langs a[href]') : null;
+    if (!target) return;
+    if (view.peek() !== 'matrix') return;
+    const frag = currentFragment();
+    if (!frag) return;
+    try {
+      const u = new URL(target.href, location.href);
+      u.hash = `#${frag}`;
+      target.href = u.href;
+    } catch { /* ignore malformed href */ }
+  }, true);
   // The test build's hook, asked for first (open() waits for it before handing over the source).
   if (__CT_TEST_HOOK__) testHook = import('./test-hook.ts');
   // The database first: its loader chunk is on the way while the memory starts (the country guess).

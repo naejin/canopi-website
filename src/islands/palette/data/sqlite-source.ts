@@ -332,6 +332,7 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
       ? group(db.selectObjects(`SELECT * FROM plant_frost WHERE ${IN_CLIMATE} ORDER BY kind, variety, source`, [c]), (r) => Number(r.plant))
       : new Map<number, Row[]>();
     const areasByPlant = group(db.selectObjects(`SELECT plant, area, introduced FROM plant_areas WHERE ${IN_CLIMATE} ORDER BY area`, [c]), (r) => Number(r.plant));
+    const koppenByPlant = group(db.selectObjects(`SELECT plant, koppen, share, cells FROM plant_koppen WHERE ${IN_CLIMATE} ORDER BY share DESC, koppen`, [c]), (r) => Number(r.plant));
     const windByPlant = new Map<number, boolean>();
     for (const wr of db.selectObjects(`SELECT plant, flag FROM layer_values WHERE field = 'tolerates_wind' AND flag IS NOT NULL AND (climate_zone IS NULL OR climate_zone = ?1) AND ${IN_CLIMATE}`, [c])) {
       const pNum = Number(wr.plant);
@@ -353,6 +354,7 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
       const extremes = hasExtremesTable ? extremesFromRows(extremesByPlant.get(plant)) : undefined;
       const frost = frostRecorded ? (frostByPlant.get(plant) ?? []).flatMap(frostOf) : undefined;
       const areas = areasFromRows(areasByPlant.get(plant));
+      const koppen: KoppenShare[] = (koppenByPlant.get(plant) ?? []).map((kr) => ({ code: String(kr.koppen), share: Number(kr.share), cells: Number(kr.cells) }));
       const windTolerant = windByPlant.has(plant) ? windByPlant.get(plant)! : null;
       return {
         id,
@@ -381,6 +383,7 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
         ...(extremes !== undefined ? { extremes } : {}),
         ...(frost !== undefined ? { frost } : {}),
         ...(areas ? { areas } : {}),
+        ...(koppen.length ? { koppen } : {}),
         ...(windTolerant !== null ? { windTolerant } : {}),
       };
     });
