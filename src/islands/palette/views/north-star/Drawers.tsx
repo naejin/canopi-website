@@ -46,6 +46,7 @@ import {
   plantMatchesSunLevel,
   pollinationNote,
   pollinationShortWarn,
+  quatrefoilPetalScale,
   sanitizeSourceLabel,
   scenarioLabel,
   scenarioShort,
@@ -680,15 +681,14 @@ function AtlasDrawer({ rep, swapFor }: { rep: PaletteReport; swapFor?: PlantId }
   const pctPh = (val: number) => Math.max(0, Math.min(100, ((val - 4.0) / 5.0) * 100));
   const topFamily = rob.familiesSorted[0] ?? ['—', 0];
 
-  // A6 Quatrefoil: proportional 0..1 petal scores + weakest pillar identification
+  // A6 Quatrefoil: area-proportional 0..1 petal scores (sqrt(v), no floor) + weakest pillar identification
   const backedUpJobs = 6 - rep.missingJobs.length - rep.noBackupJobs.length;
-  const clampScale = (v: number) => Math.max(0.22, Math.min(1, v));
-  const jobsScale = clampScale((rep.coveredJobs + backedUpJobs) / 12);
+  const jobsScale = quatrefoilPetalScale((rep.coveredJobs + backedUpJobs) / 12);
   const famScale = rep.taxa.length === 0
-    ? 0.22
-    : clampScale(rob.monocultureWarn ? Math.min(0.55, rob.familyCount / Math.max(1, rep.taxa.length)) : Math.min(1, rob.familyCount / Math.min(rep.taxa.length, 6)));
-  const shockScale = rep.taxa.length === 0 ? 0.22 : clampScale(rob.survivesAllCore / rep.taxa.length);
-  const monthScale = clampScale(rep.growingYear.activeMonths.length / 10);
+    ? 0
+    : quatrefoilPetalScale(rob.monocultureWarn ? Math.min(0.55, rob.familyCount / Math.max(1, rep.taxa.length)) : Math.min(1, rob.familyCount / Math.min(rep.taxa.length, 6)));
+  const shockScale = rep.taxa.length === 0 ? 0 : quatrefoilPetalScale(rob.survivesAllCore / rep.taxa.length);
+  const monthScale = quatrefoilPetalScale(rep.growingYear.activeMonths.length / 12);
 
   type PillarKey = 'jobs' | 'families' | 'shocks' | 'months';
   const pillarScores: { key: PillarKey; ok: boolean; scale: number }[] = [
@@ -712,19 +712,23 @@ function AtlasDrawer({ rep, swapFor }: { rep: PaletteReport; swapFor?: PlantId }
   // Leader elbow geometry from weakest petal tip to its quadrant edge (hidden below 639px via .qf-leader CSS)
   const leaderCoords = (k: PillarKey | null): { cx: number; cy: number; pts: string } | null => {
     if (k === 'jobs') {
-      const tipX = 108 - 64 * jobsScale, tipY = 102 - 64 * jobsScale;
+      const r = Math.max(0.32, jobsScale);
+      const tipX = 108 - 64 * r, tipY = 102 - 64 * r;
       return { cx: tipX, cy: tipY, pts: `${tipX.toFixed(1)},${tipY.toFixed(1)} ${Math.max(18, tipX - 16).toFixed(1)},46 2,46` };
     }
     if (k === 'families') {
-      const tipX = 108 + 64 * famScale, tipY = 102 - 64 * famScale;
+      const r = Math.max(0.32, famScale);
+      const tipX = 108 + 64 * r, tipY = 102 - 64 * r;
       return { cx: tipX, cy: tipY, pts: `${tipX.toFixed(1)},${tipY.toFixed(1)} ${Math.min(198, tipX + 16).toFixed(1)},46 214,46` };
     }
     if (k === 'shocks') {
-      const tipX = 108 + 64 * shockScale, tipY = 102 + 64 * shockScale;
+      const r = Math.max(0.32, shockScale);
+      const tipX = 108 + 64 * r, tipY = 102 + 64 * r;
       return { cx: tipX, cy: tipY, pts: `${tipX.toFixed(1)},${tipY.toFixed(1)} ${Math.min(198, tipX + 16).toFixed(1)},158 214,158` };
     }
     if (k === 'months') {
-      const tipX = 108 - 64 * monthScale, tipY = 102 + 64 * monthScale;
+      const r = Math.max(0.32, monthScale);
+      const tipX = 108 - 64 * r, tipY = 102 + 64 * r;
       return { cx: tipX, cy: tipY, pts: `${tipX.toFixed(1)},${tipY.toFixed(1)} ${Math.max(18, tipX - 16).toFixed(1)},158 2,158` };
     }
     return null;
@@ -789,7 +793,7 @@ function AtlasDrawer({ rep, swapFor }: { rep: PaletteReport; swapFor?: PlantId }
                 {verdictStampText(rob.redundancyOk ? 'fits' : 'check')}
               </span>
             </div>
-            <div class="qf-q-score tnum">{rep.coveredJobs}/6 · {backedUpJobs}/6</div>
+            <div class="qf-q-score tnum">{T('ns.pillar.score.jobs', { cov: rep.coveredJobs, bak: backedUpJobs })}</div>
             {weakestPillar === 'jobs' && <p class="qf-weak-sent">{T('ns.pillar.weak.jobs')}</p>}
           </div>
 
@@ -801,11 +805,15 @@ function AtlasDrawer({ rep, swapFor }: { rep: PaletteReport; swapFor?: PlantId }
                 {verdictStampText(rob.familyDiversityOk ? 'fits' : 'check')}
               </span>
             </div>
-            <div class="qf-q-score tnum">{rob.familyCount} · max {topFamily[1]}/{rep.taxa.length} {topFamily[0]}</div>
+            <div class="qf-q-score tnum">
+              {rep.taxa.length > 0
+                ? T('ns.pillar.score.families', { n: rob.familyCount, fam: topFamily[0], top: topFamily[1], total: rep.taxa.length })
+                : T('ns.pillar.score.familiesEmpty')}
+            </div>
             {weakestPillar === 'families' && <p class="qf-weak-sent">{T('ns.pillar.weak.families')}</p>}
           </div>
 
-          {/* Center: Proportional 4-Petal Quatrefoil SVG */}
+          {/* Center: Proportional 4-Petal Quatrefoil SVG (area-proportional sqrt(v), 0 = dashed outline only) */}
           <div class="qf-center">
             <svg width="216" height="204" viewBox="0 0 216 204" role="img" aria-label={T('ns.atlas.pillarsStrong', { n: strongCount })}>
               <line x1="108" y1="16" x2="108" y2="188" stroke="var(--border)" stroke-width="1" stroke-dasharray="2 3" />
@@ -817,45 +825,53 @@ function AtlasDrawer({ rep, swapFor }: { rep: PaletteReport; swapFor?: PlantId }
                 <path d="M108 102 C108 130 82 172 44 166 C38 128 80 102 108 102 Z" />
               </g>
               {/* NW: Jobs */}
-              <g transform={`translate(108 102) scale(${jobsScale.toFixed(2)}) translate(-108 -102)`}>
-                <path
-                  d="M108 102 C80 102 38 76 44 38 C82 32 108 74 108 102 Z"
-                  fill={weakestPillar === 'jobs' ? 'var(--accent)' : 'var(--plant-green)'}
-                  fill-opacity={weakestPillar === 'jobs' ? '0.28' : '0.24'}
-                  stroke={weakestPillar === 'jobs' ? 'var(--accent)' : 'var(--plant-green)'}
-                  stroke-width={weakestPillar === 'jobs' ? '2' : '1.8'}
-                />
-              </g>
+              {jobsScale > 0 && (
+                <g transform={`translate(108 102) scale(${jobsScale.toFixed(3)}) translate(-108 -102)`}>
+                  <path
+                    d="M108 102 C80 102 38 76 44 38 C82 32 108 74 108 102 Z"
+                    fill={weakestPillar === 'jobs' ? 'var(--accent)' : 'var(--plant-green)'}
+                    fill-opacity={weakestPillar === 'jobs' ? '0.28' : '0.24'}
+                    stroke={weakestPillar === 'jobs' ? 'var(--accent)' : 'var(--plant-green)'}
+                    stroke-width={weakestPillar === 'jobs' ? '2' : '1.8'}
+                  />
+                </g>
+              )}
               {/* NE: Families */}
-              <g transform={`translate(108 102) scale(${famScale.toFixed(2)}) translate(-108 -102)`}>
-                <path
-                  d="M108 102 C108 74 134 32 172 38 C178 76 136 102 108 102 Z"
-                  fill={weakestPillar === 'families' ? 'var(--accent)' : 'var(--plant-green)'}
-                  fill-opacity={weakestPillar === 'families' ? '0.28' : '0.24'}
-                  stroke={weakestPillar === 'families' ? 'var(--accent)' : 'var(--plant-green)'}
-                  stroke-width={weakestPillar === 'families' ? '2' : '1.8'}
-                />
-              </g>
+              {famScale > 0 && (
+                <g transform={`translate(108 102) scale(${famScale.toFixed(3)}) translate(-108 -102)`}>
+                  <path
+                    d="M108 102 C108 74 134 32 172 38 C178 76 136 102 108 102 Z"
+                    fill={weakestPillar === 'families' ? 'var(--accent)' : 'var(--plant-green)'}
+                    fill-opacity={weakestPillar === 'families' ? '0.28' : '0.24'}
+                    stroke={weakestPillar === 'families' ? 'var(--accent)' : 'var(--plant-green)'}
+                    stroke-width={weakestPillar === 'families' ? '2' : '1.8'}
+                  />
+                </g>
+              )}
               {/* SE: Climate shocks */}
-              <g transform={`translate(108 102) scale(${shockScale.toFixed(2)}) translate(-108 -102)`}>
-                <path
-                  d="M108 102 C136 102 178 128 172 166 C134 172 108 130 108 102 Z"
-                  fill={weakestPillar === 'shocks' ? 'var(--accent)' : 'var(--plant-green)'}
-                  fill-opacity={weakestPillar === 'shocks' ? '0.28' : '0.24'}
-                  stroke={weakestPillar === 'shocks' ? 'var(--accent)' : 'var(--plant-green)'}
-                  stroke-width={weakestPillar === 'shocks' ? '2' : '1.8'}
-                />
-              </g>
+              {shockScale > 0 && (
+                <g transform={`translate(108 102) scale(${shockScale.toFixed(3)}) translate(-108 -102)`}>
+                  <path
+                    d="M108 102 C136 102 178 128 172 166 C134 172 108 130 108 102 Z"
+                    fill={weakestPillar === 'shocks' ? 'var(--accent)' : 'var(--plant-green)'}
+                    fill-opacity={weakestPillar === 'shocks' ? '0.28' : '0.24'}
+                    stroke={weakestPillar === 'shocks' ? 'var(--accent)' : 'var(--plant-green)'}
+                    stroke-width={weakestPillar === 'shocks' ? '2' : '1.8'}
+                  />
+                </g>
+              )}
               {/* SW: Active months */}
-              <g transform={`translate(108 102) scale(${monthScale.toFixed(2)}) translate(-108 -102)`}>
-                <path
-                  d="M108 102 C108 130 82 172 44 166 C38 128 80 102 108 102 Z"
-                  fill={weakestPillar === 'months' ? 'var(--accent)' : 'var(--plant-green)'}
-                  fill-opacity={weakestPillar === 'months' ? '0.28' : '0.24'}
-                  stroke={weakestPillar === 'months' ? 'var(--accent)' : 'var(--plant-green)'}
-                  stroke-width={weakestPillar === 'months' ? '2' : '1.8'}
-                />
-              </g>
+              {monthScale > 0 && (
+                <g transform={`translate(108 102) scale(${monthScale.toFixed(3)}) translate(-108 -102)`}>
+                  <path
+                    d="M108 102 C108 130 82 172 44 166 C38 128 80 102 108 102 Z"
+                    fill={weakestPillar === 'months' ? 'var(--accent)' : 'var(--plant-green)'}
+                    fill-opacity={weakestPillar === 'months' ? '0.28' : '0.24'}
+                    stroke={weakestPillar === 'months' ? 'var(--accent)' : 'var(--plant-green)'}
+                    stroke-width={weakestPillar === 'months' ? '2' : '1.8'}
+                  />
+                </g>
+              )}
               {weakLeader && (
                 <g class="qf-leader" aria-hidden="true">
                   <polyline points={weakLeader.pts} fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
@@ -875,7 +891,7 @@ function AtlasDrawer({ rep, swapFor }: { rep: PaletteReport; swapFor?: PlantId }
                 {verdictStampText(rob.shockSurvivalOk ? 'fits' : 'check')}
               </span>
             </div>
-            <div class="qf-q-score tnum">{rob.survivesAllCore}/{rep.taxa.length}</div>
+            <div class="qf-q-score tnum">{T('ns.pillar.score.shocks', { ok: rob.survivesAllCore, total: rep.taxa.length })}</div>
             {weakestPillar === 'shocks' && <p class="qf-weak-sent">{T('ns.pillar.weak.shocks')}</p>}
           </div>
 
@@ -887,7 +903,7 @@ function AtlasDrawer({ rep, swapFor }: { rep: PaletteReport; swapFor?: PlantId }
                 {verdictStampText(rob.seasonalityOk ? 'fits' : 'check')}
               </span>
             </div>
-            <div class="qf-q-score tnum">{rep.growingYear.activeMonths.length}/12</div>
+            <div class="qf-q-score tnum">{T('ns.pillar.score.months', { n: rep.growingYear.activeMonths.length })}</div>
             {(aggBloom.length > 0 || aggFruit.length > 0) && (
               <div style={{ marginTop: '3px' }}>
                 <MiniYearRibbon bloom={aggBloom} fruiting={aggFruit} />

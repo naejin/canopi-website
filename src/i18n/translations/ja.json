@@ -3580,5 +3580,14 @@
   "consortium.ns.pair.yieldGain": "増収コンパニオン",
   "consortium.ns.pair.sharedPest": "共通の病害虫",
   "consortium.ns.pair.highlighted": "注目ペア",
+  "consortium.ns.tox.level.slight": "毒性：弱",
+  "consortium.ns.tox.level.moderate": "毒性：中",
+  "consortium.ns.tox.level.severe": "毒性：強",
+  "consortium.ns.matrix.scrollHint": "横にスクロールして全7段階を表示 →",
+  "consortium.ns.pillar.score.jobs": "6役割中 {cov} カバー · {bak} に控えあり",
+  "consortium.ns.pillar.score.families": "{n} 科 · 最大：{fam}（{top}/{total}）",
+  "consortium.ns.pillar.score.familiesEmpty": "0 科",
+  "consortium.ns.pillar.score.shocks": "{total} 種中 {ok} 種が主要な極端気象に耐える",
+  "consortium.ns.pillar.score.months": "12か月中 {n} か月が活動期",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

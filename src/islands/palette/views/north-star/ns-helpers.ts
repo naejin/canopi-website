@@ -375,10 +375,22 @@ export function toxBadgeInfo(t: Taxon): { cls: string; text: string } | null {
   const tx = toxicityStatusOf(t);
   if (tx.status === 'toxic') {
     const lvl = (tx.level ?? '').toLowerCase();
-    const label = lvl === 'high' ? `⚠ ${T('ns.tox.caution')}` : `⚠ ${tx.level ?? T('ns.tox.caution')}`;
-    return { cls: lvl === 'high' ? 'badge-bad' : 'badge-warn', text: label };
+    const isSevere = lvl === 'severe' || lvl === 'high';
+    const label = lvl === 'slight'
+      ? T('ns.tox.level.slight')
+      : lvl === 'moderate'
+        ? T('ns.tox.level.moderate')
+        : isSevere
+          ? T('ns.tox.level.severe')
+          : T('ns.tox.caution');
+    return { cls: isSevere ? 'badge-bad' : 'badge-warn', text: `⚠ ${label}` };
   }
   return null;
+}
+
+export function quatrefoilPetalScale(score01: number): number {
+  const clamped = Math.max(0, Math.min(1, score01));
+  return clamped <= 0 ? 0 : Math.sqrt(clamped);
 }
 
 export function pollinationNote(t: Taxon): string | null {

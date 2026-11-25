@@ -86,3 +86,12 @@ test('selectStarterPalette spreads across multiple ecological light strata', () 
   const strata = new Set(chosen.map((t) => t.stratum?.value).filter(Boolean));
   assert.ok(strata.size >= 3, `expected >= 3 ecological strata in starter guild, got ${[...strata].join(', ')}`);
 });
+
+test('quatrefoilPetalScale is area-proportional (sqrt) with zero floor', async () => {
+  const { quatrefoilPetalScale } = await import('../src/islands/palette/views/north-star/ns-helpers.ts');
+  assert.equal(quatrefoilPetalScale(0), 0);
+  assert.equal(quatrefoilPetalScale(-0.2), 0);
+  assert.equal(quatrefoilPetalScale(0.25), 0.5);
+  assert.equal(quatrefoilPetalScale(1), 1);
+  assert.equal(quatrefoilPetalScale(1.4), 1);
+});

@@ -73,7 +73,7 @@ function PlantRow({ taxon, rep, primaryJobId }: { taxon: Taxon; rep: PaletteRepo
   const hMax = taxon.traits.height_m?.max ?? null;
   const hStr = hMax != null ? `${fmtNum(hMax)} m` : '';
   const tox = toxBadgeInfo(taxon);
-  const toxWord = tox ? tox.text.replace(/^⚠\s*/, '') : null;
+  const toxWord = tox ? tox.text : null;
   const pollWarn = pollinationShortWarn(taxon);
   const onSite = v?.alreadyOnSite ?? false;
   const txStatus = toxicityStatusOf(taxon);
@@ -700,7 +700,7 @@ export function DesignBoard({ rep }: { rep: PaletteReport }) {
             <p class="pulse-kicker">{T('ns.matrix.kicker')}</p>
             <p class="small muted">{T('ns.matrix.sub')}</p>
           </div>
-          <p class="cal-scroll-hint">{T('ns.cal.scrollHint')}</p>
+          <p class="cal-scroll-hint">{T('ns.matrix.scrollHint')}</p>
           <div class="matrix-scroll" tabIndex={0} role="region" aria-label={T('ns.view.matrix')}>
             <div class="matrix-grid">
               <div class="matrix-head">

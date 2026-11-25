@@ -3580,5 +3580,14 @@
   "consortium.ns.pair.yieldGain": "Consórcio produtivo",
   "consortium.ns.pair.sharedPest": "Praga em comum",
   "consortium.ns.pair.highlighted": "Par destacado",
+  "consortium.ns.tox.level.slight": "Tóxica: leve",
+  "consortium.ns.tox.level.moderate": "Tóxica: moderada",
+  "consortium.ns.tox.level.severe": "Tóxica: grave",
+  "consortium.ns.matrix.scrollHint": "Deslize para o lado para ver os 7 estágios de crescimento →",
+  "consortium.ns.pillar.score.jobs": "{cov} de 6 funções cobertas · {bak} com reforço",
+  "consortium.ns.pillar.score.families": "{n} famílias · maior: {fam}, {top} de {total}",
+  "consortium.ns.pillar.score.familiesEmpty": "0 famílias",
+  "consortium.ns.pillar.score.shocks": "{ok} de {total} resistem a todos os extremos-chave",
+  "consortium.ns.pillar.score.months": "{n} de 12 meses ativos",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

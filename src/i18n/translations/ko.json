@@ -3580,5 +3580,14 @@
   "consortium.ns.pair.yieldGain": "수확 증대 조합",
   "consortium.ns.pair.sharedPest": "공통 병해충",
   "consortium.ns.pair.highlighted": "강조된 조합",
+  "consortium.ns.tox.level.slight": "독성: 약함",
+  "consortium.ns.tox.level.moderate": "독성: 보통",
+  "consortium.ns.tox.level.severe": "독성: 강함",
+  "consortium.ns.matrix.scrollHint": "옆으로 스크롤해 7개 성장 단계 모두 보기 →",
+  "consortium.ns.pillar.score.jobs": "6개 역할 중 {cov}개 충족 · {bak}개 예비 확보",
+  "consortium.ns.pillar.score.families": "{n}개 과 · 최다: {fam} ({top}/{total})",
+  "consortium.ns.pillar.score.familiesEmpty": "0개 과",
+  "consortium.ns.pillar.score.shocks": "{total}종 중 {ok}종이 핵심 극한 기후 견딤",
+  "consortium.ns.pillar.score.months": "12개월 중 {n}개월 활성",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

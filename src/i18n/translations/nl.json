@@ -3580,5 +3580,14 @@
   "consortium.ns.pair.yieldGain": "Gunstige combinatie",
   "consortium.ns.pair.sharedPest": "Gedeelde plaag",
   "consortium.ns.pair.highlighted": "Uitgelicht paar",
+  "consortium.ns.tox.level.slight": "Giftig: licht",
+  "consortium.ns.tox.level.moderate": "Giftig: matig",
+  "consortium.ns.tox.level.severe": "Giftig: sterk",
+  "consortium.ns.matrix.scrollHint": "Veeg opzij voor alle 7 groeifasen →",
+  "consortium.ns.pillar.score.jobs": "{cov} van 6 taken gedekt · {bak} met back-up",
+  "consortium.ns.pillar.score.families": "{n} families · grootste: {fam}, {top} van {total}",
+  "consortium.ns.pillar.score.familiesEmpty": "0 families",
+  "consortium.ns.pillar.score.shocks": "{ok} van {total} doorstaan alle kernextremen",
+  "consortium.ns.pillar.score.months": "{n} van 12 maanden actief",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

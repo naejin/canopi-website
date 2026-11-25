@@ -3580,5 +3580,14 @@
   "consortium.ns.pair.yieldGain": "增产搭配",
   "consortium.ns.pair.sharedPest": "共同虫害",
   "consortium.ns.pair.highlighted": "高亮配对",
+  "consortium.ns.tox.level.slight": "毒性：轻微",
+  "consortium.ns.tox.level.moderate": "毒性：中等",
+  "consortium.ns.tox.level.severe": "毒性：强烈",
+  "consortium.ns.matrix.scrollHint": "横向滑动查看全部 7 个生长阶段 →",
+  "consortium.ns.pillar.score.jobs": "已覆盖 {cov}/6 项职能 · {bak} 项有备份",
+  "consortium.ns.pillar.score.families": "{n} 个科 · 最多：{fam}，占 {top}/{total}",
+  "consortium.ns.pillar.score.familiesEmpty": "0 个科",
+  "consortium.ns.pillar.score.shocks": "{ok}/{total} 种能扛住全部核心极端气候",
+  "consortium.ns.pillar.score.months": "全年活跃 {n}/12 个月",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

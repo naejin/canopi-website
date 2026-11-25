@@ -3580,5 +3580,14 @@
   "consortium.ns.pair.yieldGain": "Consociazione utile",
   "consortium.ns.pair.sharedPest": "Parassita comune",
   "consortium.ns.pair.highlighted": "Coppia evidenziata",
+  "consortium.ns.tox.level.slight": "Tossica: lieve",
+  "consortium.ns.tox.level.moderate": "Tossica: moderata",
+  "consortium.ns.tox.level.severe": "Tossica: grave",
+  "consortium.ns.matrix.scrollHint": "Scorri di lato per tutti i 7 stadi di crescita →",
+  "consortium.ns.pillar.score.jobs": "{cov} ruoli su 6 coperti · {bak} con riserva",
+  "consortium.ns.pillar.score.families": "{n} famiglie · maggiore: {fam}, {top} su {total}",
+  "consortium.ns.pillar.score.familiesEmpty": "0 famiglie",
+  "consortium.ns.pillar.score.shocks": "{ok} su {total} superano tutti gli shock chiave",
+  "consortium.ns.pillar.score.months": "{n} mesi attivi su 12",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

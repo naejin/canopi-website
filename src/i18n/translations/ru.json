@@ -3580,5 +3580,14 @@
   "consortium.ns.pair.yieldGain": "Удачное соседство",
   "consortium.ns.pair.sharedPest": "Общий вредитель",
   "consortium.ns.pair.highlighted": "Выделенная пара",
+  "consortium.ns.tox.level.slight": "Токсично: слабо",
+  "consortium.ns.tox.level.moderate": "Токсично: умеренно",
+  "consortium.ns.tox.level.severe": "Токсично: сильно",
+  "consortium.ns.matrix.scrollHint": "Прокрутите вбок, чтобы увидеть все 7 стадий роста →",
+  "consortium.ns.pillar.score.jobs": "Покрыто {cov} из 6 ролей · дублировано {bak}",
+  "consortium.ns.pillar.score.families": "{n} семейств · крупнейшее: {fam}, {top} из {total}",
+  "consortium.ns.pillar.score.familiesEmpty": "0 семейств",
+  "consortium.ns.pillar.score.shocks": "{ok} из {total} переносят все ключевые экстремумы",
+  "consortium.ns.pillar.score.months": "Активно {n} из 12 месяцев",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }
