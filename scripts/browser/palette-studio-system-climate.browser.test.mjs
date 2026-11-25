@@ -95,6 +95,7 @@ test('Live regressions: Header dropdown z-index, anchored overflow menu, and liv
   assert.ok(menuAnchor.rightDiff <= 16, `overflow menu right edge aligns with trigger (diff ${menuAnchor.rightDiff}px)`);
   assert.ok(menuAnchor.belowTrigger, 'overflow menu opens directly beneath trigger button');
   await page.keyboard.press('Escape');
+  await page.waitForFunction(() => !document.querySelector('.more-menu'), { timeout: 4_000 });
   assert.ok(await page.evaluate(() => !document.querySelector('.more-menu')), 'Escape closes overflow menu');
 
   // 3. Tune site controls update Guild Pulse headline live (freeze, pH, dry spell)
@@ -102,11 +103,22 @@ test('Live regressions: Header dropdown z-index, anchored overflow menu, and liv
     const details = document.querySelector('.tune-details');
     if (details) details.open = true;
   });
+  await page.waitForSelector('#ph-input', { timeout: 4_000 });
   const parseFits = async () => page.evaluate(() => {
     const txt = document.querySelector('.pulse-h1')?.textContent?.trim() ?? '';
     const m = txt.match(/^(\d+)\s+of\s+(\d+)/);
     return { txt, fits: m ? Number(m[1]) : -1, total: m ? Number(m[2]) : -1 };
   });
+  const waitForFits = async (predicate, arg) => {
+    await page.waitForFunction((fnStr, expected) => {
+      const txt = document.querySelector('.pulse-h1')?.textContent?.trim() ?? '';
+      const m = txt.match(/^(\d+)\s+of\s+(\d+)/);
+      if (!m) return false;
+      const fits = Number(m[1]);
+      return fnStr === 'lt' ? fits < expected : fits === expected;
+    }, { timeout: 4_000 }, predicate, arg);
+    return parseFits();
+  };
   const before = await parseFits();
   assert.ok(before.fits > 0, `starter guild starts with thriving plants (${before.txt})`);
 
@@ -116,12 +128,12 @@ test('Live regressions: Header dropdown z-index, anchored overflow menu, and liv
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, '4.5');
     el.dispatchEvent(new Event('input', { bubbles: true }));
   });
-  const afterPh = await parseFits();
+  const afterPh = await waitForFits('lt', before.fits);
   assert.ok(afterPh.fits < before.fits, `tuning pH to 4.5 lowers Guild Pulse count (${before.txt} -> ${afterPh.txt})`);
 
   // Reset pH -> restores thriving count
   await page.click('.tune-details .edit-reset');
-  const afterPhReset = await parseFits();
+  const afterPhReset = await waitForFits('eq', before.fits);
   assert.equal(afterPhReset.fits, before.fits, `resetting pH restores Guild Pulse count (${afterPhReset.txt})`);
 
   // Extreme freeze (-30 C) drops thriving count live
@@ -130,17 +142,18 @@ test('Live regressions: Header dropdown z-index, anchored overflow menu, and liv
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, '-30');
     el.dispatchEvent(new Event('input', { bubbles: true }));
   });
-  const afterFreeze = await parseFits();
+  const afterFreeze = await waitForFits('lt', before.fits);
   assert.ok(afterFreeze.fits < before.fits, `tuning freeze to -30 C lowers Guild Pulse count (${before.txt} -> ${afterFreeze.txt})`);
 
   // Reset freeze, then test extreme dry spell (120 d)
   await page.click('.tune-details .edit-reset');
+  await waitForFits('eq', before.fits);
   await page.evaluate(() => {
     const el = document.getElementById('cdd-input');
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, '120');
     el.dispatchEvent(new Event('input', { bubbles: true }));
   });
-  const afterCdd = await parseFits();
+  const afterCdd = await waitForFits('lt', before.fits);
   assert.ok(afterCdd.fits < before.fits, `tuning dry spell to 120 d lowers Guild Pulse count (${before.txt} -> ${afterCdd.txt})`);
 
   assert.ok((await horizontalOverflow(page)) <= 1, 'zero horizontal overflow after live tuning & menu checks');

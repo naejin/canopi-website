@@ -40,15 +40,14 @@ export function NorthStarStudio() {
   const toast = nsToast.value;
 
   useEffect(() => {
-    if (!moreOpen) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && nsMoreOpen.value) {
         nsMoreOpen.value = false;
         moreWrapRef.current?.querySelector('button')?.focus();
       }
     }
     function onPointer(e: MouseEvent) {
-      if (moreWrapRef.current && !moreWrapRef.current.contains(e.target as Node)) {
+      if (nsMoreOpen.value && moreWrapRef.current && !moreWrapRef.current.contains(e.target as Node)) {
         nsMoreOpen.value = false;
       }
     }
@@ -58,7 +57,7 @@ export function NorthStarStudio() {
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('mousedown', onPointer);
     };
-  }, [moreOpen]);
+  }, []);
 
   const siteLabel = store.location.value?.label ?? store.climate.value ?? T('ns.land.title');
   const shortName = shortSiteName(siteLabel) || siteLabel;
