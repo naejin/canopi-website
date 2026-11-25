@@ -15,22 +15,30 @@ import {
 } from './PhenologyRibbon.tsx';
 import {
   fmtNum,
+  jobGlyphName,
   jobLabel,
   lightKeyLabel,
   lightSpanLabel,
+  pairInteractionLabel,
+  PHASE_GLYPHS,
   PHASE_LIST,
-  PHASE_SHORT_NAMES,
-  phaseLabel,
   phaseOrd,
-  plantCoversPhase,
+  phaseSpanText,
+  phaseWordLabel,
+  phaseYearLabel,
   plantLightKey,
+  plantNicheLightKey,
   pollinationShortWarn,
+  prefersFullSunNote,
   primaryJobOf,
   scenarioLabel,
   scenarioShort,
   taxCommonName,
   toxBadgeInfo,
-  verdictBadgeClass,
+  verdict2050Suffix,
+  verdictGlyphName,
+  verdictStampText,
+  verdictStampTone,
   verdictSymbolLabel,
   type LightKey,
 } from './ns-helpers.ts';
@@ -65,6 +73,7 @@ function PlantRow({ taxon, rep, primaryJobId }: { taxon: Taxon; rep: PaletteRepo
   const hMax = taxon.traits.height_m?.max ?? null;
   const hStr = hMax != null ? `${fmtNum(hMax)} m` : '';
   const tox = toxBadgeInfo(taxon);
+  const toxWord = tox ? tox.text.replace(/^⚠\s*/, '') : null;
   const pollWarn = pollinationShortWarn(taxon);
   const onSite = v?.alreadyOnSite ?? false;
   const txStatus = toxicityStatusOf(taxon);
@@ -73,11 +82,12 @@ function PlantRow({ taxon, rep, primaryJobId }: { taxon: Taxon; rep: PaletteRepo
   const isPairHl = !!(pairKey && pairKey.split('|').includes(taxon.id));
   const byId = new Map(rep.taxa.map((t) => [t.id, t]));
   const ints = rep.interactions.filter((it) => it.a === taxon.id || it.b === taxon.id);
-  const otherJobs = jobsOf(taxon).filter((j) => j !== primaryJobId).map(jobLabel);
+  const otherJobs = jobsOf(taxon).filter((j) => j !== primaryJobId);
   const roomReason = v?.reasons.find((r) => r.code === 'room_tall');
   const waterReason = v?.reasons.find((r) => r.code === 'dry_spell_water' || r.code === 'summer_water_est');
   const fullName = taxCommonName(taxon);
-  const v50Text = v50 ? verdictSymbolLabel(v50.level).replace(/^[✓▲✕]\s*/, '') : T('ns.unknown');
+  const vTone = v ? verdictStampTone(v.level) : 'unk';
+  const v50Tone = v50 ? verdictStampTone(v50.level) : 'unk';
 
   if (isCompact) {
     return (
@@ -90,10 +100,14 @@ function PlantRow({ taxon, rep, primaryJobId }: { taxon: Taxon; rep: PaletteRepo
           <PlantThumb taxon={taxon} size={32} />
           <div class="plant-main">
             <span class="plant-name">{fullName}</span>
-            {isPairHl && <span class="badge badge-warn">↔ Highlighted pair</span>}
-            {v && <span class={`badge ${verdictBadgeClass(v.level)}`}>{verdictSymbolLabel(v.level)}</span>}
-            <span class="badge">{lightSpanLabel(taxon)}</span>
-            {tox && <span class={`badge ${tox.cls}`}>{tox.text}</span>}
+            {v && (
+              <span class={`stamp stamp-${vTone}`}>
+                {v.level !== 'unknown' && <Glyph name={verdictGlyphName(v.level)} size={14} />}
+                {verdictStampText(v.level)}
+              </span>
+            )}
+            <span class="meta-plain">{lightSpanLabel(taxon)}</span>
+            {toxWord && <span class="tox-flag">{toxWord}</span>}
           </div>
         </button>
         <div class="plant-right" />
@@ -122,44 +136,59 @@ function PlantRow({ taxon, rep, primaryJobId }: { taxon: Taxon; rep: PaletteRepo
             <span class="plant-name">{fullName}</span>
             <span class="plant-bot">{taxon.canonical_name}</span>
           </div>
-          <div class="plant-badges">
-            {isPairHl && <span class="badge badge-warn">↔ Highlighted pair</span>}
-            {v && <span class={`badge ${verdictBadgeClass(v.level)}`}>{verdictSymbolLabel(v.level)}</span>}
-            <span class="badge">{lightSpanLabel(taxon)}{hStr ? ` · ${hStr}` : ''}</span>
-            {tox && <span class={`badge ${tox.cls}`}>{tox.text}</span>}
-            {pollWarn && <span class="badge badge-warn">{pollWarn}</span>}
-            {onSite && <span class="badge badge-ok">{T('ns.alreadyOnSite')}</span>}
+          <div class="plant-status-line">
+            {v && (
+              <span class="stamp-group">
+                <span class={`stamp stamp-${vTone}`}>
+                  {v.level !== 'unknown' && <Glyph name={verdictGlyphName(v.level)} size={15} />}
+                  {verdictStampText(v.level)}
+                </span>
+              </span>
+            )}
+            {v50 && v50.level !== 'unknown' && (
+              <span class={`suffix-2050 ${v50Tone === 'warn' || v50Tone === 'bad' ? v50Tone : ''}`.trim()}>
+                · {verdict2050Suffix(v50.level)}
+              </span>
+            )}
+            <span class="meta-plain tnum">{lightSpanLabel(taxon)}{hStr ? ` · ${hStr}` : ''}</span>
+            {toxWord && <span class="tox-flag">{toxWord}</span>}
+            {pollWarn && <span class="note-plain">{pollWarn}</span>}
+            {onSite && <span class="note-ok">{T('ns.alreadyOnSite')}</span>}
             {roomReason && rep.eff.roomLimitM != null && hMax != null && (
-              <span class="badge badge-warn">
+              <span class="note-plain">
                 {T('ns.board.pruneTag', { h: `${fmtNum(hMax, 0)} m`, lim: `${Math.max(2, Math.round(rep.eff.roomLimitM - 1))} m` })}
               </span>
             )}
             {waterReason && rep.eff.watering === 'rain' && v?.level !== 'fits' && (
-              <span class="badge badge-warn">{T('ns.board.summerWaterTag')}</span>
+              <span class="note-plain">{T('ns.board.summerWaterTag')}</span>
             )}
-            {v?.subsoilPhTrap && <span class="badge badge-warn">{T('ns.board.rootCheckTag')}</span>}
+            {v?.subsoilPhTrap && <span class="note-plain">{T('ns.board.rootCheckTag')}</span>}
+            {isPairHl && <span class="note-plain">↔ {T('ns.pair.highlighted')}</span>}
             {ints.slice(0, 2).map((it, idx) => {
               const other = byId.get(it.a === taxon.id ? it.b : it.a);
               const otherName = other ? taxCommonName(other) : '';
               return (
-                <span key={idx} class="badge badge-warn">
-                  {it.positive ? 'Yield-gain pairing' : 'Shared pest'}{otherName ? `: ${otherName}` : ''}
+                <span key={idx} class="note-plain">
+                  {pairInteractionLabel(it.positive)}{otherName ? `: ${otherName}` : ''}
                 </span>
               );
             })}
-            {otherJobs.map((lbl) => (
-              <span key={lbl} class="badge">+ {lbl}</span>
-            ))}
           </div>
+          {otherJobs.length > 0 && (
+            <div class="sec-jobs">
+              {otherJobs.map((j, idx) => (
+                <span key={j} class="sec-job-item">
+                  <span aria-hidden="true">{idx === 0 ? '+' : '·'}</span>
+                  <Glyph name={jobGlyphName(j)} size={14} />
+                  <span>{jobLabel(j)}</span>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </button>
       <div class="plant-right">
         <MiniYear rep={rep} id={taxon.id} />
-        {v50 && (
-          <span class={`badge ${verdictBadgeClass(v50.level)}`} title="2050s projection">
-            2050s: {v50Text}
-          </span>
-        )}
       </div>
       <button
         class="rm-btn"
@@ -305,17 +334,18 @@ function GrowingYearCard({ rep }: { rep: PaletteReport }) {
   if (!rows.length) return null;
   const monthLabels = localizedMonthLabels();
   const isSouth = rep.eff.hemisphere === 'S';
-  const yearRange = `${monthLabels[0]}–${monthLabels[11]}`;
+  const rng = (a: number, b: number) => `${monthLabels[a]}\u2060–\u2060${monthLabels[b]}`;
+  const yearRange = rng(0, 11);
   const seasonLabel = isSouth
     ? T('ns.cal.seasonSouth', {
         year: yearRange,
-        summer: `${monthLabels[11]}–${monthLabels[1]}`,
-        winter: `${monthLabels[5]}–${monthLabels[7]}`,
+        summer: rng(11, 1),
+        winter: rng(5, 7),
       })
     : T('ns.cal.seasonNorth', {
         year: yearRange,
-        spring: `${monthLabels[2]}–${monthLabels[4]}`,
-        autumn: `${monthLabels[8]}–${monthLabels[10]}`,
+        spring: rng(2, 4),
+        autumn: rng(8, 10),
       });
   const winMonthIdxs = new Set(isSouth ? [4, 5, 6, 7] : [10, 11, 0, 1]);
   const showMildWinter = rep.eff.isMildWinter;
@@ -534,22 +564,25 @@ export function DesignBoard({ rep }: { rep: PaletteReport }) {
     primaryByJob[primaryJobOf(t)].push(t);
   }
 
-  // Sun x Succession grouping
+  // A5 Sun x Succession grouping — placed by ecological niche stratum (placements.stratum -> plants.default_stratum; light fallback)
   const byLight: Record<LightKey, Taxon[]> = { full_sun: [], mostly_sun: [], part_shade: [], shade: [], unknown: [] };
-  for (const t of filtered) byLight[plantLightKey(t)].push(t);
+  for (const t of filtered) byLight[plantNicheLightKey(t)].push(t);
   const activeLights: LightKey[] = ['full_sun', 'mostly_sun', 'part_shade', 'shade'];
   if (byLight.unknown.length > 0) activeLights.push('unknown');
 
-  const spanShort = (p: Taxon) => {
-    if (!p.phases) return T('ns.board.stageUnknown');
-    const s = phaseOrd(p.phases.start), e = phaseOrd(p.phases.end);
-    return s === e ? PHASE_SHORT_NAMES[s] : `${PHASE_SHORT_NAMES[s]}→${PHASE_SHORT_NAMES[e]}`;
+  const stratumInkVar = (l: LightKey): string => {
+    if (l === 'full_sun') return 'var(--sun-full-ink)';
+    if (l === 'mostly_sun') return 'var(--sun-mostly-ink)';
+    if (l === 'part_shade') return 'var(--sun-part-ink)';
+    if (l === 'shade') return 'var(--sun-shade-ink)';
+    return 'var(--text-secondary)';
   };
-  const spanFull = (p: Taxon) => {
-    if (!p.phases) return T('ns.board.stageUnknown');
-    return p.phases.start === p.phases.end
-      ? phaseLabel(p.phases.start)
-      : `${phaseLabel(p.phases.start)} → ${phaseLabel(p.phases.end)}`;
+  const stratumBgVar = (l: LightKey): string => {
+    if (l === 'full_sun') return 'var(--sun-full-bg)';
+    if (l === 'mostly_sun') return 'var(--sun-mostly-bg)';
+    if (l === 'part_shade') return 'var(--sun-part-bg)';
+    if (l === 'shade') return 'var(--sun-shade-bg)';
+    return 'var(--surface-alt)';
   };
 
   return (
@@ -662,24 +695,21 @@ export function DesignBoard({ rep }: { rep: PaletteReport }) {
           })}
         </>
       ) : viewMode === 'matrix' ? (
-        <section class="matrix-wrap" aria-label="Sun by 7-phase succession matrix">
+        <section class="matrix-wrap" aria-label={T('ns.view.matrix')}>
           <div>
-            <p class="pulse-kicker">2D Guild Matrix · Preferred sun × 7 Succession phases (exact start → end spans)</p>
-            <p class="small muted">
-              ✓ Thrives · ▲ Check · ✕ At risk · ⚠ Toxic. Each bar spans a plant&apos;s exact succession range from Placenta 1 (P1) through Climax. Tap any species for its Field Dossier.
-            </p>
+            <p class="pulse-kicker">{T('ns.matrix.kicker')}</p>
+            <p class="small muted">{T('ns.matrix.sub')}</p>
           </div>
-          <div class="matrix-scroll" tabIndex={0} role="region" aria-label="Sun by 7-phase succession timeline">
+          <p class="cal-scroll-hint">{T('ns.cal.scrollHint')}</p>
+          <div class="matrix-scroll" tabIndex={0} role="region" aria-label={T('ns.view.matrix')}>
             <div class="matrix-grid">
-              <div class="matrix-head-row">
-                <div class="matrix-head-cell">Preferred sun</div>
+              <div class="matrix-head">
+                <div class="m-hcell first">{T('ns.matrix.nicheCol')}</div>
                 {PHASE_LIST.map((ph, i) => (
-                  <div key={ph} class="matrix-head-cell" title={phaseLabel(ph)}>
-                    {PHASE_SHORT_NAMES[i]}
-                    <br />
-                    <span style={{ fontWeight: 400, fontSize: '10px', color: 'var(--text-muted)' }}>
-                      {phaseLabel(ph).replace('Placenta ', 'Pl. ').replace('Secondary ', 'Sec. ')}
-                    </span>
+                  <div key={ph} class="m-hcell">
+                    <Glyph name={PHASE_GLYPHS[i]} size={16} />
+                    <span class="tnum">{phaseYearLabel(ph)}</span>
+                    <span class="m-hsub">{phaseWordLabel(ph)}</span>
                   </div>
                 ))}
               </div>
@@ -689,13 +719,15 @@ export function DesignBoard({ rep }: { rep: PaletteReport }) {
                   .filter((p) => p.phases != null)
                   .sort((a, b) => phaseOrd(a.phases!.start) - phaseOrd(b.phases!.start) || phaseOrd(b.phases!.end) - phaseOrd(a.phases!.end) || taxCommonName(a).localeCompare(taxCommonName(b)));
                 const unk = list.filter((p) => p.phases == null);
+                const inkCol = stratumInkVar(l);
+                const bgCol = stratumBgVar(l);
                 return (
-                  <div key={l} class="matrix-sun-row">
-                    <div class="matrix-sun-label">
-                      <span>{lightKeyLabel(l)}</span>
-                      <span class="small muted" style={{ fontWeight: 400 }}>{T('ns.board.speciesCount', { n: list.length })}</span>
+                  <div key={l} class="m-row">
+                    <div class="m-stratum">
+                      <span class="m-stratum-lbl" style={{ color: inkCol }}>{lightKeyLabel(l)}</span>
+                      <span class="m-stratum-sub">{T('ns.board.speciesCount', { n: list.length })}</span>
                     </div>
-                    <div class="matrix-lanes">
+                    <div class="m-lanes">
                       {known.length === 0 && unk.length === 0 && (
                         <span class="small muted" style={{ gridColumn: '1 / 8', padding: '6px 4px' }}>
                           {T('ns.board.openNiche')}
@@ -705,34 +737,49 @@ export function DesignBoard({ rep }: { rep: PaletteReport }) {
                         const v = rep.verdicts.get(p.id);
                         const cStart = phaseOrd(p.phases!.start) + 1;
                         const cEnd = Math.max(cStart + 1, phaseOrd(p.phases!.end) + 2);
-                        const spanCols = cEnd - cStart;
-                        const vSym = v?.level === 'fits' ? '✓' : v?.level === 'check' ? '▲' : '✕';
-                        const isTox = toxicityStatusOf(p).status === 'toxic';
                         const fullName = taxCommonName(p);
+                        const spanStr = phaseSpanText(p);
+                        const showPrefSun = prefersFullSunNote(p, l);
+                        const vTone = v ? verdictStampTone(v.level) : 'unk';
                         return (
                           <button
                             key={p.id}
                             type="button"
-                            class="matrix-span-bar"
+                            class="ribbon-btn"
                             style={{ gridColumn: `${cStart} / ${cEnd}`, gridRow: idx + 1 }}
-                            aria-label={`${fullName} · ${spanFull(p)} · ${v ? verdictSymbolLabel(v.level) : ''}${isTox ? ' · Toxic' : ''}`}
+                            aria-label={`${fullName} · ${spanStr} · ${v ? verdictStampText(v.level) : ''}`}
                             onClick={() => { nsDrawer.value = { kind: 'dossier', id: p.id }; }}
                           >
-                            <span class="matrix-span-name">{fullName}</span>
-                            {spanCols >= 3 && <span class="matrix-span-tag">{spanShort(p)}</span>}
-                            {v && (
-                              <span class={`badge ${verdictBadgeClass(v.level)}`}>
-                                {spanCols >= 3 ? verdictSymbolLabel(v.level) : <>{vSym}<span class="sr-only"> {verdictSymbolLabel(v.level)}</span></>}
-                              </span>
-                            )}
-                            {isTox && <span class="badge badge-warn">{spanCols >= 3 ? '⚠ Toxic' : '⚠'}</span>}
-                            {spanCols >= 2 && <PlantThumb taxon={p} size={22} />}
+                            <div class="ribbon-head">
+                              {v && v.level !== 'unknown' && (
+                                <Glyph
+                                  name={verdictGlyphName(v.level)}
+                                  size={14}
+                                  class={`stamp-${vTone}`}
+                                />
+                              )}
+                              <span class="ribbon-name">{fullName}</span>
+                              {showPrefSun && <span class="ribbon-note">{T('ns.matrix.prefersFullSun')}</span>}
+                              <span class="ribbon-span tnum">{spanStr}</span>
+                            </div>
+                            <svg class="ribbon-wedge" viewBox="0 0 100 11" preserveAspectRatio="none" aria-hidden="true">
+                              <polygon
+                                points="0,4.5 100,1 100,10 0,6.5"
+                                fill={bgCol}
+                                stroke={inkCol}
+                                stroke-opacity="0.5"
+                                stroke-width="1"
+                                vector-effect="non-scaling-stroke"
+                              />
+                            </svg>
                           </button>
                         );
                       })}
                       {unk.length > 0 && (
                         <div class="matrix-unk-row">
-                          <span class="small muted" style={{ alignSelf: 'center', fontWeight: 600 }}>Stage unknown:</span>
+                          <span class="small muted" style={{ alignSelf: 'center', fontWeight: 600 }}>
+                            {T('ns.board.stageUnknown')}:
+                          </span>
                           {unk.slice(0, 12).map((p) => {
                             const v = rep.verdicts.get(p.id);
                             return (
@@ -742,7 +789,7 @@ export function DesignBoard({ rep }: { rep: PaletteReport }) {
                                 class="proto-btn"
                                 onClick={() => { nsDrawer.value = { kind: 'dossier', id: p.id }; }}
                               >
-                                {taxCommonName(p)}{v ? ` · ${verdictSymbolLabel(v.level)}` : ''}
+                                {taxCommonName(p)}{v ? ` · ${verdictStampText(v.level)}` : ''}
                               </button>
                             );
                           })}
@@ -753,49 +800,6 @@ export function DesignBoard({ rep }: { rep: PaletteReport }) {
                 );
               })}
             </div>
-          </div>
-
-          <div class="matrix-mobile">
-            {activeLights.map((l) => {
-              const list = byLight[l];
-              return (
-                <div key={l} class="job-group">
-                  <div class="job-group-head">
-                    <h3>{lightKeyLabel(l)}</h3>
-                    <span class="job-group-meta">{T('ns.board.speciesCount', { n: list.length })}</span>
-                  </div>
-                  {list.length === 0 ? (
-                    <p class="small muted">{T('ns.board.openNiche')}</p>
-                  ) : (
-                    list.slice(0, 20).map((p) => {
-                      const v = rep.verdicts.get(p.id);
-                      const isTox = toxicityStatusOf(p).status === 'toxic';
-                      return (
-                        <button
-                          key={p.id}
-                          type="button"
-                          class="matrix-mob-card"
-                          onClick={() => { nsDrawer.value = { kind: 'dossier', id: p.id }; }}
-                        >
-                          <div class="matrix-mob-head">
-                            <PlantThumb taxon={p} size={28} />
-                            <span class="matrix-span-name">{taxCommonName(p)}</span>
-                            {v && <span class={`badge ${verdictBadgeClass(v.level)}`}>{verdictSymbolLabel(v.level)}</span>}
-                          </div>
-                          <div class="small muted">{spanFull(p)}{isTox ? ' · ⚠ Toxic' : ''}</div>
-                          <div class="matrix-mob-7" aria-hidden="true">
-                            {PHASE_SHORT_NAMES.map((sh, i) => {
-                              const on = plantCoversPhase(p, i);
-                              return <span key={sh} class="matrix-mob-seg" data-on={on ? 'true' : 'false'}>{on ? '✓' : sh}</span>;
-                            })}
-                          </div>
-                        </button>
-                      );
-                    })
-                  )}
-                </div>
-              );
-            })}
           </div>
         </section>
       ) : (
@@ -820,7 +824,12 @@ export function DesignBoard({ rep }: { rep: PaletteReport }) {
                 <div class="photo-card-body">
                   <strong>{taxCommonName(p)}</strong>
                   <span class="small muted" style={{ fontStyle: 'italic' }}>{p.canonical_name}</span>
-                  {v && <span class={`badge ${verdictBadgeClass(v.level)}`} style={{ justifySelf: 'start' }}>{verdictSymbolLabel(v.level)}</span>}
+                  {v && (
+                    <span class={`stamp stamp-${verdictStampTone(v.level)}`} style={{ justifySelf: 'start' }}>
+                      {v.level !== 'unknown' && <Glyph name={verdictGlyphName(v.level)} size={14} />}
+                      {verdictStampText(v.level)}
+                    </span>
+                  )}
                 </div>
               </button>
             );

@@ -9,12 +9,13 @@ import {
   localizedMonthLabels,
 } from '../src/lib/phenology.ts';
 
-test('shared botanical glyph registry defines all 13 glyphs on the 16×16 1.4px grid', () => {
+test('shared botanical glyph registry defines all 17 glyphs on the 16×16 1.4px grid', () => {
   assert.equal(GLYPH_VIEWBOX, '0 0 16 16');
   assert.equal(GLYPH_STROKE_WIDTH, 1.4);
   const expected = [
     'bloom', 'fruit', 'bloom-fruit', 'sow', 'fits', 'check', 'risk',
     'job-food', 'job-soil', 'job-helpers', 'job-mulch', 'job-ground', 'job-shelter',
+    'phase-seedling', 'phase-shrub', 'phase-young-tree', 'phase-canopy',
   ];
   assert.deepEqual(Object.keys(GLYPH_PRIMITIVES), expected);
   for (const name of expected) {

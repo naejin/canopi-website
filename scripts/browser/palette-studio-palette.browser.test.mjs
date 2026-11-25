@@ -9,12 +9,14 @@ useHarness();
 test('Design Board: Your land + Tune site, By job / 7-phase Sun x Succession / Photo grid, and Kids/Pets lens @real-data', async () => {
   const page = await openSuggestedPalette({ width: 1280, theme: 'light' });
 
-  // Verify Guild Pulse, Elevation SVG, Job Strip, and Light-span labels
+  // Verify Guild Pulse, Elevation SVG, Job Strip, A4 de-chipped rows, and MiniYearRibbon
   const designInfo = await page.evaluate(() => ({
     hasLandPanel: !!document.querySelector('.land-panel'),
     hasElevSvg: !!document.querySelector('.guild-profile-svg'),
     jobCells: document.querySelectorAll('.job-cell').length,
     plantRows: document.querySelectorAll('.plant-row').length,
+    plantRowBadges: document.querySelectorAll('.plant-row .badge').length,
+    plantRowStamps: document.querySelectorAll('.plant-row .stamp').length,
     hasMiniYear: !!document.querySelector('.mini-year'),
     text: document.querySelector('main')?.innerText ?? '',
   }));
@@ -22,7 +24,9 @@ test('Design Board: Your land + Tune site, By job / 7-phase Sun x Succession / P
   assert.ok(designInfo.hasElevSvg, 'Guild Elevation Profile SVG renders');
   assert.equal(designInfo.jobCells, 6, '6-cell Job Coverage Strip renders');
   assert.equal(designInfo.plantRows, 8, `multi-layer 8-plant starter guild renders (got ${designInfo.plantRows})`);
-  assert.ok(designInfo.hasMiniYear, '12-month mini phenology dot strip renders on plant rows');
+  assert.equal(designInfo.plantRowBadges, 0, 'A4 de-chipped rows render zero capsule pills');
+  assert.ok(designInfo.plantRowStamps >= 8, 'A4 small-caps status stamps render on plant rows');
+  assert.ok(designInfo.hasMiniYear, '12-month mini phenology ribbon renders on plant rows');
   assert.ok(!PFAF_PATTERN.test(designInfo.text), 'zero PFAF on Design Board');
   assert.ok(!RAW_TECH_PATTERN.test(designInfo.text), 'zero raw jargon on Design Board');
 
@@ -31,11 +35,17 @@ test('Design Board: Your land + Tune site, By job / 7-phase Sun x Succession / P
   const lensPressed = await page.evaluate(() => document.querySelector('.board-filters .btn-ghost')?.getAttribute('aria-pressed'));
   assert.equal(lensPressed, 'true', 'Kids / Pets lens toggles to aria-pressed=true');
 
-  // Switch to 7-phase Sun x Succession matrix
+  // Switch to A5 7-phase Sun x Succession matrix
   await clickNth(page, '.board-bar .seg button', 1);
   assert.ok(await has(page, '.matrix-grid', 8_000), '7-phase Sun x Succession matrix renders');
-  const matrixBars = await page.evaluate(() => document.querySelectorAll('.matrix-span-bar').length);
-  assert.ok(matrixBars > 0, 'continuous 7-phase succession span bars render');
+  const matrixInfo = await page.evaluate(() => ({
+    ribbons: document.querySelectorAll('.ribbon-btn').length,
+    wedges: document.querySelectorAll('.ribbon-wedge').length,
+    populatedStrata: [...document.querySelectorAll('.m-row')].filter((r) => r.querySelector('.ribbon-btn')).length,
+  }));
+  assert.ok(matrixInfo.ribbons > 0, 'A5 tapered succession ribbons render');
+  assert.equal(matrixInfo.wedges, matrixInfo.ribbons, 'each ribbon has a tapered SVG wedge');
+  assert.ok(matrixInfo.populatedStrata >= 2, `ecological niche placement spreads across strata (got ${matrixInfo.populatedStrata})`);
 
   // Switch to Photo grid
   await clickNth(page, '.board-bar .seg button', 2);

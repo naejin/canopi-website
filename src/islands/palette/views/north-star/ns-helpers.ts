@@ -76,6 +76,22 @@ export function plantLightKey(t: Taxon): LightKey {
   return 'unknown';
 }
 
+/**
+ * Ecological niche light stratum for A5 Sun × Succession Matrix.
+ * Places each plant by its ecological guild stratum (`placements.stratum` → `plants.default_stratum`),
+ * falling back to physiological light preference only when stratum is unrecorded.
+ */
+export function plantNicheLightKey(t: Taxon): LightKey {
+  if (t.stratum?.value) return stratumToLightKey(t.stratum.value);
+  return plantLightKey(t);
+}
+
+/** True when a plant occupies a shaded ecological niche but physiologically prefers full/mostly sun. */
+export function prefersFullSunNote(t: Taxon, niche: LightKey): boolean {
+  if (niche !== 'part_shade' && niche !== 'shade') return false;
+  return t.light.preferred === 'emergent' || t.light.preferred === 'high';
+}
+
 export function lightKeyLabel(k: LightKey): string {
   switch (k) {
     case 'full_sun': return T('ns.stratum.emergent');
@@ -227,6 +243,21 @@ export function jobLabel(job: JobId): string {
   }
 }
 
+export function jobGlyphName(job: JobId): 'job-food' | 'job-soil' | 'job-helpers' | 'job-mulch' | 'job-ground' | 'job-shelter' {
+  switch (job) {
+    case 'feeds_you': return 'job-food';
+    case 'feeds_soil': return 'job-soil';
+    case 'helpers': return 'job-helpers';
+    case 'mulch': return 'job-mulch';
+    case 'ground': return 'job-ground';
+    case 'shelter': return 'job-shelter';
+  }
+}
+
+export function pairInteractionLabel(positive: boolean): string {
+  return positive ? T('ns.pair.yieldGain') : T('ns.pair.sharedPest');
+}
+
 
 export function primaryJobOf(t: Taxon): JobId {
   const js = jobsOf(t);
@@ -254,8 +285,6 @@ export const PHASE_LIST: readonly Phase[] = [
   'climax',
 ];
 
-export const PHASE_SHORT_NAMES = ['P1', 'P2', 'P3', 'S1', 'S2', 'S3', 'Clx'] as const;
-
 export function phaseOrd(phase: Phase): number {
   return Math.max(0, PHASE_LIST.indexOf(phase));
 }
@@ -275,6 +304,57 @@ export function phaseLabel(phase: Phase): string {
     case 'secondary_iii': return T('ns.phase.5');
     case 'climax': return T('ns.phase.6');
   }
+}
+
+export const PHASE_GLYPHS: readonly ('phase-seedling' | 'phase-shrub' | 'phase-young-tree' | 'phase-canopy')[] = [
+  'phase-seedling',
+  'phase-seedling',
+  'phase-shrub',
+  'phase-young-tree',
+  'phase-young-tree',
+  'phase-canopy',
+  'phase-canopy',
+];
+
+export function phaseYearLabel(phase: Phase): string {
+  return T(`ns.phaseYr.${phaseOrd(phase)}`);
+}
+
+export function phaseWordLabel(phase: Phase): string {
+  return T(`ns.phaseWord.${phaseOrd(phase)}`);
+}
+
+export function phaseSpanText(t: Taxon): string {
+  if (!t.phases) return T('ns.board.stageUnknown');
+  if (t.phases.start === t.phases.end) return phaseYearLabel(t.phases.start);
+  return `${phaseYearLabel(t.phases.start)} → ${phaseYearLabel(t.phases.end)}`;
+}
+
+export function verdictStampText(level: ReportVerdictLevel): string {
+  if (level === 'fits') return T('ns.stamp.fits');
+  if (level === 'check') return T('ns.stamp.check');
+  if (level === 'at_risk') return T('ns.stamp.atRisk');
+  return T('ns.unknown');
+}
+
+export function verdictStampTone(level: ReportVerdictLevel): 'ok' | 'warn' | 'bad' | 'unk' {
+  if (level === 'fits') return 'ok';
+  if (level === 'check') return 'warn';
+  if (level === 'at_risk') return 'bad';
+  return 'unk';
+}
+
+export function verdictGlyphName(level: ReportVerdictLevel): 'fits' | 'check' | 'risk' {
+  if (level === 'fits') return 'fits';
+  if (level === 'check') return 'check';
+  return 'risk';
+}
+
+export function verdict2050Suffix(level: ReportVerdictLevel): string {
+  if (level === 'fits') return T('ns.stamp.suffix2050Fits');
+  if (level === 'check') return T('ns.stamp.suffix2050Check');
+  if (level === 'at_risk') return T('ns.stamp.suffix2050AtRisk');
+  return T('ns.unknown');
 }
 
 export function verdictSymbolLabel(level: ReportVerdictLevel): string {

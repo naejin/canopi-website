@@ -13,6 +13,7 @@ import type {
   Taxon,
 } from '../../../../lib/palette/index.ts';
 import {
+  computeGrowingYear,
   evaluatePlantVerdict,
   findCompatibleSwaps,
   formatAreaName,
@@ -37,9 +38,9 @@ import {
   lightSpanLabel,
   localizedReason,
   PHASE_LIST,
-  PHASE_SHORT_NAMES,
   phaseLabel,
   phaseOrd,
+  phaseYearLabel,
   plantCoversPhase,
   plantLightKey,
   plantMatchesSunLevel,
@@ -54,6 +55,7 @@ import {
   toxBadgeInfo,
   traitFieldLabel,
   verdictBadgeClass,
+  verdictStampText,
   verdictSymbolLabel,
   type LightKey,
 } from './ns-helpers.ts';
@@ -118,6 +120,7 @@ interface PickerFilterState {
   nitrogenFixer: boolean;
   fitsRoom: boolean;
   annual: boolean;
+  inBloomNow: boolean;
 }
 
 function defaultPickerFilters(initialJob: JobId | 'all'): PickerFilterState {
@@ -141,6 +144,7 @@ function defaultPickerFilters(initialJob: JobId | 'all'): PickerFilterState {
     nitrogenFixer: false,
     fitsRoom: false,
     annual: false,
+    inBloomNow: false,
   };
 }
 
@@ -269,6 +273,16 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
     () => new Map(catalog.map((t) => [t.id, evaluatePlantVerdict(t, rep.eff2050)])),
     [catalog, rep.eff2050],
   );
+  const pickerTracks = useMemo(() => {
+    const gy = computeGrowingYear(
+      catalog,
+      nsLayerValues.value,
+      { lat: rep.eff.lat, country: rep.eff.country, zone: store.climate.value },
+      rep.eff.hemisphere,
+    );
+    return gy.tracks;
+  }, [catalog, nsLayerValues.value, rep.eff.lat, rep.eff.country, rep.eff.hemisphere, store.climate.value]);
+  const nowMonth = MONTHS[new Date().getMonth()];
 
   const q = query.trim().toLowerCase();
   const searchMatches = useMemo(() => {
@@ -321,6 +335,10 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
     if (st.nitrogenFixer && t.traits.nitrogen_fixer !== true) return false;
     if (st.fitsRoom && rep.eff.roomLimitM != null && (t.traits.height_m?.max ?? 0) > rep.eff.roomLimitM) return false;
     if (st.annual && !(t.traits.is_annual === true || t.traits.grown_as_annual === true)) return false;
+    if (st.inBloomNow) {
+      const tr = pickerTracks.get(t.id) ?? rep.growingYear.tracks.get(t.id);
+      if (!tr || !tr.bloom.includes(nowMonth)) return false;
+    }
     return true;
   };
 
@@ -399,6 +417,7 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
     { key: 'nitrogenFixer', label: T('ns.picker.fNfix') },
     { key: 'fitsRoom', label: roomChipLabel },
     { key: 'annual', label: T('ns.picker.fAnnual') },
+    { key: 'inBloomNow', label: T('ns.picker.fInBloom') },
   ];
 
   const activeFilterCount = (f.job !== 'all' ? 1 : 0)
@@ -427,6 +446,7 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
       <div class="pf-chips" aria-label={T('ns.picker.moreFilters')}>
         {boolChip('fillsGap', T('ns.picker.fFillsGap'))}
         {boolChip('thrives2050', T('ns.picker.fThrives2050'))}
+        {boolChip('inBloomNow', T('ns.picker.fInBloom'))}
         {boolChip('droughtAdapted', T('ns.picker.fDrought'))}
         {boolChip('winterCrop', T('ns.picker.fWinterCrop'))}
         {boolChip('nonToxic', T('ns.picker.fNonToxic'))}
@@ -580,7 +600,7 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
             const pollWarn = pollinationShortWarn(p);
             const hMax = p.traits.height_m?.max ?? null;
             const guestZ = guestZones.get(p.id);
-            const pTrack = rep.growingYear.tracks.get(p.id);
+            const pTrack = pickerTracks.get(p.id) ?? rep.growingYear.tracks.get(p.id);
             return (
               <div key={p.id} class="picker-row-v7">
                 <button
@@ -592,7 +612,7 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
                   <div style={{ minWidth: 0 }}>
                     <div>
                       <strong>{taxCommonName(p)}</strong>{' '}
-                      <span class="small muted" style={{ fontStyle: 'italic' }}>{p.canonical_name}</span>
+                      <span class="plant-bot">{p.canonical_name}</span>
                     </div>
                     <div class="plant-badges" style={{ marginTop: '4px' }}>
                       {v && <span class={`badge ${verdictBadgeClass(v.level)}`}>{verdictSymbolLabel(v.level)}</span>}
@@ -651,7 +671,6 @@ function AtlasDrawer({ rep, swapFor }: { rep: PaletteReport; swapFor?: PlantId }
   const fmtDelta = (v: number | null, unit: string) => v == null ? '—' : `${v > 0 ? '+' : ''}${fmtNum(v, 1)} ${unit}`;
 
   const strongCount = rob.strongPillars;
-  const famColors = ['var(--pal-ok)', 'var(--accent)', 'var(--winter-ink)', 'var(--soil-2)', 'var(--border-strong)'];
   const tankDays = eff.tankDays ?? 0;
   const cddDays = eff.cddDays ?? 0;
   const maxTankScale = Math.max(tankDays, cddDays, 30);
@@ -660,7 +679,58 @@ function AtlasDrawer({ rep, swapFor }: { rep: PaletteReport; swapFor?: PlantId }
   const waterBuffer = eff.tankDays != null && eff.cddDays != null ? eff.tankDays - eff.cddDays : null;
   const pctPh = (val: number) => Math.max(0, Math.min(100, ((val - 4.0) / 5.0) * 100));
   const topFamily = rob.familiesSorted[0] ?? ['—', 0];
-  const activeMonthsSet = new Set(rep.growingYear.activeMonths);
+
+  // A6 Quatrefoil: proportional 0..1 petal scores + weakest pillar identification
+  const backedUpJobs = 6 - rep.missingJobs.length - rep.noBackupJobs.length;
+  const clampScale = (v: number) => Math.max(0.22, Math.min(1, v));
+  const jobsScale = clampScale((rep.coveredJobs + backedUpJobs) / 12);
+  const famScale = rep.taxa.length === 0
+    ? 0.22
+    : clampScale(rob.monocultureWarn ? Math.min(0.55, rob.familyCount / Math.max(1, rep.taxa.length)) : Math.min(1, rob.familyCount / Math.min(rep.taxa.length, 6)));
+  const shockScale = rep.taxa.length === 0 ? 0.22 : clampScale(rob.survivesAllCore / rep.taxa.length);
+  const monthScale = clampScale(rep.growingYear.activeMonths.length / 10);
+
+  type PillarKey = 'jobs' | 'families' | 'shocks' | 'months';
+  const pillarScores: { key: PillarKey; ok: boolean; scale: number }[] = [
+    { key: 'jobs', ok: rob.redundancyOk, scale: jobsScale },
+    { key: 'families', ok: rob.familyDiversityOk, scale: famScale },
+    { key: 'shocks', ok: rob.shockSurvivalOk, scale: shockScale },
+    { key: 'months', ok: rob.seasonalityOk, scale: monthScale },
+  ];
+  const weakestPillar: PillarKey | null = strongCount >= 4
+    ? null
+    : ([...pillarScores].filter((p) => !p.ok).sort((a, b) => a.scale - b.scale)[0]?.key ?? null);
+
+  // Aggregate unique bloom & fruiting months across the palette for Q4 A1b ribbon
+  const aggBloom = MONTHS.filter((m) =>
+    rep.taxa.some((t) => rep.growingYear.tracks.get(t.id)?.bloom.includes(m)),
+  );
+  const aggFruit = MONTHS.filter((m) =>
+    rep.taxa.some((t) => rep.growingYear.tracks.get(t.id)?.fruiting.includes(m)),
+  );
+
+  // Leader elbow geometry from weakest petal tip to its quadrant edge (hidden below 639px via .qf-leader CSS)
+  const leaderCoords = (k: PillarKey | null): { cx: number; cy: number; pts: string } | null => {
+    if (k === 'jobs') {
+      const tipX = 108 - 64 * jobsScale, tipY = 102 - 64 * jobsScale;
+      return { cx: tipX, cy: tipY, pts: `${tipX.toFixed(1)},${tipY.toFixed(1)} ${Math.max(18, tipX - 16).toFixed(1)},46 2,46` };
+    }
+    if (k === 'families') {
+      const tipX = 108 + 64 * famScale, tipY = 102 - 64 * famScale;
+      return { cx: tipX, cy: tipY, pts: `${tipX.toFixed(1)},${tipY.toFixed(1)} ${Math.min(198, tipX + 16).toFixed(1)},46 214,46` };
+    }
+    if (k === 'shocks') {
+      const tipX = 108 + 64 * shockScale, tipY = 102 + 64 * shockScale;
+      return { cx: tipX, cy: tipY, pts: `${tipX.toFixed(1)},${tipY.toFixed(1)} ${Math.min(198, tipX + 16).toFixed(1)},158 214,158` };
+    }
+    if (k === 'months') {
+      const tipX = 108 - 64 * monthScale, tipY = 102 + 64 * monthScale;
+      return { cx: tipX, cy: tipY, pts: `${tipX.toFixed(1)},${tipY.toFixed(1)} ${Math.max(18, tipX - 16).toFixed(1)},158 2,158` };
+    }
+    return null;
+  };
+  const weakLeader = leaderCoords(weakestPillar);
+
   const texture = store.location.value?.lookup?.soil?.texture ?? 'loam';
   const terrain = store.location.value?.lookup?.v07?.terrain ?? null;
   const frostCal = store.location.value?.lookup?.v07?.frostCalendar ?? null;
@@ -703,78 +773,127 @@ function AtlasDrawer({ rep, swapFor }: { rep: PaletteReport; swapFor?: PlantId }
         </div>
       </section>
 
-      {/* 2. Four-Pillar Agroecological Robustness */}
+      {/* 2. A6 Four-Pillar Agroecological Robustness Quatrefoil */}
       <section class="atlas-card" aria-label={T('ns.atlas.pillarsHead')}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-          <div>
-            <p class="pulse-kicker">{T('ns.atlas.pillarsHead')}</p>
-            <div style={{ fontSize: '15px', fontWeight: 600, marginTop: '2px' }}>{T('ns.atlas.pillarsStrong', { n: strongCount })}</div>
-          </div>
-          <svg width="46" height="46" viewBox="0 0 46 46" role="img" aria-label={T('ns.atlas.pillarsStrong', { n: strongCount })}>
-            <circle cx="23" cy="23" r="18" fill="none" stroke="var(--border)" stroke-width="5" />
-            <circle
-              cx="23"
-              cy="23"
-              r="18"
-              fill="none"
-              stroke={strongCount === 4 ? 'var(--pal-ok)' : 'var(--accent)'}
-              stroke-width="5"
-              stroke-dasharray={`${((strongCount / 4) * 113.1).toFixed(1)} 113.1`}
-              transform="rotate(-90 23 23)"
-              stroke-linecap="round"
-            />
-            <text x="23" y="27" text-anchor="middle" font-size="12" font-weight="600" fill="var(--text)">{strongCount}/4</text>
-          </svg>
+        <div>
+          <p class="pulse-kicker">{T('ns.atlas.pillarsHead')}</p>
+          <div style={{ fontSize: '15px', fontWeight: 600, marginTop: '2px' }}>{T('ns.atlas.pillarsStrong', { n: strongCount })}</div>
         </div>
 
-        <div class="pillar-grid">
-          <div class="pillar-box" data-tone={rob.redundancyOk ? 'ok' : 'warn'}>
-            <span class="robust-k">1. {T('ns.pillar.jobs')}</span>
-            <span class="robust-v">{rob.redundancyOk ? '✓ ' : '▲ '}{rep.coveredJobs}/6 · {6 - rep.missingJobs.length - rep.noBackupJobs.length}/6</span>
-            <div class="pillar-segs" aria-hidden="true">
-              {rep.jobStats.map((j) => (
-                <span key={j.job} class="pillar-seg" data-st={j.status === 'backed_up' ? 'ok' : j.status === 'no_backup' ? 'low' : 'gap'} title={`${jobLabel(j.job)}: ${j.total}`} />
-              ))}
+        <div class="qf-layout">
+          {/* Q1: Top-left (Jobs) */}
+          <div class={`qf-quad qf-q1 ${weakestPillar === 'jobs' ? 'weak' : ''}`.trim()}>
+            <div class="qf-q-head">
+              <span>1. {T('ns.pillar.jobs')}</span>
+              <span class={`stamp stamp-${rob.redundancyOk ? 'ok' : 'warn'}`}>
+                {verdictStampText(rob.redundancyOk ? 'fits' : 'check')}
+              </span>
             </div>
+            <div class="qf-q-score tnum">{rep.coveredJobs}/6 · {backedUpJobs}/6</div>
+            {weakestPillar === 'jobs' && <p class="qf-weak-sent">{T('ns.pillar.weak.jobs')}</p>}
           </div>
-          <div class="pillar-box" data-tone={rob.familyDiversityOk ? 'ok' : 'warn'}>
-            <span class="robust-k">2. {T('ns.pillar.families')}</span>
-            <span class="robust-v">{rob.familyDiversityOk ? '✓ ' : '⚠ '}{rob.familyCount} · max {topFamily[1]}/{rep.taxa.length} {topFamily[0]}</span>
-            <div class="fam-bar" aria-hidden="true">
-              {rob.familiesSorted.slice(0, 5).map(([fam, cnt], idx) => (
-                <span key={fam} class="fam-seg" style={{ width: `${Math.max(8, Math.round((cnt / Math.max(1, rep.taxa.length)) * 100))}%`, background: famColors[idx % famColors.length] }} title={`${fam}: ${cnt}`} />
-              ))}
+
+          {/* Q2: Top-right (Families) */}
+          <div class={`qf-quad qf-q2 ${weakestPillar === 'families' ? 'weak' : ''}`.trim()}>
+            <div class="qf-q-head">
+              <span>2. {T('ns.pillar.families')}</span>
+              <span class={`stamp stamp-${rob.familyDiversityOk ? 'ok' : 'warn'}`}>
+                {verdictStampText(rob.familyDiversityOk ? 'fits' : 'check')}
+              </span>
             </div>
+            <div class="qf-q-score tnum">{rob.familyCount} · max {topFamily[1]}/{rep.taxa.length} {topFamily[0]}</div>
+            {weakestPillar === 'families' && <p class="qf-weak-sent">{T('ns.pillar.weak.families')}</p>}
           </div>
-          <div class="pillar-box" data-tone={rob.shockSurvivalOk ? 'ok' : 'warn'}>
-            <span class="robust-k">3. {T('ns.pillar.shocks')}</span>
-            <span class="robust-v">{rob.shockSurvivalOk ? '✓ ' : '▲ '}{rob.survivesAllCore}/{rep.taxa.length}</span>
-            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }} aria-hidden="true">
-              {rob.coreScenarioBreaks.map((sb) => (
-                <span
-                  key={sb.id}
-                  class="badge"
-                  style={{
-                    fontSize: '10px',
-                    padding: '1px 6px',
-                    background: 'var(--surface)',
-                    borderColor: sb.brokenCount === 0 ? 'var(--pal-ok)' : 'var(--accent)',
-                    color: sb.brokenCount === 0 ? 'var(--pal-ok)' : 'var(--pal-warn)',
-                  }}
-                >
-                  {sb.brokenCount === 0 ? '✓' : '▲'} {scenarioShort(sb.id)}
-                </span>
-              ))}
-            </div>
+
+          {/* Center: Proportional 4-Petal Quatrefoil SVG */}
+          <div class="qf-center">
+            <svg width="216" height="204" viewBox="0 0 216 204" role="img" aria-label={T('ns.atlas.pillarsStrong', { n: strongCount })}>
+              <line x1="108" y1="16" x2="108" y2="188" stroke="var(--border)" stroke-width="1" stroke-dasharray="2 3" />
+              <line x1="22" y1="102" x2="194" y2="102" stroke="var(--border)" stroke-width="1" stroke-dasharray="2 3" />
+              <g fill="none" stroke="var(--border-strong)" stroke-width="1.2" stroke-dasharray="3 2">
+                <path d="M108 102 C80 102 38 76 44 38 C82 32 108 74 108 102 Z" />
+                <path d="M108 102 C108 74 134 32 172 38 C178 76 136 102 108 102 Z" />
+                <path d="M108 102 C136 102 178 128 172 166 C134 172 108 130 108 102 Z" />
+                <path d="M108 102 C108 130 82 172 44 166 C38 128 80 102 108 102 Z" />
+              </g>
+              {/* NW: Jobs */}
+              <g transform={`translate(108 102) scale(${jobsScale.toFixed(2)}) translate(-108 -102)`}>
+                <path
+                  d="M108 102 C80 102 38 76 44 38 C82 32 108 74 108 102 Z"
+                  fill={weakestPillar === 'jobs' ? 'var(--accent)' : 'var(--plant-green)'}
+                  fill-opacity={weakestPillar === 'jobs' ? '0.28' : '0.24'}
+                  stroke={weakestPillar === 'jobs' ? 'var(--accent)' : 'var(--plant-green)'}
+                  stroke-width={weakestPillar === 'jobs' ? '2' : '1.8'}
+                />
+              </g>
+              {/* NE: Families */}
+              <g transform={`translate(108 102) scale(${famScale.toFixed(2)}) translate(-108 -102)`}>
+                <path
+                  d="M108 102 C108 74 134 32 172 38 C178 76 136 102 108 102 Z"
+                  fill={weakestPillar === 'families' ? 'var(--accent)' : 'var(--plant-green)'}
+                  fill-opacity={weakestPillar === 'families' ? '0.28' : '0.24'}
+                  stroke={weakestPillar === 'families' ? 'var(--accent)' : 'var(--plant-green)'}
+                  stroke-width={weakestPillar === 'families' ? '2' : '1.8'}
+                />
+              </g>
+              {/* SE: Climate shocks */}
+              <g transform={`translate(108 102) scale(${shockScale.toFixed(2)}) translate(-108 -102)`}>
+                <path
+                  d="M108 102 C136 102 178 128 172 166 C134 172 108 130 108 102 Z"
+                  fill={weakestPillar === 'shocks' ? 'var(--accent)' : 'var(--plant-green)'}
+                  fill-opacity={weakestPillar === 'shocks' ? '0.28' : '0.24'}
+                  stroke={weakestPillar === 'shocks' ? 'var(--accent)' : 'var(--plant-green)'}
+                  stroke-width={weakestPillar === 'shocks' ? '2' : '1.8'}
+                />
+              </g>
+              {/* SW: Active months */}
+              <g transform={`translate(108 102) scale(${monthScale.toFixed(2)}) translate(-108 -102)`}>
+                <path
+                  d="M108 102 C108 130 82 172 44 166 C38 128 80 102 108 102 Z"
+                  fill={weakestPillar === 'months' ? 'var(--accent)' : 'var(--plant-green)'}
+                  fill-opacity={weakestPillar === 'months' ? '0.28' : '0.24'}
+                  stroke={weakestPillar === 'months' ? 'var(--accent)' : 'var(--plant-green)'}
+                  stroke-width={weakestPillar === 'months' ? '2' : '1.8'}
+                />
+              </g>
+              {weakLeader && (
+                <g class="qf-leader" aria-hidden="true">
+                  <polyline points={weakLeader.pts} fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                  <circle cx={weakLeader.cx.toFixed(1)} cy={weakLeader.cy.toFixed(1)} r="3.5" fill="var(--accent)" />
+                </g>
+              )}
+              <circle cx="108" cy="102" r="16" fill="var(--surface)" stroke="var(--border-strong)" stroke-width="1.4" />
+              <text x="108" y="106.5" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--text)">{strongCount}/4</text>
+            </svg>
           </div>
-          <div class="pillar-box" data-tone={rob.seasonalityOk ? 'ok' : 'warn'}>
-            <span class="robust-k">4. {T('ns.pillar.months')}</span>
-            <span class="robust-v">{rob.seasonalityOk ? '✓ ' : '▲ '}{rep.growingYear.activeMonths.length}/12</span>
-            <div class="spark-12" aria-hidden="true">
-              {MONTHS.map((m) => (
-                <span key={m} class="spark-m" data-on={activeMonthsSet.has(m) ? 'true' : 'false'}>{m[0]}</span>
-              ))}
+
+          {/* Q3: Bottom-right (Climate shocks) */}
+          <div class={`qf-quad qf-q3 ${weakestPillar === 'shocks' ? 'weak' : ''}`.trim()}>
+            <div class="qf-q-head">
+              <span>3. {T('ns.pillar.shocks')}</span>
+              <span class={`stamp stamp-${rob.shockSurvivalOk ? 'ok' : 'warn'}`}>
+                {verdictStampText(rob.shockSurvivalOk ? 'fits' : 'check')}
+              </span>
             </div>
+            <div class="qf-q-score tnum">{rob.survivesAllCore}/{rep.taxa.length}</div>
+            {weakestPillar === 'shocks' && <p class="qf-weak-sent">{T('ns.pillar.weak.shocks')}</p>}
+          </div>
+
+          {/* Q4: Bottom-left (Active months — reuses A1b MiniYearRibbon with bloom & fruit glyphs) */}
+          <div class={`qf-quad qf-q4 ${weakestPillar === 'months' ? 'weak' : ''}`.trim()}>
+            <div class="qf-q-head">
+              <span>4. {T('ns.pillar.months')}</span>
+              <span class={`stamp stamp-${rob.seasonalityOk ? 'ok' : 'warn'}`}>
+                {verdictStampText(rob.seasonalityOk ? 'fits' : 'check')}
+              </span>
+            </div>
+            <div class="qf-q-score tnum">{rep.growingYear.activeMonths.length}/12</div>
+            {(aggBloom.length > 0 || aggFruit.length > 0) && (
+              <div style={{ marginTop: '3px' }}>
+                <MiniYearRibbon bloom={aggBloom} fruiting={aggFruit} />
+              </div>
+            )}
+            {weakestPillar === 'months' && <p class="qf-weak-sent">{T('ns.pillar.weak.months')}</p>}
           </div>
         </div>
       </section>
@@ -1098,7 +1217,12 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
             {activePhoto.url ? (
               <img class="dossier-img" src={activePhoto.url} width={112} height={112} alt={`${taxCommonName(taxon)} (${activePhoto.role})`} />
             ) : (
-              <span class="dossier-img plant-thumb-fb" aria-hidden="true">{(taxCommonName(taxon)[0] ?? '?').toUpperCase()}</span>
+              <span class="dossier-img plant-thumb-fb" aria-hidden="true">
+                <Glyph
+                  name={(taxon.traits.habit ?? '').toLowerCase().includes('tree') ? 'phase-canopy' : (taxon.traits.habit ?? '').toLowerCase().includes('shrub') ? 'phase-shrub' : 'phase-seedling'}
+                  size={44}
+                />
+              </span>
             )}
           </div>
           <figcaption class="herbarium-credit">
@@ -1327,15 +1451,17 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
             </span>
           )}
         </div>
-        <div class="pheno-grid">
-          <div />
-          {MONTHS.map((m, i) => {
-            const isMw = rep.eff.isMildWinter && winMonths.has(i + 1);
-            return <div key={m} class="pheno-m" data-mw={isMw ? 'true' : 'false'}>{monthLabels[i]}</div>;
-          })}
-          {renderPhenoRow(T('studio.act.sow'), sowSet, 'sow')}
-          {renderPhenoRow(T('ns.cal.bloom'), blmSet, 'bloom')}
-          {renderPhenoRow(T('ns.cal.fruit'), frtSet, 'fruit')}
+        <div class="pheno-scroll" tabIndex={0} role="region" aria-label={T('ns.dossier.phenoTitle', { site: siteShort })}>
+          <div class="pheno-grid">
+            <div />
+            {MONTHS.map((m, i) => {
+              const isMw = rep.eff.isMildWinter && winMonths.has(i + 1);
+              return <div key={m} class="pheno-m" data-mw={isMw ? 'true' : 'false'}>{monthLabels[i]}</div>;
+            })}
+            {renderPhenoRow(T('studio.act.sow'), sowSet, 'sow')}
+            {renderPhenoRow(T('ns.cal.bloom'), blmSet, 'bloom')}
+            {renderPhenoRow(T('ns.cal.fruit'), frtSet, 'fruit')}
+          </div>
         </div>
       </div>
 
@@ -1346,9 +1472,9 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
           <span>{phaseRangeLabel}</span>
         </div>
         <div class="succ-strip-7">
-          {PHASE_SHORT_NAMES.map((sh, i) => {
+          {PHASE_LIST.map((ph, i) => {
             const on = plantCoversPhase(taxon, i);
-            return <div key={sh} class="succ-stage" data-on={on ? 'true' : 'false'} title={phaseLabel(PHASE_LIST[i])}>{sh}{on ? ' ✓' : ''}</div>;
+            return <div key={ph} class="succ-stage tnum" data-on={on ? 'true' : 'false'} title={phaseLabel(ph)}>{phaseYearLabel(ph)}{on ? ' ✓' : ''}</div>;
           })}
           {taxon.phases && (
             <div class="succ-span-bar" style={{ gridColumn: `${phaseOrd(taxon.phases.start) + 1} / ${phaseOrd(taxon.phases.end) + 2}` }} aria-hidden="true" />

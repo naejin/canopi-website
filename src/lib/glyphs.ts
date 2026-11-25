@@ -18,7 +18,11 @@ export type GlyphName =
   | 'job-helpers'
   | 'job-mulch'
   | 'job-ground'
-  | 'job-shelter';
+  | 'job-shelter'
+  | 'phase-seedling'
+  | 'phase-shrub'
+  | 'phase-young-tree'
+  | 'phase-canopy';
 
 export interface GlyphPrimitive {
   readonly tag: 'path' | 'circle' | 'ellipse';
@@ -147,6 +151,35 @@ export const GLYPH_PRIMITIVES: Readonly<Record<GlyphName, readonly GlyphPrimitiv
     { tag: 'path', attrs: { d: 'M10.5 13.8 V4.2' } },
     { tag: 'path', attrs: { d: 'M10.5 3.0 C8.2 3.8 7.4 6.0 7.4 8.4 C7.4 10.2 8.7 11.2 10.5 11.2 C12.3 11.2 13.6 10.2 13.6 8.4 C13.6 6.0 12.8 3.8 10.5 3.0 Z' } },
     { tag: 'path', attrs: { d: 'M2.0 6.0 H5.4 M2.0 8.8 H4.6 M2.0 11.6 H5.4' } },
+  ],
+
+  // Succession phase / habit — Seedling (Yr 0–2)
+  'phase-seedling': [
+    { tag: 'path', attrs: { d: 'M3 13.5 H13' } },
+    { tag: 'path', attrs: { d: 'M8 13.5 V7.5' } },
+    { tag: 'path', attrs: { d: 'M8 9.2 C5.6 9.2 4.4 7.5 4.7 5.5 C6.7 5.5 8 7.0 8 9.2 Z' } },
+    { tag: 'path', attrs: { d: 'M8 8.2 C10.4 8.2 11.6 6.5 11.3 4.5 C9.3 4.5 8 6.0 8 8.2 Z' } },
+  ],
+
+  // Succession phase / habit — Shrub (Yr 2–5)
+  'phase-shrub': [
+    { tag: 'path', attrs: { d: 'M3 13.5 H13' } },
+    { tag: 'path', attrs: { d: 'M8 13.5 V9.5 M5.5 13.5 L6.5 10 M10.5 13.5 L9.5 10' } },
+    { tag: 'path', attrs: { d: 'M3.4 9.8 C3.1 6.7 5.4 4.8 8 4.8 C10.6 4.8 12.9 6.7 12.6 9.8 Z', fill: 'currentColor', 'fill-opacity': 0.14 } },
+  ],
+
+  // Succession phase / habit — Young tree (Yr 5–12)
+  'phase-young-tree': [
+    { tag: 'path', attrs: { d: 'M4 13.5 H12' } },
+    { tag: 'path', attrs: { d: 'M8 13.5 V7.6 M8 10.2 L6.1 8.3 M8 9.4 L9.9 7.8' } },
+    { tag: 'path', attrs: { d: 'M4.5 8.2 C4.5 4.6 6.1 2.6 8 2.6 C9.9 2.6 11.5 4.6 11.5 8.2 Z', fill: 'currentColor', 'fill-opacity': 0.14 } },
+  ],
+
+  // Succession phase / habit — Mature canopy tree (Yr 12+)
+  'phase-canopy': [
+    { tag: 'path', attrs: { d: 'M3.5 13.5 H12.5' } },
+    { tag: 'path', attrs: { d: 'M8 13.5 V7.0 M8 9.6 L5.5 7.4 M8 9.6 L10.5 7.4' } },
+    { tag: 'path', attrs: { d: 'M2.5 7.6 C2.1 4.0 4.7 2.0 8 2.0 C11.3 2.0 13.9 4.0 13.5 7.6 Z', fill: 'currentColor', 'fill-opacity': 0.14 } },
   ],
 };
 

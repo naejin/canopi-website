@@ -16,15 +16,24 @@ import {
 import type { EffectiveSiteClimate, PaletteReport, PlantId, Taxon } from '../../../../lib/palette/index.ts';
 import { months as MONTHS } from '../../../../lib/palette/index.ts';
 import { T } from '../../strings.ts';
+import { Glyph } from '../kit/Glyph.tsx';
 import {
   fmtNum,
   lightSpanLabel,
+  pairInteractionLabel,
   photoUrlOf,
   scenarioShort,
   taxCommonName,
   verdictSymbolLabel,
 } from './ns-helpers.ts';
 import { nsActivePairKey, nsDrawer, nsScenario } from './ns-state.ts';
+
+function habitGlyphFor(taxon: Taxon): 'phase-canopy' | 'phase-shrub' | 'phase-seedling' {
+  const h = (taxon.traits.habit ?? '').toLowerCase();
+  if (h.includes('tree')) return 'phase-canopy';
+  if (h.includes('shrub') || h.includes('bush')) return 'phase-shrub';
+  return 'phase-seedling';
+}
 
 export function PlantThumb({ taxon, size = 44 }: { taxon: Taxon; size?: number }) {
   const url = photoUrlOf(taxon);
@@ -41,14 +50,14 @@ export function PlantThumb({ taxon, size = 44 }: { taxon: Taxon; size?: number }
       />
     );
   }
-  const init = (taxCommonName(taxon)[0] ?? taxon.canonical_name[0] ?? '?').toUpperCase();
+  const gSize = Math.max(16, Math.round(size * 0.54));
   return (
     <span
       class="plant-thumb plant-thumb-fb"
       aria-hidden="true"
       style={{ width: `${size}px`, height: `${size}px` }}
     >
-      {init}
+      <Glyph name={habitGlyphFor(taxon)} size={gSize} />
     </span>
   );
 }
@@ -310,7 +319,7 @@ export function GuildProfileSvg({ rep }: { rep: PaletteReport }) {
   const pB = activePair ? posById.get(activePair.b) : undefined;
   const midX = pA && pB ? (pA.cx + pB.cx) / 2 : 0;
   const arcY = pA && pB ? Math.max(12, Math.min(pA.topY, pB.topY) - 22) : 0;
-  const pairLbl = activePair?.positive ? '↔ Yield-gain pairing' : '↔ Shared pest';
+  const pairLbl = activePair ? `↔ ${pairInteractionLabel(activePair.positive)}` : '';
   const shadeRightEdge = bands.shadeLeftX + shadeW;
   const partMidY = (yCanopyBase + yShrubTop) / 2;
   const shadeMidY = Math.max(yShrubTop + 1, Math.min(soilY - 2, (yShrubTop + soilY) / 2));

@@ -867,6 +867,7 @@ export function selectStarterPalette(
   options: StarterOptions = {},
 ): Taxon[] {
   const maxPlants = options.maxPlants ?? 8;
+  const nicheStratumOf = (t: Taxon): string => t.stratum?.value ?? t.light.preferred ?? t.light.sunniest ?? '';
   const fitsPool = pool
     .map((t) => ({
       taxon: t,
@@ -874,6 +875,7 @@ export function selectStarterPalette(
       jobs: jobsOf(t),
       area: crownAreaM2(t) ?? 0,
       sizeClass: sizeClassOf(t),
+      stratum: nicheStratumOf(t),
       perennial: t.traits.is_annual !== true,
       edibility: t.traits.edibility_rating ?? 0,
     }))
@@ -883,6 +885,7 @@ export function selectStarterPalette(
   const chosen: Taxon[] = [];
   const chosenIds = new Set<PlantId>();
   const usedFamilies = new Set<string>();
+  const usedStrata = new Set<string>();
   let usedArea = 0;
 
   const canAdd = (item: (typeof fitsPool)[number]): boolean =>
@@ -893,6 +896,7 @@ export function selectStarterPalette(
     chosenIds.add(item.taxon.id);
     usedArea += item.area;
     if (item.taxon.family) usedFamilies.add(item.taxon.family);
+    if (item.stratum) usedStrata.add(item.stratum);
     return true;
   };
 
@@ -903,6 +907,7 @@ export function selectStarterPalette(
     ((isSevereTox(a.taxon) ? 1 : 0) - (isSevereTox(b.taxon) ? 1 : 0))
     || ((b.perennial ? 1 : 0) - (a.perennial ? 1 : 0))
     || (((b.taxon.family && !usedFamilies.has(b.taxon.family)) ? 1 : 0) - ((a.taxon.family && !usedFamilies.has(a.taxon.family)) ? 1 : 0))
+    || (((b.stratum && !usedStrata.has(b.stratum)) ? 1 : 0) - ((a.stratum && !usedStrata.has(a.stratum)) ? 1 : 0))
     || ((b.taxon.image ? 1 : 0) - (a.taxon.image ? 1 : 0))
     || (b.jobs.length - a.jobs.length)
     || (b.edibility - a.edibility)
