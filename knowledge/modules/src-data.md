@@ -5,20 +5,20 @@ description: Build-time content and link authorities for the site (release URLs,
 resource: ../../src/data
 tags: [module, data]
 status: stable
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:36Z }
+generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:09:54Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:42Z }
 sources:
   - id: data
     resource: ../../src/data
     title: src/data/
-    digest: sha256:3d916bc31709d75c
-    last_modified: 2026-11-23T20:58:01Z
+    digest: sha256:d97500de4b015c05
+    last_modified: 2026-11-25T11:09:08Z
   - id: climate-release-json
     resource: ../../src/data/climate-release.json
     title: src/data/climate-release.json
-    digest: sha256:f17c3cc7b270a864
-    last_modified: 2026-11-11T09:33:29Z
+    digest: sha256:f1d7272131f4398d
+    last_modified: 2026-11-24T18:04:54Z
 ---
 
 # Responsibility
@@ -36,12 +36,12 @@ Static data read at build time. No runtime fetching; the featured designs JSON l
 - [source-credits.ts](../../src/data/source-credits.ts): the source credits on /data-sources/, from `source_credits.tsv`, which only a real `npm run install:consortium` writes, when the export's manifest lists `source_credits` (`{ file, sha256, rows }`, kept in `consortium-index.json`). Installed from release r-01102782139409b5 (format 4, schema 3; the ranges rebuild; the same 42 rows as r-e0b162087a79eecf, schema 2, P5 commit 0): 42 rows, six more than r-2c6bdf65c35caca3 (`gbif_occurrences`, `canopi_climate`, `treegoer_ranges`, `ecocrop`, `eive`, `niinemets_valladares`); `check-built-site` counts 35 credited sources shown. Since release `r-415fcc60773473a4` (Q1): 49 rows (`canopi-knowledge` and `agroforestree` added), 41 credited sources shown; release `r-c15a216b9663d2fa` (S4) gives `agroforestree` its rights line and status `confirmed`. Read through `import.meta.glob`, so with no file `sourceCredits` is null and the page lists the TRY datasets alone; no copy is committed by hand, with one exception: at the P5 pre-push review (5) the `gbif_occurrences` credit's internal note ("A GBIF derived-dataset DOI is pending …") was removed in this copy and in canopi-data's `data/curated/source_credits.tsv` (branch ranges-rebuild, `2e195da`), byte-identical, and `consortium-index.json` `source_credits.sha256` set to the new digest so `check-built-site` and `source-credits.test.mjs` pass; export `r-60ea417b5a15c3aa` (rebuilt from canopi-data master `94a67a5`, installed after it) carries the same text in its manifest and `sources` table, and the installer wrote this file and the digest from its manifest.
 - [try_references.tsv](../../src/data/try_references.tsv), [try_references.meta.json](../../src/data/try_references.meta.json), [try-references.ts](../../src/data/try-references.ts): the TRY dataset list. canopi-data's consortium export owns it: a real `npm run install:consortium -- <export-dir>` writes the file byte for byte and the meta (the manifest entry's `sha256`, `rows`, `dataset_ids`, also kept in `consortium-index.json`), so neither is edited or copied by hand;
 - [climate-page-data.ts](../../src/data/climate-page-data.ts): `climatePageData(index)`, the canopi-climate base and tile names per layer the consortium page writes to `#ct-climate` for the location reader (no sizes or hashes; ≤ 2 KB gzip, `CLIMATE_PAGE_DATA_GZIP_BUDGET`), `null` without an index; tested in `scripts/climate-page-data.test.mjs`.
-- [consortium-index.json](../../src/data/consortium-index.json): the installed consortium release as the build sees it (release, database file and digests, climates, canonical names per climate, photo paths, TRY and credits entries, and since schema 2 `climate_grid_manifest_sha256` and `ranges_review`); written only by the installer, read by the page, the guide presets, the home note and the checks, never served; see [Consortium core](/modules/consortium-core.md). `tryReferences` is parsed when the site builds, by [src/lib](/modules/src-lib.md).
+- [consortium-index.json](../../src/data/palette-index.json): the installed consortium release as the build sees it (release, database file and digests, climates, canonical names per climate, photo paths, TRY and credits entries, and since schema 2 `climate_grid_manifest_sha256` and `ranges_review`); written only by the installer, read by the page, the guide presets, the home note and the checks, never served; see [Consortium core](/modules/consortium-core.md). `tryReferences` is parsed when the site builds, by [src/lib](/modules/src-lib.md).
 - [climate-release.json](../../src/data/climate-release.json): the pinned canopi-climate grid release (tag, GitHub asset URL, size, sha256, manifest sha256) that every `astro build` fetches and verifies. `climate-index.json` (git-ignored, written by each fresh install): the installed grid as the build sees it (URL base `/data/climate/<version>-<12 hex>/`, tile names and sizes per layer, variables, slots, release, credits, the consortium grid check); see [Climate reader](/modules/climate-reader.md).
-- [consortium-credits.ts](../../src/data/consortium-credits.ts): the consortium tool's credits on /data-sources/ (P5 S5f): `toolCredits(climateIndex.credits, tag)` (the grid, its five inputs from the climate index, GBIF, OpenFreeMap, Nominatim; a missing known grid source throws), `GBIF` (fetch window and basis of record, checked against the installed export's meta by `scripts/consortium-p5-seams-s5f.test.mjs`); see [Privacy page and tool credits](/modules/privacy-and-credits.md).
+- [consortium-credits.ts](../../src/data/palette-credits.ts): the consortium tool's credits on /data-sources/ (P5 S5f): `toolCredits(climateIndex.credits, tag)` (the grid, its five inputs from the climate index, GBIF, OpenFreeMap, Nominatim; a missing known grid source throws), `GBIF` (fetch window and basis of record, checked against the installed export's meta by `scripts/palette-p5-seams-s5f.test.mjs`); see [Privacy page and tool credits](/modules/privacy-and-credits.md).
 - [glossary.ts](../../src/data/glossary.ts): the Field Guides glossary, en and fr (`glossary`, `glossaryEntry(id, lang)`; one id per concept, no aliases).
 - [crops.ts](../../src/data/crops.ts): the 42-row crop table (the guide map's 40 crops plus mustard and flax) behind `CropCards`, `CropTable` and `CropExplorer` (ease, crossing, pollination, life, seed; `crop(id)`; no aliases).
-- [consortium-guides.ts](../../src/data/consortium-guides.ts): the Field Guides the consortium tool links: `consortiumGuides` (plant canonical name to slugs), `jobGuides` (one guide for each of the six jobs, never `null`) and `explainGuide`; see [Consortium page](/modules/consortium-page.md).
+- [consortium-guides.ts](../../src/data/palette-guides.ts): the Field Guides the consortium tool links: `consortiumGuides` (plant canonical name to slugs), `jobGuides` (one guide for each of the six jobs, never `null`) and `explainGuide`; see [Consortium page](/modules/consortium-page.md).
 - [food-risks.ts](../../src/data/food-risks.ts): `foodRisks`, the one list of `<FoodCaution risk>` values, used by the component and the tests.
 
 # Interfaces

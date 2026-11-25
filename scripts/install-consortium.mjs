@@ -24,7 +24,7 @@
 //   database), its sha256 and bytes those of the manifest and SHA256SUMS, the gzip magic, at most
 //   under MAX_FILE_BYTES raw (over MAX_GZIP_BYTES gzipped is reported, not a failure); then, read with node:sqlite: application_id,
 //   user_version, integrity_check, foreign_key_check, every table, column, index and base statement of
-//   scripts/consortium-schema.mjs (declared extras accepted, undeclared ones and missing
+//   scripts/palette-schema.mjs (declared extras accepted, undeclared ones and missing
 //   declared ones refused, open-vocabulary values held to the base lists plus the declared values; the
 //   tier rules 1-5 of the format note), meta (schema, format, release, climates, built_at), each table's
 //   row count against meta and the manifest, every plant placed and every placement with a reason,
@@ -41,7 +41,7 @@
 // - <out>/ (default public/data/consortium/): each database byte for byte under its own name (the
 //   name changes with the content, so public/_headers caches it forever), the names file
 //   under its digest-bearing name, images/<uuid>.<digest>.<ext> and the INSTALLED_BY mark. Nothing else: no manifest, no sums (the index holds the digests).
-// - The index, src/data/consortium-index.json (design check A4): release id, the database files with
+// - The index, src/data/palette-index.json (design check A4): release id, the database files with
 //   their sha256, climates, the canonical names placed in each climate, {plant uuid: photo path},
 //   schema_minor, schema_additions and search_names (the names file), and
 //   climate_grid_manifest_sha256 and ranges_review from the database's meta: the climate
@@ -64,12 +64,12 @@ import { fileURLToPath } from 'node:url';
 import { gunzipSync, inflateRawSync } from 'node:zlib';
 import { parseTryReferences } from '../src/lib/try-references.js';
 import { CREDIT_FILE, parseSourceCredits } from '../src/lib/source-credits.js';
-import { DATA_TABLES_BY_SCHEMA, DDL_BY_SCHEMA, LATEST_SCHEMA, MIN_SCHEMA_MINOR, REQUIRED_ADDITIONS, SCHEMAS, VOCABULARIES_4, VOCABULARIES_42 } from './consortium-schema.mjs';
+import { DATA_TABLES_BY_SCHEMA, DDL_BY_SCHEMA, LATEST_SCHEMA, MIN_SCHEMA_MINOR, REQUIRED_ADDITIONS, SCHEMAS, VOCABULARIES_4, VOCABULARIES_42 } from './palette-schema.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const DEFAULT_OUT = join(ROOT, 'public', 'data', 'consortium');
 export const DATA_DIR = join(ROOT, 'src', 'data');
-export const INDEX_FILE = 'consortium-index.json';
+export const INDEX_FILE = 'palette-index.json';
 export const INDEX_PATH = join(DATA_DIR, INDEX_FILE);
 // Where an install writes src/data/: only a real one into the site.
 export const dataDirFor = (out, fixture) => (!fixture && resolve(out) === DEFAULT_OUT ? DATA_DIR : null);
@@ -336,7 +336,7 @@ function declaredOf(manifest) {
 }
 
 // The expected schema per version: each table's column names, each index, and every statement as SQLite
-// stores it, from scripts/consortium-schema.mjs.
+// stores it, from scripts/palette-schema.mjs.
 const expected = new Map();
 async function schemaShape(version) {
   if (expected.has(version)) return expected.get(version);

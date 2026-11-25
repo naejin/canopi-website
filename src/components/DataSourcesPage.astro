@@ -14,7 +14,7 @@ import { sourceCredits } from '../data/source-credits';
 import { safeHref } from '../lib/safe-href.js';
 import { TRY_CITATION, TRY_DOI, referenceParts } from '../lib/try-references';
 import { t, localizedUrl, type Locale } from '../i18n/utils';
-import { toolCredits, type ClimateCredit } from '../data/consortium-credits';
+import { toolCredits, type ClimateCredit } from '../data/palette-credits';
 import climateRelease from '../data/climate-release.json';
 interface Props { lang: Locale; }
 const { lang } = Astro.props;
@@ -33,7 +33,7 @@ const creditGroups = sourceCredits ? [
   { id: 'credits-used', title: t('dataSources.credits.used', lang), rows: sourceCredits.used },
   { id: 'credits-held', title: t('dataSources.credits.held', lang), rows: sourceCredits.held },
 ].filter((group) => group.rows.length) : [];
-// The consortium tool's ("Plant palette") credits (P5 S5f, src/data/consortium-credits.ts): the canopi-climate grid and its
+// The consortium tool's ("Plant palette") credits (P5 S5f, src/data/palette-credits.ts): the canopi-climate grid and its
 // inputs as the installed climate index names them (scripts/install-climate.mjs writes it before every
 // build), GBIF, the map and the place search. Each row has a data-credit id.
 const climateIndex = Object.values(import.meta.glob('../data/climate-index.json', { eager: true, import: 'default' }))[0] as { credits?: ClimateCredit[] } | undefined;

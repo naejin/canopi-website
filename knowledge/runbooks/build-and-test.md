@@ -4,7 +4,7 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:39Z }
+generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:09:59Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:14Z }
@@ -13,8 +13,8 @@ sources:
   - id: package-json
     resource: ../../package.json
     title: package.json
-    digest: sha256:a54f837af2a33c43
-    last_modified: 2026-11-14T11:12:40Z
+    digest: sha256:aaa701d6aea28428
+    last_modified: 2026-11-25T11:09:08Z
   - id: readme
     resource: ../../README.md
     title: README.md
@@ -23,8 +23,8 @@ sources:
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:7eb74c8505c7b909
-    last_modified: 2026-11-23T20:58:01Z
+    digest: sha256:26ec9eb01fbd7a27
+    last_modified: 2026-11-25T11:09:08Z
   - id: tsconfig-json
     resource: ../../tsconfig.json
     title: tsconfig.json
@@ -63,13 +63,13 @@ sources:
   - id: axe-smoke-mjs
     resource: ../../scripts/browser/smoke/axe.smoke.mjs
     title: scripts/browser/smoke/axe.smoke.mjs
-    digest: sha256:3c67f98ddf1f093a
-    last_modified: 2026-11-16T23:20:48Z
+    digest: sha256:d8fb45474f4f2353
+    last_modified: 2026-11-25T08:48:21Z
   - id: climate-vectors-test-mjs
     resource: ../../scripts/climate-vectors.test.mjs
     title: scripts/climate-vectors.test.mjs
-    digest: sha256:5a5ac310e04b365c
-    last_modified: 2026-11-13T03:45:14Z
+    digest: sha256:36da1c81c30ca6b4
+    last_modified: 2026-11-24T18:04:54Z
   - id: version-json-ts
     resource: ../../src/pages/version.json.ts
     title: src/pages/version.json.ts
@@ -84,32 +84,32 @@ sources:
     resource: ../../scripts/quality/ast-grep/rules.test.mjs
     title: scripts/quality/ast-grep/rules.test.mjs
     digest: sha256:3993101a22fc3722
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: number-format-only-in-format-typescript
     resource: ../../scripts/quality/ast-grep/rules/number-format-only-in-format.typescript.yml
     title: scripts/quality/ast-grep/rules/number-format-only-in-format.typescript.yml
     digest: sha256:6e464b145be567ac
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: timing-json
     resource: ../../scripts/browser/timing.json
     title: scripts/browser/timing.json
-    digest: sha256:eac4e0b9cfa86a83
-    last_modified: 2026-11-13T11:02:09Z
+    digest: sha256:74244c42c704d685
+    last_modified: 2026-11-25T11:09:08Z
   - id: consortium-timing-mjs
-    resource: ../../scripts/browser/consortium-timing.mjs
-    title: scripts/browser/consortium-timing.mjs
-    digest: sha256:3a8eff8f51600f86
-    last_modified: 2026-11-23T20:58:01Z
+    resource: ../../scripts/browser/palette-timing.mjs
+    title: scripts/browser/palette-timing.mjs
+    digest: sha256:52fa4275f4ecd4aa
+    last_modified: 2026-11-25T11:09:08Z
   - id: dependency-cruiser-cjs
     resource: ../../.dependency-cruiser.cjs
     title: .dependency-cruiser.cjs
-    digest: sha256:b6d0b198825d16a5
-    last_modified: 2026-11-23T20:58:08Z
+    digest: sha256:91ca040088fb4842
+    last_modified: 2026-11-25T11:09:08Z
   - id: shards-json
     resource: ../../scripts/browser/shards.json
     title: scripts/browser/shards.json
-    digest: sha256:484efcce06b077ec
-    last_modified: 2026-11-23T13:35:12Z
+    digest: sha256:31db1c4d104ea305
+    last_modified: 2026-11-25T11:09:08Z
 enforced_by:
   - scripts/package.test.mjs
   - sgconfig.yml

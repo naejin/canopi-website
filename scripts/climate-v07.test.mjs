@@ -29,7 +29,7 @@ import {
   wasmUsdaZone,
   wasmVersion,
 } from '../src/lib/climate/index.ts';
-import { consortiumGridProblem } from './consortium-grid-check.mjs';
+import { consortiumGridProblem } from './palette-grid-check.mjs';
 
 const FIXTURES = new URL('./fixtures/climate/', import.meta.url);
 

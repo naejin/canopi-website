@@ -129,7 +129,7 @@ export function locationCountry(code: string | null, reader: boolean): void {
   else quietly(() => { store.country.value = next; });
 }
 
-// ---- the climate reader over the installed tiles (#ct-climate, ConsortiumPage.astro) ----
+// ---- the climate reader over the installed tiles (#ct-climate, PalettePage.astro) ----
 let tiles: TileSource | null = null;
 function tileSource(): TileSource {
   tiles ??= createTileSource({ index: siteIndex(JSON.parse(document.getElementById('ct-climate')?.textContent ?? 'null')) });

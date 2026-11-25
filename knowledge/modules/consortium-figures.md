@@ -3,7 +3,7 @@ type: Module
 title: Plant palette figures panel
 description: The PP-C pf-d panel that shows every site input the Plant palette checks read, what limits plants at a place, and the summary of what an edit changed.
 tags: [consortium, module]
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:10Z }
+generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:09:42Z }
 verified:
   - { by: antigravity/gemini, at: 2026-11-23T15:46:00Z }
   - { by: antigravity/gemini-3-pro, at: 2026-11-23T22:35:59Z }
@@ -36,23 +36,23 @@ sources:
   - id: sitetuner-tsx
     resource: ../../src/islands/palette/views/place/SiteTuner.tsx
     title: src/islands/palette/views/place/SiteTuner.tsx
-    digest: sha256:508af61023220fb6
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:bb409dc60fee9561
+    last_modified: 2026-11-24T18:31:15Z
   - id: field-studio-css
     resource: ../../src/styles/palette/field-studio.css
     title: src/styles/palette/field-studio.css
     digest: sha256:1f58100c121aa18c
     last_modified: 2026-11-23T21:58:22Z
   - id: consortiumpage-astro
-    resource: ../../src/components/consortium/ConsortiumPage.astro
-    title: src/components/consortium/ConsortiumPage.astro
-    digest: sha256:c35923d10b1d644f
-    last_modified: 2026-11-23T21:07:43Z
+    resource: ../../src/components/palette/PalettePage.astro
+    title: src/components/palette/PalettePage.astro
+    digest: sha256:8d5b992f4939045d
+    last_modified: 2026-11-25T11:09:08Z
   - id: consortium-pf-d-test-mjs
-    resource: ../../scripts/consortium-pf-d.test.mjs
-    title: scripts/consortium-pf-d.test.mjs
+    resource: ../../scripts/palette-pf-d.test.mjs
+    title: scripts/palette-pf-d.test.mjs
     digest: sha256:26e78ce0fec33c37
-    last_modified: 2026-11-23T21:07:43Z
+    last_modified: 2026-11-25T11:07:24Z
 ---
 
 # Plant palette figures panel (PP-C pf-d)
@@ -106,4 +106,4 @@ the h3 fix rounds and chunk 4 (C2). Related: [Site inputs](/modules/consortium-s
 - The soil pH and texture come from the soil tile read after the place (`state/location.ts` `soilLater`, h3 G1); a failed or slow soil tile leaves them "not known".
 
 ## Tests
-`scripts/consortium-pf-d.test.mjs` (core counts and words), `scripts/browser/consortium-pf-d.browser.test.mjs` (boards SiteKiambu, PlaceDesk, SiteMendoza; PFD49 the slot reserve; PFD53, PFD55, PFD59 the limits card's visit; PFD60, PFD62, PFD63 the phone's closed card; PFD61 a failed chunk).
+`scripts/palette-pf-d.test.mjs` (core counts and words), `scripts/browser/consortium-pf-d.browser.test.mjs` (boards SiteKiambu, PlaceDesk, SiteMendoza; PFD49 the slot reserve; PFD53, PFD55, PFD59 the limits card's visit; PFD60, PFD62, PFD63 the phone's closed card; PFD61 a failed chunk).

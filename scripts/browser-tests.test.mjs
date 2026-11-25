@@ -12,10 +12,10 @@ const read = (f) => readFileSync(new URL(f, dir), 'utf8');
 const testsOf = (text) => [...text.matchAll(/^(test|failing)\('((?:\\'|[^'])+)',\s*(\{[^}]*\})?/gm)].map(([, kind, title, opts]) => ({ title: title.replace(/\\'/g, "'"), opts: opts ?? '', marked: kind === 'failing' }));
 
 const SPEC_FILES = [
-  'consortium-studio-onboarding.browser.test.mjs',
-  'consortium-studio-palette.browser.test.mjs',
-  'consortium-studio-plan-i18n.browser.test.mjs',
-  'consortium-studio-system-climate.browser.test.mjs',
+  'palette-studio-onboarding.browser.test.mjs',
+  'palette-studio-palette.browser.test.mjs',
+  'palette-studio-plan-i18n.browser.test.mjs',
+  'palette-studio-system-climate.browser.test.mjs',
 ];
 
 test('Field Studio browser test files match SPEC_FILES and package.json scripts stay wired', () => {
@@ -23,7 +23,7 @@ test('Field Studio browser test files match SPEC_FILES and package.json scripts 
   const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
   assert.match(pkg.scripts['test:browser'], /node scripts\/browser\/run\.mjs --list local$/);
   assert.match(pkg.scripts['test:browser:shard'], /run\.mjs --list ci --no-scope --shard$/);
-  assert.match(pkg.scripts['test:browser:smoke'], /scripts\/browser\/smoke\/consortium\.smoke\.mjs$/);
+  assert.match(pkg.scripts['test:browser:smoke'], /scripts\/browser\/smoke\/palette\.smoke\.mjs$/);
   assert.doesNotMatch(pkg.scripts.test, /browser/, 'browser tests never run in npm test');
 });
 

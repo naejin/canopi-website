@@ -118,7 +118,7 @@ export const source = signal<PlantSource | null>(null);
 type Countries = ReadonlyMap<string, { invasiveChecked: boolean }>;
 const pageCountries = signal<Countries>(new Map());
 // zones: each country's time zones (space-separated), worked out at build time from the same CLDR data
-// the browser has (ConsortiumPage.astro), so the country guess reads them instead of asking the
+// the browser has (PalettePage.astro), so the country guess reads them instead of asking the
 // browser for every country's (about 0.5 s of main thread; Firefox has none: state/arrival.ts).
 let pageZones: Record<string, string> = {};
 export const zonesOfCountry = (c: string): string[] | null => (pageZones[c] ? pageZones[c].split(' ') : null);
@@ -1194,7 +1194,7 @@ export function openFigure(line: string | null): void {
 
 // The store's own effects, started by main.ts before the first render, in the order they ran when
 // they were module-level; a node test imports the store with none running
-// (scripts/consortium-start.test.mjs). A second call does nothing (each effect would run twice).
+// (scripts/palette-start.test.mjs). A second call does nothing (each effect would run twice).
 let started = false;
 export function start(): void {
   if (started) return;

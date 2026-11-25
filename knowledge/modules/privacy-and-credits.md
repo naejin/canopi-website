@@ -2,7 +2,7 @@
 type: Module
 title: Privacy page and tool credits
 description: The /privacy/ page in 11 locales, its footer link, and the consortium tool's climate, occurrence, map and search credits on /data-sources/.
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:35Z }
+generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:09:52Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:18Z }
   - { by: antigravity/gemini, at: 2026-11-23T12:36:40Z }
@@ -11,17 +11,17 @@ sources:
     resource: ../../src/components/PrivacyPage.astro
     title: src/components/PrivacyPage.astro
     digest: sha256:1a2cf7d7db89b2b7
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-credits-ts
-    resource: ../../src/data/consortium-credits.ts
-    title: src/data/consortium-credits.ts
-    digest: sha256:dbcfa8aea1d4e496
-    last_modified: 2026-11-18T02:34:14Z
+    resource: ../../src/data/palette-credits.ts
+    title: src/data/palette-credits.ts
+    digest: sha256:5fe9e4603c9c8b88
+    last_modified: 2026-11-25T11:09:08Z
   - id: datasourcespage-astro
     resource: ../../src/components/DataSourcesPage.astro
     title: src/components/DataSourcesPage.astro
-    digest: sha256:60c7d25fd06f12e0
-    last_modified: 2026-11-14T12:22:11Z
+    digest: sha256:faeee5017da6b50f
+    last_modified: 2026-11-25T11:09:08Z
   - id: footer-astro
     resource: ../../src/components/Footer.astro
     title: src/components/Footer.astro
@@ -30,8 +30,8 @@ sources:
   - id: third-party-notices-md
     resource: ../../THIRD_PARTY_NOTICES.md
     title: THIRD_PARTY_NOTICES.md
-    digest: sha256:c4eac6579e810512
-    last_modified: 2026-11-11T18:10:52Z
+    digest: sha256:40e3be67f9c7c6bf
+    last_modified: 2026-11-24T18:04:54Z
   - id: wrangler-jsonc
     resource: ../../wrangler.jsonc
     title: wrangler.jsonc
@@ -46,7 +46,7 @@ sources:
     resource: ../../src/lib/correction.mjs
     title: src/lib/correction.mjs
     digest: sha256:16cff4bec2a99cbf
-    last_modified: 2026-11-23T21:01:36Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: maplibre-notices-mjs
     resource: ../../scripts/maplibre-notices.mjs
     title: scripts/maplibre-notices.mjs
@@ -55,32 +55,32 @@ sources:
   - id: climate-index-ts
     resource: ../../src/lib/climate/index.ts
     title: src/lib/climate/index.ts
-    digest: sha256:09a8785016e8c670
-    last_modified: 2026-11-23T20:58:01Z
+    digest: sha256:1647d4003262d734
+    last_modified: 2026-11-24T18:04:54Z
   - id: consortium-state-ts
     resource: ../../src/lib/palette/state.ts
     title: src/lib/palette/state.ts
     digest: sha256:023783ecbccd0096
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: location-tsx
     resource: ../../src/islands/palette/views/location/location.tsx
     title: src/islands/palette/views/location/location.tsx
     digest: sha256:4a3aaec54728bcfd
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: developers-cloudflare-com-workers-observ
     resource: https://developers.cloudflare.com/workers/observability/logs/workers-logs/
   - id: persist-ts
     resource: ../../src/islands/palette/state/persist.ts
     title: src/islands/palette/state/persist.ts
     digest: sha256:abaa195b434f5099
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: location-ts
     resource: ../../src/islands/palette/state/location.ts
     title: src/islands/palette/state/location.ts
-    digest: sha256:5acb3da6eca26ed5
-    last_modified: 2026-11-23T20:58:01Z
+    digest: sha256:86dd45160353ac46
+    last_modified: 2026-11-25T11:09:08Z
 enforced_by:
-  - scripts/consortium-p5-seams-s5f.test.mjs
+  - scripts/palette-p5-seams-s5f.test.mjs
   - scripts/check-built-site.mjs
 ---
 
@@ -93,7 +93,7 @@ The `/privacy/` page in 11 locales (owner answer 4, decision "P5 owner answers",
 | [PrivacyPage.astro](../../src/components/PrivacyPage.astro) | The page: sections site, tool, location, contact, correction, donate, questions; each service's own privacy policy linked (Cloudflare, OSMF for Nominatim, OpenFreeMap, Google for Gmail); "Questions" links the home contact form. The header comment lists the code each claim rests on |
 | `src/pages/privacy.astro`, `src/pages/[lang]/privacy.astro` | Thin locale wrappers, the data-sources pattern |
 | [Footer.astro](../../src/components/Footer.astro) | The Privacy link (label `privacy.title`) after Contact |
-| [consortium-credits.ts](../../src/data/consortium-credits.ts) | `toolCredits()`: canopi-climate grid (tag from `climate-release.json`), CHELSA, Beck Köppen-Geiger, SoilGrids, WGSRPD, Natural Earth (from `climate-index.json` `credits`, as the crate publishes them), GBIF, OpenFreeMap, Nominatim |
+| [consortium-credits.ts](../../src/data/palette-credits.ts) | `toolCredits()`: canopi-climate grid (tag from `climate-release.json`), CHELSA, Beck Köppen-Geiger, SoilGrids, WGSRPD, Natural Earth (from `climate-index.json` `credits`, as the crate publishes them), GBIF, OpenFreeMap, Nominatim |
 | [DataSourcesPage.astro](../../src/components/DataSourcesPage.astro) | Renders the rows as `li.tool-credit[data-credit=<id>]`; names, citations and licences in English (`lang="en"`), the use lines translated; SoilGrids and WGSRPD say "served with the grid; the tool does not use it yet" (`dataSources.tool.servedUse`): the lookup fetches those tiles but the soil offer and the native line moved to P5.2 (owner, 2026-11-11), so the page names only climate and country as read for the site |
 | [THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.md) | maplibre-gl 6.10.0 and its 24 bundled dependencies with their licence texts, generated by [maplibre-notices.mjs](../../scripts/maplibre-notices.mjs) from `package-lock.json` and `node_modules` (regenerate after an update); "Code copied from canopi" (S5b's five files in `src/lib/location/`, from canopi `b039f14ee`) |
 
@@ -114,7 +114,7 @@ The `/privacy/` page in 11 locales (owner answer 4, decision "P5 owner answers",
 
 ## PP-B b1a (2026-11-14)
 
-`privacy.location.link` now reads, in English: "A share link includes your place only if you tick 'Include my place', and then only as the centre of its climate-grid square (about 11 km north to south, narrower toward the poles), its country, your spot answers and your soil test." (owner-approved EN and FR; the other nine translated). `scripts/consortium-p5-seams-s5f.test.mjs` checks the 11 km figure and the country word in every locale.
+`privacy.location.link` now reads, in English: "A share link includes your place only if you tick 'Include my place', and then only as the centre of its climate-grid square (about 11 km north to south, narrower toward the poles), its country, your spot answers and your soil test." (owner-approved EN and FR; the other nine translated). `scripts/palette-p5-seams-s5f.test.mjs` checks the 11 km figure and the country word in every locale.
 
 ## Main h2 hand-off (2026-11-18): the link's name and "Look up its name"
 

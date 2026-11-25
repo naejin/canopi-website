@@ -4,7 +4,7 @@ title: Consortium tool plan (beta)
 description: Scope, user paths, data path, scoring contract, states and tests for the beta consortium design tool.
 status: deprecated
 superseded_by: /project/consortium-v2-plan.md
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:36Z }
+generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:09:54Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:36Z }
 sources:
@@ -18,13 +18,13 @@ sources:
   - id: climates-ts
     resource: ../../src/data/climates.ts
     title: src/data/climates.ts
-    digest: sha256:c22dc51d073203d2
-    last_modified: 2026-11-23T20:58:01Z
+    digest: sha256:5d9d2c7d3e6a7d53
+    last_modified: 2026-11-25T11:09:08Z
   - id: suggest-ts
     resource: ../../src/lib/palette/suggest.ts
     title: src/lib/palette/suggest.ts
     digest: sha256:15f1a3ec8774ad24
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
 ---
 
 > **Deprecated.** Superseded by [Consortium v2 plan](/project/consortium-v2-plan.md). P2 commit 0 (consortium/integration) replaced the v1 tool and its format 3 data path; the v2 plan keeps this one for history
@@ -150,7 +150,7 @@ app term. Region names translated (8 × 11), as labels of a plant's reasons.
 Header item (inline ≥ 640 px; phone Menu below), measured at 640 px in all 11
 locales; footer link; home section after Start here (since 2026-11-06 the first card of the home's one Learn and try section, owner row in [Home page redesign](/decisions/homepage-redesign.md)); guides index and
 bibliography mention it (Learn section); guides → tool preset links;
-plant details → guides (hand-made map `src/data/consortium-guides.ts`,
+plant details → guides (hand-made map `src/data/palette-guides.ts`,
 canonical name → guide slugs).
 
 ## Site changes needed

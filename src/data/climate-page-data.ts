@@ -1,5 +1,5 @@
 // P5 commit 0: what the consortium page hands the island about the canopi-climate tiles (#ct-climate,
-// ConsortiumPage.astro), so the location reader (S5b) knows which tiles exist without fetching the
+// PalettePage.astro), so the location reader (S5b) knows which tiles exist without fetching the
 // index and without editing the page: the base path and each layer's tile names, in the shape
 // lib/climate siteIndex() reads. No sizes, no hashes (the build checks those: check-built-site.mjs).
 // About 1.9 KB gzip on climate 0.7.0 (all 12 layers + analogues flag), staying under 2 KB gzip.

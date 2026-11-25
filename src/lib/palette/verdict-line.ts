@@ -976,7 +976,7 @@ export function invasiveLines(d: InvasiveInput, where: { country: string | null;
 // the plant's pH range, water), what the check could not decide, and the notes (drought tolerance
 // Medium on a dry site: "water in the dry months"; a plant taller than a small or large garden: "grows
 // to N m", N to a tenth). Misfits are the plant's alone; rules/site-fit.ts keeps those that hold beside
-// the members' canopy. Its keys are written out whole (scripts/consortium-keys.test.mjs reads them).
+// the members' canopy. Its keys are written out whole (scripts/palette-keys.test.mjs reads them).
 const MISFIT: { [K in 'light' | 'soil' | 'water']: Partial<Record<Site[K], string>> } = {
   light: { sun: 'misfit.light.sun', part: 'misfit.light.part', shade: 'misfit.light.shade' },
   soil: { acid: 'misfit.soil.acid', neutral: 'misfit.soil.neutral', chalky: 'misfit.soil.chalky' },

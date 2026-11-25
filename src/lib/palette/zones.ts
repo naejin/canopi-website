@@ -3,7 +3,7 @@
 // ('tropical', src/data/climates.ts) mapped from them here only. The correction endpoint
 // (src/lib/correction.mjs CLIMATES) and the site list (src/data/climates.ts) read this file; the
 // installer (scripts/install-consortium.mjs, plain node) keeps a copy that
-// scripts/consortium-zones.test.mjs checks equal.
+// scripts/palette-zones.test.mjs checks equal.
 
 // The export's climate zones in canopi-data order (climates.ord). The site names them in lowercase
 // ('tropical', src/data/climates.ts); the mapping happens here, at the edge, never elsewhere in the core.

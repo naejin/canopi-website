@@ -1,4 +1,4 @@
-// The page's words on the island (frozen seam): ConsortiumPage.astro writes every consortium.* key of
+// The page's words on the island (frozen seam): PalettePage.astro writes every consortium.* key of
 // the page language, without its prefix, into #ct-data `strings`; T and P read them. Plural strings
 // use the v1 form "one: # plant | other: # plants" (Intl.PluralRules picks the form, # is the number).
 // A missing key shows the key itself, so a gap is visible rather than blank.

@@ -2,28 +2,28 @@
   "_comment": "Static shard lists (E1 design check A11; coordinator choice 13: no assigner). Every spec file is in each list exactly once (scripts/browser-tests.test.mjs). Phase 3 Field Studio redesign (2026-11-23) retired the 22 pre-redesign PP-B/PP-C/PF specs and replaced them with 4 Field Studio specs covering all 6 screens, balanced across 3 local shards and 4 CI shards.",
   "local": [
     [
-      "consortium-studio-onboarding.browser.test.mjs",
-      "consortium-studio-palette.browser.test.mjs"
+      "palette-studio-onboarding.browser.test.mjs",
+      "palette-studio-palette.browser.test.mjs"
     ],
     [
-      "consortium-studio-system-climate.browser.test.mjs"
+      "palette-studio-system-climate.browser.test.mjs"
     ],
     [
-      "consortium-studio-plan-i18n.browser.test.mjs"
+      "palette-studio-plan-i18n.browser.test.mjs"
     ]
   ],
   "ci": [
     [
-      "consortium-studio-onboarding.browser.test.mjs"
+      "palette-studio-onboarding.browser.test.mjs"
     ],
     [
-      "consortium-studio-palette.browser.test.mjs"
+      "palette-studio-palette.browser.test.mjs"
     ],
     [
-      "consortium-studio-system-climate.browser.test.mjs"
+      "palette-studio-system-climate.browser.test.mjs"
     ],
     [
-      "consortium-studio-plan-i18n.browser.test.mjs"
+      "palette-studio-plan-i18n.browser.test.mjs"
     ]
   ],
   "ratchet": {

@@ -4,7 +4,7 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:06Z }
+generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:25:09Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:20Z }
   - { by: antigravity/gemini, at: 2026-11-23T18:52:34Z }
@@ -19,8 +19,8 @@ sources:
   - id: dependency-cruiser-cjs
     resource: ../../.dependency-cruiser.cjs
     title: .dependency-cruiser.cjs
-    digest: sha256:b6d0b198825d16a5
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:91ca040088fb4842
+    last_modified: 2026-11-25T11:09:08Z
   - id: redirects
     resource: ../../public/_redirects
     title: public/_redirects
@@ -29,13 +29,13 @@ sources:
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
-    digest: sha256:f02082c9d31d1f5a
-    last_modified: 2026-11-19T18:24:56Z
+    digest: sha256:b8cbb2e5aa5ee385
+    last_modified: 2026-11-25T11:09:08Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
-    digest: sha256:2fbd78dfb558f1ec
-    last_modified: 2026-11-12T22:04:52Z
+    digest: sha256:97b1665139099464
+    last_modified: 2026-11-25T11:09:08Z
   - id: built-links-test-mjs
     resource: ../../scripts/built-links.test.mjs
     title: scripts/built-links.test.mjs
@@ -44,23 +44,23 @@ sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:eeaab36bba2abe93
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:2fe92fff56d143ac
+    last_modified: 2026-11-25T02:05:24Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:7eb74c8505c7b909
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:26ec9eb01fbd7a27
+    last_modified: 2026-11-25T11:09:08Z
   - id: consortium-boundary-test-mjs
-    resource: ../../scripts/consortium-boundary.test.mjs
-    title: scripts/consortium-boundary.test.mjs
+    resource: ../../scripts/palette-boundary.test.mjs
+    title: scripts/palette-boundary.test.mjs
     digest: sha256:a3995b1e88daada2
-    last_modified: 2026-11-23T21:58:22Z
+    last_modified: 2026-11-25T11:07:24Z
   - id: guides-consortium-test-mjs
-    resource: ../../scripts/guides-consortium.test.mjs
-    title: scripts/guides-consortium.test.mjs
-    digest: sha256:8062525e2cccb015
-    last_modified: 2026-11-14T12:22:23Z
+    resource: ../../scripts/guides-palette.test.mjs
+    title: scripts/guides-palette.test.mjs
+    digest: sha256:4da1c5ab8ea9efb5
+    last_modified: 2026-11-25T11:09:08Z
   - id: arch-rules-test-mjs
     resource: ../../scripts/quality/arch-rules.test.mjs
     title: scripts/quality/arch-rules.test.mjs
@@ -72,15 +72,15 @@ sources:
     digest: sha256:207ecca44742d6dd
     last_modified: 2026-11-17T13:23:27Z
   - id: tryconsortium-astro
-    resource: ../../src/components/guides/TryConsortium.astro
-    title: src/components/guides/TryConsortium.astro
-    digest: sha256:125cb10a8e1203ac
-    last_modified: 2026-11-14T12:22:23Z
+    resource: ../../src/components/guides/TryPalette.astro
+    title: src/components/guides/TryPalette.astro
+    digest: sha256:a8e9ed3f3475b0f7
+    last_modified: 2026-11-25T11:09:08Z
   - id: consortium-path-js
-    resource: ../../src/i18n/consortium-path.js
-    title: src/i18n/consortium-path.js
+    resource: ../../src/i18n/palette-path.js
+    title: src/i18n/palette-path.js
     digest: sha256:f2e51ba89fdab93e
-    last_modified: 2026-11-14T12:22:23Z
+    last_modified: 2026-11-25T11:23:11Z
   - id: app-tsx
     resource: ../../src/islands/palette/App.tsx
     title: src/islands/palette/App.tsx
@@ -94,18 +94,18 @@ sources:
   - id: search-ts
     resource: ../../src/islands/palette/data/search.ts
     title: src/islands/palette/data/search.ts
-    digest: sha256:b880117e9fda4714
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:286bf7b5a040d571
+    last_modified: 2026-11-25T11:09:08Z
   - id: sqlite-source-ts
     resource: ../../src/islands/palette/data/sqlite-source.ts
     title: src/islands/palette/data/sqlite-source.ts
-    digest: sha256:1d4e48c67077cda7
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:a58999987775c520
+    last_modified: 2026-11-25T11:09:08Z
   - id: focus-ts
     resource: ../../src/islands/palette/focus.ts
     title: src/islands/palette/focus.ts
-    digest: sha256:2a09db72632e81bd
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:b817636ccebcdd3e
+    last_modified: 2026-11-25T02:05:24Z
   - id: format-ts
     resource: ../../src/islands/palette/format.ts
     title: src/islands/palette/format.ts
@@ -114,8 +114,8 @@ sources:
   - id: main-ts
     resource: ../../src/islands/palette/main.ts
     title: src/islands/palette/main.ts
-    digest: sha256:f9f45406565dd302
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:9847778fd30d00b1
+    last_modified: 2026-11-25T11:09:08Z
   - id: site-fit-ts
     resource: ../../src/islands/palette/rules/site-fit.ts
     title: src/islands/palette/rules/site-fit.ts
@@ -124,13 +124,13 @@ sources:
   - id: suggest-block-ts
     resource: ../../src/islands/palette/rules/suggest-block.ts
     title: src/islands/palette/rules/suggest-block.ts
-    digest: sha256:a40b87de812fd50b
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:51a5393d3f865b17
+    last_modified: 2026-11-25T11:09:08Z
   - id: arrival-ts
     resource: ../../src/islands/palette/state/arrival.ts
     title: src/islands/palette/state/arrival.ts
-    digest: sha256:2b38494690ba1bea
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:06b523117639a398
+    last_modified: 2026-11-25T11:09:08Z
   - id: draft-ts
     resource: ../../src/islands/palette/state/draft.ts
     title: src/islands/palette/state/draft.ts
@@ -139,8 +139,8 @@ sources:
   - id: location-ts
     resource: ../../src/islands/palette/state/location.ts
     title: src/islands/palette/state/location.ts
-    digest: sha256:5acb3da6eca26ed5
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:86dd45160353ac46
+    last_modified: 2026-11-25T11:09:08Z
   - id: persist-ts
     resource: ../../src/islands/palette/state/persist.ts
     title: src/islands/palette/state/persist.ts
@@ -164,13 +164,13 @@ sources:
   - id: store-ts
     resource: ../../src/islands/palette/store.ts
     title: src/islands/palette/store.ts
-    digest: sha256:a2d405853d85b528
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:2db1720b440cca21
+    last_modified: 2026-11-25T11:09:08Z
   - id: strings-ts
     resource: ../../src/islands/palette/strings.ts
     title: src/islands/palette/strings.ts
-    digest: sha256:cc2cefe2eeef65d9
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:c88a1a97eadc670a
+    last_modified: 2026-11-25T11:09:08Z
   - id: actions-tsx
     resource: ../../src/islands/palette/views/Actions.tsx
     title: src/islands/palette/views/Actions.tsx
@@ -179,8 +179,8 @@ sources:
   - id: correction-tsx
     resource: ../../src/islands/palette/views/Correction.tsx
     title: src/islands/palette/views/Correction.tsx
-    digest: sha256:bf8e99431d3f4218
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:6ce20d305fc65484
+    last_modified: 2026-11-25T11:09:08Z
   - id: futureslot-tsx
     resource: ../../src/islands/palette/views/FutureSlot.tsx
     title: src/islands/palette/views/FutureSlot.tsx
@@ -189,8 +189,8 @@ sources:
   - id: locationslot-tsx
     resource: ../../src/islands/palette/views/LocationSlot.tsx
     title: src/islands/palette/views/LocationSlot.tsx
-    digest: sha256:49df7d766bb12039
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:fa8ea75f87d7fccb
+    last_modified: 2026-11-23T23:58:53Z
   - id: poolslot-tsx
     resource: ../../src/islands/palette/views/PoolSlot.tsx
     title: src/islands/palette/views/PoolSlot.tsx
@@ -214,13 +214,13 @@ sources:
   - id: flags-ts
     resource: ../../src/islands/palette/views/kit/flags.ts
     title: src/islands/palette/views/kit/flags.ts
-    digest: sha256:e629db37f6148c1f
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:11c68d787431cee5
+    last_modified: 2026-11-25T02:05:24Z
   - id: names-ts
     resource: ../../src/islands/palette/views/kit/names.ts
     title: src/islands/palette/views/kit/names.ts
-    digest: sha256:949e5b236a7bf8fe
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:ace99fa6a4571d8b
+    last_modified: 2026-11-25T11:09:08Z
   - id: later-ts
     resource: ../../src/islands/palette/views/later.ts
     title: src/islands/palette/views/later.ts
@@ -229,13 +229,13 @@ sources:
   - id: layers-ts
     resource: ../../src/islands/palette/views/layers.ts
     title: src/islands/palette/views/layers.ts
-    digest: sha256:724abc98a8c401ae
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:cdfda5e04372b771
+    last_modified: 2026-11-25T11:09:08Z
   - id: lazy-tsx
     resource: ../../src/islands/palette/views/lazy.tsx
     title: src/islands/palette/views/lazy.tsx
-    digest: sha256:be4f158b7f10cafd
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:344fe88870182c63
+    last_modified: 2026-11-25T02:05:24Z
   - id: pool-tsx
     resource: ../../src/islands/palette/views/pool/pool.tsx
     title: src/islands/palette/views/pool/pool.tsx
@@ -244,8 +244,8 @@ sources:
   - id: side-ts
     resource: ../../src/islands/palette/views/side.ts
     title: src/islands/palette/views/side.ts
-    digest: sha256:4c0191d39a946863
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:1de8040e9b608b78
+    last_modified: 2026-11-25T11:09:08Z
   - id: lookup-ts
     resource: ../../src/lib/climate/lookup.ts
     title: src/lib/climate/lookup.ts
@@ -259,8 +259,8 @@ sources:
   - id: canopi-file-ts
     resource: ../../src/lib/palette/canopi-file.ts
     title: src/lib/palette/canopi-file.ts
-    digest: sha256:872518766f5b6313
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:96c2533671b8b111
+    last_modified: 2026-11-25T11:09:08Z
   - id: conflicts-ts
     resource: ../../src/lib/palette/conflicts.ts
     title: src/lib/palette/conflicts.ts
@@ -269,8 +269,8 @@ sources:
   - id: fold-ts
     resource: ../../src/lib/palette/fold.ts
     title: src/lib/palette/fold.ts
-    digest: sha256:dae939a445a54069
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:71e9ad0f814f568b
+    last_modified: 2026-11-25T11:09:08Z
   - id: future-ts
     resource: ../../src/lib/palette/future.ts
     title: src/lib/palette/future.ts
@@ -279,8 +279,8 @@ sources:
   - id: index-ts
     resource: ../../src/lib/palette/index.ts
     title: src/lib/palette/index.ts
-    digest: sha256:daa1389e174a2f90
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:0d25a6b89828a55e
+    last_modified: 2026-11-25T11:09:08Z
   - id: jobs-ts
     resource: ../../src/lib/palette/jobs.ts
     title: src/lib/palette/jobs.ts
@@ -339,13 +339,13 @@ sources:
   - id: types-ts
     resource: ../../src/lib/palette/types.ts
     title: src/lib/palette/types.ts
-    digest: sha256:2163e2e956deda1c
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:442b3a87d9b94d8f
+    last_modified: 2026-11-25T11:09:08Z
   - id: zones-ts
     resource: ../../src/lib/palette/zones.ts
     title: src/lib/palette/zones.ts
-    digest: sha256:33f34d5c6cad519a
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:2b37f13a2c38852d
+    last_modified: 2026-11-25T11:09:08Z
   - id: place-ts
     resource: ../../src/lib/palette/place.ts
     title: src/lib/palette/place.ts
@@ -369,13 +369,13 @@ sources:
   - id: palette-tsx
     resource: ../../src/islands/palette/views/palette/Palette.tsx
     title: src/islands/palette/views/palette/Palette.tsx
-    digest: sha256:32defe8479504c15
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:2d7ef4aa4d340fcb
+    last_modified: 2026-11-25T02:23:53Z
   - id: save-ts
     resource: ../../src/islands/palette/state/save.ts
     title: src/islands/palette/state/save.ts
-    digest: sha256:7a5518810d5d8e3a
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:c8b55124c1b5eb75
+    last_modified: 2026-11-25T11:09:08Z
 ---
 
 **State (2026-11-19):** PP-B and PP-C are built and live (master 398558aa); the module concepts ([page](/modules/consortium-page.md), [palette page](/modules/consortium-palette-page.md), [state](/modules/consortium-state.md), [core](/modules/consortium-core.md)) describe the code as it is. The owner's island architecture of 2026-11-19 ([user decisions](/decisions/consortium-user-decisions.md) "Owner decisions, 2026-11-19") changes this target in the coming commit 0 and one-pool stream: two stored records with one owner each (link as an overlay until "Use it"), the store split by domain, thin views over view models, one pool (a climate list is a label, never a scope; the guest path deleted) and no browser country guess. Until those land, the sections on storage, the store and guests describe the current code.
@@ -410,7 +410,7 @@ The ADR-1 stack and layers stay: a storage-independent TypeScript core (`src/lib
 | L4 views | `views/place/**`, `views/palette/**`, `views/find/**` (PP-C), `views/plan/**` and `views/take/**` (PP-D), `views/climate/**` (PP-E), `views/soil/**` (PP-F), `views/year/**` (PP-G), `views/details/**` | one folder per chunk | core through `index.ts` only (L4) |
 | L4 kit | `views/kit/chart.tsx` (band chart with its "Show as a table" form, P17), `views/kit/fit.tsx` (fit line, P16), `views/kit/phase.ts` (from `views/tracks.ts`; only `warningCounts` after commit 0a') | leaf parts (L5) | kit leaf |
 
-The core stays flat (no subfolder of `src/lib/palette/`): whether the boundary test globs it flat is unverified (`scripts/consortium-boundary.test.mjs`).
+The core stays flat (no subfolder of `src/lib/palette/`): whether the boundary test globs it flat is unverified (`scripts/palette-boundary.test.mjs`).
 
 ### ADR changes (rows in [Consortium v2 architecture](/decisions/consortium-v2-architecture.md); written into ADR-1 and ADR-2 by each push's commit 0)
 
@@ -580,7 +580,7 @@ Owner, 2026-11-14 (row "Plant palette plan check answers" (4)): start from the a
 | `--level-fits`, `--level-unknown` | existing `--text`, `--text-secondary` | same tokens | site | fits and not checked are told by icon and words, no colour of their own |
 | `--focus` | `#1F5F8B` | `#7FB8E0` | Fable | no app token |
 
-Commit 0 checks contrast in both themes (text 4.5:1, graphics 3:1 against `--bg` and `--surface`); a token that fails gets an ink outline in the picture or, by a coordinator row, Fable's value (Fable's `--layer-light` `#A8651C`/`#D4A060` for light graphics, Fable's food `#4F7132`). Later pushes add their meaning tokens to this block, never to stream CSS. `views/kit/flags.ts` holds the one map from level, severity and job to a token. `scripts/consortium-css.test.mjs` allows `--role-*` and `[data-job]`, forbids raw hex in consortium CSS and TSX (`print.css` excepted) and drops the comment citing the replaced "no green" rule (`consortium-css.test.mjs:5-8`). Amber sharing is settled by rule: kind is told by icon and words (row "Fable advice answers" (7)).
+Commit 0 checks contrast in both themes (text 4.5:1, graphics 3:1 against `--bg` and `--surface`); a token that fails gets an ink outline in the picture or, by a coordinator row, Fable's value (Fable's `--layer-light` `#A8651C`/`#D4A060` for light graphics, Fable's food `#4F7132`). Later pushes add their meaning tokens to this block, never to stream CSS. `views/kit/flags.ts` holds the one map from level, severity and job to a token. `scripts/palette-css.test.mjs` allows `--role-*` and `[data-job]`, forbids raw hex in consortium CSS and TSX (`print.css` excepted) and drops the comment citing the replaced "no green" rule (`consortium-css.test.mjs:5-8`). Amber sharing is settled by rule: kind is told by icon and words (row "Fable advice answers" (7)).
 
 ### 3.6 Palette state (`state/schema.ts`)
 
@@ -647,14 +647,14 @@ A module exported from `index.ts` but used by one lazy chunk only lives in that 
 | `verdict-load.ts` (new) | keep: `loadVerdictRule()` outlives `marks.ts` | b2 |
 | `views/PlantMarks.tsx` | keep; reads verdict projections in the commit that deletes `marks.ts` | c2 |
 | `views/kit/flags.ts` | refactor: Slight → warning token, Moderate/Severe → danger token (b3); lines from `fitLine` (c2) | b3, c2 |
-| `balance.ts`, `views/balance/**`, `balance.css`, `scripts/consortium-balance.test.mjs` | delete | PP-B commit 0 |
+| `balance.ts`, `views/balance/**`, `balance.css`, `scripts/palette-balance.test.mjs` | delete | PP-B commit 0 |
 | `state/schema.ts`, `persist.ts`, `arrival.ts`, `restore.ts`, `draft.ts`, `location.ts` | refactor (fields, record with `place`, `canopi-place` as seed, notices) | commit 0 seams, then b1a |
 | `state/suggest-wait.ts` | keep | b1a |
 | `views/Start.tsx` | moved into `views/place/` (commit 0 creates `Place.tsx` re-exporting Start and points `App.tsx:16` at it), then rewritten and deleted there; country line (`:60-70`), climate cards and today's light, soil and water questions (until PP-F) kept as parts; the `markStart()` call moves with it | b1a |
 | `views/pool/pool.tsx`, `PoolSlot.tsx`, `rules/suggest-block.ts` | port to `poolVerdicts`; the count folds into Place. **As built (b1b, amended by the chunk-2 drift check, 2026-11-15):** the pool role and panel are kept as the lazy home of the count line (`pool.tsx` `CountLine` from `store.countFits`, 0 B on the first run), shown in Place's form and the "Your place" sheet; Place's head keeps the needs lines only (`PoolSlot` `head`); `poolCounts` and the panel's edge and left lines went; `suggest-block.ts` keeps `suggestBlock` and `nothingFits` and gains `countKind` | b1b (chunk 2, after b2's verdict engine) |
 | `views/LocationSlot.tsx`, `views/location/**` | keep, inside Place | b1a |
 | `views/Matrix.tsx`, `PhoneMatrix.tsx`, `matrix-parts.tsx`, `Jobs.tsx`, `PlantList.tsx`, `StageStepper.tsx`, `matrix.css` (the shared rules kept views use to `shell.css`, the side drawing's rules to `print.css`, slices section 2), `palette.css` (F1a era, empty) | delete first (owner, 2026-11-14): commit 0a' deletes them with their tests and owns their importers (the matrix `lazyPart` in `App.tsx`, the `SideView`, Jobs and PlantList re-exports in `views/later.ts`, `ConsortiumPage.astro`'s two imports); b3 later mounts YourPlants and Weigh in `views/palette/Palette.tsx` | commit 0a' |
-| `views/tracks.ts` | helpers moved in commit 0a: `PHASE_ORDS` (`:40`), `Order`, `collatorFor`, `nameOrder` (`:18-30`), `warningCounts` (`:139`), `stepStage` (`:153`) to `views/kit/phase.ts` and `names.ts`; `spanOf` to `years.ts` (`views/kit/span.ts` deleted; `side.ts`, `SideView`, `StageBar`, `StageStepper` and `views/kit/sheet.tsx` (`:14`) repointed to `years.ts` `spanOf`); deleted in 0a' with `scripts/consortium-tracks.test.mjs` (its print cases move to `scripts/consortium-print.test.mjs`); `stepStage` and `PHASE_ORDS` deleted in 0a'; `warningCounts` stays in `kit/phase.ts` (StageBar's `warnings` and `Marks`, drawn in print) | commit 0a, 0a' |
+| `views/tracks.ts` | helpers moved in commit 0a: `PHASE_ORDS` (`:40`), `Order`, `collatorFor`, `nameOrder` (`:18-30`), `warningCounts` (`:139`), `stepStage` (`:153`) to `views/kit/phase.ts` and `names.ts`; `spanOf` to `years.ts` (`views/kit/span.ts` deleted; `side.ts`, `SideView`, `StageBar`, `StageStepper` and `views/kit/sheet.tsx` (`:14`) repointed to `years.ts` `spanOf`); deleted in 0a' with `scripts/palette-tracks.test.mjs` (its print cases move to `scripts/palette-print.test.mjs`); `stepStage` and `PHASE_ORDS` deleted in 0a'; `warningCounts` stays in `kit/phase.ts` (StageBar's `warnings` and `Marks`, drawn in print) | commit 0a, 0a' |
 | `views/StageBar.tsx` | commit 0a' deletes `StageStrip`, `cellName`, `plantLabel`, `openSwap` (no reader after PlantList) and the kept and main-crop marks, and (built) `StageBar`, `Explain` and `openAdd`, which had no reader left; `Marks`, `warnings` (module-private), `openDetails`, `jobFind`, `byName` stay until their last readers go (`future.tsx:17` in PP-E, `Add.tsx:24` in PP-C, print); `App.tsx` imports it and `PlantMarks.tsx` to keep them in the first run (the future part's cap, one build) | commit 0a', c1, e2 |
 | `views/SideView.tsx`, `side.ts`, `draw.ts`, `PrintSheet.tsx` | print only: commit 0a' deletes the on-screen side view (its stage chips) and "At a glance" (`PrintSheet.tsx:34` reads `matrix`), keeping `SideDrawing` and the plant table; the side drawing shows the year step chosen in Through the years (coordinator choice, 2026-11-14; inventory E9 keeps it), the jobs and years tables follow in d2 | commit 0a', b2 (off `stage`, PP-B18), d2 (print) |
 | `views/Actions.tsx`, `views/FutureSlot.tsx` | hosted by the palette page | b2 until PP-E; `FutureSlot` deleted by e2 |
@@ -761,19 +761,19 @@ The privacy text this storage must match is `privacy.tool.device`, owner-approve
 - **The save model** (b1a fix round 3, save-model design check 2026-11-15, owner decisions 2026-11-15; replaces `setAside`, `placeBase`, `own()`, `beneath`, `offered`, `release()` and the watcher's hold releases). One flag, `state/save.ts` `held`: this page's palette is not the save.
   - Every page starts held. Only a restore of the save that applies, and a plant change that can be undone (`store.ts` `addMembers`, `removeMember`, `swapMember`, `suggestMembers`), set it false; each of those offers its own Undo from the snapshot it takes, so no effect can drop it (fix round 4: `suggestMembers` offers the suggestion's, waited or not, Place's or the Next step's); Start over sets it true. Navigation, Place's answers (card, room, plot, spot, soil), "Use it", "Use my own place" and "Show my palette" never touch it (owner decision 2).
   - Not held, `persist()` writes the current palette (`persist.palette()`, which leaves out a guest the chosen climate's read list holds: r3-3) on every change, Place's answers included (owner decision 1: "Show my palette" is navigation only, with no Undo). Held, the save is left as it is.
-  - Every undoable action's snapshot (`store.snapshot()`) records `save: { text, held }` (`markSave`: the storage as read then, and the flag). Undo (`undoSave`) puts the flag and the state back in one batch, then, held again, the save byte for byte (`putSave`), only while the storage still holds what this page last wrote or read (`lastSave`), so another tab's save is never lost (R2-2, M1–M3). Reloads and Back/Forward are covered too (pre-push fix 5): a reload of an owned page owns its save only while storage still holds that palette (`state/arrival.ts` `arrival`: the stored record's fragment equals `history.state.ct`, and its spot and soil answers equal the tab's `pl` unless a link's place waited), and a Back/Forward restore only while storage still holds what this page last wrote or read (`hashAction`'s `storageMoved`: `lastSave` against storage); otherwise the page opens held, so another tab's newer save (or its removal) is never overwritten and "Open my saved palette instead" offers the stored one. Unit test "pre-push fix 5" in `scripts/consortium-pp-b1.test.mjs` (with storage unavailable, `memory.works()` false, a reload opens owned: no other tab's save exists to protect; unit test "second-round review 3"); browser case PP-B71 in `consortium-pp-b1.browser.test.mjs`.
+  - Every undoable action's snapshot (`store.snapshot()`) records `save: { text, held }` (`markSave`: the storage as read then, and the flag). Undo (`undoSave`) puts the flag and the state back in one batch, then, held again, the save byte for byte (`putSave`), only while the storage still holds what this page last wrote or read (`lastSave`), so another tab's save is never lost (R2-2, M1–M3). Reloads and Back/Forward are covered too (pre-push fix 5): a reload of an owned page owns its save only while storage still holds that palette (`state/arrival.ts` `arrival`: the stored record's fragment equals `history.state.ct`, and its spot and soil answers equal the tab's `pl` unless a link's place waited), and a Back/Forward restore only while storage still holds what this page last wrote or read (`hashAction`'s `storageMoved`: `lastSave` against storage); otherwise the page opens held, so another tab's newer save (or its removal) is never overwritten and "Open my saved palette instead" offers the stored one. Unit test "pre-push fix 5" in `scripts/palette-pp-b1.test.mjs` (with storage unavailable, `memory.works()` false, a reload opens owned: no other tab's save exists to protect; unit test "second-round review 3"); browser case PP-B71 in `consortium-pp-b1.browser.test.mjs`.
   - Start over: `putSave(null)` when not held (same multi-tab check), then holds; on a held page (a link or a guide preset over the reader's save) the save stays, so it is never lost without an Undo (r3-1).
   - "Open my saved palette instead" / "Back to mine" (`persist.savedInstead`, re-exported by `restore.ts`) is computed, not bookkept: `held` and the readable save in storage (read again on each write of this page and on the `storage` event), unless the page shows that very palette (owner decision 3: offered on every held page whose save differs). Pressed, it reads storage, adopts it as `lastSave` and calls `restore(saved.fragment, { from: 'saved' })`, so another tab's save is offered and opened, never this page's stale palette written over it (fix round 4, s-5).
-  - Unit tests: one per walk row and section 4 addition of the design check, and a random-sequence test of the invariants (every plant change that lets the save go offers its own Undo; not held ⇒ the save is `currentFragment()`; held ⇒ the save unchanged unless another tab wrote; an Undo puts back the flag the action saw and, held again, the save it saw; "Search all plants" removes no plant; fix round 4, s-7) in `scripts/consortium-pp-b1.test.mjs` ("save model ..."); browser seams-p2 F1, R2-1, T2, D1.
+  - Unit tests: one per walk row and section 4 addition of the design check, and a random-sequence test of the invariants (every plant change that lets the save go offers its own Undo; not held ⇒ the save is `currentFragment()`; held ⇒ the save unchanged unless another tab wrote; an Undo puts back the flag the action saw and, held again, the save it saw; "Search all plants" removes no plant; fix round 4, s-7) in `scripts/palette-pp-b1.test.mjs` ("save model ..."); browser seams-p2 F1, R2-1, T2, D1.
 - **A link without a place** is judged against the open palette's `place`, else `canopi-place`, plus the device location: the location half works today (`restore.ts:52-58`). The link "brings a place" when it has `o` or at least one spot or soil answer that is not `unsure` (decided on the decoded state, not on keys present). `m` and `z` never count as bringing a place: they belong to the palette, are always in the link and the save, and a link's or save's `m` and `z` win. A `k` with no `o` and no answer other than `unsure` does not bring a place, and the reader's country is kept. Vectors: every answer `unsure`; only `m` and `z`; `k` alone; `k` with `l=sun`.
-- **Forget this location** runs today's `forget()` (`state/location.ts`) and also clears `canopi-place` and the open palette's `place`, and scrubs the stored `canopi-consortium` record on a held page too (`persist.ts` `forgetSavedPlace`, pre-push fix 3: a held page writes nothing, so its save kept the spot and soil answers and "Open my saved palette instead" or a plain visit brought them back): after Forget no stored record holds the reader's spot or soil answers, nor a country from their own location; a link's own country (`src: 'link'`), the plants, the room and the plot stay. Forget never makes another tab's save look like this page's: the scrubbed record becomes `lastSave` only when the stored one was this page's (second-round review 1). No history entry brings the forgotten answers back: the tab counts its Forgets (`state/save.ts` `forgets`, sessionStorage `canopi-forget`), `writeAddress` stamps each entry `fg`, and `arrival.ts` `ownOf` keeps only a link's `k` and `o` of an entry written before the last Forget (second-round review 2). Unit tests "Forget this location on a held page" and "second-round review 1" and "2" in `scripts/consortium-pp-b1.test.mjs`. **Start over** keeps the palette's `place`, removes a save the page owns and holds (see the save model above).
+- **Forget this location** runs today's `forget()` (`state/location.ts`) and also clears `canopi-place` and the open palette's `place`, and scrubs the stored `canopi-consortium` record on a held page too (`persist.ts` `forgetSavedPlace`, pre-push fix 3: a held page writes nothing, so its save kept the spot and soil answers and "Open my saved palette instead" or a plain visit brought them back): after Forget no stored record holds the reader's spot or soil answers, nor a country from their own location; a link's own country (`src: 'link'`), the plants, the room and the plot stay. Forget never makes another tab's save look like this page's: the scrubbed record becomes `lastSave` only when the stored one was this page's (second-round review 1). No history entry brings the forgotten answers back: the tab counts its Forgets (`state/save.ts` `forgets`, sessionStorage `canopi-forget`), `writeAddress` stamps each entry `fg`, and `arrival.ts` `ownOf` keeps only a link's `k` and `o` of an entry written before the last Forget (second-round review 2). Unit tests "Forget this location on a held page" and "second-round review 1" and "2" in `scripts/palette-pp-b1.test.mjs`. **Start over** keeps the palette's `place`, removes a save the page owns and holds (see the save model above).
 - **A link that brings a place** (Arrivals board): it applies to that page only (`history.state.pl`, `location.source = 'link'`), with the notice "Use it" / "Use my own place"; `writeSave` keeps the save's own `place` until the reader chooses; "Use it" writes the link's spot and soil answers into the palette's `place`, its `o` into `canopi-location` through `state/location.ts` and its `k` through `state/draft.ts`, so they hold across reloads (coordinator row 2026-11-14: this reverses the [location module](/modules/consortium-location.md) rule that a link's `o=` is never saved over the reader's `canopi-location`). "Send the link to my computer" (P11) is `encodeLink(…, { origin, place: true })`, the grower's own link, and takes the same path. Unit tests: a palette edit keeps `l=sun`; "Use it" gives `l=shade` and the link's cell after reload; "Use my own place" restores the reader's own.
 - **Sheets and browser history** (inventory K7; coordinator decision 2026-11-14, simplified by the owner's simplify pass the same day; `store.ts` history block, `main.ts` popstate and hashchange): a sheet (Details, Swap, Add, search, Paste, Your place) pushes one entry with the same address; Back closes it and keeps every edit, a second Back leaves the page. The step from Your place to Your palette pushes one entry (`watchSteps`), so Back returns to Place; a return visit's or a link's own opening pushes nothing (`arrivalOpensPalette`). The model: each pushed entry records the page's entries up to it in its own `history.state.pp` (for example `['palette', 'sheet']`), and `state/persist.ts` `writeAddress` keeps `pp` through every rewrite, so `historyMoved(state)` reads where a Back or Forward landed from the entry itself: no position counting, no Navigation API, and a reload keeps the entries (review r2 hist-2 closed). popstate closes a sheet the landed entry has not, or shows Place when it has no palette step, then `writeAddress` rewrites the landed entry with the current link (`force` false only after an Undo back to Place, which wrote the address it wants), then `pushWaiting` pushes an entry asked for while the page's own Back was on its way. The hashchange that may follow lands on the fragment the page last wrote (`persist.lastWritten`) and stops in `main.ts`, so `state/arrival.ts` never reads it as a link; any other hashchange onto an entry the page wrote itself (its `history.state.ct` equals the fragment) takes that entry's `pp` and start (`adoptEntry`); any other is the reader's link and ends the entries (`forgetEntries`), which starts a new start id. Start ids (fix round 2, C, 2026-11-15): every entry carries `history.state.st`, new for each link opened in the tab, inherited by `pushEntry`, kept by `writeAddress` and read back after a reload (`watchSteps`); `historyMoved` returns `away` when the landed entry's `st` differs from the current one (or, for an entry with a `ct` and no `st`, written by the code before start ids: r3-4, browser case in `consortium-pp-b1.browser.test.mjs`), and popstate then rewrites nothing, so the hashchange that follows reopens that entry's own palette (browser cases r2-6 and r2-7 in `consortium-pp-b1.browser.test.mjs`). Forward onto an entry the page left is allowed and changes nothing on screen (owner 2026-11-14: no refused Forward). Every palette to Place change leaves the palette step's entry, and any sheet's above it, in one `history.go` (`leaveEntry('palette')`: "Your place", and `watchSteps` for a change made outside history). Browser cases PP-B31 (K7), PP-B32 (Place step), PP-B40, PP-B41 and PP-B48/48b (a link pasted again, with and without the Navigation API) in `consortium-pp-b2.browser.test.mjs`.
 - **Guide presets** (`?plant=&climate=`, `readPreset` `state.ts:279`, `applyPreset` `restore.ts:189-204`): the plant joins `members` inside the existing `quietly(batch())`; `guideKept` becomes `guidePlant`, and b1a replaces `consortium.start.guideKept` with a `consortium.place.` key that does not say "Kept". A preset gives `members == [id]` and no save until the reader acts.
 
 ### 8.4 The move to `/palette/` (PP-B commit 0; no forwarding since 2026-11-17)
 
-- `src/i18n/consortium-path.js` returns `/palette/` and `/${lang}/palette/`; the pages are `src/pages/palette.astro` and `src/pages/[lang]/palette.astro`, and `ConsortiumPage.astro` builds its canonical, hreflang and og:url through `consortiumPath`. Data path `/data/consortium/*.sqlite.gz`, storage keys, key prefixes, folders and chunk roles keep the name "consortium".
+- `src/i18n/palette-path.js` returns `/palette/` and `/${lang}/palette/`; the pages are `src/pages/palette.astro` and `src/pages/[lang]/palette.astro`, and `ConsortiumPage.astro` builds its canonical, hreflang and og:url through `consortiumPath`. Data path `/data/consortium/*.sqlite.gz`, storage keys, key prefixes, folders and chunk roles keep the name "consortium".
 - **The old `/consortium/` and `/<lang>/consortium/` addresses answer 404** (owner row "No /consortium/ forwarding", 2026-11-17, [user decisions](/decisions/consortium-user-decisions.md): few users yet). PP-B's 22 `public/_redirects` lines were removed; they never applied in production anyway (Workers Builds ignores `public/_redirects`). There is no stub page at the old address and no redirect plan left: this supersedes the earlier 301 lines, their wrangler-dev probe and the stub-page fallback.
 - `scripts/check-built-site.mjs` holds it: `_redirects` has no `/consortium/` rule (and keeps the `/app/:route` line first), no old page is built, the sitemap has none, and no built page links one. Old share links (`/consortium/#v=…`) are not rewritten; a reader who has one lands on the 404 page.
 - What still says "consortium" on purpose: the internal names above, and `public/_redirects`' comment that records the decision.

@@ -2,7 +2,7 @@
 type: Module
 title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:11Z }
+generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:09:46Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:09Z }
   - { by: antigravity/gemini, at: 2026-11-23T18:52:42Z }
@@ -12,8 +12,8 @@ sources:
   - id: palette-tsx
     resource: ../../src/islands/palette/views/palette/Palette.tsx
     title: src/islands/palette/views/palette/Palette.tsx
-    digest: sha256:6334abc75d73f0cf
-    last_modified: 2026-11-25T01:44:31Z
+    digest: sha256:2d7ef4aa4d340fcb
+    last_modified: 2026-11-25T02:23:53Z
   - id: nextstep-tsx
     resource: ../../src/islands/palette/views/palette/NextStep.tsx
     title: src/islands/palette/views/palette/NextStep.tsx
@@ -28,7 +28,7 @@ sources:
     resource: ../../src/islands/palette/views/kit/chart.tsx
     title: src/islands/palette/views/kit/chart.tsx
     digest: sha256:ef7bc5c49f8b5146
-    last_modified: 2026-11-25T01:46:11Z
+    last_modified: 2026-11-25T02:05:24Z
   - id: fit-tsx
     resource: ../../src/islands/palette/views/kit/fit.tsx
     title: src/islands/palette/views/kit/fit.tsx
@@ -48,17 +48,17 @@ sources:
     resource: ../../src/islands/palette/views/lazy.tsx
     title: src/islands/palette/views/lazy.tsx
     digest: sha256:344fe88870182c63
-    last_modified: 2026-11-25T01:46:11Z
+    last_modified: 2026-11-25T02:05:24Z
   - id: store-ts
     resource: ../../src/islands/palette/store.ts
     title: src/islands/palette/store.ts
-    digest: sha256:2178af2010e79f79
-    last_modified: 2026-11-23T23:48:40Z
+    digest: sha256:2db1720b440cca21
+    last_modified: 2026-11-25T11:09:08Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
-    digest: sha256:337cd10afe3d21a3
-    last_modified: 2026-11-23T21:58:22Z
+    digest: sha256:85453d34141dd7db
+    last_modified: 2026-11-25T11:09:08Z
   - id: weigh-ts
     resource: ../../src/lib/palette/weigh.ts
     title: src/lib/palette/weigh.ts
@@ -85,10 +85,10 @@ sources:
     digest: sha256:1f58100c121aa18c
     last_modified: 2026-11-23T21:58:22Z
   - id: pf-b-test
-    resource: ../../scripts/consortium-pf-b.test.mjs
-    title: scripts/consortium-pf-b.test.mjs
-    digest: sha256:eddf8283a2d9a66b
-    last_modified: 2026-11-25T01:52:25Z
+    resource: ../../scripts/palette-pf-b.test.mjs
+    title: scripts/palette-pf-b.test.mjs
+    digest: sha256:113e98e678288fae
+    last_modified: 2026-11-25T11:09:08Z
   - id: find-tsx
     resource: ../../src/islands/palette/views/find/Find.tsx
     title: src/islands/palette/views/find/Find.tsx
@@ -102,8 +102,8 @@ sources:
   - id: paste-ts
     resource: ../../src/islands/palette/views/find/paste.ts
     title: src/islands/palette/views/find/paste.ts
-    digest: sha256:594b76dd46601bf5
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:314d2dc1dc51cf2b
+    last_modified: 2026-11-25T11:09:08Z
   - id: many-tsx
     resource: ../../src/islands/palette/views/plants/Many.tsx
     title: src/islands/palette/views/plants/Many.tsx
@@ -118,12 +118,12 @@ sources:
     resource: ../../src/islands/palette/views/plants/state.ts
     title: src/islands/palette/views/plants/state.ts
     digest: sha256:3ebbb396c6cf4fbe
-    last_modified: 2026-11-25T01:46:11Z
+    last_modified: 2026-11-25T02:05:24Z
   - id: model-ts
     resource: ../../src/islands/palette/views/plants/model.ts
     title: src/islands/palette/views/plants/model.ts
-    digest: sha256:9e42968eb3c347b7
-    last_modified: 2026-11-25T01:46:11Z
+    digest: sha256:bca36c4215e39645
+    last_modified: 2026-11-25T11:09:08Z
   - id: head-link-tsx
     resource: ../../src/islands/palette/views/plants/head-link.tsx
     title: src/islands/palette/views/plants/head-link.tsx
@@ -132,8 +132,8 @@ sources:
   - id: steps-tsx
     resource: ../../src/islands/palette/views/place/steps.tsx
     title: src/islands/palette/views/place/steps.tsx
-    digest: sha256:3448a53f9ebb4e85
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:e8ffadf99df44a63
+    last_modified: 2026-11-25T11:09:08Z
   - id: sheet-tsx
     resource: ../../src/islands/palette/views/kit/sheet.tsx
     title: src/islands/palette/views/kit/sheet.tsx
@@ -143,7 +143,7 @@ sources:
     resource: ../../src/islands/palette/views/Sheets.tsx
     title: src/islands/palette/views/Sheets.tsx
     digest: sha256:ef008491be8016f4
-    last_modified: 2026-11-25T01:46:11Z
+    last_modified: 2026-11-25T02:05:24Z
   - id: toast-tsx
     resource: ../../src/islands/palette/views/Toast.tsx
     title: src/islands/palette/views/Toast.tsx
@@ -153,7 +153,7 @@ sources:
     resource: ../../src/islands/palette/views/kit/flags.ts
     title: src/islands/palette/views/kit/flags.ts
     digest: sha256:11c68d787431cee5
-    last_modified: 2026-11-25T01:46:11Z
+    last_modified: 2026-11-25T02:05:24Z
   - id: yourplants-tsx
     resource: ../../src/islands/palette/views/palette/YourPlants.tsx
     title: src/islands/palette/views/palette/YourPlants.tsx
@@ -170,9 +170,9 @@ sources:
     digest: sha256:ae4b8bbf3eb488d9
     last_modified: 2026-11-23T21:07:43Z
 enforced_by:
-  - scripts/browser/consortium-studio-palette.browser.test.mjs
-  - scripts/consortium-pf-b.test.mjs
-  - scripts/consortium-pp-b2.test.mjs
+  - scripts/browser/palette-studio-palette.browser.test.mjs
+  - scripts/palette-pf-b.test.mjs
+  - scripts/palette-pp-b2.test.mjs
 ---
 
 ## What it is
@@ -209,7 +209,7 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
   effect of its own would otherwise be dropped from that import and land in a third, shared lazy chunk
   that the Find chunk imports statically (K3 red).
 - Your plants and Things to weigh derive in the views (`useMemo`), never in the store (first run). Vectors:
-  `scripts/vectors/weigh.json`; unit tests `scripts/consortium-pp-b3.test.mjs`; browser: the pf
+  `scripts/vectors/weigh.json`; unit tests `scripts/palette-pp-b3.test.mjs`; browser: the pf
   board specs `scripts/browser/consortium-pf-b.browser.test.mjs` (pf commit 0 swept
   `consortium-pp-b3.browser.test.mjs` into them; the board specs of the palette page, Place and the
   location are `consortium-pf-a/-pf-b/-pf-c.browser.test.mjs`, each head listing the old tests it carries).
@@ -232,7 +232,7 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
 - **One names list** (size rule A14): every list of member names in Years, Jobs, Warnings and Balance goes
   through `kit/chart.tsx` `Names`: inline (a conjunction list in the page language) while the palette has
   40 plants or fewer and the group 12 or fewer, else the count cell (`kit/more.tsx` MoreList), its names
-  sorted by display name. `scripts/consortium-pf-b.test.mjs` fails a view that joins names itself.
+  sorted by display name. `scripts/palette-pf-b.test.mjs` fails a view that joins names itself.
 - **Row and strip figures from the model**: `PictureRow.count` (plants standing that count toward the holes)
   and `outside`; `stripStates(lane, holes, thins, pending)`: a span is a hole only inside an open job hole,
   thin only inside an open thin spot, filled otherwise when held, neutral while a list loads.
@@ -285,7 +285,7 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
 
 ## Many plants (chunk 3 pf-e, h3 and chunk 4; boards Many, ManyDesk, PaletteMore, Recife, AddMany, Paste)
 
-- **Your plants** (`views/palette/YourPlants.tsx`): up to 40 plants (`SIZE_PALETTE`) the small form `views/plants/Small.tsx` (every row shown, warned first by `model.ts` `byFitRank`, each row opening the plant's Details, which keeps Remove and Swap; A21: the boards' folds are a known difference); past 40 `views/plants/Many.tsx`: a compact list on the phone, a table at 960 px and wider, grouped (light level by default) with each group closed until opened (10 rows, "+ N more", all, "Show fewer"), sorted by fit unless the reader sorts otherwise, filtered by the search (the phone's under the palette's head, `PlantSearch`). `views/plants/model.ts` is pure (items, sort, group, search; Node-tested by `scripts/consortium-pf-e.test.mjs`); its groups and reasons are core `weigh.ts` `fitGroups`'s, so a row and the Warnings line it is counted on agree.
+- **Your plants** (`views/palette/YourPlants.tsx`): up to 40 plants (`SIZE_PALETTE`) the small form `views/plants/Small.tsx` (every row shown, warned first by `model.ts` `byFitRank`, each row opening the plant's Details, which keeps Remove and Swap; A21: the boards' folds are a known difference); past 40 `views/plants/Many.tsx`: a compact list on the phone, a table at 960 px and wider, grouped (light level by default) with each group closed until opened (10 rows, "+ N more", all, "Show fewer"), sorted by fit unless the reader sorts otherwise, filtered by the search (the phone's under the palette's head, `PlantSearch`). `views/plants/model.ts` is pure (items, sort, group, search; Node-tested by `scripts/palette-pf-e.test.mjs`); its groups and reasons are core `weigh.ts` `fitGroups`'s, so a row and the Warnings line it is counted on agree.
 - **Ticks** (`views/plants/state.ts`, signals, never saved): they stay through a search, sort, regroup or a layout crossing 960 px, are pruned to the members, and go when the palette falls to 40 plants or fewer or another palette opens. "Remove N plants" removes the ticked plants at once with one Undo (`store.removeMembers`: the toast names only new thin spots); the focus goes to the next row or its group's head. "Tick these N" on Warnings and fit (`Weigh.tsx`) ticks a reason's plants and shows them (`tickAndShow`), with "N ticked" said under the reason until the ticks change.
 - **Many rows' marks** (M47, chunk 4 T13 (a)): plain words, no pill, through `rows.tsx` `markWords`; each takes its flag line's own level (`kit/flags.ts`: Toxic and Very toxic, and a serious conflict, are danger; Mildly toxic warning; a line with no level, a misfit or an invasive record, warning), so one level has one colour on every surface.
 - **The head's count** (`views/plants/head-link.tsx` `PlantsCount`, M14): under 960 px while the many form shows, "200 plants: Your plants" with a link that focuses the list's heading; otherwise the plain count. It is a slot in Place's place line (first run).
@@ -310,7 +310,7 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
 
 ## Tests
 
-`scripts/consortium-pp-b2.test.mjs` (vectors, pictures, probe) and
+`scripts/palette-pp-b2.test.mjs` (vectors, pictures, probe) and
 `scripts/browser/consortium-pp-b2.browser.test.mjs` (A1, A2, S1, S2, P1, P2, P8, PP-B6-8, 15-18, 20-22, 24, 25).
 
 ## Chunk-2 main fixes (PP-C h2, 2026-11-18)

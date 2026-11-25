@@ -42,7 +42,7 @@ import {
 } from '../src/lib/climate/index.ts';
 
 const ROOT = join(fileURLToPath(import.meta.url), '..', '..');
-const CONSORTIUM_INDEX = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'consortium-index.json'), 'utf8'));
+const CONSORTIUM_INDEX = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'palette-index.json'), 'utf8'));
 const SQLITE_GZ_PATH = join(ROOT, 'public', 'data', 'consortium', CONSORTIUM_INDEX.files[0].file);
 const CLIMATE_INDEX_PATH = join(ROOT, 'src', 'data', 'climate-index.json');
 const round1 = (n) => Math.round(n * 10) / 10;

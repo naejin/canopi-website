@@ -2,7 +2,7 @@
 // Paste both read it, so a name is found the same way in each. One release-wide index over every
 // plant's names (the core's plant_names for the page's language and English, the canonical name) and,
 // once fetched, schema 4's names file (vernacular names in 20 languages, WCVP synonyms, accepted
-// names; data/names-file.ts fetches it). Pure: no DOM, no store, so scripts/consortium-pp-c1.test.mjs
+// names; data/names-file.ts fetches it). Pure: no DOM, no store, so scripts/palette-pp-c1.test.mjs
 // runs it in Node. In the find chunk only (Find, Paste): never in the first run.
 //
 // Ranking tiers (the owner's design, the app's order within a tier):

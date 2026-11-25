@@ -2,7 +2,7 @@
 type: Architecture Decision
 title: Plant palette chunk-2 hand-off rulings (D1-D10)
 description: The agent rulings of 2026-11-18 on the PP-C chunk-2 hand-offs, as auto-approved under the owner's autonomy rule, and where each lives in the code.
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:26Z }
+generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:09:37Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:16Z }
   - { by: antigravity/gemini, at: 2026-11-23T18:52:39Z }
@@ -16,52 +16,52 @@ sources:
     resource: ../../src/islands/palette/views/find/Find.tsx
     title: src/islands/palette/views/find/Find.tsx
     digest: sha256:320123ca652ab060
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: state-ts
     resource: ../../src/lib/palette/state.ts
     title: src/lib/palette/state.ts
     digest: sha256:023783ecbccd0096
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: place-search-ts
     resource: ../../src/lib/location/place-search.ts
     title: src/lib/location/place-search.ts
     digest: sha256:8e36232a62615b80
     last_modified: 2026-11-18T17:37:33Z
   - id: consortiumpage-astro
-    resource: ../../src/components/consortium/ConsortiumPage.astro
-    title: src/components/consortium/ConsortiumPage.astro
-    digest: sha256:c35923d10b1d644f
-    last_modified: 2026-11-23T20:58:01Z
+    resource: ../../src/components/palette/PalettePage.astro
+    title: src/components/palette/PalettePage.astro
+    digest: sha256:8d5b992f4939045d
+    last_modified: 2026-11-25T11:09:08Z
   - id: holes-ts
     resource: ../../src/lib/palette/holes.ts
     title: src/lib/palette/holes.ts
     digest: sha256:5da2a7bd168c0ee5
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: place-tsx
     resource: ../../src/islands/palette/views/place/Place.tsx
     title: src/islands/palette/views/place/Place.tsx
-    digest: sha256:8310681ad9758fb1
-    last_modified: 2026-11-23T20:58:01Z
+    digest: sha256:70d05d76fdfcd22c
+    last_modified: 2026-11-25T00:34:20Z
   - id: persist-ts
     resource: ../../src/islands/palette/state/persist.ts
     title: src/islands/palette/state/persist.ts
     digest: sha256:abaa195b434f5099
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: location-ts
     resource: ../../src/islands/palette/state/location.ts
     title: src/islands/palette/state/location.ts
-    digest: sha256:5acb3da6eca26ed5
-    last_modified: 2026-11-23T20:58:01Z
+    digest: sha256:86dd45160353ac46
+    last_modified: 2026-11-25T11:09:08Z
   - id: suggest-wait-ts
     resource: ../../src/islands/palette/state/suggest-wait.ts
     title: src/islands/palette/state/suggest-wait.ts
     digest: sha256:ad330f5c00ac2504
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: draft-ts
     resource: ../../src/islands/palette/state/draft.ts
     title: src/islands/palette/state/draft.ts
     digest: sha256:ea0e524d1cd90f7b
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
 ---
 
 # Plant palette chunk-2 hand-off rulings

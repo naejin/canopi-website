@@ -47,48 +47,48 @@
     },
     {
       "id": "F1a-P12",
-      "file": "scripts/consortium-palette.test.mjs",
+      "file": "scripts/palette-palette.test.mjs",
       "line": 71,
       "title": "F1a-P12 (pal1 invasive tie, A10): of two plants that bring the same, the suggestion picks the one not invasive in the chosen country",
       "owner": "b1a",
-      "to": "scripts/consortium-pp-b1.test.mjs"
+      "to": "scripts/palette-pp-b1.test.mjs"
     },
     {
       "id": "F1a-P13",
-      "file": "scripts/consortium-palette.test.mjs",
+      "file": "scripts/palette-palette.test.mjs",
       "line": 78,
       "title": "F1a-P13 (pal1 invasive tie, owner Q1): with no country chosen, the tie goes to the plant invasive in no GRIIS country",
       "owner": "b1a",
-      "to": "scripts/consortium-pp-b1.test.mjs"
+      "to": "scripts/palette-pp-b1.test.mjs"
     },
     {
       "id": "F1a-C1",
-      "file": "scripts/consortium-confidence.test.mjs",
+      "file": "scripts/palette-confidence.test.mjs",
       "line": 32,
       "title": "F1a-C1 (conf1 key table, A15, A18): every term has a key on every surface and in all 11 locales, and a methods-page anchor",
       "push": "PP-C",
       "owner": "c2",
-      "to": "scripts/consortium-pp-c2.test.mjs",
+      "to": "scripts/palette-pp-c2.test.mjs",
       "rewrite": "surfaces = fit line, Details, Find, print (methods anchor waits for F1b-2)"
     },
     {
       "id": "F1a-C2",
-      "file": "scripts/consortium-confidence.test.mjs",
+      "file": "scripts/palette-confidence.test.mjs",
       "line": 45,
       "title": "F1a-C2 (conf1 marks to terms, A15, A18): every mark kind maps to one term or is a site note; the range and placement hedges keep their meaning",
       "push": "PP-C",
       "owner": "c2",
-      "to": "scripts/consortium-pp-c2.test.mjs",
+      "to": "scripts/palette-pp-c2.test.mjs",
       "rewrite": "maps verdict factors to terms"
     },
     {
       "id": "F1a-C3",
-      "file": "scripts/consortium-confidence.test.mjs",
+      "file": "scripts/palette-confidence.test.mjs",
       "line": 57,
       "title": "F1a-C3 (conf1 not reviewed, A17): \"not reviewed\" is one dataset-level line driven by SourceInfo.rangesReview, never a literal",
       "push": "PP-C",
       "owner": "c2",
-      "to": "scripts/consortium-pp-c2.test.mjs",
+      "to": "scripts/palette-pp-c2.test.mjs",
       "rewrite": "restored"
     },
     {
@@ -199,7 +199,7 @@
     },
     {
       "id": "F1a-B3",
-      "file": "scripts/consortium-balance.test.mjs",
+      "file": "scripts/palette-balance.test.mjs",
       "line": 79,
       "title": "F1a-B3 (bal2 waiting checks, A20, A21): roots, insect-habitat months, active season, flowering (until the hemisphere stamp) and evergreen (until D2a) wait for data",
       "why": "roots, insects, active season, evergreen are not on the approved page"
@@ -241,7 +241,7 @@
     },
     {
       "id": "F1a-P10",
-      "file": "scripts/consortium-palette.test.mjs",
+      "file": "scripts/palette-palette.test.mjs",
       "line": 32,
       "title": "F1a-P10 (pal1 cards by role, A4): Main crops and food first, then each plant under its first job with the others as \"also\", each plant once",
       "why": "owner 'Delete first' (2026-11-14): its subject, the cards by role with Main crops, is deleted; new form: b3's unit case 'Your plants lists each plant once, warnings first'"
@@ -275,13 +275,13 @@
     },
     {
       "id": "F1a-P11",
-      "file": "scripts/consortium-palette.test.mjs",
+      "file": "scripts/palette-palette.test.mjs",
       "line": 52,
       "title": "F1a-P11 (pal2 guest list loading, design check §5 Busy): while a guest's list is still loading the gaps say loading, never a false gap",
       "push": "PP-B",
       "owner": "b2",
       "rewrite": "rewritten on holes(): pending while a guest list loads",
-      "to": "scripts/consortium-pp-b2.test.mjs",
+      "to": "scripts/palette-pp-b2.test.mjs",
       "evidence": "P11 restored"
     },
     {
@@ -330,7 +330,7 @@
     },
     {
       "id": "F1a-B1",
-      "file": "scripts/consortium-balance.test.mjs",
+      "file": "scripts/palette-balance.test.mjs",
       "line": 60,
       "title": "F1a-B1 (bal2 family spread, A20): six of eight members in one family is a gap whose \"Find…\" opens Add with a hint; eight families pass",
       "push": "PP-B",
@@ -341,7 +341,7 @@
     },
     {
       "id": "F1a-B2",
-      "file": "scripts/consortium-balance.test.mjs",
+      "file": "scripts/palette-balance.test.mjs",
       "line": 70,
       "title": "F1a-B2 (bal2 water mix, A20): a Tropical palette with two of ten water needs recorded says \"not enough data\", 2 of 10, never a pass",
       "push": "PP-B",
@@ -352,7 +352,7 @@
     },
     {
       "id": "F1a-B4",
-      "file": "scripts/consortium-balance.test.mjs",
+      "file": "scripts/palette-balance.test.mjs",
       "line": 87,
       "title": "F1a-B4 (bal2 borrowed climate, A20, A15): on a borrowed list every check that ran carries the estimate term",
       "push": "PP-B",

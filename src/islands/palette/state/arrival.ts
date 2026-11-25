@@ -3,7 +3,7 @@
 // reader's country at start and the browser's guess, a link pasted into the open tab, and startMemory,
 // which reads the page once and wires all of it (openWith). The pure parts (arrival, hashAction,
 // countryAtStart, guessCountry, ported from v1 logic.js and memory.js; arrivalPlan) run in Node
-// (scripts/consortium-memory.test.mjs, scripts/consortium-pp-b1.test.mjs).
+// (scripts/palette-memory.test.mjs, scripts/palette-pp-b1.test.mjs).
 import type { ClimateZone, LinkOrigin } from '../../../lib/palette/index.ts';
 import { bringsPlace, countryZones, decodeLink, linkOrigin, NO_EDITS, readPreset, zoneOf } from '../../../lib/palette/index.ts';
 import type { Country } from '../store.ts';

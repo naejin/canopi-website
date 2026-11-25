@@ -7,7 +7,7 @@
 // stripped, ß/œ/æ written out, word prefix;
 // never SQL LIKE (ASCII-only folding, a substring match, % and _ unescaped).
 // Schema 4's tables, 4.5's light columns and 4.6/4.7's kind columns are read unconditionally: the
-// installer refuses an export below 4.7 (scripts/consortium-schema.mjs MIN_SCHEMA_MINOR,
+// installer refuses an export below 4.7 (scripts/palette-schema.mjs MIN_SCHEMA_MINOR,
 // REQUIRED_ADDITIONS; PP-C 0b and 0c, no backward compatibility). Open vocabularies: a row whose value the reader does not know is skipped, never the plant.
 import type {
   ClimateRange, ClimateZone, Details, Dispute, DisputeField, EstimateKind, ExtremeStat, FrostFact, FunctionId, FunctionMethod, Image, Interaction, InvasiveAreaCode, InvasiveRecord, InvasiveScope, InvasiveSource, KoppenShare, Labels, LayerScope, LightNiche, LayerValue, Locale, Month, Placement,

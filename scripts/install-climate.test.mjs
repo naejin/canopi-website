@@ -92,7 +92,7 @@ function writeArchive(root, { tiles = TILES, editManifest, extra = [], sums, edi
 function workspace(t) {
   const root = mkdtempSync(join(tmpdir(), 'climate-install-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
-  const consortiumIndex = join(root, 'consortium-index.json');
+  const consortiumIndex = join(root, 'palette-index.json');
   writeFileSync(consortiumIndex, JSON.stringify({ release_id: 'r-0000000000000001' }));
   return { root, out: join(root, 'out', 'climate'), index: join(root, 'src-data', 'climate-index.json'), consortiumIndex, staging: join(root, 'staging') };
 }

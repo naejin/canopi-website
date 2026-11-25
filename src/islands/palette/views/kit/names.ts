@@ -40,7 +40,7 @@ export const coords = (lat: number, lon: number): string =>
 export const listOf = (items: string[]): string => new Intl.ListFormat(pageLang(), { type: 'conjunction' }).format(items);
 
 // A climate's name ("Temperate"; '' for none). correction.* and climate.<zone> are site-wide keys;
-// ConsortiumPage.astro passes them under their own names beside consortium.* (H13).
+// PalettePage.astro passes them under their own names beside consortium.* (H13).
 export const zoneName = (z: ClimateZone | null): string => (z ? T(`climate.${z.toLowerCase()}`) : '');
 // A climate's plant list ("Temperate list").
 export const listName = (c: ClimateZone): string => T(`list.${c.toLowerCase()}`);

@@ -86,7 +86,7 @@ const consortiumChunkRoles = {
 // reached only through import() is preloaded (the sheets, the plant dialog, the views after the
 // matrix, suggest, the P5 features, MapLibre), so on a slow phone nothing lazy competes with the
 // database download; views/lazy.tsx prefetches those parts once the data is ready. Other pages are not
-// touched (P7). ConsortiumPage.astro preloads the database itself; scripts/check-built-site.mjs checks
+// touched (P7). PalettePage.astro preloads the database itself; scripts/check-built-site.mjs checks
 // both.
 /** @type {import('astro').AstroIntegration} */
 const consortiumModulePreload = {

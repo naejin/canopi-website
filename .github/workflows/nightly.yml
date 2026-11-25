@@ -53,7 +53,7 @@ jobs:
         run: |
           mkdir -p test-results
           if [ -f scripts/browser/timing.json ]; then set -- --ratchet scripts/browser/timing.json; else set --; fi
-          npm run timing:consortium -- "$@" 2>&1 | tee test-results/timing.txt
+          npm run timing:palette -- "$@" 2>&1 | tee test-results/timing.txt
         # bash -eo pipefail: the timing script's exit status, not tee's.
         shell: bash
       - if: always()

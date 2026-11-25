@@ -59,7 +59,7 @@ export async function fixturePhotos() {
   return photoMap;
 }
 
-// The fixture's countries as the page names them (ConsortiumPage.astro countryCodes): space-separated
+// The fixture's countries as the page names them (PalettePage.astro countryCodes): space-separated
 // ISO codes GRIIS checked and did not.
 let countryCodes = null;
 export async function fixtureCountries() {

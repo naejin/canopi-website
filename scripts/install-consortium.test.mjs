@@ -68,10 +68,10 @@ test('the fixture installs with --fixture --no-images --out: the database byte f
   assert.match(stdout, /Installed the consortium database consortium-v4\.r-000000000000f1c7\.[0-9a-f]{12}\.sqlite\.gz and the names file names\.r-000000000000f1c7\.[0-9a-f]{12}\.tsv\.gz \(Tropical 12, Mediterranean 13, Temperate 21\)/);
   const manifest = JSON.parse(readFileSync(join(w.src, 'manifest.json'), 'utf8'));
   const db = manifest.files[0].file;
-  assert.deepEqual(readdirSync(w.out).sort(), ['INSTALLED_BY', 'consortium-index.json', db, manifest.names.file].sort());
+  assert.deepEqual(readdirSync(w.out).sort(), ['INSTALLED_BY', 'palette-index.json', db, manifest.names.file].sort());
   assert.deepEqual(readFileSync(join(w.out, manifest.names.file)), readFileSync(join(w.src, manifest.names.file)));
   assert.deepEqual(readFileSync(join(w.out, db)), readFileSync(join(w.src, db)));
-  const index = JSON.parse(readFileSync(join(w.out, 'consortium-index.json'), 'utf8'));
+  const index = JSON.parse(readFileSync(join(w.out, 'palette-index.json'), 'utf8'));
   assert.equal(indexProblem(index), null);
   assert.equal(index.release_id, FIXTURE_RELEASE);
   assert.deepEqual(index.climates, ['Tropical', 'Mediterranean', 'Temperate']);
@@ -221,7 +221,7 @@ test('the database file: over the gzip budget is reported, not a failure', async
   assert.equal(summary.files.length, 1, 'installed');
   assert.ok(existsSync(join(w.out, summary.files[0])), 'the large database is in place');
   // verifyInstall reports the same size and does not throw.
-  const index = JSON.parse(readFileSync(join(w.out, 'consortium-index.json'), 'utf8'));
+  const index = JSON.parse(readFileSync(join(w.out, 'palette-index.json'), 'utf8'));
   const reported = [];
   assert.deepEqual(verifyInstall(w.out, index, { log: (line) => reported.push(line) }), { databases: 1, images: 0, names: 1 });
   assert.ok(reported.some((line) => /reported, not a failure/.test(line)), reported.join('\n'));
@@ -272,23 +272,23 @@ test('a real install writes src/data/: the index, the TRY list with its meta, th
   const src = await variant(w, 'real', { manifest: (m) => { m.canopi_db_sha256 = 'a'.repeat(64); } });
   mkdirSync(w.data);
   await install({ ...w, src }, { fixture: false, images: true, fetchImpl: photoFetch(), delayMs: 0, releaseCheck: () => null, dataDir: w.data });
-  assert.deepEqual(readdirSync(w.data).sort(), ['consortium-index.json', 'source_credits.tsv', 'try_references.meta.json', 'try_references.tsv']);
+  assert.deepEqual(readdirSync(w.data).sort(), ['palette-index.json', 'source_credits.tsv', 'try_references.meta.json', 'try_references.tsv']);
   assert.equal(readFileSync(join(w.data, 'try_references.tsv'), 'utf8'), FIXTURE_TRY);
   assert.deepEqual(JSON.parse(readFileSync(join(w.data, 'try_references.meta.json'), 'utf8')), { sha256: sha(Buffer.from(FIXTURE_TRY)), rows: 3, dataset_ids: 2 });
   assert.equal(readFileSync(join(w.data, 'source_credits.tsv'), 'utf8'), FIXTURE_CREDITS);
-  assert.ok(!existsSync(join(w.out, 'consortium-index.json')), 'the index is not served');
-  const index = JSON.parse(readFileSync(join(w.data, 'consortium-index.json'), 'utf8'));
+  assert.ok(!existsSync(join(w.out, 'palette-index.json')), 'the index is not served');
+  const index = JSON.parse(readFileSync(join(w.data, 'palette-index.json'), 'utf8'));
   assert.deepEqual(verifyInstall(w.out, index), { databases: 1, images: 6, names: 1 });
   // The defaults: only the site's own folder writes src/data/.
   assert.equal(DATA_DIR, fileURLToPath(new URL('../src/data', import.meta.url)));
-  assert.equal(INDEX_PATH, join(DATA_DIR, 'consortium-index.json'));
+  assert.equal(INDEX_PATH, join(DATA_DIR, 'palette-index.json'));
 });
 
 test('photos: thumbnails with the User-Agent, named by plant and digest, mapped in the index; the database keeps its urls', async (t) => {
   const w = workspace(t);
   const calls = [];
   await install(w, { images: true, fetchImpl: photoFetch(calls), delayMs: 0 });
-  const index = JSON.parse(readFileSync(join(w.out, 'consortium-index.json'), 'utf8'));
+  const index = JSON.parse(readFileSync(join(w.out, 'palette-index.json'), 'utf8'));
   assert.equal(Object.keys(index.images).length, 6);
   assert.ok(calls.every((c) => c.ua === USER_AGENT));
   assert.ok(calls.some((c) => c.url.includes('/thumb/a/ab/Castanea_sativa_fixture.jpg/500px-')));
@@ -304,7 +304,7 @@ test('photos: a failed one is left out and listed; over 10% failing stops the in
   const failing = (n) => photoFetch([], (url) => (n.some((s) => url.includes(s)) ? new Response('no', { status: 500 }) : new Response(JPEG, { headers: { 'content-type': 'image/jpeg' } })));
   const summary = await install(w, { images: true, fetchImpl: failing(['Olea']), delayMs: 0, maxFailedShare: 0.2 });
   assert.deepEqual(summary.photos.failed.map((f) => f.name), ['Olea europaea']);
-  assert.equal(Object.keys(JSON.parse(readFileSync(join(w.out, 'consortium-index.json'), 'utf8')).images).length, 5);
+  assert.equal(Object.keys(JSON.parse(readFileSync(join(w.out, 'palette-index.json'), 'utf8')).images).length, 5);
   const w2 = workspace(t);
   await assert.rejects(install(w2, { images: true, fetchImpl: failing(['Olea', 'Malus']), delayMs: 0 }), /2 of 6 photos failed/);
   assert.ok(!existsSync(w2.out));
@@ -317,7 +317,7 @@ test('photos: a url that is not http(s) is never fetched, and that plant has no 
   const summary = await install(w, { images: true, fetchImpl: photoFetch(calls), delayMs: 0 });
   assert.equal(summary.photos.skipped, 1);
   assert.ok(!calls.some((c) => c.url.includes('x.jpg')));
-  assert.ok(!('00000000-f1c7-4000-8000-000000000001' in JSON.parse(readFileSync(join(w.out, 'consortium-index.json'), 'utf8')).images));
+  assert.ok(!('00000000-f1c7-4000-8000-000000000001' in JSON.parse(readFileSync(join(w.out, 'palette-index.json'), 'utf8')).images));
 });
 
 test('thumbnailUrl: Commons and iNaturalist originals become 500 px copies; svg and tif get their suffix; others are null', () => {
@@ -352,7 +352,7 @@ test('schema 3 and schema 4 before 4.7 are refused; the required additions must 
     [{ manifest: (m) => { m.schema_additions = m.schema_additions.filter((a) => a.table !== 'plant_names'); } }, /does not declare \{"table":"plant_names","column":"kind"\}/],
   ]);
   assert.ok(!existsSync(w.out), 'nothing written');
-  const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
+  const index = JSON.parse(readFileSync(new URL('../src/data/palette-index.json', import.meta.url), 'utf8'));
   assert.equal(indexProblem({ ...index, schema_minor: 4 }), 'the index is schema 4.4, not 4.7 or later: reinstall the export.');
   assert.equal(indexProblem({ ...index, search_names: undefined }), 'the index has no search_names entry.');
 });
@@ -425,7 +425,7 @@ test('schema 4, the names file: header, codes, rows and order are checked; a bad
 test('verifyInstall: a stray file, a changed database, a missing photo and a broken index fail', async (t) => {
   const w = workspace(t);
   await install(w, { images: true, fetchImpl: photoFetch(), delayMs: 0 });
-  const index = JSON.parse(readFileSync(join(w.out, 'consortium-index.json'), 'utf8'));
+  const index = JSON.parse(readFileSync(join(w.out, 'palette-index.json'), 'utf8'));
   writeFileSync(join(w.out, 'temperate.json'), '{}');
   assert.throws(() => verifyInstall(w.out, index), /files the index does not name: temperate\.json/);
   rmSync(join(w.out, 'temperate.json'));
@@ -507,7 +507,7 @@ test('the command line: a real export is refused when verify cannot say yes, and
 
 // Schema 4.10: plant_gallery http(s) URL validation (source_page_url and url) when declared.
 test('schema 4.10 plant_gallery: valid table installs; non-http(s) source_page_url or url is refused', async (t) => {
-  const { PLANT_GALLERY_DDL, PLANT_GALLERY_ADDITIONS } = await import('./consortium-schema.mjs');
+  const { PLANT_GALLERY_DDL, PLANT_GALLERY_ADDITIONS } = await import('./palette-schema.mjs');
   const w = workspace(t);
   const add410 = (rowSql) => ({
     edit: (db) => {
@@ -535,7 +535,7 @@ test('the stamped range-verdict vectors match the installed consortium release',
   const bytes = readFileSync(new URL('vectors/range-verdicts.json', import.meta.url));
   assert.equal(createHash('sha256').update(bytes).digest('hex'), '40a1aa7593b83dfb0632cf063699804ba5894c8baf0a411f948ac1e8e523a850', 'the copy is canopi-data\'s file, unedited');
   const vectors = JSON.parse(bytes.toString('utf8'));
-  const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
+  const index = JSON.parse(readFileSync(new URL('../src/data/palette-index.json', import.meta.url), 'utf8'));
   assert.equal(vectors.schema, 'canopi-range-verdicts/1');
   assert.ok(vectors.source.release_id === index.release_id || vectors.source.release_id === 'r-738770089e0b2db0', `unexpected vectors source release ${vectors.source.release_id}`);
   assert.ok(vectors.vectors.length > 0);

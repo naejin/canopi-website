@@ -3,20 +3,20 @@ type: Reference
 title: Field Guide components
 description: Every component, prop, allowed value and limit a Field Guide's MDX can use, and what fails the build or the tests.
 tags: [guides, reference]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:24:43Z }
+generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:09:58Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:54Z }
 sources:
   - id: index-ts
     resource: ../../src/components/guides/index.ts
     title: src/components/guides/index.ts
-    digest: sha256:f699c81f1739bbc6
-    last_modified: 2026-10-27T20:56:00Z
+    digest: sha256:356eb3f2b34fbcd6
+    last_modified: 2026-11-25T11:09:08Z
   - id: guides
     resource: ../../src/components/guides
     title: src/components/guides/
-    digest: sha256:dc4770be6cded2ce
-    last_modified: 2026-11-14T12:22:23Z
+    digest: sha256:b144048944d9150c
+    last_modified: 2026-11-25T11:09:08Z
   - id: content-config-ts
     resource: ../../src/content.config.ts
     title: src/content.config.ts
@@ -58,15 +58,15 @@ sources:
     digest: sha256:9633fcd98755c6ac
     last_modified: 2026-10-26T22:42:16Z
   - id: tryconsortium-astro
-    resource: ../../src/components/guides/TryConsortium.astro
-    title: src/components/guides/TryConsortium.astro
-    digest: sha256:125cb10a8e1203ac
-    last_modified: 2026-11-14T12:22:23Z
+    resource: ../../src/components/guides/TryPalette.astro
+    title: src/components/guides/TryPalette.astro
+    digest: sha256:a8e9ed3f3475b0f7
+    last_modified: 2026-11-25T11:09:08Z
   - id: try-consortium-ts
-    resource: ../../src/components/guides/try-consortium.ts
-    title: src/components/guides/try-consortium.ts
-    digest: sha256:373ca6cca53ab50c
-    last_modified: 2026-11-11T02:58:29Z
+    resource: ../../src/components/guides/try-palette.ts
+    title: src/components/guides/try-palette.ts
+    digest: sha256:989b06358212de9d
+    last_modified: 2026-11-25T11:09:08Z
   - id: en-json
     resource: ../../src/i18n/guides/en.json
     title: src/i18n/guides/en.json
@@ -75,7 +75,7 @@ sources:
 enforced_by:
   - scripts/guides.test.mjs
   - scripts/check-built-site.mjs
-  - scripts/guides-consortium.test.mjs
+  - scripts/guides-palette.test.mjs
 ---
 
 The contract between the guide components and the people writing guides. Source of truth: `src/components/guides/index.ts`
@@ -187,7 +187,7 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
 - `<TryConsortium plant="Artocarpus altilis" climate="tropical" name="Breadfruit" />` — opens the
   consortium tool ("Plant palette", beta) with the guide's plant kept and its climate set:
   `consortiumPath(lang)?plant=<canonical_name>&climate=<id>` (`/palette/`, fr `/fr/palette/` since PP-B commit 0b, [decision row "Plant palette name"](/decisions/consortium-user-decisions.md); the old `/consortium/` paths 301-redirect with the query kept).
-  `plant` required: a `canonical_name` placed in a beta climate (`names` of `src/data/consortium-index.json`, written by the installer); `name`
+  `plant` required: a `canonical_name` placed in a beta climate (`names` of `src/data/palette-index.json`, written by the installer); `name`
   required: the guide's own name for the plant in that file's language (en and fr differ); `climate`
   optional: the zone of the `<ForClimate>` block it sits in, and the plant must be placed in that climate. Left
   out (only outside climate blocks, in a guide for every climate), each beta climate whose list has the plant
@@ -196,8 +196,8 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
   `consortium.label`) and one link per climate, "<name> · <climate>" (`consortium.link`, the climate from the site-wide
   `climate.<id>`: "Corn · Temperate", « Maïs · Tempéré »); one list serves a climate
   everywhere, so no region is named; each link is described by the label. The links come
-  from `src/components/guides/try-consortium.ts` (`presetClimates(index)`, `presetLinks`): an unknown climate, a
-  plant outside its climate's list or in no list fails the build. `scripts/guides-consortium.test.mjs`
+  from `src/components/guides/try-palette.ts` (`presetClimates(index)`, `presetLinks`): an unknown climate, a
+  plant outside its climate's list or in no list fails the build. `scripts/guides-palette.test.mjs`
   checks those links on the installed index, every preset against them, its block and the en/fr
   pairing (same plant and climate, once each per guide), that no `consortium.cell.*` name is left, and that a preset in a
   climate block is the last thing in it. Used in guides whose subject is a plant or a planting system

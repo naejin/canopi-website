@@ -1,6 +1,6 @@
 /** @jsxImportSource preact */
 // The three steps above the page title (v14 boards Place, PlaceDesk, SiteKiambu, Many; pf-c, h3 M13):
-// "1 Your place", "2 Your palette", "3 Planting plan", in the page head (ConsortiumPage.astro #ct-steps),
+// "1 Your place", "2 Your palette", "3 Planting plan", in the page head (PalettePage.astro #ct-steps),
 // static so they show before the island, and never rendered again here (BC1, C14: no second render root
 // over static markup). The head carries data-step: on the palette step step 1 is done, its button
 // (back to Place) in place of its words, by shell.css, and step 2 is current; on Place step 2's button

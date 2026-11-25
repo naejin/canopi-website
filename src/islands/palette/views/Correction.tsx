@@ -9,7 +9,7 @@
 // the dialog, so this chunk imports nothing from the dialog's chunk: importing them made the Details
 // chunk export them, and a Details chunk re-imported after a failed request then showed nothing,
 // E6-5c) until it is sent.
-// Words: the correction.* family (S3 block of the locale files), passed by ConsortiumPage.astro.
+// Words: the correction.* family (S3 block of the locale files), passed by PalettePage.astro.
 import { useEffect, useState } from 'preact/hooks';
 import { pageLang, T } from '../strings.ts';
 import { LIMITS } from '../../../lib/correction.mjs';

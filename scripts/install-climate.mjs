@@ -27,7 +27,7 @@
 //   slots and the site layers' bands exactly as the reader decodes them (src/lib/climate/model.js);
 //   each tile entry a valid name at <dir>/<name>.tif with the file's bytes and sha256; no tile file
 //   outside the manifest; each tile's TIFF header the layout and position of its name.
-// - the consortium export's grid (src/data/consortium-index.json `climate_grid_manifest_sha256`, the
+// - the consortium export's grid (src/data/palette-index.json `climate_grid_manifest_sha256`, the
 //   grid its ranges were sampled from): refused when it differs; when the export does not name one
 //   yet, a warning, recorded in the index as unchecked.
 //
@@ -55,7 +55,7 @@ export const DEFAULT_OUT = join(ROOT, 'public', 'data', 'climate');
 export const INDEX_PATH = join(ROOT, 'src', 'data', 'climate-index.json');
 export const RELEASE_PATH = join(ROOT, 'src', 'data', 'climate-release.json');
 export const DEFAULT_CACHE = join(ROOT, 'node_modules', '.cache', 'canopi-climate');
-export const CONSORTIUM_INDEX_PATH = join(ROOT, 'src', 'data', 'consortium-index.json');
+export const CONSORTIUM_INDEX_PATH = join(ROOT, 'src', 'data', 'palette-index.json');
 export const PUBLIC_BASE = '/data/climate/';
 export const STAGING_DIR = join(ROOT, '.cache', 'climate-install');
 export const MAX_FILE_BYTES = 25 * 1024 * 1024;

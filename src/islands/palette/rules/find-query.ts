@@ -2,7 +2,7 @@
 // grouped by how it fits the place, which plants each filter keeps and how many it cannot judge, and
 // which jobs a typed word names. Pure (ADR-1: rules import the core only): the view hands in the
 // verdicts, the predicates that read the store (holds up later, toxic, invasive) and the job words of
-// the page's language, so scripts/consortium-pp-c1.test.mjs runs it in Node.
+// the page's language, so scripts/palette-pp-c1.test.mjs runs it in Node.
 //
 // Inform, don't block (owner 2026-11-14): no group hides a plant. A plant with a warning (a serious
 // conflict, a site misfit, toxic, recorded as invasive in the country) that fits otherwise needs a

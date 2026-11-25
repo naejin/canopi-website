@@ -26,7 +26,7 @@ export function useHarness(options) {
   }, { timeout: 15_000 });
 }
 
-export const index = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'consortium-index.json'), 'utf8'));
+export const index = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'palette-index.json'), 'utf8'));
 export const en = JSON.parse(readFileSync(join(ROOT, 'src', 'i18n', 'translations', 'en.json'), 'utf8'));
 
 // Variants by purpose (E1 design check A7), each as a subtest named for its variant:

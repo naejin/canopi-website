@@ -2,7 +2,7 @@
 type: Module
 title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:10Z }
+generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:09:42Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:18Z }
   - { by: antigravity/gemini, at: 2026-11-23T18:52:39Z }
@@ -16,8 +16,8 @@ sources:
   - id: locationslot-tsx
     resource: ../../src/islands/palette/views/LocationSlot.tsx
     title: src/islands/palette/views/LocationSlot.tsx
-    digest: sha256:49df7d766bb12039
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:fa8ea75f87d7fccb
+    last_modified: 2026-11-23T23:58:53Z
   - id: location-tsx
     resource: ../../src/islands/palette/views/location/location.tsx
     title: src/islands/palette/views/location/location.tsx
@@ -81,8 +81,8 @@ sources:
   - id: start-tsx
     resource: ../../src/islands/palette/views/place/Place.tsx
     title: src/islands/palette/views/place/Place.tsx
-    digest: sha256:8310681ad9758fb1
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:70d05d76fdfcd22c
+    last_modified: 2026-11-25T00:34:20Z
   - id: transport-ts
     resource: ../../src/lib/location/transport.ts
     title: src/lib/location/transport.ts
@@ -91,8 +91,8 @@ sources:
   - id: location-ts
     resource: ../../src/islands/palette/state/location.ts
     title: src/islands/palette/state/location.ts
-    digest: sha256:5acb3da6eca26ed5
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:86dd45160353ac46
+    last_modified: 2026-11-25T11:09:08Z
   - id: lookups-ts
     resource: ../../src/islands/palette/state/lookups.ts
     title: src/islands/palette/state/lookups.ts
@@ -106,11 +106,11 @@ sources:
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
     title: src/lib/climate/index.ts
-    digest: sha256:09a8785016e8c670
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:1647d4003262d734
+    last_modified: 2026-11-24T18:04:54Z
 enforced_by:
-  - scripts/consortium-p5-seams-s5b.test.mjs
-  - scripts/browser/consortium-studio-onboarding.browser.test.mjs
+  - scripts/palette-p5-seams-s5b.test.mjs
+  - scripts/browser/palette-studio-onboarding.browser.test.mjs
 ---
 
 # Consortium location step ("Where is your site?")
@@ -159,7 +159,7 @@ At canopi `b039f14ee612c6090c91d44b9968357cbdd1d33e` (AGPL header and a "copied 
 
 ## Tests
 
-`scripts/consortium-p5-seams-s5b.test.mjs` (node); browser specs P5-0d, P5-1 … P5-13 (round 2: P5-1e, 1f, 10b, 13c; round 3: P5-13d, P5-10 strengthened; round 4: P5-1g; seam review: P5-27c sea keeps and names the site, P5-27d failed read keeps it in page and storage over a reload, P5-27e a link without `o=` keeps the saved site fresh, pasted and reloaded, P5-13b updated) in `scripts/browser/consortium-p5-s5b.browser.test.mjs` (P5-0d in `consortium-commit0`; shared code in `p5-helpers.mjs`).
+`scripts/palette-p5-seams-s5b.test.mjs` (node); browser specs P5-0d, P5-1 … P5-13 (round 2: P5-1e, 1f, 10b, 13c; round 3: P5-13d, P5-10 strengthened; round 4: P5-1g; seam review: P5-27c sea keeps and names the site, P5-27d failed read keeps it in page and storage over a reload, P5-27e a link without `o=` keeps the saved site fresh, pasted and reloaded, P5-13b updated) in `scripts/browser/consortium-p5-s5b.browser.test.mjs` (P5-0d in `consortium-commit0`; shared code in `p5-helpers.mjs`).
 
 ## PP-B b1a (2026-11-14)
 

@@ -11,7 +11,7 @@ export function markStart(): void {
 }
 
 // performance.mark('ct:first-view') once per page, when the studio is first on screen
-// (design check A7: nightly consortium-timing.mjs waits for it). Called from an effect, after first commit.
+// (design check A7: nightly palette-timing.mjs waits for it). Called from an effect, after first commit.
 let first = false;
 export function markFirstView(): boolean {
   if (first || typeof performance === 'undefined') return false;

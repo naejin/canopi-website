@@ -2,7 +2,7 @@
 type: Convention
 title: Palette language-robust layout
 description: "The Plant palette's parts (.ct) lay out in any face and all 11 locales: a one-line step bar, CJK breaking and system faces, long-word hyphenation, checked at 320-1280 px."
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:07Z }
+generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:09:33Z }
 verified:
   - { by: antigravity/gemini, at: 2026-11-23T15:45:59Z }
   - { by: antigravity/gemini-3-pro, at: 2026-11-23T22:35:48Z }
@@ -13,16 +13,16 @@ sources:
     digest: sha256:1f58100c121aa18c
     last_modified: 2026-11-23T21:58:22Z
   - id: consortiumpage-astro
-    resource: ../../src/components/consortium/ConsortiumPage.astro
-    title: src/components/consortium/ConsortiumPage.astro
-    digest: sha256:c35923d10b1d644f
-    last_modified: 2026-11-23T21:07:43Z
+    resource: ../../src/components/palette/PalettePage.astro
+    title: src/components/palette/PalettePage.astro
+    digest: sha256:8d5b992f4939045d
+    last_modified: 2026-11-25T11:09:08Z
   - id: consortium-seams-layout-browser-test-mjs
-    resource: ../../scripts/browser/consortium-studio-plan-i18n.browser.test.mjs
-    title: scripts/browser/consortium-studio-plan-i18n.browser.test.mjs
-    digest: sha256:e3692063b5f468af
-    last_modified: 2026-11-23T21:58:22Z
-enforced_by: [scripts/browser/consortium-studio-plan-i18n.browser.test.mjs]
+    resource: ../../scripts/browser/palette-studio-plan-i18n.browser.test.mjs
+    title: scripts/browser/palette-studio-plan-i18n.browser.test.mjs
+    digest: sha256:406500fa2ce3b211
+    last_modified: 2026-11-25T11:07:24Z
+enforced_by: [scripts/browser/palette-studio-plan-i18n.browser.test.mjs]
 ---
 
 Ruled 2026-11-19 (pf-decisions row "language-robust layout", owner question on adaptive elements for Japanese and similar). Palette parts only, under `.ct`; the site header, nav and `fonts.css` keep the site's faces. All palette styles live in `src/styles/palette/field-studio.css` (and `print.css` for print) after the Stage 2A legacy stylesheet retirement.

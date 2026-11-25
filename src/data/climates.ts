@@ -5,7 +5,7 @@
 // (src/scripts/climate.js); knowledge/decisions/climate-ux.md gives the rules.
 //
 // The ids are the zone list's site ids (src/lib/palette/zones.ts, canopi-data climates.ord): the
-// line after the list fails the type check on an id outside it, and scripts/consortium-zones.test.mjs
+// line after the list fails the type check on an id outside it, and scripts/palette-zones.test.mjs
 // checks that every zone is here. The order is the site's display order (the picker, the consortium
 // Start cards; scripts/homepage.test.mjs pins it), which puts Mediterranean before Arid, unlike the
 // data order. The list stays a literal because scripts/guides.test.mjs and homepage.test.mjs read it

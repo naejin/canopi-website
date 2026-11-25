@@ -1,6 +1,6 @@
 /** @jsxImportSource preact */
 // Verbatim 1:1 port of mockup-v73.html renderStudioBar (L2575) + render shell (L4433-4435).
-// Preserves markFirstView() (ct:first-view) for nightly consortium-timing.mjs.
+// Preserves markFirstView() (ct:first-view) for nightly palette-timing.mjs.
 import { useEffect } from 'preact/hooks';
 import type { ReportHorizonId } from '../../../../lib/palette/index.ts';
 import { REPORT_SCENARIOS } from '../../../../lib/palette/index.ts';

@@ -26,8 +26,8 @@
             "scripts/browser-tests.test.mjs",
             "scripts/expect-fail.mjs",
             "scripts/expect-fail.test.mjs",
-            "scripts/consortium-zones.test.mjs",
-            "scripts/consortium-list-query.test.mjs",
+            "scripts/palette-zones.test.mjs",
+            "scripts/palette-list-query.test.mjs",
             "scripts/climate-vectors.test.mjs",
             "scripts/plan/**",
             "scripts/plan-owners.test.mjs",
@@ -72,8 +72,8 @@
             "src/islands/consortium/strings.ts",
             "src/islands/consortium/main.ts",
             "scripts/browser/consortium-e6.browser.test.mjs",
-            "scripts/consortium-p5-ranges.test.mjs",
-            "scripts/consortium-tracks.test.mjs",
+            "scripts/palette-p5-ranges.test.mjs",
+            "scripts/palette-tracks.test.mjs",
             "src/islands/consortium/format.ts"
           ]
         },
@@ -86,7 +86,7 @@
             "src/islands/consortium/store.ts",
             "src/islands/consortium/memory.ts",
             "src/islands/consortium/state/schema.ts",
-            "scripts/consortium-memory.test.mjs"
+            "scripts/palette-memory.test.mjs"
           ]
         },
         "R1": {
@@ -105,10 +105,10 @@
             "src/lib/correction.mjs",
             "src/data/climates.ts",
             "scripts/install-consortium.mjs",
-            "scripts/consortium-core.test.mjs",
+            "scripts/palette-core.test.mjs",
             "scripts/correction.test.mjs",
             "scripts/install-consortium.test.mjs",
-            "scripts/consortium-zones.test.mjs"
+            "scripts/palette-zones.test.mjs"
           ]
         },
         "CI": {
@@ -137,7 +137,7 @@
             "knip.json",
             ".jscpd.json",
             "scripts/quality/**",
-            "scripts/consortium-boundary.test.mjs",
+            "scripts/palette-boundary.test.mjs",
             "scripts/browser/smoke/axe.smoke.mjs"
           ]
         },
@@ -185,13 +185,13 @@
             "src/lib/consortium/types.ts",
             "src/lib/consortium/index.ts",
             "scripts/browser/consortium-p5-s5c.browser.test.mjs",
-            "scripts/consortium-p5-seams*.test.mjs",
-            "scripts/consortium-list-query.test.mjs",
+            "scripts/palette-p5-seams*.test.mjs",
+            "scripts/palette-list-query.test.mjs",
             "src/lib/consortium/state.ts",
             "scripts/built-modules.mjs",
             "scripts/built-modules.test.mjs",
             "src/lib/consortium/zones.ts",
-            "scripts/consortium-tracks.test.mjs"
+            "scripts/palette-tracks.test.mjs"
           ]
         },
         "S2": {
@@ -215,7 +215,7 @@
             "src/islands/consortium/views/PrintSheet.tsx",
             "src/islands/consortium/focus.ts",
             "src/lib/location/place-search.ts",
-            "scripts/consortium-memory.test.mjs",
+            "scripts/palette-memory.test.mjs",
             "src/styles/consortium/base.css",
             "scripts/browser/consortium-seams-layout.browser.test.mjs",
             "src/islands/consortium/state/lookups.ts",
@@ -271,9 +271,9 @@
             "src/islands/consortium/state/**",
             "src/islands/consortium/main.ts",
             "src/islands/consortium/test-hook.ts",
-            "scripts/consortium-start.test.mjs",
-            "scripts/consortium-memory.test.mjs",
-            "scripts/consortium-p5-seams.test.mjs",
+            "scripts/palette-start.test.mjs",
+            "scripts/palette-memory.test.mjs",
+            "scripts/palette-p5-seams.test.mjs",
             "src/islands/consortium/views/location/load.ts",
             "src/lib/consortium/index.ts"
           ]
@@ -284,7 +284,7 @@
           ],
           "duty": "boundary test extended to src/lib/location (A27); L1 lib-no-ui flipped to error",
           "files": [
-            "scripts/consortium-boundary.test.mjs",
+            "scripts/palette-boundary.test.mjs",
             ".dependency-cruiser.cjs"
           ]
         }
@@ -320,11 +320,11 @@
             "src/islands/consortium/views/layers.ts",
             "scripts/browser/consortium-e6-r4.browser.test.mjs",
             "scripts/browser/consortium-p5-s5c.browser.test.mjs",
-            "scripts/consortium-p5-seams-s5c.test.mjs",
-            "scripts/consortium-source.test.mjs",
+            "scripts/palette-p5-seams-s5c.test.mjs",
+            "scripts/palette-source.test.mjs",
             "src/islands/consortium/state/suggest-wait.ts",
-            "scripts/consortium-core.test.mjs",
-            "scripts/consortium-p5-ranges.test.mjs",
+            "scripts/palette-core.test.mjs",
+            "scripts/palette-p5-ranges.test.mjs",
             "src/islands/consortium/views/Paste.tsx"
           ]
         },
@@ -339,12 +339,12 @@
             "scripts/built-modules.mjs",
             "scripts/built-modules.test.mjs",
             "scripts/check-built-site.mjs",
-            "scripts/browser/consortium-timing.mjs",
+            "scripts/browser/palette-timing.mjs",
             "scripts/browser/timing.json",
             "scripts/browser/consortium-s2.browser.test.mjs",
             "scripts/browser/consortium-e6.browser.test.mjs",
-            "scripts/consortium-memory.test.mjs",
-            "scripts/consortium-p5-seams.test.mjs",
+            "scripts/palette-memory.test.mjs",
+            "scripts/palette-p5-seams.test.mjs",
             "scripts/browser/shards.json"
           ]
         }

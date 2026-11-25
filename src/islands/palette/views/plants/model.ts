@@ -1,6 +1,6 @@
 // Your plants at scale (v14 pf-e; boards Many, ManyDesk): each member as one item (its fit rank, the
 // reason it shows, its main job, light level, years and family), sorted, grouped and searched. Pure: no
-// DOM, no store, no words (the view says them), so scripts/consortium-pf-e.test.mjs runs it in Node.
+// DOM, no store, no words (the view says them), so scripts/palette-pf-e.test.mjs runs it in Node.
 //
 // Fit order (board Many: "Sorted by fit: plants outside their range first, then those that need a
 // second look"): outside its climate range, a second look, fits with a mark (Mildly toxic), fits, not

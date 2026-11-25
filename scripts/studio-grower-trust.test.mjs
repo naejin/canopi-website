@@ -17,7 +17,7 @@ import { DEFAULT_CLIMATE_STRESS } from '../src/islands/palette/state/studio.ts';
 import { evaluateStudioCatalog } from '../src/islands/palette/rules/studio-fit.ts';
 import { evaluateClimate2050 } from '../src/islands/palette/rules/studio-analysis.ts';
 
-const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
+const index = JSON.parse(readFileSync(new URL('../src/data/palette-index.json', import.meta.url), 'utf8'));
 const opened = await openBytes(
   new Uint8Array(gunzipSync(readFileSync(new URL(`../public${index.files[0].url}`, import.meta.url)))),
   { releaseId: index.release_id, climates: index.climates },

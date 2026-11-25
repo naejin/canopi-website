@@ -287,10 +287,10 @@ test('L11: the dist-test chunk graph is the production graph plus the test hook\
   for (const f of readdirSync(join(BUILT.production, '_astro')).filter((x) => x.endsWith('.js'))) assert.doesNotMatch(readFileSync(join(BUILT.production, '_astro', f), 'utf8'), /__ctTest|__ctFaults/, `_astro/${f}: no test hook in dist`);
 });
 
-// The time-to-first-view ratchet (E6 A8, ADR-2, R10; scripts/browser/consortium-timing.mjs --ratchet
+// The time-to-first-view ratchet (E6 A8, ADR-2, R10; scripts/browser/palette-timing.mjs --ratchet
 // scripts/browser/timing.json): the build stream's other budget, tested here with the chunk caps.
 test('timing ratchet: within, a warning above, a failure only above 1.5×; null is not compared; the committed file is valid', async () => {
-  const { compare, checkRatchet, parseArgs, nullRatchetWarning, FAIL_FACTOR } = await import('./browser/consortium-timing.mjs');
+  const { compare, checkRatchet, parseArgs, nullRatchetWarning, FAIL_FACTOR } = await import('./browser/palette-timing.mjs');
   const allNull = { desktop: { cold: null, warm: null }, phone: { cold: null, warm: null } };
   assert.match(nullRatchetWarning(allNull, 'scripts/browser/timing.json'), /^::warning file=scripts\/browser\/timing\.json::.*every value in scripts\/browser\/timing\.json is null\. The coordinator fills it from a nightly runner run/);
   assert.equal(nullRatchetWarning({ ...allNull, phone: { cold: 6000, warm: null } }, 'x'), null, 'one value set: no warning');

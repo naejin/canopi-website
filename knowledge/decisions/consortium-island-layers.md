@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium island layers (ADR-1)
 description: The consortium island's layers L0-L4, the import rules dependency-cruiser enforces (L1-L9, and L10 as warn since PP-B commit 0a) and their severities by stage, so state never imports views and the core imports no UI framework.
 tags: [consortium, architecture]
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:08Z }
+generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:09:34Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:57Z }
   - { by: antigravity/gemini, at: 2026-11-23T18:52:38Z }
@@ -12,18 +12,18 @@ sources:
   - id: consortium
     resource: ../../src/islands/palette
     title: src/islands/palette/
-    digest: sha256:47490a58036ac89c
-    last_modified: 2026-11-23T21:58:22Z
+    digest: sha256:181af4d757409ff8
+    last_modified: 2026-11-25T11:09:08Z
   - id: index-ts
     resource: ../../src/lib/palette/index.ts
     title: src/lib/palette/index.ts
-    digest: sha256:daa1389e174a2f90
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:0d25a6b89828a55e
+    last_modified: 2026-11-25T11:09:08Z
   - id: consortium-boundary-test-mjs
-    resource: ../../scripts/consortium-boundary.test.mjs
-    title: scripts/consortium-boundary.test.mjs
+    resource: ../../scripts/palette-boundary.test.mjs
+    title: scripts/palette-boundary.test.mjs
     digest: sha256:a3995b1e88daada2
-    last_modified: 2026-11-23T21:58:22Z
+    last_modified: 2026-11-25T11:07:24Z
   - id: test-seam-d-ts
     resource: ../../src/islands/palette/test-seam.d.ts
     title: src/islands/palette/test-seam.d.ts
@@ -37,8 +37,8 @@ sources:
   - id: suggest-block-ts
     resource: ../../src/islands/palette/rules/suggest-block.ts
     title: src/islands/palette/rules/suggest-block.ts
-    digest: sha256:a40b87de812fd50b
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:51a5393d3f865b17
+    last_modified: 2026-11-25T11:09:08Z
   - id: sgconfig-yml
     resource: ../../sgconfig.yml
     title: sgconfig.yml
@@ -47,13 +47,13 @@ sources:
   - id: dependency-cruiser-cjs
     resource: ../../.dependency-cruiser.cjs
     title: .dependency-cruiser.cjs
-    digest: sha256:b6d0b198825d16a5
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:91ca040088fb4842
+    last_modified: 2026-11-25T11:09:08Z
   - id: sheets-tsx
     resource: ../../src/islands/palette/views/Sheets.tsx
     title: src/islands/palette/views/Sheets.tsx
-    digest: sha256:b1e6bc8619935c95
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:ef008491be8016f4
+    last_modified: 2026-11-25T02:05:24Z
   - id: sheet-tsx
     resource: ../../src/islands/palette/views/kit/sheet.tsx
     title: src/islands/palette/views/kit/sheet.tsx
@@ -62,8 +62,8 @@ sources:
   - id: lazy-tsx
     resource: ../../src/islands/palette/views/lazy.tsx
     title: src/islands/palette/views/lazy.tsx
-    digest: sha256:be4f158b7f10cafd
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:344fe88870182c63
+    last_modified: 2026-11-25T02:05:24Z
   - id: arch-json
     resource: ../../scripts/quality/baselines/arch.json
     title: scripts/quality/baselines/arch.json
@@ -80,7 +80,7 @@ sources:
     digest: sha256:e95bb5569ae7217b
     last_modified: 2026-11-23T21:07:43Z
 enforced_by:
-  - scripts/consortium-boundary.test.mjs
+  - scripts/palette-boundary.test.mjs
   - sgconfig.yml
   - scripts/quality/arch-rules.test.mjs
 ---
@@ -103,7 +103,7 @@ Layers, imports going down or sideways through a layer's entry:
 | L1 core, climate reader, location service | `src/lib/palette/**`, `src/lib/climate/**`, `src/lib/location/**` |
 | L0 seams | core `types.ts`, the test globals in `src/islands/palette/test-seam.d.ts` |
 
-Rules (dependency-cruiser, `.dependency-cruiser.cjs`, E4; boundary facts in `scripts/consortium-boundary.test.mjs`):
+Rules (dependency-cruiser, `.dependency-cruiser.cjs`, E4; boundary facts in `scripts/palette-boundary.test.mjs`):
 
 | Rule | Statement | Severity |
 |---|---|---|

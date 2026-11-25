@@ -1,4 +1,4 @@
-// The consortium island's entry (commit 0 of P2; stream S1 owns it from here). ConsortiumPage.astro
+// The consortium island's entry (commit 0 of P2; stream S1 owns it from here). PalettePage.astro
 // imports it from its page script. It reads #ct-data (views/kit/page.ts PageData), renders App into
 // #ct-root (replacing the static loading line) and opens the database at once, in parallel with the
 // first render (design check A2), so Start works while the plant list loads. Once open, the database is wrapped in the PlantSource

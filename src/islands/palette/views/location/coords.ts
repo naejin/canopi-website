@@ -1,5 +1,5 @@
 // Coordinates typed into the place field (board LocStates "Coordinates typed", owner Q6): read on this
-// device, never sent. Pure, so scripts/consortium-pf-c.test.mjs reads it in node.
+// device, never sent. Pure, so scripts/palette-pf-c.test.mjs reads it in node.
 //
 // readCoords(text):
 // - { lat, lon }: decimal degrees with a comma or semicolon between them ("-1.17, 36.83", "−1.17; 36.83"),

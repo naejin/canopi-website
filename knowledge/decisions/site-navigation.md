@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Site navigation
 description: The header carries Guides, Books, Consortium, Donate, language and theme, a phone Menu below 640px holds every link, the guides and bibliography form one Learn section with the consortium tool, and the home page's Learn and try section holds the consortium tool and the entry guides.
 tags: [decision, navigation]
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:09Z }
+generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:09:38Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:29:15Z }
@@ -11,10 +11,10 @@ verified:
   - { by: antigravity/gemini-3-pro, at: 2026-11-23T22:35:54Z }
 sources:
   - id: consortium-index-json
-    resource: ../../src/data/consortium-index.json
-    title: src/data/consortium-index.json
-    digest: sha256:b4b79e7df59ce9a2
-    last_modified: 2026-11-18T06:34:33Z
+    resource: ../../src/data/palette-index.json
+    title: src/data/palette-index.json
+    digest: sha256:e74af26de8dc316f
+    last_modified: 2026-11-25T11:07:24Z
   - id: header-astro
     resource: ../../src/components/Header.astro
     title: src/components/Header.astro
@@ -53,8 +53,8 @@ sources:
   - id: en-json
     resource: ../../src/i18n/translations/en.json
     title: src/i18n/translations/en.json
-    digest: sha256:049f9a9ac8ad0de5
-    last_modified: 2026-11-23T21:58:22Z
+    digest: sha256:8788a7688819c5a7
+    last_modified: 2026-11-25T10:27:20Z
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
@@ -78,7 +78,7 @@ enforced_by: [scripts/homepage.test.mjs, scripts/check-built-site.mjs]
 
 # What was built
 
-- **Header** (`src/components/Header.astro`): Canopi · Guides · Books · Plant palette · Donate · language · theme. Discord and Docs live in the footer. `current: 'guides' | 'books' | 'consortium'` sets `aria-current="page"` (the tool page passes `'consortium'`). The tool's item, `nav.consortium`, is the full name (report #29, PP-C commit 0: "Plant palette", es "Paleta vegetal", pt "Paleta de plantas", it "Palette vegetale", de "Pflanzenpalette", nl "Plantenpalet", ko "식물 팔레트", zh 植物搭配, ja 植栽パレット) except in French and Russian, which keep one short word (« Palette », "Палитра"): measured 2026-11-17 on the built pages at 640 to 960px in steps of 20 (headless Chrome, light), « Palette végétale » and "Палитра растений" push the links under the logo at 640 and 660px; every other locale stays on one row at every width, and nothing scrolls sideways at 390, 640, 700, 960 or 1280px. `homepage.test.mjs` pins the two short words. It links to `consortiumPath(lang)` (`src/i18n/consortium-path.js`, re-exported by `utils.ts`, so `check-built-site.mjs` uses the same function).
+- **Header** (`src/components/Header.astro`): Canopi · Guides · Books · Plant palette · Donate · language · theme. Discord and Docs live in the footer. `current: 'guides' | 'books' | 'consortium'` sets `aria-current="page"` (the tool page passes `'consortium'`). The tool's item, `nav.consortium`, is the full name (report #29, PP-C commit 0: "Plant palette", es "Paleta vegetal", pt "Paleta de plantas", it "Palette vegetale", de "Pflanzenpalette", nl "Plantenpalet", ko "식물 팔레트", zh 植物搭配, ja 植栽パレット) except in French and Russian, which keep one short word (« Palette », "Палитра"): measured 2026-11-17 on the built pages at 640 to 960px in steps of 20 (headless Chrome, light), « Palette végétale » and "Палитра растений" push the links under the logo at 640 and 660px; every other locale stays on one row at every width, and nothing scrolls sideways at 390, 640, 700, 960 or 1280px. `homepage.test.mjs` pins the two short words. It links to `consortiumPath(lang)` (`src/i18n/palette-path.js`, re-exported by `utils.ts`, so `check-built-site.mjs` uses the same function).
 - **640px fit**: between 640 and 959px a global style in `Header.astro` (`is:global`, so the header markup carries no `data-astro-cid` attributes that `check-built-site.mjs` would trip on) tightens the inline row (link padding 6px, gaps 2px, header gap 8px); from 960px `global.css` spacing applies. Measured 2026-10-27 in headless Chrome at 640px (625px client width with a classic scrollbar), light theme, all 11 locales: one row, no overlap, no horizontal scroll, language and theme controls inside the page margins. Russian is the tightest (16px between logo and links), then Japanese (30px). That fit needs Source Sans 3: re-measured the same day with the webfonts blocked (the stack then fell back to Noto Sans on Linux; since E6 the metric-matched local faces 'Source Sans 3 Fallback' and 'Literata Fallback' come first, before Noto, see [Metric-matched fallback fonts](/decisions/metric-matched-fallback-fonts.md); not re-measured with them), Russian overflowed by 3px at 640px, and with header text at 110% (a minimum font size or text-only zoom) French, Dutch and Russian overflowed too. So from 640px the header row may wrap (global style in `Header.astro`: `flex-wrap` on `.header-inner`, `.header-nav` and `.nav-inline`, links right-aligned): when the row is too long, the links move under the logo, and wrap again if they must, instead of scrolling sideways; no item is hidden. Re-measured at 640, 700, 800, 959 and 960px in all 11 locales with the webfonts, without them, without them at 110%, and in DejaVu Sans at 110%: no horizontal scroll, no overlap, every item visible; with the webfonts at the default size the row stays one line. A new header item needs this measurement again.
 - **No climate in the header**: the reader's climate is set from a chip on the pages it changes, not from the header (see [Climate UX](/decisions/climate-ux.md)).
 - **Phone Menu**: below 640px only the logo, a `<details data-nav-menu>` Menu and the theme toggle show. The panel holds Guides, Books, the tool's full name (`nav.consortium.full`, "Plant palette" / « Palette végétale »), Donate, Discord, Docs (if set), Contact and the 11 languages. It opens without script; `src/scripts/chrome.js` closes it on outside click, Escape, link activation and focus leaving. `donate.js` returns focus to the Menu summary.
@@ -86,7 +86,7 @@ enforced_by: [scripts/homepage.test.mjs, scripts/check-built-site.mjs]
 - **Footer**: "Plant palette" (`nav.consortium.full`, the same key as the Menu line) after the bibliography and data sources links (`Footer.astro` order: Docs if set, source code, Discord, Guides, bibliography, Data sources, Plant palette, Donate, Contact).
 - **Footer, data sources**: "Data sources" (`dataSources.title`) sits right after the bibliography link, before the consortium tool, in the footer only, not the header or the phone Menu; the consortium tool's head also links it. Measured 2026-11-06 in headless Chrome, all 11 locales, at 320, 360, 414, 500, 639, 640, 768, 959 and 1200 px: links wrap with 20 px between them in a row, no overlap, no horizontal scroll. The extra link adds at most one row (29 px); the tallest is Japanese at 320 px, five rows, 348 px of footer.
 - **One name per locale**: `nav.consortium.full` is the tool's name in the Menu, the footer and the home card's title, and `learn.consortium.link` starts with it, and it equals the tool page's title (`consortium.title`). Since PP-B commit 0b the name is a noun, "Plant palette" (fr Palette végétale, es Paleta vegetal, pt Paleta de plantas, it Palette vegetale, de Pflanzenpalette, nl Plantenpalet, ru Палитра растений, zh 植物搭配, ja 植栽パレット, ko 식물 팔레트), no longer a verb phrase ("Design a consortium"). The full name contains the header word; `homepage.test.mjs` checks this.
-- **Consortium on the home page** (`src/components/LearnAndTry.astro`), the first card of the section: title (`nav.consortium.full`) with a Beta mark, a one-paragraph promise, the beta's coverage (`home.consortium.note`: curated lists for four climates so far, tropical, arid, Mediterranean and temperate (arid since the D9a list), other climates borrowing the nearest list checked against the reader's location; reworded at P5, 2026-11-12, when location-based ranges covered every climate) and one action to the tool. The note spells the climates out in each locale, with no region; `homepage.test.mjs` fails when `src/data/consortium-index.json` lists other climates, so a new climate means rewriting the note in all 11 locales. No photos and no strata colours (the tool's drawing keeps those); styles scoped in the component.
+- **Consortium on the home page** (`src/components/LearnAndTry.astro`), the first card of the section: title (`nav.consortium.full`) with a Beta mark, a one-paragraph promise, the beta's coverage (`home.consortium.note`: curated lists for four climates so far, tropical, arid, Mediterranean and temperate (arid since the D9a list), other climates borrowing the nearest list checked against the reader's location; reworded at P5, 2026-11-12, when location-based ranges covered every climate) and one action to the tool. The note spells the climates out in each locale, with no region; `homepage.test.mjs` fails when `src/data/palette-index.json` lists other climates, so a new climate means rewriting the note in all 11 locales. No photos and no strata colours (the tool's drawing keeps those); styles scoped in the component.
 - **Entry guides** (`src/components/LearnAndTry.astro`), the second card: three guides (food-forest, living-soil, landrace-gardening) from frontmatter, en or fr by locale, English with an "in English" note elsewhere, the topics with their counts, plus "All field guides".
 
 # Settled choices

@@ -1,11 +1,11 @@
 // The database's bytes, checked before SQLite sees them (stream S1 owns this file with load.ts). No
-// sqlite-wasm here, so node --test runs it (scripts/consortium-load.test.mjs). The whole body is in
+// sqlite-wasm here, so node --test runs it (scripts/palette-load.test.mjs). The whole body is in
 // hand (≤ 1 MB gzipped, the installer's limit): the gzip magic is read from it, never from one
 // stream chunk, and the digests the page was built with are checked, the gzipped file's when the
 // magic is there, the raw database's when the server already decoded it (P3).
 import type { LoadFailure } from '../../../lib/palette/source.ts';
 
-// What the page names (ConsortiumPage.astro, from src/data/consortium-index.json): the database, and at
+// What the page names (PalettePage.astro, from src/data/palette-index.json): the database, and at
 // schema 4 the names file (#ct-data `names`; null before), fetched by c1 after first paint, never preloaded.
 export interface DbRef { url: string; sha256: string; bytes: number; rawSha256: string; rawBytes: number }
 

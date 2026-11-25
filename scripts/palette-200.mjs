@@ -24,7 +24,7 @@ export const PALETTE_CLIMATE = 'Temperate'; // a curated list (Subtropical is th
 const GUEST_LISTS = ['Tropical', 'Mediterranean'];
 const MEMBERS = 194, GUESTS_PER_LIST = 3;
 
-const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
+const index = JSON.parse(readFileSync(new URL('../src/data/palette-index.json', import.meta.url), 'utf8'));
 let opened = null;
 async function source() {
   if (opened) return opened;

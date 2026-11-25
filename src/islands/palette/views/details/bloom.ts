@@ -6,7 +6,7 @@
 // (no bloom row at all: "no months recorded", place or not), 'found' (the months), 'no-place' (no
 // latitude, and a row a latitude would select: "set a place to see when it flowers here"), 'none' (no
 // row holds the place: "no months recorded near your place").
-// Pure: no DOM, no store (scripts/consortium-pf-f.test.mjs tests it).
+// Pure: no DOM, no store (scripts/palette-pf-f.test.mjs tests it).
 import type { ClimateZone, LayerValue, Month } from '../../../../lib/palette/types.ts';
 import { months as MONTHS } from '../../../../lib/palette/types.ts';
 import { holdsLayerPlace } from '../../../../lib/palette/index.ts';

@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium per-chunk caps and first-view ratchet (ADR-2)
 description: The consortium page caps each built chunk by role and the first run, keeps no total cap, and ratchets time to first view from nightly runner medians.
 tags: [consortium, performance]
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:08Z }
+generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:09:34Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:14Z }
   - { by: antigravity/gemini, at: 2026-11-23T12:36:25Z }
@@ -12,18 +12,18 @@ sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:eeaab36bba2abe93
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:2fe92fff56d143ac
+    last_modified: 2026-11-25T02:05:24Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:7eb74c8505c7b909
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:26ec9eb01fbd7a27
+    last_modified: 2026-11-25T11:09:08Z
   - id: consortium-timing-mjs
-    resource: ../../scripts/browser/consortium-timing.mjs
-    title: scripts/browser/consortium-timing.mjs
-    digest: sha256:3a8eff8f51600f86
-    last_modified: 2026-11-23T21:07:43Z
+    resource: ../../scripts/browser/palette-timing.mjs
+    title: scripts/browser/palette-timing.mjs
+    digest: sha256:52fa4275f4ecd4aa
+    last_modified: 2026-11-25T11:09:08Z
   - id: sheet-tsx
     resource: ../../src/islands/palette/views/kit/sheet.tsx
     title: src/islands/palette/views/kit/sheet.tsx
@@ -32,18 +32,18 @@ sources:
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
-    digest: sha256:337cd10afe3d21a3
-    last_modified: 2026-11-23T21:58:22Z
+    digest: sha256:85453d34141dd7db
+    last_modified: 2026-11-25T11:09:08Z
   - id: timing-json
     resource: ../../scripts/browser/timing.json
     title: scripts/browser/timing.json
-    digest: sha256:eac4e0b9cfa86a83
-    last_modified: 2026-11-13T11:02:09Z
+    digest: sha256:74244c42c704d685
+    last_modified: 2026-11-25T11:09:08Z
   - id: nightly-yml
     resource: ../../.github/workflows/nightly.yml
     title: .github/workflows/nightly.yml
-    digest: sha256:f461e1c971e04d97
-    last_modified: 2026-11-13T03:21:28Z
+    digest: sha256:090b52cf5ef033d3
+    last_modified: 2026-11-25T11:09:08Z
   - id: app-tsx
     resource: ../../src/islands/palette/App.tsx
     title: src/islands/palette/App.tsx
@@ -52,7 +52,7 @@ sources:
 enforced_by: [scripts/check-built-site.mjs, scripts/built-modules.test.mjs]
 ---
 
-ADR-2 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, design check A14, A7, A8; written in commit 0, 2026-11-13). Applied by stream B4 at the chunk-4 merge (coordinator row "E6 B4 merge choices" in [the decisions](/decisions/consortium-user-decisions.md)); chunk 5 lowers the first-run cap to the measured value plus slack. Enforced by `scripts/check-built-site.mjs` on every locale's consortium page; the time-to-first-view ratchet by `scripts/browser/consortium-timing.mjs --ratchet` in the nightly workflow.
+ADR-2 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, design check A14, A7, A8; written in commit 0, 2026-11-13). Applied by stream B4 at the chunk-4 merge (coordinator row "E6 B4 merge choices" in [the decisions](/decisions/consortium-user-decisions.md)); chunk 5 lowers the first-run cap to the measured value plus slack. Enforced by `scripts/check-built-site.mjs` on every locale's consortium page; the time-to-first-view ratchet by `scripts/browser/palette-timing.mjs --ratchet` in the nightly workflow.
 
 ## Context
 

@@ -87,7 +87,7 @@ test('every English key is used by a page or a script, and every script string r
   const source = [...dir('components'), ...dir('scripts'), read('layouts/Base.astro'), read('data/network.ts')].join('\n');
   // Keys built from a prefix in components (installer names and details, plant roles, countries, bibliography themes, climate zones).
   // consortium.* and correction.* keys are asked for by the island (T('…'), src/islands/palette/);
-  // scripts/consortium-keys.test.mjs checks those are all used and all present.
+  // scripts/palette-keys.test.mjs checks those are all used and all present.
   const dynamic = ['edition.installer.', 'download.detail.', 'design.role.', 'network.country.', 'bibliography.theme.', 'climate.', 'consortium.', 'correction.'];
   for (const key of Object.keys(en)) {
     const used = source.includes(`'${key}'`) || dynamic.some((prefix) => key.startsWith(prefix));
@@ -236,9 +236,9 @@ test('the consortium tool\'s header item is its full name, or one short word whe
 
 test('the home section\'s note names exactly the curated climates the installed index lists, says they are checked against the reader\'s location, and names no region', () => {
   // home.consortium.note spells the curated climates out in all 11 locales: a climate added to (or dropped
-  // from) src/data/consortium-index.json means rewriting the note, and this list, in every locale.
+  // from) src/data/palette-index.json means rewriting the note, and this list, in every locale.
   const described = ['arid', 'boreal', 'continental', 'mediterranean', 'subtropical', 'temperate', 'tropical']; // All 7 climates curated since r-61c991c93df2effd
-  const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
+  const index = JSON.parse(readFileSync(new URL('../src/data/palette-index.json', import.meta.url), 'utf8'));
   assert.deepEqual(index.climates.map((c) => c.toLowerCase()).sort(), described);
   // The note itself, in each locale: all seven curated climates, checked against the reader's location.
   const words = {

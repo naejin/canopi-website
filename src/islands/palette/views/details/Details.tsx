@@ -25,7 +25,7 @@ import { TODAY_PERIOD, borrowedFrom, candoLine, drainageLine, factAt, fills, gue
 import type { Factor, PlantVerdict, SureRow } from '../../../../lib/palette/index.ts';
 import { bloomNear, monthsLong } from './bloom.ts';
 import { safeHref } from '../../../../lib/safe-href.js';
-import { consortiumGuides, jobGuides } from '../../../../data/consortium-guides.ts';
+import { consortiumGuides, jobGuides } from '../../../../data/palette-guides.ts';
 import { Against, SoilCard, soilSayOf } from './Against.tsx';
 import { AltRow, FitLine, JobIcon, jobList, MeasureGlyph, midSentence, nicheLight, RowBandLine, say, sizeShort, SWAP } from '../kit/fit.tsx';
 import { shared, type Frame } from '../kit/sheet.tsx';

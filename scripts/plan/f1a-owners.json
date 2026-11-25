@@ -90,7 +90,7 @@
       "streams": {
         "main": {
           "needs": [],
-          "duty": "commit 0: additive seams in core types.ts (rooms value 'pots', View 'start'|'palette'|'structure', ConfidenceTerm/Confidence, BalanceCheck, AddPreset {job?, cell?: CellSpan, filters?, hint?} with CellSpan moved from store.ts into core types.ts (store.ts re-exports it), BalanceDetail {plants?, families?, months?, vars?} on every BalanceCheck) and ROOM_LIMIT_M in site.ts (one room table, values unchanged; 'pots' is in the Room type and in ROOM_LIMIT_M and suggest.ts SIZE_LIMIT at the small garden's values, which consortium-core.test.mjs pins, but not yet in the rooms Start offers or a link's m= accepts, so no user sees it until pal1); balance.ts with the check registry's signature (every check 'not-checked' until bal2 fills it) and its index.ts export, so pal2's strip and bal2 build on one seam in chunk 2; focus.ts with the toast-focus helper's signature (today's behaviour) and its calls in store.ts (hideToast and the toast timer; no-op), so a11y1 implements it in chunk 1 needing no other stream; views/kit/start-mark.ts markStart() (no-op) called on every render of Start.tsx's form, so perf1 implements ct:start in chunk 1 needing no other stream; the 'balance' lazy part registered in lazy.tsx as retryable with a stub views/balance/BalanceSlot.tsx; empty palette.css and balance.css imported by ConsortiumPage.astro (page-level, no CSS on a lazy chunk); lazy roles 'structure' and 'balance' in ROLE_ENTRIES with caps at their maximum until measured (A1, A2; coordinator = the one budget owner); the six F1a spec files (F1a-A2 scoped to a11y1's regions, F1a-P9 pal1's Start and view regions, F1a-P10 pal2's strip without the balance chunk; review round 1) and the three new core test files written failing with expect-fail markers (owner stream in each title; one browser test per user scenario, no layout or wording pinned); shards.json lists the new specs; owners file; plan and decision rows",
+          "duty": "commit 0: additive seams in core types.ts (rooms value 'pots', View 'start'|'palette'|'structure', ConfidenceTerm/Confidence, BalanceCheck, AddPreset {job?, cell?: CellSpan, filters?, hint?} with CellSpan moved from store.ts into core types.ts (store.ts re-exports it), BalanceDetail {plants?, families?, months?, vars?} on every BalanceCheck) and ROOM_LIMIT_M in site.ts (one room table, values unchanged; 'pots' is in the Room type and in ROOM_LIMIT_M and suggest.ts SIZE_LIMIT at the small garden's values, which consortium-core.test.mjs pins, but not yet in the rooms Start offers or a link's m= accepts, so no user sees it until pal1); balance.ts with the check registry's signature (every check 'not-checked' until bal2 fills it) and its index.ts export, so pal2's strip and bal2 build on one seam in chunk 2; focus.ts with the toast-focus helper's signature (today's behaviour) and its calls in store.ts (hideToast and the toast timer; no-op), so a11y1 implements it in chunk 1 needing no other stream; views/kit/start-mark.ts markStart() (no-op) called on every render of Start.tsx's form, so perf1 implements ct:start in chunk 1 needing no other stream; the 'balance' lazy part registered in lazy.tsx as retryable with a stub views/balance/BalanceSlot.tsx; empty palette.css and balance.css imported by PalettePage.astro (page-level, no CSS on a lazy chunk); lazy roles 'structure' and 'balance' in ROLE_ENTRIES with caps at their maximum until measured (A1, A2; coordinator = the one budget owner); the six F1a spec files (F1a-A2 scoped to a11y1's regions, F1a-P9 pal1's Start and view regions, F1a-P10 pal2's strip without the balance chunk; review round 1) and the three new core test files written failing with expect-fail markers (owner stream in each title; one browser test per user scenario, no layout or wording pinned); shards.json lists the new specs; owners file; plan and decision rows",
           "files": [
             "src/lib/consortium/types.ts",
             "src/lib/consortium/site.ts",
@@ -105,7 +105,7 @@
             "src/islands/consortium/views/balance/**",
             "src/styles/consortium/palette.css",
             "src/styles/consortium/balance.css",
-            "src/components/consortium/ConsortiumPage.astro",
+            "src/components/palette/PalettePage.astro",
             "scripts/built-modules.mjs",
             "scripts/built-modules.test.mjs",
             "scripts/check-built-site.mjs",
@@ -113,10 +113,10 @@
             "scripts/browser/f1a-helpers.mjs",
             "scripts/browser/shards.json",
             "scripts/browser-tests.test.mjs",
-            "scripts/consortium-palette.test.mjs",
-            "scripts/consortium-balance.test.mjs",
-            "scripts/consortium-confidence.test.mjs",
-            "scripts/consortium-core.test.mjs",
+            "scripts/palette-palette.test.mjs",
+            "scripts/palette-balance.test.mjs",
+            "scripts/palette-confidence.test.mjs",
+            "scripts/palette-core.test.mjs",
             "scripts/plan/**",
             "scripts/plan-owners.test.mjs",
             "knowledge/**"
@@ -131,7 +131,7 @@
           "needs": [
             "main"
           ],
-          "duty": "Stream 1 By role and Structure (the first view, planned 'Palette', is named 'By role'), view side (base d9e00ca). Probe first: move the matrix (Matrix, PhoneMatrix, matrix-parts, tracks, matrix-only StageBar parts) to the lazy 'structure' role and measure the first run before building Palette (A1). Kit first-view.ts owns ct:first-view and prefetchLater for Palette and Structure; Start.tsx keeps commit 0's markStart() call (perf1 implements ct:start in views/kit/start-mark.ts). A3 palette.ts (role groups, counts, health summary) with runsOf moved into jobs.ts; A4 cards by role, '+ N more' at 200 plants; A5 the % bar goes; A6 View + saved 'shown' (store.ts's older View type 'start'|'matrix'|'side'|'jobs'|'list' is removed: the island reads core types.ts View, internal ids 'palette' and 'structure' kept), a view link key under v4 (no bump, Structure only; not w, which v4 writes for the water answer: pal1 picks a free key and sets it in the palette spec's VIEW_KEY), writers restore.ts/draft.ts/suggest-wait.ts/store.ts repointed; A7 Head placeholder while restoring, page-head script marks saves, and the fr .tool-meta wrap fixed (row 'E1 harness deviations'); A8 'pots' room, SIZE_LIMIT and site-marks.ts:102 from ROOM_LIMIT_M; A9 chips glyph-only at 960 px, names start with the visible name, list-level 'placed from the {lists} lists' line; A10 + Q1 invasive tie rule in gain() (any GRIIS country with no country chosen, that country with one) with a scenario test and the suggest.ts:13 comment; Q2 a future tie rule after it, only with a location (Suggest waits for the future chunk: new wait and failure row; F3 replaces it); A11 four tabs -> Palette + Structure, All plants into Palette through listQuery, Jobs -> gap list, Side print-only; A12 strip states, FutureSlot failure line + Reload, Notices to the shell; A23 site.ts through factAt (no behaviour change); openAdd(preset: AddPreset) in store.ts carries the preset (job, cell span, filters) and hint through to Add (A22); store.ts keeps commit 0's focusAfterToast calls on every hideToast path; places commit 0's balancePanel (views/lazy.tsx) in Palette as the Balance entry, so bal2 fills it in chunk 2 needing only pal1 and conf1 (if the placement alone makes F1a-B9 pass, the merge agent says so; B9 also waits for bal2's checks); the live regions of its files on the page before their message and each line announced once per reader's event (Start's crops count and loading line, PoolSlot's notices, the lazy parts' loading and failed lines, Actions) and Start.tsx's aria-expanded (F1a-P9, moved from a11y1); ct-tab/panel waits in the old specs and helpers move to the hook, state and ct:first-view; replaced screens' old tests deleted; A26 carried-in gaps (zoneOf regex with double quotes, E6-18 rescheduled Reload toast, Suggest after the cap then the late chunk); failure rows (design check section 5): a link with an unknown w or m=pots in an old tab opens Palette / 'Not sure' (state test in consortium-memory.test.mjs); Structure pressed before the prefetch shows a loading line with one fetch, and a resize across 960 keeps the stage (both in the Structure-link browser scenario); structure registered retryable in lazy.tsx (re-import as ?retry=n, covered by the 'Structure chunk fails' scenario); rename and move (owner row 'Plant palette name', plan F1a stream 1 'Rename and move'): readers see 'Plant palette' in 11 locales; pages move to src/pages/palette.astro and src/pages/[lang]/palette.astro; consortiumPath returns /palette/ and /{lang}/palette/; ConsortiumPage.astro's '/consortium/' literals go through it (canonical, hreflang, og:url, sitemap follow); public/_redirects gets /consortium/ and /consortium -> /palette/ 301 for each of the 11 locales written out (no :lang placeholder or splat: it would catch /data/consortium/*; /app/:route stays; no Language=); the four guide MDX files that link the tool and the guides' consortium.label/link strings; titles, meta, nav, home, Learn, privacy and data-sources words; the Header's short label re-measured at 640 px in 11 locales; check-built-site, built-modules.test, built-links.test, guides-consortium.test and every browser spec or helper that opens /consortium/ (the harness's fixture route included) move to /palette/; one scenario in the palette spec: an old /consortium/ and /fr/consortium/ share link lands on /palette/ with the same palette and view, a ?plant=&climate= preset and a ?v=3 link keep their query. Internal names stay consortium (folders, storage keys, /data/consortium/, key prefixes, chunk roles)",
+          "duty": "Stream 1 By role and Structure (the first view, planned 'Palette', is named 'By role'), view side (base d9e00ca). Probe first: move the matrix (Matrix, PhoneMatrix, matrix-parts, tracks, matrix-only StageBar parts) to the lazy 'structure' role and measure the first run before building Palette (A1). Kit first-view.ts owns ct:first-view and prefetchLater for Palette and Structure; Start.tsx keeps commit 0's markStart() call (perf1 implements ct:start in views/kit/start-mark.ts). A3 palette.ts (role groups, counts, health summary) with runsOf moved into jobs.ts; A4 cards by role, '+ N more' at 200 plants; A5 the % bar goes; A6 View + saved 'shown' (store.ts's older View type 'start'|'matrix'|'side'|'jobs'|'list' is removed: the island reads core types.ts View, internal ids 'palette' and 'structure' kept), a view link key under v4 (no bump, Structure only; not w, which v4 writes for the water answer: pal1 picks a free key and sets it in the palette spec's VIEW_KEY), writers restore.ts/draft.ts/suggest-wait.ts/store.ts repointed; A7 Head placeholder while restoring, page-head script marks saves, and the fr .tool-meta wrap fixed (row 'E1 harness deviations'); A8 'pots' room, SIZE_LIMIT and site-marks.ts:102 from ROOM_LIMIT_M; A9 chips glyph-only at 960 px, names start with the visible name, list-level 'placed from the {lists} lists' line; A10 + Q1 invasive tie rule in gain() (any GRIIS country with no country chosen, that country with one) with a scenario test and the suggest.ts:13 comment; Q2 a future tie rule after it, only with a location (Suggest waits for the future chunk: new wait and failure row; F3 replaces it); A11 four tabs -> Palette + Structure, All plants into Palette through listQuery, Jobs -> gap list, Side print-only; A12 strip states, FutureSlot failure line + Reload, Notices to the shell; A23 site.ts through factAt (no behaviour change); openAdd(preset: AddPreset) in store.ts carries the preset (job, cell span, filters) and hint through to Add (A22); store.ts keeps commit 0's focusAfterToast calls on every hideToast path; places commit 0's balancePanel (views/lazy.tsx) in Palette as the Balance entry, so bal2 fills it in chunk 2 needing only pal1 and conf1 (if the placement alone makes F1a-B9 pass, the merge agent says so; B9 also waits for bal2's checks); the live regions of its files on the page before their message and each line announced once per reader's event (Start's crops count and loading line, PoolSlot's notices, the lazy parts' loading and failed lines, Actions) and Start.tsx's aria-expanded (F1a-P9, moved from a11y1); ct-tab/panel waits in the old specs and helpers move to the hook, state and ct:first-view; replaced screens' old tests deleted; A26 carried-in gaps (zoneOf regex with double quotes, E6-18 rescheduled Reload toast, Suggest after the cap then the late chunk); failure rows (design check section 5): a link with an unknown w or m=pots in an old tab opens Palette / 'Not sure' (state test in consortium-memory.test.mjs); Structure pressed before the prefetch shows a loading line with one fetch, and a resize across 960 keeps the stage (both in the Structure-link browser scenario); structure registered retryable in lazy.tsx (re-import as ?retry=n, covered by the 'Structure chunk fails' scenario); rename and move (owner row 'Plant palette name', plan F1a stream 1 'Rename and move'): readers see 'Plant palette' in 11 locales; pages move to src/pages/palette.astro and src/pages/[lang]/palette.astro; consortiumPath returns /palette/ and /{lang}/palette/; PalettePage.astro's '/consortium/' literals go through it (canonical, hreflang, og:url, sitemap follow); public/_redirects gets /consortium/ and /consortium -> /palette/ 301 for each of the 11 locales written out (no :lang placeholder or splat: it would catch /data/consortium/*; /app/:route stays; no Language=); the four guide MDX files that link the tool and the guides' consortium.label/link strings; titles, meta, nav, home, Learn, privacy and data-sources words; the Header's short label re-measured at 640 px in 11 locales; check-built-site, built-modules.test, built-links.test, guides-consortium.test and every browser spec or helper that opens /consortium/ (the harness's fixture route included) move to /palette/; one scenario in the palette spec: an old /consortium/ and /fr/consortium/ share link lands on /palette/ with the same palette and view, a ?plant=&climate= preset and a ?v=3 link keep their query. Internal names stay consortium (folders, storage keys, /data/consortium/, key prefixes, chunk roles)",
           "files": [
             "src/islands/consortium/App.tsx",
             "src/islands/consortium/views/Matrix.tsx",
@@ -167,17 +167,17 @@
             "src/lib/consortium/site.ts",
             "src/lib/consortium/site-marks.ts",
             "src/lib/consortium/index.ts",
-            "src/components/consortium/ConsortiumPage.astro",
+            "src/components/palette/PalettePage.astro",
             "src/styles/consortium/matrix.css",
             "src/styles/consortium/base.css",
-            "scripts/consortium-palette.test.mjs",
-            "scripts/consortium-core.test.mjs",
-            "scripts/consortium-memory.test.mjs",
-            "scripts/consortium-zones.test.mjs",
-            "scripts/consortium-tracks.test.mjs",
-            "scripts/consortium-start.test.mjs",
-            "scripts/consortium-p5-seams.test.mjs",
-            "scripts/consortium-p5-seams-s5e.test.mjs",
+            "scripts/palette-palette.test.mjs",
+            "scripts/palette-core.test.mjs",
+            "scripts/palette-memory.test.mjs",
+            "scripts/palette-zones.test.mjs",
+            "scripts/palette-tracks.test.mjs",
+            "scripts/palette-start.test.mjs",
+            "scripts/palette-p5-seams.test.mjs",
+            "scripts/palette-p5-seams-s5e.test.mjs",
             "scripts/browser/consortium-f1a-palette.browser.test.mjs",
             "scripts/browser/consortium-s*.browser.test.mjs",
             "scripts/browser/consortium-e6*.browser.test.mjs",
@@ -189,13 +189,13 @@
             "src/pages/palette.astro",
             "src/pages/[lang]/consortium.astro",
             "src/pages/[lang]/palette.astro",
-            "src/i18n/consortium-path.js",
+            "src/i18n/palette-path.js",
             "src/i18n/utils.ts",
             "src/i18n/guides/en.json",
             "src/i18n/guides/fr.json",
             "public/_redirects",
             "src/components/Header.astro",
-            "src/components/guides/TryConsortium.astro",
+            "src/components/guides/TryPalette.astro",
             "src/content/guides/garden-helpers/en.mdx",
             "src/content/guides/garden-helpers/fr.mdx",
             "src/content/guides/flowers-for-pollinators/en.mdx",
@@ -203,7 +203,7 @@
             "scripts/check-built-site.mjs",
             "scripts/built-modules.test.mjs",
             "scripts/built-links.test.mjs",
-            "scripts/guides-consortium.test.mjs",
+            "scripts/guides-palette.test.mjs",
             "scripts/browser/harness.mjs",
             "scripts/browser/consortium-commit0.browser.test.mjs",
             "scripts/browser/consortium-p5-s5b.browser.test.mjs",
@@ -212,7 +212,7 @@
             "scripts/browser/consortium-seams-p2.browser.test.mjs",
             "scripts/browser/fixtures/fail-fast.spec.mjs",
             "scripts/browser/fixtures/hang.spec.mjs",
-            "scripts/browser/smoke/consortium.smoke.mjs",
+            "scripts/browser/smoke/palette.smoke.mjs",
             "scripts/browser/smoke/axe.smoke.mjs"
           ]
         },
@@ -230,12 +230,12 @@
             "src/lib/consortium/mark-providers.ts",
             "src/lib/consortium/placement.ts",
             "src/islands/consortium/views/layers.ts",
-            "scripts/consortium-confidence.test.mjs",
-            "scripts/consortium-keys.test.mjs",
-            "scripts/consortium-layers.test.mjs",
-            "scripts/consortium-p5-ranges.test.mjs",
-            "scripts/consortium-p5-seams-s5c.test.mjs",
-            "scripts/consortium-p5-seams-s5d.test.mjs",
+            "scripts/palette-confidence.test.mjs",
+            "scripts/palette-keys.test.mjs",
+            "scripts/palette-layers.test.mjs",
+            "scripts/palette-p5-ranges.test.mjs",
+            "scripts/palette-p5-seams-s5c.test.mjs",
+            "scripts/palette-p5-seams-s5d.test.mjs",
             "knowledge/decisions/consortium-confidence.md"
           ]
         },
@@ -247,17 +247,17 @@
           "files": [
             "src/islands/consortium/rules/list-query.ts",
             "src/islands/consortium/views/Add.tsx",
-            "scripts/consortium-list-query.test.mjs"
+            "scripts/palette-list-query.test.mjs"
           ]
         },
         "perf1": {
           "needs": [
             "main"
           ],
-          "duty": "Stream 5 Slow phone and budgets (base d9e00ca; A24, A1 budget side). Probe first: compare the harness's wasm Content-Encoding with production before setting any target. Wasm preload injected after the build in astro.config.mjs; the build asserts href = the fetched URL, matching crossorigin and one wasm; implements commit 0's markStart() in views/kit/start-mark.ts (performance.mark('ct:start') once per page, after the paint; Start.tsx calls it on every render of the form) and timing reads it (target <= 6 s first-visit Start, warns) beside ct:first-view (restored link no worse than the E6 hand-off within P-E6b's noise band; <= 6 s moves to E7); load.ts only if compileStreaming is taken; ADR-2 concept. Caps are set by the budget owner at each merge (first run = measured + 0.5 KB after stream 1; a coordinator row above 38 KB, an ADR-2 change above 40 KB); failure row: a wasm 404 after a deploy shows the existing screen with no second error from the preload (one browser scenario in the f1a perf spec); the tool's move to /palette/ (owner row 'Plant palette name'): consortium-timing.mjs and the f1a perf spec open /palette/, never /consortium/ (a redirect hop would skew timings)",
+          "duty": "Stream 5 Slow phone and budgets (base d9e00ca; A24, A1 budget side). Probe first: compare the harness's wasm Content-Encoding with production before setting any target. Wasm preload injected after the build in astro.config.mjs; the build asserts href = the fetched URL, matching crossorigin and one wasm; implements commit 0's markStart() in views/kit/start-mark.ts (performance.mark('ct:start') once per page, after the paint; Start.tsx calls it on every render of the form) and timing reads it (target <= 6 s first-visit Start, warns) beside ct:first-view (restored link no worse than the E6 hand-off within P-E6b's noise band; <= 6 s moves to E7); load.ts only if compileStreaming is taken; ADR-2 concept. Caps are set by the budget owner at each merge (first run = measured + 0.5 KB after stream 1; a coordinator row above 38 KB, an ADR-2 change above 40 KB); failure row: a wasm 404 after a deploy shows the existing screen with no second error from the preload (one browser scenario in the f1a perf spec); the tool's move to /palette/ (owner row 'Plant palette name'): palette-timing.mjs and the f1a perf spec open /palette/, never /consortium/ (a redirect hop would skew timings)",
           "files": [
             "astro.config.mjs",
-            "scripts/browser/consortium-timing.mjs",
+            "scripts/browser/palette-timing.mjs",
             "scripts/browser/timing.json",
             "scripts/browser/serve.mjs",
             "scripts/browser/consortium-f1a-perf.browser.test.mjs",
@@ -279,7 +279,7 @@
             "src/islands/consortium/views/details/Details.tsx",
             "scripts/browser/live-regions.mjs",
             "scripts/browser/consortium-f1a-a11y.browser.test.mjs",
-            "scripts/consortium-p5-seams-s5b.test.mjs"
+            "scripts/palette-p5-seams-s5b.test.mjs"
           ]
         }
       }
@@ -301,7 +301,7 @@
             "src/lib/consortium/palette.ts",
             "src/lib/consortium/jobs.ts",
             "src/styles/consortium/palette.css",
-            "scripts/consortium-palette.test.mjs",
+            "scripts/palette-palette.test.mjs",
             "scripts/browser/consortium-f1a-palette.browser.test.mjs"
           ]
         },
@@ -322,8 +322,8 @@
             "src/islands/consortium/views/pool/pool.tsx",
             "src/islands/consortium/views/Add.tsx",
             "src/lib/consortium/site-marks.ts",
-            "scripts/consortium-p5-seams.test.mjs",
-            "scripts/consortium-p5-ranges.test.mjs",
+            "scripts/palette-p5-seams.test.mjs",
+            "scripts/palette-p5-ranges.test.mjs",
             "scripts/browser/consortium-f1a-confidence.browser.test.mjs"
           ]
         },
@@ -342,8 +342,8 @@
             "src/islands/consortium/views/balance/**",
             "src/styles/consortium/balance.css",
             "scripts/fixtures/consortium-v2/**",
-            "scripts/consortium-balance.test.mjs",
-            "scripts/consortium-source.test.mjs",
+            "scripts/palette-balance.test.mjs",
+            "scripts/palette-source.test.mjs",
             "scripts/browser/consortium-f1a-balance.browser.test.mjs"
           ]
         }
@@ -369,7 +369,7 @@
             "src/islands/consortium/views/details/Details.tsx",
             "src/islands/consortium/store.ts",
             "src/islands/consortium/data/search.ts",
-            "scripts/consortium-list-query.test.mjs",
+            "scripts/palette-list-query.test.mjs",
             "scripts/browser/consortium-f1a-filters.browser.test.mjs"
           ]
         },
@@ -381,7 +381,7 @@
           "files": [
             "src/lib/consortium/balance.ts",
             "scripts/fixtures/consortium-v2/**",
-            "scripts/consortium-balance.test.mjs"
+            "scripts/palette-balance.test.mjs"
           ]
         }
       }

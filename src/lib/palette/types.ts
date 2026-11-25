@@ -1,6 +1,6 @@
 // Consortium v2 core types (frozen seam, commit 0 of P2; design check §4). The core
 // (src/lib/palette/) reads plants only through PlantSource (./source.ts) as these plain records,
-// imports nothing outside this folder and touches no DOM (scripts/consortium-boundary.test.mjs).
+// imports nothing outside this folder and touches no DOM (scripts/palette-boundary.test.mjs).
 // The data contract is canopi-data docs/consortium-export-v2.md (format 4, schema 4.7 or later:
 // docs/website-handoff/2026-11-14-schema4-format.md, 4.2 2026-11-17-toxicity-parts.md, 4.5
 // 2026-11-17-light-span.md, 4.6 2026-11-18-llm-estimates.md, 4.7 2026-11-18-name-kind.md); the adapter
@@ -11,7 +11,7 @@
 // "none": Taxon.functions is null then.
 
 // The schema the reader opens (PRAGMA user_version): 4, at minor 4.7 or later (the installer refuses an
-// older minor: scripts/consortium-schema.mjs MIN_SCHEMA_MINOR). No older schema or minor is read (PP-C
+// older minor: scripts/palette-schema.mjs MIN_SCHEMA_MINOR). No older schema or minor is read (PP-C
 // 0b and 0c, owner 2026-11-17 "no backward compatibility").
 export const SCHEMA_VERSIONS = [4] as const;
 export type SchemaVersion = (typeof SCHEMA_VERSIONS)[number];
@@ -98,7 +98,7 @@ export interface Range { min: number | null; max: number | null }
 
 export interface Source { label: string; url: string | null; licence: string | null; attribution: string | null }
 
-// url is the self-hosted path from src/data/consortium-index.json (design check A4), never the
+// url is the self-hosted path from src/data/palette-index.json (design check A4), never the
 // export's remote url. credit is null only for CC0 or public domain.
 export interface Image { url: string; credit: string | null; licence: string | null; source_page_url: string | null }
 
@@ -418,7 +418,7 @@ export type Labels = Record<string, Record<string, Partial<Record<Locale, string
 
 // climateGrid: the canopi-climate grid manifest sha256 the ranges were sampled from (meta), for
 // information: the page does not compare it; the build fails unless the consortium index names the same
-// grid as the installed climate tiles (scripts/consortium-grid-check.mjs). rangesReview:
+// grid as the installed climate tiles (scripts/palette-grid-check.mjs). rangesReview:
 // 'estimate_not_reviewed' today. schemaVersion: the user_version load.ts accepted (SCHEMA_VERSIONS).
 // frostRecorded: the release has any plant_frost row (then a plant without one reads "frost tolerance
 // not recorded"; without, no frost line at all).
@@ -504,7 +504,7 @@ export interface DecodedLink { state: ShareState; notice: LinkNotice }
 
 // The core's view of a climate reader lookup (src/lib/climate/index.ts SiteLookup, which must stay
 // assignable to it: checked at compile time in src/islands/palette/store.ts). The core never imports
-// the reader (scripts/consortium-boundary.test.mjs), so it names only the fields its rules read.
+// the reader (scripts/palette-boundary.test.mjs), so it names only the fields its rules read.
 export interface SitePeriod {
   period: string; // '1991-2020', '2041-2070', '2071-2099'
   scenario: string; // 'historical', 'ssp126', 'ssp245', 'ssp370', 'ssp585'

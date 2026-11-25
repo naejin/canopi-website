@@ -1,6 +1,6 @@
 // A name as search compares it: canopi-types species-search normalization v1 (the app's rule, one
 // for both; scripts/fixtures/canopi-types/species-search-normalization.json, its corpus run by
-// scripts/consortium-pp-c1.test.mjs; coordinator row 2026-11-17 "Schema 4.1 staging and search
+// scripts/palette-pp-c1.test.mjs; coordinator row 2026-11-17 "Schema 4.1 staging and search
 // normalization"). Callers: data/search.ts (Find and Paste, one search module). A leaf: it imports
 // nothing.
 //

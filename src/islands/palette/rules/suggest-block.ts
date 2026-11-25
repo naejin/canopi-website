@@ -1,7 +1,7 @@
 // "Can Suggest now" (E6 R2; design check §7.1): why a Suggest for a climate would refuse, and "nothing
 // fits" (views/pool/pool.tsx shows its state; the count line itself reads store.countFits, PP-B b1b). Pure functions over core types
 // (ADR-1: rules import the core only); the store's signals and the page's curated climates come in as
-// arguments (views/PoolSlot.tsx, store.ts suggestMembers). scripts/consortium-p5-seams-s5c.test.mjs runs them.
+// arguments (views/PoolSlot.tsx, store.ts suggestMembers). scripts/palette-p5-seams-s5c.test.mjs runs them.
 //
 // A climate has a list to suggest from when it is curated, or borrows a nearest list (core
 // placement.ts NEAREST_LISTS) once the site location has a climate: only the range rule fits a

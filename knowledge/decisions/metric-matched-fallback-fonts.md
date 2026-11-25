@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Metric-matched fallback fonts
 description: Local Arial and Times New Roman (or their metric twins) scaled to Source Sans 3's and Literata's metrics come first in the fallback stacks, so the late web-font swap does not shift the layout on slow phones.
 tags: [fonts, performance, layout]
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:08Z }
+generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:09:36Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:58:20Z }
   - { by: antigravity/gemini, at: 2026-11-23T17:14:39Z }
@@ -25,10 +25,10 @@ sources:
     digest: sha256:af61386628adc5fe
     last_modified: 2026-11-13T04:47:00Z
   - id: consortium-seams-layout-browser-test-mjs
-    resource: ../../scripts/browser/consortium-studio-plan-i18n.browser.test.mjs
-    title: scripts/browser/consortium-studio-plan-i18n.browser.test.mjs
-    digest: sha256:e3692063b5f468af
-    last_modified: 2026-11-23T21:58:22Z
+    resource: ../../scripts/browser/palette-studio-plan-i18n.browser.test.mjs
+    title: scripts/browser/palette-studio-plan-i18n.browser.test.mjs
+    digest: sha256:406500fa2ce3b211
+    last_modified: 2026-11-25T11:07:24Z
   - id: base-astro
     resource: ../../src/layouts/Base.astro
     title: src/layouts/Base.astro
@@ -39,7 +39,7 @@ sources:
     title: src/styles/palette/field-studio.css
     digest: sha256:1f58100c121aa18c
     last_modified: 2026-11-23T21:58:22Z
-enforced_by: [scripts/browser/consortium-studio-plan-i18n.browser.test.mjs]
+enforced_by: [scripts/browser/palette-studio-plan-i18n.browser.test.mjs]
 ---
 
 # Context

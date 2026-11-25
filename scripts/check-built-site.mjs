@@ -4,8 +4,8 @@ import { join } from 'node:path';
 import { builtTarget, splitHref, subdirectories } from './built-links.mjs';
 import { tryListProblem, verifyInstall, INDEX_PATH } from './install-consortium.mjs';
 import { verifyClimateInstall, readRelease, INDEX_PATH as CLIMATE_INDEX_PATH } from './install-climate.mjs';
-import { consortiumGridProblem } from './consortium-grid-check.mjs';
-import { consortiumPath } from '../src/i18n/consortium-path.js';
+import { consortiumGridProblem } from './palette-grid-check.mjs';
+import { consortiumPath } from '../src/i18n/palette-path.js';
 import { parseTryReferences, TRY_CITATION, TRY_DOI } from '../src/lib/try-references.js';
 import { parseSourceCredits, shownCredits } from '../src/lib/source-credits.js';
 import { createHash } from 'node:crypto';
@@ -32,7 +32,7 @@ const locales = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru
 const tryMeta = JSON.parse(readFileSync('src/data/try_references.meta.json', 'utf8'));
 const tryBytes = readFileSync('src/data/try_references.tsv');
 assert.equal(tryListProblem(tryBytes, tryMeta), null, 'try_references.tsv matches its meta');
-// The installer's index (src/data/consortium-index.json, design check A4): what the build read of the
+// The installer's index (src/data/palette-index.json, design check A4): what the build read of the
 // installed export. It is never served.
 const consortiumIndex = JSON.parse(readFileSync(INDEX_PATH, 'utf8'));
 assert.deepEqual(tryMeta, consortiumIndex.try_references, 'try_references.meta.json is the installed index entry');
@@ -379,9 +379,9 @@ for (const lang of guideLocales) {
 for (const asset of ['canopi-logo.svg', 'data/featured-designs.json', 'data/plant-symbols.json']) assert.ok(existsSync(join(root, asset)), asset);
 for (const gone of ['orchard-screenshot.png', 'demo-canopi-720.mp4', 'screenshot-light.png', 'network']) assert.ok(!existsSync(join(root, gone)), `${gone} is retired`);
 const en = JSON.parse(readFileSync('src/i18n/translations/en.json', 'utf8'));
-// The guide slugs the plant dialog links (src/data/consortium-guides.ts: 'Name': ['slug', …]).
-const consortiumGuideSlugs = new Set([...readFileSync('src/data/consortium-guides.ts', 'utf8').matchAll(/\[([^\]]*)\]/g)].flatMap((m) => [...m[1].matchAll(/'([a-z0-9-]+)'/g)].map((x) => x[1])));
-assert.ok(consortiumGuideSlugs.size > 10, 'consortium-guides.ts lists guide slugs');
+// The guide slugs the plant dialog links (src/data/palette-guides.ts: 'Name': ['slug', …]).
+const consortiumGuideSlugs = new Set([...readFileSync('src/data/palette-guides.ts', 'utf8').matchAll(/\[([^\]]*)\]/g)].flatMap((m) => [...m[1].matchAll(/'([a-z0-9-]+)'/g)].map((x) => x[1])));
+assert.ok(consortiumGuideSlugs.size > 10, 'palette-guides.ts lists guide slugs');
 // The browser-test hook never ships (H14, E6 L11): no built script names it, nor the tests' shortened
 // timeouts (E1 design check A4, failure row F17), nor the faults it writes (A13 __ctFaults).
 {
@@ -470,7 +470,7 @@ assert.ok(!existsSync(join(root, 'fr', 'guilde')), 'no /fr/guilde/: French is /f
 assert.notEqual(consortiumIndex.canopi_db_sha256, '0'.repeat(64), 'consortium: a real install, never the fixture');
 const consortiumInstall = verifyInstall(join(root, 'data', 'consortium'), consortiumIndex);
 assert.ok(consortiumInstall.databases > 0 && consortiumInstall.images > 0, 'consortium: database and photos');
-for (const gone of ['manifest.json', 'labels.json', 'SHA256SUMS', 'tropical.json', 'temperate.json', 'mediterranean.json', 'consortium-index.json']) assert.ok(!existsSync(join(root, 'data', 'consortium', gone)), `consortium: ${gone} is not served`);
+for (const gone of ['manifest.json', 'labels.json', 'SHA256SUMS', 'tropical.json', 'temperate.json', 'mediterranean.json', 'palette-index.json']) assert.ok(!existsSync(join(root, 'data', 'consortium', gone)), `consortium: ${gone} is not served`);
 
 // Review B5 follow-up: a browser test run writes a marker file into dist/client and removes it when
 // it stops; one left behind (a killed run) must never be deployed.
@@ -687,10 +687,10 @@ console.log(`Static assets: ${assetFiles} files in ${root} (limit ${MAX_ASSET_FI
   const pin = readRelease();
   assert.equal(climateIndex.release?.grid_manifest_sha256, pin.grid_manifest_sha256, `${CLIMATE_INDEX_PATH} is not the pinned climate grid ${pin.tag}: rebuild`);
   const counts = verifyClimateInstall(climateDir, climateIndex);
-  // One grid for the plant ranges and the site lookup (scripts/consortium-grid-check.mjs).
+  // One grid for the plant ranges and the site lookup (scripts/palette-grid-check.mjs).
   const gridProblem = consortiumGridProblem(consortiumIndex, climateIndex);
   assert.equal(gridProblem, null, `${CLIMATE_INDEX_PATH}: ${gridProblem}`);
-  // #ct-climate (P5 commit 0, ConsortiumPage.astro): every tool page hands the island the base and each
+  // #ct-climate (P5 commit 0, PalettePage.astro): every tool page hands the island the base and each
   // installed layer's tile names (src/data/climate-page-data.ts), no hashes, under 2 KB gzip.
   const tileNames = Object.fromEntries(Object.keys(climateIndex.layers).map((l) => [l, { tiles: Object.keys(climateIndex.layers[l].tiles).sort() }]));
   const expectedPageClimate = { base: climateIndex.base, layers: tileNames, ...(climateIndex.analogues ? { analogues: true } : {}) };

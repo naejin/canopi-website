@@ -26,7 +26,7 @@ test('the shipped list is what its meta says: hash, rows and DatasetIDs read fro
 });
 
 test('the list has one owner: the meta is the installed index entry, so a hand copy shows', () => {
-  const { sha256, rows, dataset_ids } = JSON.parse(read('src/data/consortium-index.json')).try_references;
+  const { sha256, rows, dataset_ids } = JSON.parse(read('src/data/palette-index.json')).try_references;
   assert.deepEqual(meta, { sha256, rows, dataset_ids });
 });
 
@@ -82,10 +82,10 @@ test('the page shows the citation verbatim, no CC BY claim, and never writes the
   assert.ok(installed.attribution.startsWith(`${TRY_CITATION} ${TRY_DOI}`));
 });
 
-// A sources row of the installed database (src/data/consortium-index.json names it), read with node:sqlite.
+// A sources row of the installed database (src/data/palette-index.json names it), read with node:sqlite.
 async function installedSource(t, id) {
   const { DatabaseSync } = await import('node:sqlite');
-  const index = JSON.parse(read('src/data/consortium-index.json'));
+  const index = JSON.parse(read('src/data/palette-index.json'));
   const dir = mkdtempSync(join(tmpdir(), 'consortium-db-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const path = join(dir, 'db.sqlite');

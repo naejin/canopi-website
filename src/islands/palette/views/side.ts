@@ -1,6 +1,6 @@
 // The side view's rules (ported from v1 src/scripts/consortium/side.js; design check §2, owner rows
 // "Scale" 2026-10-28 and "v2 mockup choices" 2026-11-11). Pure: no DOM, no strings
-// (scripts/consortium-print.test.mjs). The side view, print's drawing since PP-B commit 0a', is a slice
+// (scripts/palette-print.test.mjs). The side view, print's drawing since PP-B commit 0a', is a slice
 // of one stage: the members growing in that stage, drawn at their wild maximum height on one log scale. Layer is
 // light, not height, so the drawing never sorts heights into layer bands.
 //

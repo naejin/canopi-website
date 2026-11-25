@@ -1,6 +1,6 @@
 // The consortium v2 core: types, the PlantSource seam and pure, framework-free rules: site fit,
 // conflicts, jobs, the strata × phases matrix, the suggestion and Swap list, share state and the
-// .canopi writer. No DOM, no Astro, no import outside this folder (scripts/consortium-boundary.test.mjs),
+// .canopi writer. No DOM, no Astro, no import outside this folder (scripts/palette-boundary.test.mjs),
 // so node --test runs it and it can move to a canopi-consortium package unchanged.
 import { retryableImport } from './retry-import.ts';
 export * from './types.ts';

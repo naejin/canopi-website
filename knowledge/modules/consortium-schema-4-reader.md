@@ -2,36 +2,36 @@
 type: Module
 title: Consortium schema 4 reader and installer
 description: "How the installer and the island read canopi-data schema 4.7 exports and nothing older: additive-tier checks, the required 4.2 to 4.7 additions (plant_aliases accepted, never read), the light span columns, the AI-estimate kinds on jobs and primary names, and the search names file."
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:33Z }
+generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:09:48Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:21:16Z }
   - { by: antigravity/gemini, at: 2026-11-23T12:36:36Z }
 sources:
   - id: consortium-schema-mjs
-    resource: ../../scripts/consortium-schema.mjs
-    title: scripts/consortium-schema.mjs
-    digest: sha256:521be440cb6a551b
-    last_modified: 2026-11-23T20:58:01Z
+    resource: ../../scripts/palette-schema.mjs
+    title: scripts/palette-schema.mjs
+    digest: sha256:2e744696c5218628
+    last_modified: 2026-11-25T11:09:08Z
   - id: install-consortium-mjs
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
-    digest: sha256:fdcadd208508d5e3
-    last_modified: 2026-11-18T06:34:33Z
+    digest: sha256:68d37b8d3b41005e
+    last_modified: 2026-11-25T11:09:08Z
   - id: sqlite-source-ts
     resource: ../../src/islands/palette/data/sqlite-source.ts
     title: src/islands/palette/data/sqlite-source.ts
-    digest: sha256:1d4e48c67077cda7
-    last_modified: 2026-11-23T20:58:01Z
+    digest: sha256:a58999987775c520
+    last_modified: 2026-11-25T11:09:08Z
   - id: source-ts
     resource: ../../src/lib/palette/source.ts
     title: src/lib/palette/source.ts
     digest: sha256:9efeeffb336dec8a
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: types-ts
     resource: ../../src/lib/palette/types.ts
     title: src/lib/palette/types.ts
-    digest: sha256:2163e2e956deda1c
-    last_modified: 2026-11-23T20:58:01Z
+    digest: sha256:442b3a87d9b94d8f
+    last_modified: 2026-11-25T11:09:08Z
   - id: make-fixture-mjs
     resource: ../../scripts/fixtures/consortium-v2/make-fixture.mjs
     title: scripts/fixtures/consortium-v2/make-fixture.mjs
@@ -41,39 +41,39 @@ sources:
     resource: ../../src/lib/palette/state.ts
     title: src/lib/palette/state.ts
     digest: sha256:023783ecbccd0096
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-source-test-mjs
-    resource: ../../scripts/consortium-source.test.mjs
-    title: scripts/consortium-source.test.mjs
-    digest: sha256:7ec90e01ed7bfb91
-    last_modified: 2026-11-23T20:58:01Z
+    resource: ../../scripts/palette-source.test.mjs
+    title: scripts/palette-source.test.mjs
+    digest: sha256:b7fcd95308207758
+    last_modified: 2026-11-25T11:09:08Z
   - id: names-ts
     resource: ../../src/islands/palette/views/find/names.ts
     title: src/islands/palette/views/find/names.ts
     digest: sha256:dd99c7e5ca8e8a82
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: names-file-ts
     resource: ../../src/islands/palette/data/names-file.ts
     title: src/islands/palette/data/names-file.ts
     digest: sha256:a6d9f0e270c94cbf
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
 enforced_by:
   - scripts/install-consortium.test.mjs
-  - scripts/consortium-source.test.mjs
+  - scripts/palette-source.test.mjs
 ---
 
 # Consortium schema 4 reader and installer (PP-C commit 0a, 1b7ec49; 4.5 only since 0b, 4.7 only since 0c)
 
 ## What is accepted
-- Since PP-C 0c (release `r-255553893fa4f4b4`; 0b with `r-bcc417fd89a3147c` set 4.5; owner 2026-11-17 "no backward compatibility"): schema 4 at `schema_minor` 7 or later only. `SCHEMA_VERSIONS` is `[4]` in core `types.ts` and the installer; `MIN_SCHEMA_MINOR` 7 and `REQUIRED_ADDITIONS` (4.2's `plant_toxicity_parts` and its key and count, 4.3's `plant_invasive_areas` and its count, 4.5's three `plants` columns, 4.6's `functions.kind`, 4.7's `plant_names.kind`) live in `scripts/consortium-schema.mjs`. A manifest below 4.7 or missing one of those declarations is refused by name; the tier rules then hold the database to them. Open-vocabulary values stay optional (the reader skips what it does not know). The index must say `schema_minor` 7 or more and always names `search_names` (`indexProblem`); `ConsortiumPage.astro` and `check-built-site.mjs` no longer allow a missing names file. No schema-3 export installs or opens; `DDL_3` survives only as the private base `DDL_4` is derived from.
+- Since PP-C 0c (release `r-255553893fa4f4b4`; 0b with `r-bcc417fd89a3147c` set 4.5; owner 2026-11-17 "no backward compatibility"): schema 4 at `schema_minor` 7 or later only. `SCHEMA_VERSIONS` is `[4]` in core `types.ts` and the installer; `MIN_SCHEMA_MINOR` 7 and `REQUIRED_ADDITIONS` (4.2's `plant_toxicity_parts` and its key and count, 4.3's `plant_invasive_areas` and its count, 4.5's three `plants` columns, 4.6's `functions.kind`, 4.7's `plant_names.kind`) live in `scripts/palette-schema.mjs`. A manifest below 4.7 or missing one of those declarations is refused by name; the tier rules then hold the database to them. Open-vocabulary values stay optional (the reader skips what it does not know). The index must say `schema_minor` 7 or more and always names `search_names` (`indexProblem`); `ConsortiumPage.astro` and `check-built-site.mjs` no longer allow a missing names file. No schema-3 export installs or opens; `DDL_3` survives only as the private base `DDL_4` is derived from.
 - `DDL_READ` is the full schema the reader reads (base statements plus every required addition, canopi-data's statement text, the light span CHECKs included); `consortium-p5-ranges.test.mjs` compares it with the installed export statement by statement, declared additions included.
-- `scripts/consortium-schema.mjs` also holds `DDL_4` (`DDL_BY_SCHEMA`), the data tables per schema (`DATA_TABLES_4` adds `plant_disputes`, `plant_aliases`, `trait_sources`, `plant_frost`, `plant_toxicity_audience`), `LATEST_SCHEMA` 4, the open vocabularies (`VOCABULARIES_4`, `VOCABULARIES_42`) 4.2's `plant_toxicity_parts` (`TOXICITY_PARTS_DDL`, `TOXICITY_PARTS_ADDITIONS`) and 4.3's `plant_invasive_areas` (`INVASIVE_AREAS_DDL`, `INVASIVE_AREAS_ADDITIONS`, since 3; canopi-data `docs/website-handoff/2026-11-17-invasive-scope.md`). 4.5's `LIGHT_SPAN_DDL` and `LIGHT_SPAN_ADDITIONS` (canopi-data `docs/website-handoff/2026-11-17-light-span.md`) sit beside them, and `LLM_KIND_DDL` / `LLM_KIND_ADDITIONS` (4.6 `functions.kind` since 6, 4.7 `plant_names.kind` since 7; canopi-data `docs/website-handoff/2026-11-18-llm-estimates.md` and `2026-11-18-name-kind.md`). SQLite writes each `kind` column before its table's constraint (`UNIQUE`, `PRIMARY KEY`) in the stored statement and lists it last in `pragma_table_info`, so the tier rule's trailing-column check holds; `DDL_READ` replays the `ALTER` statements to match the stored text.
+- `scripts/palette-schema.mjs` also holds `DDL_4` (`DDL_BY_SCHEMA`), the data tables per schema (`DATA_TABLES_4` adds `plant_disputes`, `plant_aliases`, `trait_sources`, `plant_frost`, `plant_toxicity_audience`), `LATEST_SCHEMA` 4, the open vocabularies (`VOCABULARIES_4`, `VOCABULARIES_42`) 4.2's `plant_toxicity_parts` (`TOXICITY_PARTS_DDL`, `TOXICITY_PARTS_ADDITIONS`) and 4.3's `plant_invasive_areas` (`INVASIVE_AREAS_DDL`, `INVASIVE_AREAS_ADDITIONS`, since 3; canopi-data `docs/website-handoff/2026-11-17-invasive-scope.md`). 4.5's `LIGHT_SPAN_DDL` and `LIGHT_SPAN_ADDITIONS` (canopi-data `docs/website-handoff/2026-11-17-light-span.md`) sit beside them, and `LLM_KIND_DDL` / `LLM_KIND_ADDITIONS` (4.6 `functions.kind` since 6, 4.7 `plant_names.kind` since 7; canopi-data `docs/website-handoff/2026-11-18-llm-estimates.md` and `2026-11-18-name-kind.md`). SQLite writes each `kind` column before its table's constraint (`UNIQUE`, `PRIMARY KEY`) in the stored statement and lists it last in `pragma_table_info`, so the tier rule's trailing-column check holds; `DDL_READ` replays the `ALTER` statements to match the stored text.
 
 ## Installer tier rules (`scripts/install-consortium.mjs`)
 - Base tables, columns and indexes are required; additions declared in the manifest (`schema_minor`, `schema_additions`) are accepted; undeclared extras and declared additions that are missing are refused.
 - Statement text is compared for base statements only.
 - Open vocabularies take base or declared values; any other stored value is refused.
-- The search names file (`names.<release>.<hash>.tsv.gz`) is checked and installed; `src/data/consortium-index.json` names it (`search_names`).
+- The search names file (`names.<release>.<hash>.tsv.gz`) is checked and installed; `src/data/palette-index.json` names it (`search_names`).
 - The island reads it since PP-C c1: `#ct-data` `names` (a `DbRef`; the island type still allows none, for browser-test pages); `data/names-file.ts` fetches and checks it (digests, the header matched to the page's database, a stalled download aborted), and `views/find/names.ts` loads it once per page for Find and Paste on top of the core's names (`PlantSource.names`), searching while it loads; a digest mismatch or a file bound to another database is dropped until reload, a failed load tried again on the next focus.
 
 ## Reader (`data/sqlite-source.ts`)

@@ -1,6 +1,6 @@
 // The .canopi writer (design check A11; stream S4): a consortium as a Canopi design file, v9, that the
 // Canopi app opens. Validated against the app's own format in scripts/vendor/canopi-design-format/
-// (canopi 0c425fb07) by scripts/consortium-canopi-file.test.mjs and BT-9. A pure function of the
+// (canopi 0c425fb07) by scripts/palette-canopi-file.test.mjs and BT-9. A pure function of the
 // core: no DOM, no clock, no import outside this folder. Exported from index.ts since commit 0.
 //
 // What the file carries: one `consortiums` entry per member, in member order (a plant listed twice is

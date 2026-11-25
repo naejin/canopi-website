@@ -37,10 +37,10 @@ test('PP-B: the importers of what a chunk deletes are owned in that chunk; b1b w
   // Delete first (owner, 2026-11-14): chunk 0 (commit 0a') deletes the old screens, so it owns each
   // deleted file and every importer it trims: App.tsx imports Matrix, later.ts re-exports SideView, Jobs
   // and PlantList, SideView imports StageStepper, PrintSheet reads the matrix, Details and Start hold
-  // Kept and Main crops, suggest.ts takes their options, ConsortiumPage.astro imports matrix.css.
+  // Kept and Main crops, suggest.ts takes their options, PalettePage.astro imports matrix.css.
   const deleted = ['Matrix.tsx', 'PhoneMatrix.tsx', 'matrix-parts.tsx', 'tracks.ts', 'Jobs.tsx', 'PlantList.tsx', 'StageStepper.tsx'].map((f) => v + f);
   const trimmed = ['src/islands/consortium/App.tsx', 'src/islands/consortium/store.ts', `${v}later.ts`, `${v}Actions.tsx`, `${v}SideView.tsx`, `${v}StageBar.tsx`, `${v}PrintSheet.tsx`, `${v}details/Details.tsx`, `${v}Start.tsx`,
-    'src/lib/consortium/matrix.ts', 'src/lib/consortium/suggest.ts', 'src/lib/consortium/source.ts', 'src/islands/consortium/data/sqlite-source.ts', 'src/components/consortium/ConsortiumPage.astro',
+    'src/lib/consortium/matrix.ts', 'src/lib/consortium/suggest.ts', 'src/lib/consortium/source.ts', 'src/islands/consortium/data/sqlite-source.ts', 'src/components/palette/PalettePage.astro',
     'src/styles/consortium/matrix.css', 'src/styles/consortium/shell.css', 'scripts/browser/consortium-s2.browser.test.mjs', 'scripts/built-modules.mjs', 'scripts/check-built-site.mjs'];
   for (const p of [...deleted, ...trimmed]) assert.ok(owns(0, 'main', p), `chunk 0 main owns ${p}`);
   // No stream deletes an old screen any more: b3 builds Your plants only, b2 takes print, b1b Suggest's gain.
@@ -114,8 +114,8 @@ test('the owners check fails a path two streams own in one chunk, and a need on 
 });
 
 test('patterns: * within a folder, ** across folders; overlap is conservative between globs', () => {
-  assert.ok(matches('scripts/consortium-p5-seams*.test.mjs', 'scripts/consortium-p5-seams-s5b.test.mjs'));
-  assert.ok(!matches('scripts/consortium-p5-seams*.test.mjs', 'scripts/consortium-memory.test.mjs'));
+  assert.ok(matches('scripts/palette-p5-seams*.test.mjs', 'scripts/palette-p5-seams-s5b.test.mjs'));
+  assert.ok(!matches('scripts/palette-p5-seams*.test.mjs', 'scripts/palette-memory.test.mjs'));
   assert.ok(matches('scripts/quality/**', 'scripts/quality/baselines/knip.json'));
   assert.ok(!matches('src/islands/palette/views/*.tsx', 'src/islands/palette/views/kit/sheet.tsx'));
   assert.ok(overlaps('scripts/quality/**', 'scripts/quality/baselines/**'));

@@ -1,5 +1,5 @@
 // Plant heights on the drawing's one log scale (moved from views/side.ts in PP-B, b2): pure, no DOM, no
-// strings. Print's side drawing and the palette page's pictures read them (scripts/consortium-print.test.mjs).
+// strings. Print's side drawing and the palette page's pictures read them (scripts/palette-print.test.mjs).
 import type { Stratum, Taxon } from '../../../lib/palette/index.ts';
 
 // One scale at every size: 0.05 m at the ground, 60 m at the top, logarithmic, so a 0.3 m herb and a

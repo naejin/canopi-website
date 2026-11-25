@@ -58,5 +58,5 @@ export function pageUrl(path: PagePath, lang: Locale): string {
   return localizedUrl(path, lang);
 }
 
-// The consortium tool: /consortium/ in every language (one rule, shared with scripts/check-built-site.mjs).
-export { consortiumPath } from './consortium-path.js';
+// The Plant Palette tool: /palette/ in English, /<lang>/palette/ in other locales (shared with scripts/check-built-site.mjs).
+export { consortiumPath } from './palette-path.js';

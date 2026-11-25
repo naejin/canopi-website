@@ -1,5 +1,5 @@
 // Serves a built site with `wrangler dev` (the browser tests' dist-test/ from `npm run
-// build:browser-test` by default; consortium-timing.mjs serves the production dist/), as Cloudflare Workers serves
+// build:browser-test` by default; palette-timing.mjs serves the production dist/), as Cloudflare Workers serves
 // it: static assets, public/_headers, _redirects. Browser tests only (design check A10): one server
 // per spec file's harness (run.mjs runs files in parallel slots, each with its own port base) on a
 // port in 4420–4499 (CANOPI_BROWSER_PORT, default 4420; the dev server's 4321 is never used), its

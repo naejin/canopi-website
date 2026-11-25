@@ -1,5 +1,5 @@
 // Layer direction and cycles of the website's code (E4; ADR-1; design check E6 §7.2, A24, A25).
-// dependency-cruiser owns direction and cycles only; scripts/consortium-boundary.test.mjs owns "core,
+// dependency-cruiser owns direction and cycles only; scripts/palette-boundary.test.mjs owns "core,
 // climate and location imports stay in their folder" and "no browser globals in core" (A27). Neither
 // checks the other's rule.
 //

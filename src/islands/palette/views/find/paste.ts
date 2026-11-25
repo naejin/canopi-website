@@ -2,7 +2,7 @@
 // of plant names, read as a spreadsheet writes it, matched against this climate's list and then the
 // other climates' lists. Names are matched through data/search.ts, the search Find reads (folded by
 // normalization v1, synonyms and names-file names included), never with SQL LIKE (A6).
-// Pure: no DOM, no store, so scripts/consortium-paste.test.mjs tests it.
+// Pure: no DOM, no store, so scripts/palette-paste.test.mjs tests it.
 import type { ClimateZone, PlantId } from '../../../../lib/palette/types.ts';
 import { fold } from '../../../../lib/palette/index.ts';
 import { releaseIndex, type FindHit, type Finder } from '../../data/search.ts';
