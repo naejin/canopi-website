@@ -51,7 +51,7 @@
 .link-btn { display: inline-flex; align-items: center; min-height: 44px; border: 0; background: transparent; color: var(--accent-ink); font-size: 13px; font-weight: 600; cursor: pointer; padding: 4px 0; text-decoration: underline; }
 .icon-btn { min-width: 44px; min-height: 44px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); cursor: pointer; font-size: 14px; }
 .icon-btn:hover { border-color: var(--text); }
-.plant-row-main { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; border: 0; background: transparent; text-align: left; cursor: pointer; padding: 0; color: inherit; }
+.plant-row-main { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; min-height: 44px; border: 0; background: transparent; text-align: left; cursor: pointer; padding: 0; color: inherit; }
 .plant-row-info { flex: 1; min-width: 0; display: grid; gap: 2px; }
 .plant-row-top { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
 .plant-sci { font-size: 12px; font-style: italic; color: var(--text-muted); }
@@ -101,16 +101,17 @@
 .plan-acts { display: flex; flex-wrap: wrap; gap: 8px; }
 .picker-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .picker-item { display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); }
-.picker-item-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; border: 0; background: transparent; text-align: left; cursor: pointer; padding: 0; color: inherit; }
+.picker-item-main { flex: 1; min-width: 0; min-height: 44px; display: flex; align-items: center; gap: 10px; border: 0; background: transparent; text-align: left; cursor: pointer; padding: 0; color: inherit; }
 .picker-item-info { flex: 1; min-width: 0; display: grid; }
 .picker-tools { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+.picker-tools select, .picker-filter-grid select, .atlas-card select, .plot-input-wrap input[type="number"] { min-height: 44px; padding: 6px 8px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 13px; }
 .picker-filter-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); }
 .picker-filter-grid label { display: grid; gap: 4px; font-size: 12px; }
 .atlas-stack { display: grid; gap: 12px; }
 .atlas-card { padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); display: grid; gap: 8px; }
 .atlas-card h4 { margin: 0; font-size: 14px; }
 .scenario-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.scenario-row { width: 100%; display: flex; justify-content: space-between; gap: 8px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 13px; cursor: pointer; }
+.scenario-row { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 13px; cursor: pointer; }
 .scenario-row.is-active { border-color: var(--accent); background: var(--ochre-tint); }
 .dossier-hero { display: grid; gap: 12px; }
 .dossier-photo { width: 100%; max-height: 210px; object-fit: cover; border-radius: var(--radius); }
