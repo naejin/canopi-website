@@ -32,7 +32,7 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
   const pathPct = nsPathPct.value;
   const eff = rep.eff;
   const siteLabel = store.location.value?.label ?? store.climate.value ?? 'Site';
-  const texture = store.location.value?.lookup?.soil?.texture ?? 'loam';
+  const texture = eff.drainage ?? store.location.value?.lookup?.soil?.texture ?? 'loam';
 
   const netM2 = Math.max(1, Math.round(eff.plotM2 * (1 - pathPct / 100)));
   const knownCrownM2 = Math.round(rep.crownBudget.totalCrownM2 * 10) / 10;

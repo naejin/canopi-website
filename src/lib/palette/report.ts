@@ -63,10 +63,11 @@ export const CORE_SHOCK_HORIZONS: readonly ReportHorizonId[] = ['today', 'y2050'
 export type SiteAspect = 'neutral' | 'south' | 'north';
 export type SiteColdAir = 'normal' | 'hollow' | 'higher';
 export type SiteLightChoice = 'full_sun' | 'part_shade' | 'shade';
+export type ReportDrainage = Drainage | 'sandy' | 'clay';
 
 export interface ReportSiteOverrides {
   soilPh?: number | null;
-  drainage?: Drainage | null;
+  drainage?: ReportDrainage | null;
   watering?: Watering | null;
   room?: Room | null;
   plotM2?: number | null;
@@ -117,7 +118,7 @@ export interface EffectiveSiteClimate {
   stonesPct: number | null;
   tankDays: number | null;
   cddDays: number | null;
-  drainage: Drainage | null;
+  drainage: ReportDrainage | null;
   watering: Watering;
   wind: InputWind | 'moderate' | null;
   siteLight: SiteLightChoice;
@@ -179,14 +180,6 @@ export function resolveEffectiveSite(
   const droughtExtraDays = horizon === 'drought' ? 20 : 0;
   const precipFactor = horizon === 'drought' ? 0.7 : 1;
 
-  const tminColdC = activeSlot ? round1(activeSlot.tminColdC + nightsShift + freezeDelta) : null;
-  const tmaxWarmC = activeSlot ? round1(activeSlot.tmaxWarmC + daysShift + heatDelta) : null;
-  const tmeanColdC = activeSlot ? round1(activeSlot.tmeanColdC + nightsShift + freezeDelta) : null;
-  const tmeanWarmC = activeSlot ? round1(activeSlot.tmeanWarmC + daysShift + heatDelta) : null;
-  const precipMm = activeSlot ? Math.round(activeSlot.precipMm * precipFactor) : null;
-  const aridityIndex = activeSlot?.aridityIndex != null ? round1(activeSlot.aridityIndex * precipFactor) : null;
-  const dryMonths = activeSlot ? Math.min(12, activeSlot.dryMonths + (horizon === 'drought' ? 2 : 0)) : null;
-
   // 1-in-10 extremes: use real v0.7.0 per-slot Tier-1 extremes + Today's P10/P90 gap (marked est. for futures).
   // Never fall back to monthly-mean tminColdC/tmaxWarmC or invent gap=0; return null (unknown) if extreme tiles or gaps are absent.
   const tminGap = v07?.extremesTail?.tminP10GapC ?? null;
@@ -195,6 +188,19 @@ export function resolveEffectiveSite(
     ?? (v07?.extremes?.tminExtremeC != null && tminGap !== null ? v07.extremes.tminExtremeC + tminGap : null);
   const todayHeat10 = v07?.extremesTail?.heatDome10yrC
     ?? (v07?.extremes?.tmaxExtremeC != null && tmaxGap !== null ? v07.extremes.tmaxExtremeC + tmaxGap : null);
+
+  const freezeOverrideShift = overrides.freeze10 != null && todayFreeze10 !== null ? round1(overrides.freeze10 - todayFreeze10) : 0;
+  const heatOverrideShift = overrides.heat10 != null && todayHeat10 !== null ? round1(overrides.heat10 - todayHeat10) : 0;
+  const effectiveColdShift = overrides.freeze10 != null ? freezeOverrideShift : nightsShift;
+  const effectiveWarmShift = overrides.heat10 != null ? heatOverrideShift : daysShift;
+
+  const tminColdC = activeSlot ? round1(activeSlot.tminColdC + effectiveColdShift + freezeDelta) : null;
+  const tmaxWarmC = activeSlot ? round1(activeSlot.tmaxWarmC + effectiveWarmShift + heatDelta) : null;
+  const tmeanColdC = activeSlot ? round1(activeSlot.tmeanColdC + effectiveColdShift + freezeDelta) : null;
+  const tmeanWarmC = activeSlot ? round1(activeSlot.tmeanWarmC + effectiveWarmShift + heatDelta) : null;
+  const precipMm = activeSlot ? Math.round(activeSlot.precipMm * precipFactor) : null;
+  const aridityIndex = activeSlot?.aridityIndex != null ? round1(activeSlot.aridityIndex * precipFactor) : null;
+  const dryMonths = activeSlot ? Math.min(12, activeSlot.dryMonths + (horizon === 'drought' ? 2 : 0)) : null;
 
   let freeze10C: number | null = null;
   let heat10C: number | null = null;
@@ -267,7 +273,10 @@ export function resolveEffectiveSite(
   const netPlotM2 = Math.max(1, Math.round(plotM2 * 0.8));
   const baseCdd = overrides.cddDays != null ? overrides.cddDays : (v07?.waterBalance?.cddDays ?? null);
   const cddDays = baseCdd !== null ? Math.round(baseCdd + droughtExtraDays) : null;
-  const tankDays = v07?.soilPlus?.dryDaysReserve != null ? Math.round(v07.soilPlus.dryDaysReserve) : null;
+  const rawTankDays = v07?.soilPlus?.dryDaysReserve ?? null;
+  const tankDays = rawTankDays != null
+    ? Math.max(1, Math.round(rawTankDays * (overrides.drainage === 'sandy' ? 0.65 : overrides.drainage === 'clay' ? 1.15 : 1)))
+    : null;
   const slopeDeg = overrides.slopeDeg != null ? overrides.slopeDeg : (v07?.terrain?.slopeDeg ?? null);
   const siteLight: SiteLightChoice = overrides.siteLight ?? 'full_sun';
 
@@ -542,9 +551,15 @@ export function evaluatePlantVerdict(
     level = elevate(level, 'check');
     reasons.push({ code: 'waterlogged', severity: 'check', detail: 'Requires well-drained soil; site stays waterlogged' });
   }
-  if (eff.clayPct !== null && eff.clayPct >= 35 && taxon.traits.well_drained === true) {
+  if ((eff.drainage === 'clay' || (eff.clayPct !== null && eff.clayPct >= 35)) && taxon.traits.well_drained === true) {
     notes.add('heavy_clay_prep');
-    reasons.push({ code: 'heavy_clay_prep', severity: 'note', detail: `Heavy clay (${eff.clayPct}%) — plant on mound or amend drainage` });
+    reasons.push({
+      code: 'heavy_clay_prep',
+      severity: 'note',
+      detail: eff.clayPct !== null && eff.clayPct >= 35
+        ? `Heavy clay (${eff.clayPct}%) — plant on mound or amend drainage`
+        : 'Heavy clay drainage — plant on mound or amend drainage',
+    });
   }
 
   // 5. Wind (UK records tolerates_wind vs windbreak function)

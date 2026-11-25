@@ -1,9 +1,9 @@
 /** @jsxImportSource preact */
 // Verbatim 1:1 port of mockup-v73.html renderLandPanel (L2613-2802) with all 14 Tune Site controls.
 import type {
-  Drainage,
   InputWind,
   PaletteReport,
+  ReportDrainage,
   ReportHorizonId,
   Room,
   SiteAspect,
@@ -41,6 +41,13 @@ function EditResetBadge({ label, onReset }: { label?: string; onReset: () => voi
 
 function fmtSignedDeltaC(delta: number): string {
   return `${delta >= 0 ? '+' : ''}${fmtNum(delta)} °C`;
+}
+
+function parseOptionalNum(raw: string): number | null {
+  const trimmed = raw.trim();
+  if (trimmed === '') return null;
+  const n = Number(trimmed);
+  return Number.isFinite(n) ? n : null;
 }
 
 export function LandPanel({ rep }: { rep: PaletteReport }) {
@@ -190,7 +197,8 @@ export function LandPanel({ rep }: { rep: PaletteReport }) {
               max="8.8"
               step="0.1"
               value={eff.soilPh ?? 6.8}
-              onInput={(e) => updateOverrides({ soilPh: Number((e.target as HTMLInputElement).value) })}
+              onInput={(e) => { const n = parseOptionalNum((e.target as HTMLInputElement).value); if (n !== null) updateOverrides({ soilPh: n }); }}
+              onChange={(e) => { const n = parseOptionalNum((e.target as HTMLInputElement).value); if (n !== null) updateOverrides({ soilPh: n }); }}
             />
           </div>
 
@@ -205,7 +213,7 @@ export function LandPanel({ rep }: { rep: PaletteReport }) {
               value={ov.drainage ?? ''}
               onChange={(e) => {
                 const v = (e.target as HTMLSelectElement).value;
-                updateOverrides({ drainage: v ? (v as Drainage) : null });
+                updateOverrides({ drainage: v ? (v as ReportDrainage) : null });
               }}
             >
               <option value="sandy">{T('ns.land.drainSandy')}</option>
@@ -227,7 +235,8 @@ export function LandPanel({ rep }: { rep: PaletteReport }) {
               max="60"
               step="5"
               value={eff.stonesPct ?? 0}
-              onInput={(e) => updateOverrides({ stonesPct: Number((e.target as HTMLInputElement).value) })}
+              onInput={(e) => { const n = parseOptionalNum((e.target as HTMLInputElement).value); if (n !== null) updateOverrides({ stonesPct: n }); }}
+              onChange={(e) => { const n = parseOptionalNum((e.target as HTMLInputElement).value); if (n !== null) updateOverrides({ stonesPct: n }); }}
             />
           </div>
 
@@ -246,10 +255,8 @@ export function LandPanel({ rep }: { rep: PaletteReport }) {
               min="-40"
               max="20"
               value={eff.freeze10C ?? ''}
-              onInput={(e) => {
-                const v = (e.target as HTMLInputElement).value;
-                updateOverrides({ freeze10: v === '' ? null : Number(v) });
-              }}
+              onInput={(e) => updateOverrides({ freeze10: parseOptionalNum((e.target as HTMLInputElement).value) })}
+              onChange={(e) => updateOverrides({ freeze10: parseOptionalNum((e.target as HTMLInputElement).value) })}
             />
           </div>
 
@@ -266,10 +273,8 @@ export function LandPanel({ rep }: { rep: PaletteReport }) {
               min="15"
               max="55"
               value={eff.heat10C ?? ''}
-              onInput={(e) => {
-                const v = (e.target as HTMLInputElement).value;
-                updateOverrides({ heat10: v === '' ? null : Number(v) });
-              }}
+              onInput={(e) => updateOverrides({ heat10: parseOptionalNum((e.target as HTMLInputElement).value) })}
+              onChange={(e) => updateOverrides({ heat10: parseOptionalNum((e.target as HTMLInputElement).value) })}
             />
           </div>
 
@@ -302,10 +307,8 @@ export function LandPanel({ rep }: { rep: PaletteReport }) {
               min="5"
               max="150"
               value={eff.cddDays ?? ''}
-              onInput={(e) => {
-                const v = (e.target as HTMLInputElement).value;
-                updateOverrides({ cddDays: v === '' ? null : Number(v) });
-              }}
+              onInput={(e) => updateOverrides({ cddDays: parseOptionalNum((e.target as HTMLInputElement).value) })}
+              onChange={(e) => updateOverrides({ cddDays: parseOptionalNum((e.target as HTMLInputElement).value) })}
             />
           </div>
 
@@ -366,10 +369,8 @@ export function LandPanel({ rep }: { rep: PaletteReport }) {
               min="0"
               max="4000"
               value={eff.elevEff != null ? Math.round(eff.elevEff) : ''}
-              onInput={(e) => {
-                const v = (e.target as HTMLInputElement).value;
-                updateOverrides({ elevM: v === '' ? null : Number(v) });
-              }}
+              onInput={(e) => updateOverrides({ elevM: parseOptionalNum((e.target as HTMLInputElement).value) })}
+              onChange={(e) => updateOverrides({ elevM: parseOptionalNum((e.target as HTMLInputElement).value) })}
             />
           </div>
 
@@ -386,10 +387,8 @@ export function LandPanel({ rep }: { rep: PaletteReport }) {
               min="0"
               max="45"
               value={eff.slopeDeg != null ? Math.round(eff.slopeDeg) : ''}
-              onInput={(e) => {
-                const v = (e.target as HTMLInputElement).value;
-                updateOverrides({ slopeDeg: v === '' ? null : Number(v) });
-              }}
+              onInput={(e) => updateOverrides({ slopeDeg: parseOptionalNum((e.target as HTMLInputElement).value) })}
+              onChange={(e) => updateOverrides({ slopeDeg: parseOptionalNum((e.target as HTMLInputElement).value) })}
             />
           </div>
 

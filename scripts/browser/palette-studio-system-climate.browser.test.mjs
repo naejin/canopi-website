@@ -61,3 +61,88 @@ test('Atlas Like-for-like Swaps and site-scoped Bloom & Fruit Calendar @real-dat
   assert.ok(calInfo.yrCells > 0, 'rounded yr-cell pill tiles render');
   assert.deepEqual(await pageErrorsOf(page), [], 'zero console/page errors across Swaps + Calendar');
 });
+
+test('Live regressions: Header dropdown z-index, anchored overflow menu, and live Guild Pulse tuning @real-data', async () => {
+  const page = await openSuggestedPalette({ width: 1440, theme: 'light' });
+
+  // 1. Header language dropdown sits above sticky .studio-bar (elementFromPoint hits .lang-menu, not .studio-bar)
+  await page.click('.lang-menu summary');
+  const langAboveBar = await page.evaluate(() => {
+    const list = document.querySelector('.lang-menu ul, .lang-list');
+    const bar = document.querySelector('.studio-bar');
+    if (!list || !bar) return { ok: false, reason: 'missing element' };
+    const lr = list.getBoundingClientRect();
+    const br = bar.getBoundingClientRect();
+    const hit = document.elementFromPoint(lr.left + lr.width / 2, Math.max(lr.top + 6, br.top + 10));
+    return { ok: !!hit?.closest('.lang-menu'), hitClass: hit?.className ?? '' };
+  });
+  assert.ok(langAboveBar.ok, `Header language dropdown must sit above .studio-bar (hit: ${langAboveBar.hitClass})`);
+  await page.click('.lang-menu summary');
+
+  // 2. Overflow menu (...) is anchored directly beneath its trigger button (not pinned to window right edge)
+  await page.click('.more-menu-wrap button');
+  assert.ok(await has(page, '.more-menu[role="menu"]', 4_000), 'overflow menu opens');
+  const menuAnchor = await page.evaluate(() => {
+    const btn = document.querySelector('.more-menu-wrap button').getBoundingClientRect();
+    const menu = document.querySelector('.more-menu').getBoundingClientRect();
+    return {
+      rightDiff: Math.abs(menu.right - btn.right),
+      belowTrigger: menu.top >= btn.bottom - 1 && menu.top <= btn.bottom + 16,
+      position: getComputedStyle(document.querySelector('.more-menu')).position,
+    };
+  });
+  assert.equal(menuAnchor.position, 'absolute', 'overflow menu uses position: absolute inside .more-menu-wrap');
+  assert.ok(menuAnchor.rightDiff <= 16, `overflow menu right edge aligns with trigger (diff ${menuAnchor.rightDiff}px)`);
+  assert.ok(menuAnchor.belowTrigger, 'overflow menu opens directly beneath trigger button');
+  await page.keyboard.press('Escape');
+  assert.ok(await page.evaluate(() => !document.querySelector('.more-menu')), 'Escape closes overflow menu');
+
+  // 3. Tune site controls update Guild Pulse headline live (freeze, pH, dry spell)
+  await page.evaluate(() => {
+    const details = document.querySelector('.tune-details');
+    if (details) details.open = true;
+  });
+  const parseFits = async () => page.evaluate(() => {
+    const txt = document.querySelector('.pulse-h1')?.textContent?.trim() ?? '';
+    const m = txt.match(/^(\d+)\s+of\s+(\d+)/);
+    return { txt, fits: m ? Number(m[1]) : -1, total: m ? Number(m[2]) : -1 };
+  });
+  const before = await parseFits();
+  assert.ok(before.fits > 0, `starter guild starts with thriving plants (${before.txt})`);
+
+  // Extreme pH (4.5) drops thriving count live
+  await page.evaluate(() => {
+    const el = document.getElementById('ph-input');
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, '4.5');
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  const afterPh = await parseFits();
+  assert.ok(afterPh.fits < before.fits, `tuning pH to 4.5 lowers Guild Pulse count (${before.txt} -> ${afterPh.txt})`);
+
+  // Reset pH -> restores thriving count
+  await page.click('.tune-details .edit-reset');
+  const afterPhReset = await parseFits();
+  assert.equal(afterPhReset.fits, before.fits, `resetting pH restores Guild Pulse count (${afterPhReset.txt})`);
+
+  // Extreme freeze (-30 C) drops thriving count live
+  await page.evaluate(() => {
+    const el = document.getElementById('freeze-input');
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, '-30');
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  const afterFreeze = await parseFits();
+  assert.ok(afterFreeze.fits < before.fits, `tuning freeze to -30 C lowers Guild Pulse count (${before.txt} -> ${afterFreeze.txt})`);
+
+  // Reset freeze, then test extreme dry spell (120 d)
+  await page.click('.tune-details .edit-reset');
+  await page.evaluate(() => {
+    const el = document.getElementById('cdd-input');
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, '120');
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  const afterCdd = await parseFits();
+  assert.ok(afterCdd.fits < before.fits, `tuning dry spell to 120 d lowers Guild Pulse count (${before.txt} -> ${afterCdd.txt})`);
+
+  assert.ok((await horizontalOverflow(page)) <= 1, 'zero horizontal overflow after live tuning & menu checks');
+  assert.deepEqual(await pageErrorsOf(page), [], 'zero console/page errors during live regression checks');
+});

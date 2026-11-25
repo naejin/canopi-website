@@ -319,6 +319,11 @@ export async function pickCoordinates(
     const country = lookup?.regions?.isoA2 ?? fallbackCountry ?? null;
 
     batch(() => {
+      const prevOv = nsOverrides.peek();
+      nsOverrides.value = {
+        ...(prevOv.room !== undefined ? { room: prevOv.room } : {}),
+        ...(prevOv.plotM2 !== undefined ? { plotM2: prevOv.plotM2 } : {}),
+      };
       store.location.value = { lat, lon, source: 'search', label, placeLevel: true, lookup };
       store.climate.value = zone;
       if (country) store.country.value = { code: country, source: 'location' };

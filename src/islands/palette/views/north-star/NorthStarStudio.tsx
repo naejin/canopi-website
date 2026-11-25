@@ -1,7 +1,7 @@
 /** @jsxImportSource preact */
 // Verbatim 1:1 port of mockup-v73.html renderStudioBar (L2575) + render shell (L4433-4435).
 // Preserves markFirstView() (ct:first-view) for nightly palette-timing.mjs.
-import { useEffect } from 'preact/hooks';
+import { useEffect, useRef } from 'preact/hooks';
 import type { ReportHorizonId } from '../../../../lib/palette/index.ts';
 import { REPORT_SCENARIOS } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
@@ -25,6 +25,8 @@ import {
 } from './ns-state.ts';
 
 export function NorthStarStudio() {
+  const moreWrapRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     startNsWatchers();
     markFirstView();
@@ -36,6 +38,27 @@ export function NorthStarStudio() {
   const landOpen = nsLandOpen.value;
   const moreOpen = nsMoreOpen.value;
   const toast = nsToast.value;
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        nsMoreOpen.value = false;
+        moreWrapRef.current?.querySelector('button')?.focus();
+      }
+    }
+    function onPointer(e: MouseEvent) {
+      if (moreWrapRef.current && !moreWrapRef.current.contains(e.target as Node)) {
+        nsMoreOpen.value = false;
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onPointer);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onPointer);
+    };
+  }, [moreOpen]);
 
   const siteLabel = store.location.value?.label ?? store.climate.value ?? T('ns.land.title');
   const shortName = shortSiteName(siteLabel) || siteLabel;
@@ -107,7 +130,7 @@ export function NorthStarStudio() {
             >
               + {T('ns.addPlant')}
             </button>
-            <div class="more-menu-wrap">
+            <div class="more-menu-wrap" ref={moreWrapRef}>
               <button
                 class="bar-btn"
                 type="button"

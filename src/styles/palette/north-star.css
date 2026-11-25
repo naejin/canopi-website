@@ -11,7 +11,7 @@
 .ct-load-failed { max-width: 720px; margin: 32px auto; padding: 18px 20px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface); }
 .ns-err { color: var(--danger); font-size: 13px; margin: 6px 0 0; }
 .more-menu-wrap { position: relative; }
-.more-menu { position: absolute; right: 0; top: calc(100% + 6px); min-width: 210px; z-index: 45; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius); box-shadow: var(--shadow); padding: 4px; display: grid; gap: 2px; }
+.more-menu { position: absolute; right: 0; top: calc(100% + 6px); width: min(260px, calc(100vw - 24px)); z-index: 18; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius); box-shadow: var(--shadow); padding: 6px; display: grid; gap: 2px; }
 .more-menu button { width: 100%; text-align: left; min-height: 44px; padding: 8px 12px; border: 0; border-radius: 5px; background: transparent; color: var(--text); font-size: 14px; font-weight: 600; cursor: pointer; }
 .more-menu button:hover { background: var(--surface-alt); }
 .plant-thumb-fb { display: grid; place-items: center; font-size: 12px; font-weight: 600; color: var(--text-muted); }
@@ -161,7 +161,7 @@
 
 /* ---------- Sticky Studio Bar ---------- */
 .studio-bar {
-  position: sticky; top: 0; z-index: 30;
+  position: sticky; top: 0; z-index: 15;
   background: color-mix(in srgb, var(--bg) 95%, transparent);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
@@ -341,7 +341,7 @@ input[type="range"] { accent-color: var(--accent); width: 100%; min-height: 44px
   font-size: 14px; min-width: 0;
 }
 .job-jump {
-  position: sticky; top: 58px; z-index: 15;
+  position: sticky; top: 58px; z-index: 10;
   display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0;
   background: var(--bg); border-bottom: 1px solid var(--border);
 }
@@ -552,17 +552,6 @@ input[type="range"] { accent-color: var(--accent); width: 100%; min-height: 44px
   gap: 10px; align-items: center; padding: 10px;
   border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg);
 }
-.more-menu {
-  position: fixed; right: 16px; top: 64px; z-index: 55;
-  width: min(280px, calc(100vw - 32px)); padding: 8px;
-  background: var(--surface); border: 1px solid var(--border-strong);
-  border-radius: var(--radius); box-shadow: var(--shadow); display: grid; gap: 4px;
-}
-.more-menu button {
-  width: 100%; min-height: 44px; padding: 0 12px; text-align: left;
-  border: 0; border-radius: 5px; background: none; font-size: 14px; font-weight: 600;
-}
-.more-menu button:hover { background: var(--surface-alt); }
 
 @media (max-width: 639px) {
   .drawer { width: 100vw; height: 100dvh; border-left: 0; }
