@@ -64,14 +64,28 @@ test('Atlas Like-for-like Swaps and site-scoped Bloom & Fruit Calendar @real-dat
   assert.ok(!PFAF_PATTERN.test(swapsInfo.text), 'zero PFAF in Swaps');
   await closeDrawerWithEscape(page);
 
-  // Verify Bloom & Fruit Calendar renders on Design Board with 12 month headers and rounded yr-cell tiles
+  // Verify A1 Bloom & Fruit Calendar semantic table, ribbons, glyphs, Season Summary, and A1b Mini-Year Ribbon
   assert.ok(await has(page, '.year-table', 6_000), 'site-scoped Bloom & Fruit calendar renders');
   const calInfo = await page.evaluate(() => ({
-    monthHeaders: document.querySelectorAll('.year-table thead th').length,
+    monthHeaders: document.querySelectorAll('.year-table thead th[scope="col"]').length,
+    colCount: document.querySelectorAll('.year-table colgroup col').length,
+    summaryRow: !!document.querySelector('.year-table tbody tr.yr-summary-row'),
+    thisMonthTag: document.querySelector('.year-table thead th[aria-current="date"] .yr-now-tag')?.textContent?.trim() ?? '',
     yrCells: document.querySelectorAll('.year-table .yr-cell').length,
+    ribbons: document.querySelectorAll('.year-table .yr-ribbon').length,
+    glyphs: document.querySelectorAll('.year-card svg.glyph').length,
+    miniRibbons: document.querySelectorAll('.plant-row .mini-year .mini-ribbon').length,
+    oldMiniDots: document.querySelectorAll('.plant-row .mini-dot').length,
   }));
-  assert.ok(calInfo.monthHeaders >= 13, `calendar table shows plant column + 12 months (got ${calInfo.monthHeaders})`);
-  assert.ok(calInfo.yrCells > 0, 'rounded yr-cell pill tiles render');
+  assert.equal(calInfo.monthHeaders, 13, `calendar table shows species th + 12 month th (got ${calInfo.monthHeaders})`);
+  assert.equal(calInfo.colCount, 13, 'calendar colgroup pins 13 fixed columns');
+  assert.ok(calInfo.summaryRow, 'Season summary row renders in calendar');
+  assert.ok(calInfo.thisMonthTag.length > 0, '"This month" tag renders in current month column header');
+  assert.ok(calInfo.yrCells > 0, 'calendar month cells render');
+  assert.ok(calInfo.ribbons > 0, 'seamless seasonal ribbons render');
+  assert.ok(calInfo.glyphs >= 3, `shared botanical <Glyph> SVGs render in calendar legend and peaks (got ${calInfo.glyphs})`);
+  assert.ok(calInfo.miniRibbons > 0, 'A1b mini-year seasonal ribbons render on plant rows');
+  assert.equal(calInfo.oldMiniDots, 0, 'legacy raw mini-dot circles are removed');
   assert.deepEqual(await pageErrorsOf(page), [], 'zero console/page errors across Swaps + Calendar');
 });
 

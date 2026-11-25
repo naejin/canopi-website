@@ -3395,7 +3395,6 @@
   "consortium.ns.cal.both": "Floraison et fructification",
   "consortium.ns.cal.monthsUnknown": "Mois inconnus",
   "consortium.ns.cal.speciesCol": "Espèce",
-  "consortium.ns.cal.mildWinterLegend": "● Colonnes teintées = fenêtre de culture d’hiver doux",
   "consortium.ns.atlas.shiftHead": "Évolution climatique · {scen}",
   "consortium.ns.atlas.pillarsHead": "Robustesse agroécologique (4 piliers)",
   "consortium.ns.atlas.pillarsStrong": "{n} piliers sur 4 solides",
@@ -3515,5 +3514,14 @@
   "consortium.ns.plan.ltOneYr": "<1 an",
   "consortium.ns.pulse.interactions": "interaction(s) de guilde",
   "consortium.ns.picker.kickerLive": "{n} espèces · évaluées pour votre site",
+  "consortium.ns.cal.sow": "Semis",
+  "consortium.ns.cal.thisMonth": "Ce mois-ci",
+  "consortium.ns.cal.seasonSummary": "Résumé saisonnier",
+  "consortium.ns.cal.bloomUnknown": "Floraison : inconnue",
+  "consortium.ns.cal.fruitUnknown": "Fructification : inconnue",
+  "consortium.ns.cal.bloomFruitUnknown": "Floraison et fructification : inconnues",
+  "consortium.ns.cal.speciesUnknown": "one: # espèce inconnue | other: # espèces inconnues",
+  "consortium.ns.cal.mildWinterWindow": "Fenêtre d’hiver doux ({months})",
+  "consortium.ns.cal.scrollHint": "Faites défiler horizontalement pour voir les 12 mois →",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

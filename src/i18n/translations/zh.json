@@ -3395,7 +3395,6 @@
   "consortium.ns.cal.both": "开花与结果",
   "consortium.ns.cal.monthsUnknown": "月份未知",
   "consortium.ns.cal.speciesCol": "物种",
-  "consortium.ns.cal.mildWinterLegend": "● 着色列 = 暖冬生长期",
   "consortium.ns.atlas.shiftHead": "未来气候变化 · {scen}",
   "consortium.ns.atlas.pillarsHead": "四支柱农业生态稳健性",
   "consortium.ns.atlas.pillarsStrong": "4 项支柱中 {n} 项强健",
@@ -3515,5 +3514,14 @@
   "consortium.ns.plan.ltOneYr": "<1 年",
   "consortium.ns.pulse.interactions": "项群落互作",
   "consortium.ns.picker.kickerLive": "{n} 个物种 · 按你的场地实时评分",
+  "consortium.ns.cal.sow": "播种",
+  "consortium.ns.cal.thisMonth": "本月",
+  "consortium.ns.cal.seasonSummary": "季节汇总",
+  "consortium.ns.cal.bloomUnknown": "花期：未知",
+  "consortium.ns.cal.fruitUnknown": "果期：未知",
+  "consortium.ns.cal.bloomFruitUnknown": "花期与果期：未知",
+  "consortium.ns.cal.speciesUnknown": "other: # 种未知",
+  "consortium.ns.cal.mildWinterWindow": "暖冬生长期（{months}）",
+  "consortium.ns.cal.scrollHint": "横向滚动查看全部 12 个月 →",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

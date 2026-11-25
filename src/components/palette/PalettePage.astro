@@ -11,6 +11,7 @@ import Base from '../../layouts/Base.astro';
 import Header from '../Header.astro';
 import Footer from '../Footer.astro';
 import DonateDialog from '../DonateDialog.astro';
+import Glyph from '../Glyph.astro';
 import PageData from '../PageData.astro';
 import { t, localizedUrl, consortiumPath, defaultLocale, type Locale } from '../../i18n/utils';
 import en from '../../i18n/translations/en.json';
@@ -161,11 +162,7 @@ setStrings(strings, lang);
         <div class="ct-loading-shell">
           <div class="ct-loading-card">
             <span class="ct-loading-mark" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 21V11" />
-                <path d="M12 11C12 6.5 15.5 3.5 20 3.5c0 4.5-3 8-8 7.5Z" />
-                <path d="M12 14C12 10 9 7.5 4.5 7.5c0 4 2.5 7 7.5 6.5Z" />
-              </svg>
+              <Glyph name="sow" size={22} />
             </span>
             <p class="ct-loading-title">{tr('title')}</p>
             <p class="status-line">{tr('loadingTool')}</p>

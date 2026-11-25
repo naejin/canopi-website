@@ -41,6 +41,20 @@
   .ct .ct-print-waves, .ct .ct-print-cal-list { margin: 4pt 0 0; padding-left: 14pt; font-size: 9pt; line-height: 1.45; }
   .ct .ct-print-cal-list { columns: 2; column-gap: 16pt; }
   .ct .ct-print-foot { margin-top: 10pt; font-size: 8.5pt; color: var(--text-muted); word-break: break-all; }
+  /* A1 Bloom & Fruit Calendar black-only print legibility (Wave 1). */
+  .glyph, .glyph-tone-bloom, .glyph-tone-fruit, .yr-c-bloom, .yr-c-fruit { color: #000000 !important; }
+  .yr-ribbon.bloom {
+    background: repeating-linear-gradient(-45deg, #000000 0 2px, #FFFFFF 2px 4px) !important;
+    border: 1px solid #000000;
+  }
+  .yr-ribbon.fruit { background: #000000 !important; }
+  .yr-ribbon.both {
+    background: linear-gradient(to bottom, #666666 0 3px, #FFFFFF 3px 4px, #000000 4px 7px) !important;
+    border-top: 1px solid #000000;
+  }
+  .yr-sum-bar.bloom { background: #FFFFFF !important; border: 1.5px solid #000000; }
+  .yr-sum-bar.fruit { background: #000000 !important; }
+  .cal-scroll-hint { display: none !important; }
 }
 
 /* The side drawing (views/SideView.tsx SideDrawing), on paper only since PP-B commit 0a' deleted the

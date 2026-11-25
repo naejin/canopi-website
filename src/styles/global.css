@@ -25,6 +25,16 @@ button { cursor: pointer; }
 .muted { color: var(--text-muted); }
 .small { font-size: 14px; }
 
+/* Shared botanical & status glyphs (src/lib/glyphs.ts). */
+.glyph {
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: -0.18em;
+  color: inherit;
+}
+.glyph-tone-bloom { color: var(--accent); }
+.glyph-tone-fruit { color: var(--plant-green); }
+
 /* The paper grain from the current site: one fixed SVG noise layer. */
 .grain::after {
   content: '';

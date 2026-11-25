@@ -3395,7 +3395,6 @@
   "consortium.ns.cal.both": "開花・結実",
   "consortium.ns.cal.monthsUnknown": "月不明",
   "consortium.ns.cal.speciesCol": "種",
-  "consortium.ns.cal.mildWinterLegend": "● 色付き列 = 暖冬生育期",
   "consortium.ns.atlas.shiftHead": "将来の気候変化 · {scen}",
   "consortium.ns.atlas.pillarsHead": "4本柱のアグロエコロジー堅牢性",
   "consortium.ns.atlas.pillarsStrong": "4本柱中{n}本が良好",
@@ -3515,5 +3514,14 @@
   "consortium.ns.plan.ltOneYr": "1年未満",
   "consortium.ns.pulse.interactions": "件の相互作用",
   "consortium.ns.picker.kickerLive": "{n} 種 · 敷地条件でリアルタイム評価",
+  "consortium.ns.cal.sow": "種まき",
+  "consortium.ns.cal.thisMonth": "今月",
+  "consortium.ns.cal.seasonSummary": "季節のまとめ",
+  "consortium.ns.cal.bloomUnknown": "開花：不明",
+  "consortium.ns.cal.fruitUnknown": "結実：不明",
+  "consortium.ns.cal.bloomFruitUnknown": "開花・結実：不明",
+  "consortium.ns.cal.speciesUnknown": "other: #種は不明",
+  "consortium.ns.cal.mildWinterWindow": "冬の生育期（{months}）",
+  "consortium.ns.cal.scrollHint": "横にスクロールして12か月を表示 →",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

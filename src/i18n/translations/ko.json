@@ -3395,7 +3395,6 @@
   "consortium.ns.cal.both": "개화 및 결실",
   "consortium.ns.cal.monthsUnknown": "월 미상",
   "consortium.ns.cal.speciesCol": "종",
-  "consortium.ns.cal.mildWinterLegend": "● 음영 열 = 온화한 겨울 생육기",
   "consortium.ns.atlas.shiftHead": "미래 기후 변화 · {scen}",
   "consortium.ns.atlas.pillarsHead": "4대 농생태 견고성",
   "consortium.ns.atlas.pillarsStrong": "4개 기둥 중 {n}개 양호",
@@ -3515,5 +3514,14 @@
   "consortium.ns.plan.ltOneYr": "1년 미만",
   "consortium.ns.pulse.interactions": "건의 길드 상호작용",
   "consortium.ns.picker.kickerLive": "{n}종 · 내 부지 기준 실시간 평가",
+  "consortium.ns.cal.sow": "파종",
+  "consortium.ns.cal.thisMonth": "이번 달",
+  "consortium.ns.cal.seasonSummary": "계절 요약",
+  "consortium.ns.cal.bloomUnknown": "개화: 미상",
+  "consortium.ns.cal.fruitUnknown": "결실: 미상",
+  "consortium.ns.cal.bloomFruitUnknown": "개화 및 결실: 미상",
+  "consortium.ns.cal.speciesUnknown": "other: #종 미상",
+  "consortium.ns.cal.mildWinterWindow": "겨울 생육기 ({months})",
+  "consortium.ns.cal.scrollHint": "옆으로 스크롤하여 12개월 모두 보기 →",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

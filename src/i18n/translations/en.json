@@ -3395,7 +3395,6 @@
   "consortium.ns.cal.both": "Bloom and ripening / fruit",
   "consortium.ns.cal.monthsUnknown": "Months unknown",
   "consortium.ns.cal.speciesCol": "Species",
-  "consortium.ns.cal.mildWinterLegend": "● Tinted columns = mild-winter growing window",
   "consortium.ns.atlas.shiftHead": "Future Climate Shift · {scen}",
   "consortium.ns.atlas.pillarsHead": "Four-pillar agroecological robustness",
   "consortium.ns.atlas.pillarsStrong": "{n} of 4 pillars strong",
@@ -3515,5 +3514,14 @@
   "consortium.ns.plan.ltOneYr": "<1 yr",
   "consortium.ns.pulse.interactions": "guild interaction(s)",
   "consortium.ns.picker.kickerLive": "{n} species · live-scored to your site",
+  "consortium.ns.cal.sow": "Sow",
+  "consortium.ns.cal.thisMonth": "This month",
+  "consortium.ns.cal.seasonSummary": "Season summary",
+  "consortium.ns.cal.bloomUnknown": "Bloom: unknown",
+  "consortium.ns.cal.fruitUnknown": "Fruit: unknown",
+  "consortium.ns.cal.bloomFruitUnknown": "Bloom & fruit: unknown",
+  "consortium.ns.cal.speciesUnknown": "one: # species unknown | other: # species unknown",
+  "consortium.ns.cal.mildWinterWindow": "Mild-winter window ({months})",
+  "consortium.ns.cal.scrollHint": "Scroll sideways for all 12 months →",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

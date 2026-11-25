@@ -3395,7 +3395,6 @@
   "consortium.ns.cal.both": "Blüte und Fruchtreife",
   "consortium.ns.cal.monthsUnknown": "Monate unbekannt",
   "consortium.ns.cal.speciesCol": "Art",
-  "consortium.ns.cal.mildWinterLegend": "● Getönte Spalten = mildes Winter-Wachstumsfenster",
   "consortium.ns.atlas.shiftHead": "Klimawandel-Ausblick · {scen}",
   "consortium.ns.atlas.pillarsHead": "Vier-Säulen-Robustheit",
   "consortium.ns.atlas.pillarsStrong": "{n} von 4 Säulen stark",
@@ -3515,5 +3514,14 @@
   "consortium.ns.plan.ltOneYr": "<1 J.",
   "consortium.ns.pulse.interactions": "Gilden-Interaktion(en)",
   "consortium.ns.picker.kickerLive": "{n} Arten · live für deinen Standort bewertet",
+  "consortium.ns.cal.sow": "Aussaat",
+  "consortium.ns.cal.thisMonth": "Dieser Monat",
+  "consortium.ns.cal.seasonSummary": "Saisonübersicht",
+  "consortium.ns.cal.bloomUnknown": "Blüte: unbekannt",
+  "consortium.ns.cal.fruitUnknown": "Frucht: unbekannt",
+  "consortium.ns.cal.bloomFruitUnknown": "Blüte & Frucht: unbekannt",
+  "consortium.ns.cal.speciesUnknown": "one: # Art unbekannt | other: # Arten unbekannt",
+  "consortium.ns.cal.mildWinterWindow": "Mildwinter-Fenster ({months})",
+  "consortium.ns.cal.scrollHint": "Seitlich scrollen für alle 12 Monate →",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

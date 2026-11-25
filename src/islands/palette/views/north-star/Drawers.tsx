@@ -25,7 +25,9 @@ import {
 } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
+import { Glyph } from '../kit/Glyph.tsx';
 import { PlantThumb, ScaleRootSvg, WalterLiethSvg } from './GuildVisuals.tsx';
+import { computeTrackCaps, localizedMonthLabels, MiniYearRibbon } from './PhenologyRibbon.tsx';
 import {
   doyToDateLabel,
   fmtNum,
@@ -573,6 +575,7 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
             const pollWarn = pollinationShortWarn(p);
             const hMax = p.traits.height_m?.max ?? null;
             const guestZ = guestZones.get(p.id);
+            const pTrack = rep.growingYear.tracks.get(p.id);
             return (
               <div key={p.id} class="picker-row-v7">
                 <button
@@ -594,6 +597,9 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
                       {tox && <span class={`badge ${tox.cls}`}>{tox.text}</span>}
                       {pollWarn && <span class="badge badge-warn">{pollWarn}</span>}
                     </div>
+                    {pTrack && (pTrack.bloom.length > 0 || pTrack.fruiting.length > 0) && (
+                      <MiniYearRibbon bloom={pTrack.bloom} fruiting={pTrack.fruiting} compact />
+                    )}
                   </div>
                 </button>
                 <button
@@ -1045,23 +1051,38 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
     ? T('ns.dossier.scaleRoom', { m: `${fmtNum(rep.eff.roomLimitM, 0)} m` })
     : '';
 
-  const renderPhenoRow = (label: string, mSet: Set<string>, k: 'sow' | 'bloom' | 'fruit') => (
-    <>
-      <div class="pheno-lbl">{label}</div>
-      {mSet.size === 0 ? (
-        <div style={{ gridColumn: '2 / 14' }} class="small muted">{T('ns.notRecorded')}</div>
-      ) : (
-        MONTHS.map((m) => {
-          const on = mSet.has(m);
-          return (
-            <div key={m} class="pheno-bar" data-k={on ? k : 'none'} title={`${m}${on ? `: ${label}` : ''}`}>
-              <span class="sr-only">{m}: {on ? label : '—'}</span>
-            </div>
-          );
-        })
-      )}
-    </>
-  );
+  const monthLabels = localizedMonthLabels();
+  const isSouth = rep.eff.hemisphere === 'S';
+  const mwRangeText = isSouth
+    ? `${monthLabels[4]}–${monthLabels[7]}`
+    : `${monthLabels[10]}–${monthLabels[1]}`;
+
+  const renderPhenoRow = (label: string, mSet: Set<string>, k: 'sow' | 'bloom' | 'fruit') => {
+    const active = MONTHS.map((m) => mSet.has(m));
+    const caps = computeTrackCaps(active);
+    const toneCls = k === 'fruit' ? 'yr-c-fruit' : 'yr-c-bloom';
+    return (
+      <>
+        <div class="pheno-lbl">
+          <Glyph name={k} size={14} class={toneCls} /> {label}
+        </div>
+        {mSet.size === 0 ? (
+          <div style={{ gridColumn: '2 / 14', paddingLeft: '6px' }} class="small muted">{T('ns.unknown')}</div>
+        ) : (
+          MONTHS.map((m, i) => {
+            const on = active[i];
+            const barCls = on ? `pheno-bar ${caps[i]}`.trim() : 'pheno-bar';
+            return (
+              <div key={m} class="pheno-bar-cell" title={`${monthLabels[i]}${on ? `: ${label}` : ''}`}>
+                <div class={barCls} data-k={on ? k : 'none'} />
+                <span class="sr-only">{monthLabels[i]}: {on ? label : '—'}</span>
+              </div>
+            );
+          })
+        )}
+      </>
+    );
+  };
 
   return (
     <div class="drawer-body">
@@ -1275,15 +1296,20 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
       <div class="viz-card">
         <div class="viz-head">
           <span>{T('ns.dossier.phenoTitle', { site: siteShort })}</span>
-          <span class="small muted">{rep.eff.isMildWinter ? '●' : '❄'}</span>
+          {rep.eff.isMildWinter && (
+            <span class="cal-mw-note">
+              <span class="cal-mw-swatch" aria-hidden="true" />
+              {T('ns.cal.mildWinterWindow', { months: mwRangeText })}
+            </span>
+          )}
         </div>
         <div class="pheno-grid">
           <div />
           {MONTHS.map((m, i) => {
             const isMw = rep.eff.isMildWinter && winMonths.has(i + 1);
-            return <div key={m} class="pheno-m" data-mw={isMw ? 'true' : 'false'}>{m[0]}{isMw ? <><br />●</> : null}</div>;
+            return <div key={m} class="pheno-m" data-mw={isMw ? 'true' : 'false'}>{monthLabels[i]}</div>;
           })}
-          {renderPhenoRow('Sow', sowSet, 'sow')}
+          {renderPhenoRow(T('ns.cal.sow'), sowSet, 'sow')}
           {renderPhenoRow(T('ns.cal.bloom'), blmSet, 'bloom')}
           {renderPhenoRow(T('ns.cal.fruit'), frtSet, 'fruit')}
         </div>

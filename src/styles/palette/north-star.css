@@ -278,7 +278,7 @@ input[type="range"] { accent-color: var(--accent); width: 100%; min-height: 44px
 }
 
 /* ---------- Main Canvas & Pulse ---------- */
-.studio-main { display: grid; gap: 8px; min-width: 0; }
+.studio-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-width: 0; }
 .pulse-card {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: 10px; padding: 10px 14px; display: grid; gap: 6px; min-width: 0;
@@ -398,13 +398,55 @@ input[type="range"] { accent-color: var(--accent); width: 100%; min-height: 44px
 .badge-warn { background: var(--pal-warn-bg); border-color: var(--accent); color: var(--pal-warn); }
 .badge-bad { background: var(--pal-bad-bg); border-color: var(--pal-bad); color: var(--pal-bad); }
 .plant-right { display: flex; align-items: center; gap: 12px; }
-.mini-year { display: inline-flex; gap: 2px; align-items: center; }
-.mini-dot {
-  width: 7px; height: 7px; border-radius: 50%; background: var(--border);
+/* A1b. Plant-row Mini-Year Seasonal Ribbon (dual-subtrack + quiet range label) */
+.mini-year {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
-.mini-dot[data-kind="bloom"] { background: var(--pal-bloom); }
-.mini-dot[data-kind="fruit"] { background: var(--pal-fruit); }
-.mini-dot[data-kind="both"] { background: var(--text); }
+.mini-year-compact { margin-top: 6px; gap: 6px; }
+.mini-ribbon {
+  display: grid;
+  grid-template-columns: repeat(12, 7px);
+  gap: 0;
+  padding: 2px 0;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.mini-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  height: 7px;
+}
+.mini-trk {
+  height: 3px;
+  background: transparent;
+}
+.mini-trk.bloom { background: var(--accent); }
+.mini-trk.fruit { background: var(--plant-green); }
+.mini-trk.cap-l { border-radius: 1.5px 0 0 1.5px; }
+.mini-trk.cap-r { border-radius: 0 1.5px 1.5px 0; }
+.mini-trk.cap-lr { border-radius: 1.5px; }
+.mini-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.mini-seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.mini-unrec {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
 .rm-btn {
   width: 44px; height: 44px; display: grid; place-items: center;
   border: 1px solid transparent; border-radius: var(--radius);
@@ -452,22 +494,152 @@ input[type="range"] { accent-color: var(--accent); width: 100%; min-height: 44px
 .photo-card img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: var(--surface-alt); }
 .photo-card-body { padding: 10px; display: grid; gap: 4px; }
 
-/* ---------- Growing Year Calendar ---------- */
+/* ---------- A1. Bloom & Fruit Calendar ---------- */
 .year-card {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: 10px; padding: 18px; display: grid; gap: 12px; min-width: 0;
+  border-radius: 10px; padding: 18px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; overflow-x: clip;
 }
-.year-scroll { overflow-x: auto; max-width: 100%; }
-.year-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 560px; }
-.year-table th, .year-table td { padding: 6px 4px; text-align: center; border-bottom: 1px solid var(--border); }
-.year-table th:first-child, .year-table td:first-child { text-align: left; padding-left: 0; width: 170px; }
-.yr-cell {
-  position: relative; display: inline-grid; place-items: center; width: 20px; height: 18px;
-  border-radius: 4px; background: var(--bg); font-size: 10px; font-weight: 600; line-height: 1;
+.cal-head {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px;
 }
-.yr-cell[data-k="bloom"] { background: var(--surface); border: 1px solid var(--accent); color: var(--pal-warn); }
-.yr-cell[data-k="fruit"] { background: var(--surface); border: 1px solid var(--pal-ok); color: var(--pal-ok); }
-.yr-cell[data-k="both"] { background: var(--text); color: var(--bg); }
+.cal-meta {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: 12px; color: var(--text-secondary);
+}
+.cal-mw-note {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary);
+}
+.cal-mw-swatch {
+  display: inline-block; width: 14px; height: 10px;
+  background: var(--ochre-tint); border-top: 2px solid var(--ochre-border); border-radius: 1px;
+}
+.cal-legend {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 14px; font-size: 12.5px; color: var(--text-secondary);
+}
+.cal-legend-item {
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.cal-scroll-hint {
+  display: none; font-size: 12px; color: var(--text-secondary); margin: 0;
+}
+.yr-c-bloom { color: var(--accent); }
+.yr-c-fruit { color: var(--plant-green); }
+
+.year-scroll { overflow-x: auto; width: 100%; min-width: 0; max-width: 100%; -webkit-overflow-scrolling: touch; }
+.year-table {
+  width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; min-width: 640px;
+}
+.year-table col.col-species { width: 176px; }
+.year-table col.col-month { width: calc((100% - 176px) / 12); }
+
+.year-table thead th {
+  font-size: 12px; font-weight: 600; color: var(--text-secondary); text-align: center;
+  padding: 6px 2px; border-bottom: 1px solid var(--border-strong); vertical-align: bottom; position: relative;
+}
+.year-table thead th.col-sp-head {
+  text-align: left; padding-left: 4px; color: var(--text-muted);
+}
+.year-table thead th.yr-mw {
+  background: var(--ochre-tint); border-top: 2px solid var(--ochre-border);
+}
+.year-table thead th.yr-now { color: var(--accent-ink); }
+.yr-now-tag {
+  display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.02em;
+  color: var(--accent-ink); line-height: 1.1; margin-bottom: 2px; white-space: nowrap;
+}
+
+/* Season summary strip */
+.year-table tbody tr.yr-summary-row th,
+.year-table tbody tr.yr-summary-row td {
+  padding: 8px 2px 9px; border-bottom: 1.5px solid var(--border-strong);
+  vertical-align: bottom; background: var(--bg);
+}
+.year-table tbody tr.yr-summary-row th {
+  text-align: left; padding: 8px 10px 9px 6px; font-size: 12px; font-weight: 600; color: var(--text);
+}
+.yr-sum-legend {
+  display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 3px; font-size: 11px; font-weight: 400;
+}
+.yr-sum-legend span { display: inline-flex; align-items: center; gap: 3px; }
+.yr-sum-unrec { display: block; margin-top: 3px; font-size: 11px; font-weight: 400; color: var(--text-secondary); }
+.yr-sum-cell { position: relative; text-align: center; }
+.yr-sum-bars {
+  display: flex; align-items: flex-end; justify-content: center; gap: 4px; height: 22px; margin-bottom: 3px;
+}
+.yr-sum-bar { width: 7px; border-radius: 1.5px 1.5px 0 0; }
+.yr-sum-bar.bloom { background: var(--accent); }
+.yr-sum-bar.fruit { background: var(--plant-green); }
+.yr-sum-bar.zero { height: 1px !important; background: var(--border-strong); border-radius: 0; }
+.yr-sum-counts {
+  display: flex; justify-content: center; gap: 4px;
+  font-size: 11px; font-variant-numeric: tabular-nums; line-height: 1;
+}
+.yr-sum-counts .cnt { width: 11px; text-align: center; font-weight: 600; }
+.yr-sum-counts .cnt-bloom { color: var(--accent-ink); }
+.yr-sum-counts .cnt-fruit { color: var(--plant-green); }
+.yr-sum-counts .cnt-zero { color: var(--text-secondary); font-weight: 400; }
+
+/* Species rows */
+.year-table tbody tr.yr-species-row th,
+.year-table tbody tr.yr-species-row td {
+  height: 40px; border-bottom: 1px solid var(--border); vertical-align: middle;
+}
+.year-table tbody tr.yr-species-row th {
+  text-align: left; padding: 4px 10px 4px 4px; font-size: 13px; font-weight: 600;
+  color: var(--text); background: var(--surface);
+}
+.yr-sp-note {
+  display: block; font-size: 11px; font-weight: 400; color: var(--text-muted); line-height: 1.2;
+}
+.yr-cell { position: relative; padding: 0; text-align: center; }
+.yr-cell.yr-mw { background: var(--ochre-tint); }
+/* Quiet 12-month hairline track */
+.yr-cell::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 27px; height: 1px;
+  background: var(--border); pointer-events: none;
+}
+/* "This month" vertical ochre hairline strictly inside species rows */
+.yr-cell.yr-now::after {
+  content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 1.5px;
+  transform: translateX(-50%); background: var(--accent); opacity: 0.45;
+  pointer-events: none; z-index: 1;
+}
+/* Seamless 6px solid ribbons (edge-to-edge) */
+.yr-ribbon {
+  position: absolute; left: 0; right: 0; top: 24px; height: 6px; z-index: 2; pointer-events: none;
+}
+.yr-ribbon.bloom { background: var(--accent); }
+.yr-ribbon.fruit { background: var(--plant-green); }
+.yr-ribbon.both {
+  top: 23px; height: 7px;
+  background: linear-gradient(to bottom, var(--accent) 0 3px, transparent 3px 4px, var(--plant-green) 4px 7px);
+}
+.yr-ribbon.seg-start { left: 4px; border-radius: 3px 0 0 3px; }
+.yr-ribbon.seg-end { right: 4px; border-radius: 0 3px 3px 0; }
+.yr-ribbon.seg-single { left: 4px; right: 4px; border-radius: 3px; }
+.yr-ribbon.seg-mid { left: 0; right: 0; border-radius: 0; }
+
+/* Peak-month glyph perched cleanly above the ribbon */
+.yr-peak-glyph {
+  position: absolute; top: 4px; left: 50%; transform: translateX(-50%); z-index: 3;
+  display: inline-flex; align-items: center; justify-content: center; line-height: 1;
+}
+.yr-unrec-cell {
+  text-align: left; padding: 0 10px; font-size: 12.5px; color: var(--text-muted); font-style: italic;
+}
+
+@media (max-width: 639px) {
+  .cal-scroll-hint { display: block; }
+  .year-table { min-width: 580px; }
+  .year-table col.col-species { width: 132px; }
+  .year-table col.col-month { width: calc((100% - 132px) / 12); }
+  .year-table thead th.col-sp-head,
+  .year-table tbody tr th {
+    position: sticky; left: 0; z-index: 4; box-shadow: 2px 0 4px rgba(0, 0, 0, 0.06);
+  }
+  .year-table thead th.col-sp-head { background: var(--surface); }
+  .year-table tbody tr.yr-summary-row th { background: var(--bg); }
+  .year-table tbody tr.yr-species-row th { background: var(--surface); }
+}
 
 /* ---------- Plan View ---------- */
 .plan-grid { display: grid; gap: 18px; min-width: 0; }
@@ -866,17 +1038,32 @@ input[type="range"] { accent-color: var(--accent); width: 100%; min-height: 44px
 .sun-step[data-active="true"][data-lvl="shade"] { background: var(--sun-shade-bg); border-color: var(--sun-shade); color: var(--sun-shade-ink); }
 .sun-step[data-pref="true"] { border-width: 2px; }
 .pheno-grid {
-  display: grid; grid-template-columns: 92px repeat(12, minmax(0, 1fr));
-  gap: 2px; align-items: center; font-size: 11px;
+  display: grid; grid-template-columns: 98px repeat(12, minmax(0, 1fr));
+  gap: 4px 0; align-items: center; font-size: 11px;
 }
-.pheno-m { text-align: center; color: var(--text-muted); font-weight: 600; padding: 2px 0; border-radius: 3px; line-height: 1.15; }
+.pheno-m { text-align: center; color: var(--text-muted); font-weight: 600; padding: 3px 1px; line-height: 1.15; }
 .pheno-m[data-frost="true"] { background: var(--winter-bg); color: var(--winter-ink); }
-.pheno-m[data-mw="true"] { background: var(--pal-ok-bg); color: var(--pal-ok); }
-.pheno-lbl { font-weight: 600; color: var(--text-secondary); padding-right: 4px; }
-.pheno-bar { height: 12px; border-radius: 3px; background: var(--surface-alt); }
+.pheno-m[data-mw="true"] { background: var(--ochre-tint); border-top: 2px solid var(--ochre-border); color: var(--accent-ink); }
+.pheno-lbl {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-weight: 600; color: var(--text-secondary); padding-right: 6px;
+}
+.pheno-bar-cell {
+  position: relative; height: 16px; display: flex; align-items: center;
+}
+.pheno-bar-cell::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px;
+  background: var(--border); pointer-events: none;
+}
+.pheno-bar {
+  position: relative; z-index: 1; width: 100%; height: 6px; background: transparent;
+}
 .pheno-bar[data-k="sow"] { background: var(--cal-sow); }
-.pheno-bar[data-k="bloom"] { background: var(--cal-bloom); }
-.pheno-bar[data-k="fruit"] { background: var(--cal-harvest); }
+.pheno-bar[data-k="bloom"] { background: var(--accent); }
+.pheno-bar[data-k="fruit"] { background: var(--plant-green); }
+.pheno-bar.cap-l { margin-left: 2px; width: calc(100% - 2px); border-radius: 3px 0 0 3px; }
+.pheno-bar.cap-r { margin-right: 2px; width: calc(100% - 2px); border-radius: 0 3px 3px 0; }
+.pheno-bar.cap-lr { margin-inline: 2px; width: calc(100% - 4px); border-radius: 3px; }
 .succ-strip-7 {
   display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px;
 }

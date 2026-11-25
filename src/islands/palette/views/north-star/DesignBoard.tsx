@@ -4,8 +4,15 @@
 // - renderPlantRow (L3031), renderGrowingYear (L3094), renderDesignBoard (L3141)
 import type { JobId, PaletteReport, PlantId, Taxon } from '../../../../lib/palette/index.ts';
 import { jobIds, jobsOf, months as MONTHS, toxicityStatusOf } from '../../../../lib/palette/index.ts';
-import { T } from '../../strings.ts';
+import { P, T } from '../../strings.ts';
+import { Glyph } from '../kit/Glyph.tsx';
 import { GuildProfileSvg, PlantThumb } from './GuildVisuals.tsx';
+import {
+  computeCalendarRuns,
+  localizedMonthLabels,
+  MiniYearRibbon,
+  type CalCellState,
+} from './PhenologyRibbon.tsx';
 import {
   fmtNum,
   jobLabel,
@@ -48,19 +55,7 @@ const JOB_TARGETS: Record<JobId, string> = {
 
 function MiniYear({ rep, id }: { rep: PaletteReport; id: PlantId }) {
   const track = rep.growingYear.tracks.get(id);
-  if (!track || (!track.bloom.length && !track.fruiting.length)) {
-    return <span class="small muted">{T('ns.cal.monthsUnknown')}</span>;
-  }
-  const bSet = new Set(track.bloom);
-  const fSet = new Set(track.fruiting);
-  return (
-    <div class="mini-year" title={T('ns.cal.both')}>
-      {MONTHS.map((m) => {
-        const k = bSet.has(m) && fSet.has(m) ? 'both' : fSet.has(m) ? 'fruit' : bSet.has(m) ? 'bloom' : 'none';
-        return <span key={m} class="mini-dot" data-kind={k} />;
-      })}
-    </div>
-  );
+  return <MiniYearRibbon bloom={track?.bloom ?? []} fruiting={track?.fruiting ?? []} />;
 }
 
 function PlantRow({ taxon, rep, primaryJobId }: { taxon: Taxon; rep: PaletteReport; primaryJobId: JobId }) {
@@ -308,67 +303,190 @@ function PulseCard({ rep }: { rep: PaletteReport }) {
 function GrowingYearCard({ rep }: { rep: PaletteReport }) {
   const rows = rep.taxa.slice(0, 24);
   if (!rows.length) return null;
-  const seasonLabel = rep.eff.hemisphere === 'S'
+  const monthLabels = localizedMonthLabels();
+  const isSouth = rep.eff.hemisphere === 'S';
+  const seasonLabel = isSouth
     ? 'Jan–Dec · Southern Hemisphere (Summer Dec–Feb · Winter Jun–Aug)'
     : 'Jan–Dec · Northern Hemisphere (Spring Mar–May · Autumn Sep–Nov)';
-  const winMonths = new Set(rep.eff.hemisphere === 'S' ? [5, 6, 7, 8] : [11, 12, 1, 2]);
+  const winMonthIdxs = new Set(isSouth ? [4, 5, 6, 7] : [10, 11, 0, 1]);
   const showMildWinter = rep.eff.isMildWinter;
-  const unknownCount = rep.taxa.filter((t) => {
+  const mwRangeText = isSouth
+    ? `${monthLabels[4]}–${monthLabels[7]}`
+    : `${monthLabels[10]}–${monthLabels[1]}`;
+  const nowIdx = new Date().getMonth();
+
+  const bloomCnt = Array<number>(12).fill(0);
+  const fruitCnt = Array<number>(12).fill(0);
+  let unknownCount = 0;
+  for (const t of rows) {
     const tr = rep.growingYear.tracks.get(t.id);
-    return !tr || (!tr.bloom.length && !tr.fruiting.length);
-  }).length;
+    const hasB = (tr?.bloom.length ?? 0) > 0;
+    const hasF = (tr?.fruiting.length ?? 0) > 0;
+    if (!hasB && !hasF) {
+      unknownCount++;
+      continue;
+    }
+    if (tr?.bloom) {
+      for (const m of tr.bloom) {
+        const idx = MONTHS.indexOf(m);
+        if (idx >= 0) bloomCnt[idx]++;
+      }
+    }
+    if (tr?.fruiting) {
+      for (const m of tr.fruiting) {
+        const idx = MONTHS.indexOf(m);
+        if (idx >= 0) fruitCnt[idx]++;
+      }
+    }
+  }
+  const maxCnt = Math.max(1, ...bloomCnt, ...fruitCnt);
 
   return (
     <section class="year-card" aria-label={T('ns.cal.title')}>
-      <div>
-        <p class="pulse-kicker">{T('ns.cal.growingYear')} · {seasonLabel}</p>
-        <h2 style={{ fontSize: '22px', marginTop: '4px' }}>{T('ns.cal.title')}</h2>
-        <p class="small muted" style={{ marginTop: '4px' }}>
-          <strong>B</strong> = {T('ns.cal.bloom')} · <strong>F</strong> = {T('ns.cal.fruit')} · <strong>✦</strong> = {T('ns.cal.both')}
-          {showMildWinter ? ` · ${T('ns.cal.mildWinterLegend')}` : ''}
-          {unknownCount > 0 ? ` · ${unknownCount} (${T('ns.cal.monthsUnknown').toLowerCase()})` : ''}
-        </p>
+      <div class="cal-head">
+        <div>
+          <p class="pulse-kicker">{T('ns.cal.growingYear')} · {seasonLabel}</p>
+          <h2 style={{ fontSize: '22px', marginTop: '4px' }}>{T('ns.cal.title')}</h2>
+        </div>
+        {showMildWinter && (
+          <div class="cal-meta">
+            <span class="cal-mw-note">
+              <span class="cal-mw-swatch" aria-hidden="true" />
+              {T('ns.cal.mildWinterWindow', { months: mwRangeText })}
+            </span>
+          </div>
+        )}
       </div>
+
+      <div class="cal-legend">
+        <span class="cal-legend-item">
+          <Glyph name="bloom" size={16} class="yr-c-bloom" /> {T('ns.cal.bloom')}
+        </span>
+        <span class="cal-legend-item">
+          <Glyph name="fruit" size={16} class="yr-c-fruit" /> {T('ns.cal.fruit')}
+        </span>
+        <span class="cal-legend-item">
+          <Glyph name="bloom-fruit" size={16} /> {T('ns.cal.both')}
+        </span>
+      </div>
+
+      <p class="cal-scroll-hint">{T('ns.cal.scrollHint')}</p>
+
       <div class="year-scroll" tabIndex={0} role="region" aria-label={T('ns.cal.title')}>
         <table class="year-table">
+          <colgroup>
+            <col class="col-species" />
+            {MONTHS.map((m) => <col key={m} class="col-month" />)}
+          </colgroup>
           <thead>
             <tr>
-              <th>{T('ns.cal.speciesCol')}</th>
-              {MONTHS.map((m, i) => (
-                <th key={m} class={showMildWinter && winMonths.has(i + 1) ? 'yr-th-winter' : undefined}>{m}</th>
-              ))}
+              <th scope="col" class="col-sp-head">{T('ns.cal.speciesCol')}</th>
+              {MONTHS.map((m, idx) => {
+                const isMw = showMildWinter && winMonthIdxs.has(idx);
+                const isNow = idx === nowIdx;
+                const cls = [isMw ? 'yr-mw' : '', isNow ? 'yr-now' : ''].filter(Boolean).join(' ') || undefined;
+                return (
+                  <th key={m} scope="col" class={cls} aria-current={isNow ? 'date' : undefined}>
+                    {isNow && <span class="yr-now-tag">{T('ns.cal.thisMonth')}</span>}
+                    {monthLabels[idx]}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
+            <tr class="yr-summary-row">
+              <th scope="row">
+                {T('ns.cal.seasonSummary')}
+                <div class="yr-sum-legend">
+                  <span class="yr-c-bloom">
+                    <Glyph name="bloom" size={14} class="yr-c-bloom" /> {T('ns.cal.bloom')}
+                  </span>
+                  <span class="yr-c-fruit">
+                    <Glyph name="fruit" size={14} class="yr-c-fruit" /> {T('ns.cal.fruit')}
+                  </span>
+                </div>
+                {unknownCount > 0 && (
+                  <span class="yr-sum-unrec">{P('ns.cal.speciesUnknown', unknownCount)}</span>
+                )}
+              </th>
+              {MONTHS.map((m, idx) => {
+                const b = bloomCnt[idx];
+                const f = fruitCnt[idx];
+                const bh = b > 0 ? Math.max(4, Math.round((b / maxCnt) * 20)) : 1;
+                const fh = f > 0 ? Math.max(4, Math.round((f / maxCnt) * 20)) : 1;
+                const sumText = `${monthLabels[idx]}: ${b} ${T('ns.cal.bloom').toLowerCase()}, ${f} ${T('ns.cal.fruit').toLowerCase()}`;
+                return (
+                  <td key={m} class="yr-sum-cell" aria-label={sumText}>
+                    <div class="yr-sum-bars" aria-hidden="true">
+                      <span class={b === 0 ? 'yr-sum-bar bloom zero' : 'yr-sum-bar bloom'} style={{ height: `${bh}px` }} />
+                      <span class={f === 0 ? 'yr-sum-bar fruit zero' : 'yr-sum-bar fruit'} style={{ height: `${fh}px` }} />
+                    </div>
+                    <div class="yr-sum-counts" aria-hidden="true">
+                      <span class={b > 0 ? 'cnt cnt-bloom' : 'cnt cnt-zero'}>{b}</span>
+                      <span class={f > 0 ? 'cnt cnt-fruit' : 'cnt cnt-zero'}>{f}</span>
+                    </div>
+                    <span class="sr-only">{sumText}</span>
+                  </td>
+                );
+              })}
+            </tr>
+
             {rows.map((p) => {
               const tr = rep.growingYear.tracks.get(p.id);
               const b = new Set(tr?.bloom ?? []);
               const f = new Set(tr?.fruiting ?? []);
-              const hasAny = b.size > 0 || f.size > 0;
-              return (
-                <tr key={p.id}>
-                  <td>
-                    <strong>{taxCommonName(p)}</strong>
-                  </td>
-                  {hasAny ? (
-                    MONTHS.map((m, i) => {
-                      const k = b.has(m) && f.has(m) ? 'both' : f.has(m) ? 'fruit' : b.has(m) ? 'bloom' : 'none';
-                      const sym = k === 'both' ? '✦' : k === 'fruit' ? 'F' : k === 'bloom' ? 'B' : '';
-                      const sr = k === 'both' ? T('ns.cal.both') : k === 'fruit' ? T('ns.cal.fruit') : k === 'bloom' ? T('ns.cal.bloom') : '';
-                      return (
-                        <td key={m} class={showMildWinter && winMonths.has(i + 1) ? 'yr-td-winter' : undefined}>
-                          <span class="yr-cell" data-k={k} title={sr || undefined}>
-                            {sym}
-                            {sr && <span class="sr-only"> {sr}</span>}
-                          </span>
-                        </td>
-                      );
-                    })
-                  ) : (
-                    <td colSpan={12} class="muted" style={{ textAlign: 'left' }}>
-                      {T('ns.cal.monthsUnknown')}
+              const hasB = b.size > 0;
+              const hasF = f.size > 0;
+              const spName = taxCommonName(p);
+
+              if (!hasB && !hasF) {
+                return (
+                  <tr key={p.id} class="yr-species-row">
+                    <th scope="row">{spName}</th>
+                    <td colSpan={12} class="yr-unrec-cell">
+                      {T('ns.cal.bloomFruitUnknown')}
                     </td>
-                  )}
+                  </tr>
+                );
+              }
+
+              const states: CalCellState[] = MONTHS.map((m) =>
+                b.has(m) && f.has(m) ? 'both' : f.has(m) ? 'fruit' : b.has(m) ? 'bloom' : '',
+              );
+              const runs = computeCalendarRuns(states);
+              const partialNote = !hasB ? T('ns.cal.bloomUnknown') : !hasF ? T('ns.cal.fruitUnknown') : null;
+
+              return (
+                <tr key={p.id} class="yr-species-row">
+                  <th scope="row">
+                    {spName}
+                    {partialNote && <span class="yr-sp-note">{partialNote}</span>}
+                  </th>
+                  {states.map((st, idx) => {
+                    const isMw = showMildWinter && winMonthIdxs.has(idx);
+                    const isNow = idx === nowIdx;
+                    const r = runs[idx];
+                    const gName = st === 'both' ? 'bloom-fruit' : st || null;
+                    const stateWord = st === 'both' ? T('ns.cal.both') : st === 'fruit' ? T('ns.cal.fruit') : st === 'bloom' ? T('ns.cal.bloom') : '';
+                    const cellLabel = stateWord ? `${spName}, ${monthLabels[idx]}: ${stateWord}` : `${spName}, ${monthLabels[idx]}`;
+                    const cellCls = ['yr-cell', isMw ? 'yr-mw' : '', isNow ? 'yr-now' : ''].filter(Boolean).join(' ');
+                    return (
+                      <td key={MONTHS[idx]} class={cellCls} data-k={st || 'none'} aria-label={cellLabel}>
+                        {st && <span class={`yr-ribbon ${st} ${r.seg}`.trim()} aria-hidden="true" />}
+                        {gName && r.peak && (
+                          <span class="yr-peak-glyph" aria-hidden="true">
+                            <Glyph
+                              name={gName}
+                              size={14}
+                              class={st === 'bloom' ? 'yr-c-bloom' : st === 'fruit' ? 'yr-c-fruit' : undefined}
+                            />
+                          </span>
+                        )}
+                        {stateWord && <span class="sr-only">{cellLabel}</span>}
+                      </td>
+                    );
+                  })}
                 </tr>
               );
             })}

@@ -1,0 +1,41 @@
+---
+import {
+  GLYPH_PRIMITIVES,
+  GLYPH_STROKE_WIDTH,
+  GLYPH_VIEWBOX,
+  glyphToneClass,
+  type GlyphName,
+} from '../lib/glyphs';
+
+interface Props {
+  name: GlyphName;
+  size?: number;
+  class?: string;
+  label?: string;
+}
+
+const { name, size = 16, class: className, label } = Astro.props;
+const primitives = GLYPH_PRIMITIVES[name];
+---
+
+<svg
+  class:list={['glyph', className]}
+  width={size}
+  height={size}
+  viewBox={GLYPH_VIEWBOX}
+  fill="none"
+  stroke="currentColor"
+  stroke-width={GLYPH_STROKE_WIDTH}
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  role={label ? 'img' : undefined}
+  aria-label={label}
+  aria-hidden={label ? undefined : 'true'}
+>
+  {primitives.map((p) => {
+    const toneClass = glyphToneClass(p.tone);
+    if (p.tag === 'circle') return <circle class={toneClass} {...p.attrs} />;
+    if (p.tag === 'ellipse') return <ellipse class={toneClass} {...p.attrs} />;
+    return <path class={toneClass} {...p.attrs} />;
+  })}
+</svg>

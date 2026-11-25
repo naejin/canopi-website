@@ -3395,7 +3395,6 @@
   "consortium.ns.cal.both": "Цветение и плодоношение",
   "consortium.ns.cal.monthsUnknown": "Месяцы неизвестны",
   "consortium.ns.cal.speciesCol": "Вид",
-  "consortium.ns.cal.mildWinterLegend": "● Выделенные столбцы = мягкое зимнее окно",
   "consortium.ns.atlas.shiftHead": "Сдвиг климата · {scen}",
   "consortium.ns.atlas.pillarsHead": "Устойчивость по 4 опорам",
   "consortium.ns.atlas.pillarsStrong": "{n} из 4 опор устойчивы",
@@ -3515,5 +3514,14 @@
   "consortium.ns.plan.ltOneYr": "<1 г.",
   "consortium.ns.pulse.interactions": "взаимод. гильдии",
   "consortium.ns.picker.kickerLive": "{n} видов · оценка для вашего участка",
+  "consortium.ns.cal.sow": "Посев",
+  "consortium.ns.cal.thisMonth": "Этот месяц",
+  "consortium.ns.cal.seasonSummary": "Сводка по сезону",
+  "consortium.ns.cal.bloomUnknown": "Цветение: неизвестно",
+  "consortium.ns.cal.fruitUnknown": "Плодоношение: неизвестно",
+  "consortium.ns.cal.bloomFruitUnknown": "Цветение и плодоношение: неизвестно",
+  "consortium.ns.cal.speciesUnknown": "one: # вид неизвестен | few: # вида неизвестно | many: # видов неизвестно | other: # вида неизвестно",
+  "consortium.ns.cal.mildWinterWindow": "Окно мягкой зимы ({months})",
+  "consortium.ns.cal.scrollHint": "Прокрутите вбок, чтобы увидеть все 12 месяцев →",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -3395,7 +3395,6 @@
   "consortium.ns.cal.both": "Bloei en vruchtzetting",
   "consortium.ns.cal.monthsUnknown": "Maanden onbekend",
   "consortium.ns.cal.speciesCol": "Soort",
-  "consortium.ns.cal.mildWinterLegend": "● Getinte kolommen = milde wintergroeiperiode",
   "consortium.ns.atlas.shiftHead": "Toekomstige klimaatverschuiving · {scen}",
   "consortium.ns.atlas.pillarsHead": "Vier-pijler robuustheid",
   "consortium.ns.atlas.pillarsStrong": "{n} van 4 pijlers sterk",
@@ -3515,5 +3514,14 @@
   "consortium.ns.plan.ltOneYr": "<1 jr",
   "consortium.ns.pulse.interactions": "gilde-interactie(s)",
   "consortium.ns.picker.kickerLive": "{n} soorten · live gescoord voor jouw plek",
+  "consortium.ns.cal.sow": "Zaaien",
+  "consortium.ns.cal.thisMonth": "Deze maand",
+  "consortium.ns.cal.seasonSummary": "Seizoensoverzicht",
+  "consortium.ns.cal.bloomUnknown": "Bloei: onbekend",
+  "consortium.ns.cal.fruitUnknown": "Vrucht: onbekend",
+  "consortium.ns.cal.bloomFruitUnknown": "Bloei & vrucht: onbekend",
+  "consortium.ns.cal.speciesUnknown": "one: # soort onbekend | other: # soorten onbekend",
+  "consortium.ns.cal.mildWinterWindow": "Milde-wintervenster ({months})",
+  "consortium.ns.cal.scrollHint": "Scroll opzij voor alle 12 maanden →",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

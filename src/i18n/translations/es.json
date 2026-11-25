@@ -3395,7 +3395,6 @@
   "consortium.ns.cal.both": "Floración y fructificación",
   "consortium.ns.cal.monthsUnknown": "Meses desconocidos",
   "consortium.ns.cal.speciesCol": "Especie",
-  "consortium.ns.cal.mildWinterLegend": "● Columnas sombreadas = ventana de invierno suave",
   "consortium.ns.atlas.shiftHead": "Cambio climático futuro · {scen}",
   "consortium.ns.atlas.pillarsHead": "Robustez agroecológica (4 pilares)",
   "consortium.ns.atlas.pillarsStrong": "{n} de 4 pilares sólidos",
@@ -3515,5 +3514,14 @@
   "consortium.ns.plan.ltOneYr": "<1 año",
   "consortium.ns.pulse.interactions": "interacción(es) de gremio",
   "consortium.ns.picker.kickerLive": "{n} especies · evaluadas para tu sitio",
+  "consortium.ns.cal.sow": "Siembra",
+  "consortium.ns.cal.thisMonth": "Este mes",
+  "consortium.ns.cal.seasonSummary": "Resumen estacional",
+  "consortium.ns.cal.bloomUnknown": "Floración: desconocida",
+  "consortium.ns.cal.fruitUnknown": "Fructificación: desconocida",
+  "consortium.ns.cal.bloomFruitUnknown": "Floración y fructificación: desconocidas",
+  "consortium.ns.cal.speciesUnknown": "one: # especie desconocida | other: # especies desconocidas",
+  "consortium.ns.cal.mildWinterWindow": "Ventana de invierno suave ({months})",
+  "consortium.ns.cal.scrollHint": "Desplaza lateralmente para ver los 12 meses →",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }
