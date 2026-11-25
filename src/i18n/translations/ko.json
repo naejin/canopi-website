@@ -3541,5 +3541,12 @@
   "consortium.ns.dossier.pinSubsoil": "심토 pH",
   "consortium.ns.dossier.specimenLabel": "{family} · {habit}",
   "consortium.ns.dossier.photoCredit": "사진: {author}",
+  "consortium.ns.elev.tallerThanRoom": "공간 높이 초과",
+  "consortium.ns.habit.tree": "교목",
+  "consortium.ns.habit.shrub": "관목",
+  "consortium.ns.habit.vine": "덩굴식물",
+  "consortium.ns.habit.groundcover": "지피식물",
+  "consortium.ns.habit.grass": "벼과·초본",
+  "consortium.ns.habit.herb": "초본",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -163,6 +163,15 @@ function PersonSilhouette({ cx, soilY, h }: { cx: number; soilY: number; h: numb
   );
 }
 
+/** Rough rendered SVG text width in px for clamping horizontal labels strictly inside the SVG viewport. */
+function estimateTextWidth(text: string, fontSize: number): number {
+  let w = 0;
+  for (const ch of text) {
+    w += /[\u3000-\u9fff\uac00-\ud7af\uff00-\uffef]/.test(ch) ? fontSize * 1.04 : fontSize * 0.57;
+  }
+  return w;
+}
+
 /** A2 Guild Elevation Profile: botanical contour silhouettes, canopy-derived light bands, horizontal wrapped labels. */
 export function GuildProfileSvg({ rep }: { rep: PaletteReport }) {
   if (!rep.taxa.length) return null;
@@ -174,7 +183,12 @@ export function GuildProfileSvg({ rep }: { rep: PaletteReport }) {
   const maxH = Math.max(3, ...shown.map((p) => p.traits.height_m?.max ?? 0));
   const maxRoomM = rep.eff.roomLimitM;
   const scaleTopM = Math.max(maxH, maxRoomM != null && maxH <= maxRoomM * 1.4 ? maxRoomM + 1 : 0);
-  const W = 780, soilY = 148, aboveH = 114, leftPad = 136, rightPad = 22;
+  const hasAnyTree = shown.some((p) => {
+    const k = classifyHabitSilhouette(p.traits.habit, p.traits.height_m?.max ?? null, p.traits.width_max_m ?? null);
+    return k === 'round_tree' || k === 'columnar_tree' || k === 'spreading_tree';
+  });
+  const anyTallerThanRoom = maxRoomM != null && shown.some((p) => p.traits.height_m?.max != null && p.traits.height_m.max > maxRoomM);
+  const W = 780, soilY = 148, aboveH = 114, leftPad = 136, rightPad = hasAnyTree ? 106 : 22;
   const plotLeft = 78;
   const topY = soilY - aboveH;
   const pxPerM = aboveH / scaleTopM;
@@ -182,7 +196,7 @@ export function GuildProfileSvg({ rep }: { rep: PaletteReport }) {
   const roomLineY = maxRoomM != null && maxRoomM <= scaleTopM ? (soilY - maxRoomM * pxPerM) : null;
   const slotW = (W - leftPad - rightPad) / Math.max(1, shown.length);
   const staggerRows = shown.length >= 7 ? 3 : shown.length > 4 ? 2 : 1;
-  const H = staggerRows === 3 ? 286 : staggerRows === 2 ? 248 : 210;
+  const H = (staggerRows === 3 ? 286 : staggerRows === 2 ? 248 : 210) + (anyTallerThanRoom ? 14 : 0);
 
   const pairKey = nsActivePairKey.value;
   const activePair = pairKey ? rep.interactions.find((it) => `${it.a}|${it.b}` === pairKey) ?? null : null;
@@ -219,6 +233,15 @@ export function GuildProfileSvg({ rep }: { rep: PaletteReport }) {
     const lines = wrapElevationLabel(fullName, 12);
     const hTag = hVal != null ? `${fmtNum(hVal)} m` : T('ns.elev.heightUnknown');
     const lightNeed = lightSpanLabel(p);
+    const metaText = `${hTag} · ${lightNeed}`;
+    const tallerNote = maxRoomM != null && hVal != null && hVal > maxRoomM ? T('ns.elev.tallerThanRoom') : null;
+    const maxLabelW = Math.max(
+      ...lines.map((ln) => estimateTextWidth(ln, 11.5)),
+      estimateTextWidth(metaText, 11),
+      tallerNote ? estimateTextWidth(tallerNote, 11) : 0,
+    );
+    const halfW = maxLabelW / 2;
+    const labelX = Math.max(plotLeft + 4 + halfW, Math.min(W - 8 - halfW, cx));
     const tier = staggerRows === 3 ? (idx % 3) : staggerRows === 2 ? (idx % 2) : 0;
     const rowShift = tier * 36;
     const baseY = soilY + 22 + rowShift;
@@ -257,23 +280,28 @@ export function GuildProfileSvg({ rep }: { rep: PaletteReport }) {
         </g>
         {stressed && v && (
           <g aria-hidden="true">
-            <rect x={(cx - 30).toFixed(1)} y={Math.max(4, soilY - pH - 19).toFixed(1)} width="60" height="15" rx="7" fill="var(--surface)" stroke={col} stroke-width="1.2" />
-            <text x={cx.toFixed(1)} y={Math.max(15, soilY - pH - 8).toFixed(1)} text-anchor="middle" font-size="10.5" font-weight="600" fill={v.level === 'check' ? 'var(--pal-warn)' : 'var(--pal-bad)'}>
+            <rect x={(cx - 32).toFixed(1)} y={Math.max(4, soilY - pH - 19).toFixed(1)} width="64" height="15" rx="7" fill="var(--surface)" stroke={col} stroke-width="1.2" />
+            <text x={cx.toFixed(1)} y={Math.max(15, soilY - pH - 8).toFixed(1)} text-anchor="middle" font-size="11" font-weight="600" fill={v.level === 'check' ? 'var(--pal-warn)' : 'var(--pal-bad)'}>
               {verdictSymbolLabel(v.level)}
             </text>
           </g>
         )}
         {rowShift > 0 && (
-          <line aria-hidden="true" x1={cx.toFixed(1)} y1={soilY + 9} x2={cx.toFixed(1)} y2={baseY - 12} stroke="var(--border-strong)" stroke-width="0.9" stroke-dasharray="2 2" />
+          <line aria-hidden="true" x1={cx.toFixed(1)} y1={soilY + 9} x2={labelX.toFixed(1)} y2={baseY - 12} stroke="var(--border-strong)" stroke-width="0.9" stroke-dasharray="2 2" />
         )}
-        <text aria-hidden="true" x={cx.toFixed(1)} y={baseY} text-anchor="middle" font-size="11.5" font-weight="600" fill={isPartner ? 'var(--accent-ink)' : 'var(--text)'}>
+        <text aria-hidden="true" x={labelX.toFixed(1)} y={baseY} text-anchor="middle" font-size="11.5" font-weight="600" fill={isPartner ? 'var(--accent-ink)' : 'var(--text)'}>
           {lines.map((ln, li) => (
-            <tspan key={li} x={cx.toFixed(1)} dy={li === 0 ? 0 : 13}>{ln}</tspan>
+            <tspan key={li} x={labelX.toFixed(1)} dy={li === 0 ? 0 : 13}>{ln}</tspan>
           ))}
         </text>
-        <text aria-hidden="true" x={cx.toFixed(1)} y={afterNameY} text-anchor="middle" font-size="11" fill="var(--text-muted)" class="elev-h">
-          {hTag} · {lightNeed}
+        <text aria-hidden="true" x={labelX.toFixed(1)} y={afterNameY} text-anchor="middle" font-size="11" fill="var(--text-muted)" class="elev-h">
+          {metaText}
         </text>
+        {tallerNote && (
+          <text aria-hidden="true" x={labelX.toFixed(1)} y={afterNameY + 13} text-anchor="middle" font-size="11" font-weight="600" fill="var(--accent-ink)">
+            {tallerNote}
+          </text>
+        )}
       </g>
     );
   });
@@ -283,7 +311,12 @@ export function GuildProfileSvg({ rep }: { rep: PaletteReport }) {
   const midX = pA && pB ? (pA.cx + pB.cx) / 2 : 0;
   const arcY = pA && pB ? Math.max(12, Math.min(pA.topY, pB.topY) - 22) : 0;
   const pairLbl = activePair?.positive ? '↔ Yield-gain pairing' : '↔ Shared pest';
-  const shadeLabelCx = Math.max(leftPad + 24, Math.min(W - 34, (bands.shadeLeftX + bands.shadeRightX) / 2));
+  const shadeRightEdge = bands.shadeLeftX + shadeW;
+  const partMidY = (yCanopyBase + yShrubTop) / 2;
+  const shadeMidY = Math.max(yShrubTop + 1, Math.min(soilY - 2, (yShrubTop + soilY) / 2));
+  const shadeTextY = soilY - 4;
+  const partTextY = Math.min(partMidY + 4, shadeTextY - 17);
+  const shadeCalloutX = shadeRightEdge + 11;
 
   return (
     <div class="guild-profile-plate">
@@ -310,12 +343,15 @@ export function GuildProfileSvg({ rep }: { rep: PaletteReport }) {
             <>
               <rect x={bands.shadeLeftX.toFixed(1)} y={yCanopyBase.toFixed(1)} width={shadeW.toFixed(1)} height={Math.max(4, yShrubTop - yCanopyBase).toFixed(1)} fill="var(--sun-part-bg)" />
               <rect x={bands.shadeLeftX.toFixed(1)} y={yShrubTop.toFixed(1)} width={shadeW.toFixed(1)} height={Math.max(4, soilY - yShrubTop).toFixed(1)} fill="var(--sun-shade-bg)" />
-              <line x1={bands.shadeLeftX.toFixed(1)} y1={yCanopyBase.toFixed(1)} x2={(bands.shadeLeftX + shadeW).toFixed(1)} y2={yCanopyBase.toFixed(1)} stroke="var(--sun-part)" stroke-width="0.8" stroke-dasharray="2 3" opacity="0.55" />
-              <line x1={bands.shadeLeftX.toFixed(1)} y1={yShrubTop.toFixed(1)} x2={(bands.shadeLeftX + shadeW).toFixed(1)} y2={yShrubTop.toFixed(1)} stroke="var(--sun-shade)" stroke-width="0.8" stroke-dasharray="2 3" opacity="0.55" />
-              <text x={shadeLabelCx.toFixed(1)} y={((yCanopyBase + yShrubTop) / 2 + 4).toFixed(1)} text-anchor="middle" font-size="11" font-weight="600" fill="var(--sun-part-ink)" paint-order="stroke" stroke="var(--bg)" stroke-width="3" stroke-linejoin="round">
+              <line x1={bands.shadeLeftX.toFixed(1)} y1={yCanopyBase.toFixed(1)} x2={shadeRightEdge.toFixed(1)} y2={yCanopyBase.toFixed(1)} stroke="var(--sun-part)" stroke-width="0.8" stroke-dasharray="2 3" opacity="0.55" />
+              <line x1={bands.shadeLeftX.toFixed(1)} y1={yShrubTop.toFixed(1)} x2={shadeRightEdge.toFixed(1)} y2={yShrubTop.toFixed(1)} stroke="var(--sun-shade)" stroke-width="0.8" stroke-dasharray="2 3" opacity="0.55" />
+              {/* Callouts sit cleanly beside the shaded patch with short leaders — never across the trunk or on the soil line */}
+              <line x1={shadeRightEdge.toFixed(1)} y1={partMidY.toFixed(1)} x2={(shadeRightEdge + 8).toFixed(1)} y2={(partTextY - 3).toFixed(1)} stroke="var(--sun-part-ink)" stroke-width="0.9" opacity="0.7" />
+              <text x={shadeCalloutX.toFixed(1)} y={partTextY.toFixed(1)} text-anchor="start" font-size="11" font-weight="600" fill="var(--sun-part-ink)">
                 {T('ns.elev.lightPart')}
               </text>
-              <text x={shadeLabelCx.toFixed(1)} y={((yShrubTop + soilY) / 2 + 4).toFixed(1)} text-anchor="middle" font-size="11" font-weight="600" fill="var(--sun-shade-ink)" paint-order="stroke" stroke="var(--bg)" stroke-width="3" stroke-linejoin="round">
+              <line x1={shadeRightEdge.toFixed(1)} y1={shadeMidY.toFixed(1)} x2={(shadeRightEdge + 8).toFixed(1)} y2={(shadeTextY - 3).toFixed(1)} stroke="var(--sun-shade-ink)" stroke-width="0.9" opacity="0.7" />
+              <text x={shadeCalloutX.toFixed(1)} y={shadeTextY.toFixed(1)} text-anchor="start" font-size="11" font-weight="600" fill="var(--sun-shade-ink)">
                 {T('ns.elev.lightShade')}
               </text>
             </>
@@ -506,7 +542,12 @@ export function ScaleRootSvg({ taxon, roomLimitM }: { taxon: Taxon; roomLimitM: 
         <rect x="0" y={soilY} width="340" height={162 - soilY} fill="var(--surface-alt)" />
         <line x1="10" y1={soilY} x2="330" y2={soilY} stroke="var(--soil-2)" stroke-width="1.5" />
         {roomLineY != null && roomLimitM != null && (
-          <line x1="10" y1={roomLineY.toFixed(1)} x2="330" y2={roomLineY.toFixed(1)} stroke="var(--accent)" stroke-dasharray="4 3" stroke-width="1.2" />
+          <>
+            <line x1="10" y1={roomLineY.toFixed(1)} x2="330" y2={roomLineY.toFixed(1)} stroke="var(--accent)" stroke-dasharray="4 3" stroke-width="1.2" />
+            <text x="14" y={Math.max(12, roomLineY - 4).toFixed(1)} text-anchor="start" font-size="10.5" font-weight="600" fill="var(--accent-ink)">
+              {T('ns.elev.yourRoom', { m: `${fmtNum(roomLimitM, 0)} m` })}
+            </text>
+          </>
         )}
         <PersonSilhouette cx={62} soilY={soilY} h={humanH} />
         <BotanicalSilhouette

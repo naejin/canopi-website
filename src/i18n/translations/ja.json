@@ -3541,5 +3541,12 @@
   "consortium.ns.dossier.pinSubsoil": "下層土pH",
   "consortium.ns.dossier.specimenLabel": "{family}・{habit}",
   "consortium.ns.dossier.photoCredit": "写真：{author}",
+  "consortium.ns.elev.tallerThanRoom": "敷地の上限超過",
+  "consortium.ns.habit.tree": "高木",
+  "consortium.ns.habit.shrub": "低木",
+  "consortium.ns.habit.vine": "つる植物",
+  "consortium.ns.habit.groundcover": "グランドカバー",
+  "consortium.ns.habit.grass": "イネ科・草本",
+  "consortium.ns.habit.herb": "草本",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

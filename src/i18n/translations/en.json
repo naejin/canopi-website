@@ -3541,5 +3541,12 @@
   "consortium.ns.dossier.pinSubsoil": "Subsoil pH",
   "consortium.ns.dossier.specimenLabel": "{family} · {habit}",
   "consortium.ns.dossier.photoCredit": "Photo: {author}",
+  "consortium.ns.elev.tallerThanRoom": "Taller than your room",
+  "consortium.ns.habit.tree": "Tree",
+  "consortium.ns.habit.shrub": "Shrub",
+  "consortium.ns.habit.vine": "Vine",
+  "consortium.ns.habit.groundcover": "Groundcover",
+  "consortium.ns.habit.grass": "Grass",
+  "consortium.ns.habit.herb": "Herbaceous",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

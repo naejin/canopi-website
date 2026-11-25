@@ -3541,5 +3541,12 @@
   "consortium.ns.dossier.pinSubsoil": "pH sous-sol",
   "consortium.ns.dossier.specimenLabel": "{family} · {habit}",
   "consortium.ns.dossier.photoCredit": "Photo : {author}",
+  "consortium.ns.elev.tallerThanRoom": "Plus haut que votre espace",
+  "consortium.ns.habit.tree": "Arbre",
+  "consortium.ns.habit.shrub": "Arbuste",
+  "consortium.ns.habit.vine": "Grimpante",
+  "consortium.ns.habit.groundcover": "Couvre-sol",
+  "consortium.ns.habit.grass": "Graminée",
+  "consortium.ns.habit.herb": "Herbacée",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

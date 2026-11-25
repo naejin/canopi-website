@@ -224,18 +224,30 @@ test('Wave 2: A2 Guild Elevation silhouettes & canopy light bands + A7 Herbarium
     const plate = document.querySelector('.guild-profile-plate');
     const scroll = plate?.querySelector('.guild-profile-scroll');
     const svg = scroll?.querySelector('.guild-profile-svg');
-    const texts = [...(svg?.querySelectorAll('text') ?? [])].map((t) => t.textContent?.trim() ?? '');
+    const svgRect = svg?.getBoundingClientRect();
+    const textEls = [...(svg?.querySelectorAll('text') ?? [])];
+    const texts = textEls.map((t) => t.textContent?.trim() ?? '');
+    const clipped = svgRect
+      ? textEls.filter((t) => {
+          const r = t.getBoundingClientRect();
+          return r.width > 0 && (r.left < svgRect.left - 1 || r.right > svgRect.right + 1);
+        }).map((t) => t.textContent?.trim() ?? '')
+      : [];
     return {
       hasScroll: Boolean(scroll),
       hasSvg: Boolean(svg),
       hasFullSun: texts.some((t) => t.includes('Full sun')),
+      hasTallerThanRoom: texts.some((t) => t.includes('Taller than your room')),
       hasEllipsis: texts.some((t) => t.includes('…')),
+      clipped,
       silButtons: svg?.querySelectorAll('.guild-sil-btn').length ?? 0,
     };
   });
   assert.ok(elev.hasScroll && elev.hasSvg, 'A2 Elevation renders inside .guild-profile-scroll');
   assert.ok(elev.hasFullSun, 'A2 Elevation labels Full sun light band in words');
+  assert.ok(elev.hasTallerThanRoom, 'A2 Elevation flags plants taller than site room in words');
   assert.equal(elev.hasEllipsis, false, 'A2 Elevation never truncates species names with ellipsis');
+  assert.deepEqual(elev.clipped, [], `A2 Elevation text stays inside SVG bounds (${elev.clipped.join(', ')})`);
   assert.ok(elev.silButtons > 0, 'A2 Elevation renders interactive botanical silhouettes');
 
   // 2. Open A7 Herbarium Dossier via first silhouette click

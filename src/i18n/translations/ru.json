@@ -3541,5 +3541,12 @@
   "consortium.ns.dossier.pinSubsoil": "pH подпочвы",
   "consortium.ns.dossier.specimenLabel": "{family} · {habit}",
   "consortium.ns.dossier.photoCredit": "Фото: {author}",
+  "consortium.ns.elev.tallerThanRoom": "Выше вашего пространства",
+  "consortium.ns.habit.tree": "Дерево",
+  "consortium.ns.habit.shrub": "Кустарник",
+  "consortium.ns.habit.vine": "Лиана",
+  "consortium.ns.habit.groundcover": "Почвопокровное",
+  "consortium.ns.habit.grass": "Злак",
+  "consortium.ns.habit.herb": "Травянистое",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

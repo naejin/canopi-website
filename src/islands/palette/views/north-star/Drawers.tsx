@@ -75,13 +75,18 @@ import {
   toggleExisting,
 } from './ns-state.ts';
 
+function localizedHabit(habit: string | null | undefined): string {
+  const h = (habit ?? '').toLowerCase();
+  if (h.includes('tree')) return T('ns.habit.tree');
+  if (h.includes('shrub') || h.includes('bush')) return T('ns.habit.shrub');
+  if (h.includes('climb') || h.includes('vine') || h.includes('liana')) return T('ns.habit.vine');
+  if (h.includes('ground') || h.includes('prostrate') || h.includes('mat')) return T('ns.habit.groundcover');
+  if (h.includes('grass') || h.includes('sedge') || h.includes('bamboo') || h.includes('rush')) return T('ns.habit.grass');
+  return T('ns.habit.herb');
+}
+
 function sizeClassLabel(t: Taxon): string {
-  const h = (t.traits.habit ?? '').toLowerCase();
-  if (h.includes('tree')) return 'Tree';
-  if (h.includes('shrub') || h.includes('bush')) return 'Shrub';
-  if (h.includes('climb') || h.includes('vine')) return 'Vine';
-  if (h.includes('ground')) return 'Groundcover';
-  return t.traits.habit || 'Herb';
+  return localizedHabit(t.traits.habit);
 }
 
 function toxDossierText(t: Taxon, details: Details | null = null): string {
@@ -1525,8 +1530,8 @@ export function Drawers({ rep }: { rep: PaletteReport }) {
     : drawer.kind === 'atlas'
       ? `${T('ns.atlas.title')} · ${rep.eff.koppen || '—'}${rep.eff.usdaZone ? ` · USDA ${rep.eff.usdaZone}` : ''}`
       : dossierTaxon?.family && dossierTaxon?.traits.habit
-        ? T('ns.dossier.specimenLabel', { family: dossierTaxon.family, habit: dossierTaxon.traits.habit })
-        : (dossierTaxon?.family ?? dossierTaxon?.traits.habit ?? '');
+        ? T('ns.dossier.specimenLabel', { family: dossierTaxon.family, habit: localizedHabit(dossierTaxon.traits.habit) })
+        : (dossierTaxon?.family ?? (dossierTaxon?.traits.habit ? localizedHabit(dossierTaxon.traits.habit) : ''));
 
   const title = drawer.kind === 'picker'
     ? T('ns.picker.title')
