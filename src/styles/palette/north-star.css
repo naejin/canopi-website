@@ -698,10 +698,32 @@ input[type="range"] { accent-color: var(--accent); width: 100%; min-height: 44px
   background: var(--bg); font-weight: 600;
 }
 .dossier-hero { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
-.dossier-img {
-  width: 112px; height: 112px; border-radius: 8px; object-fit: cover;
-  border: 1px solid var(--border); background: var(--surface-alt); flex: none;
+.herbarium-label {
+  display: inline-block; margin: 0 0 6px; padding: 4px 10px;
+  border-top: 1px solid var(--border-strong); border-bottom: 1px solid var(--border-strong);
+  font-family: var(--font-display); font-size: 15px; font-weight: 600;
+  font-variant-caps: all-small-caps; letter-spacing: 0.04em; line-height: 1.25;
+  color: var(--text-secondary); background: var(--bg);
 }
+:is(:lang(zh), :lang(ja), :lang(ko)) .herbarium-label {
+  font-size: 13px; font-variant-caps: normal; letter-spacing: 0; font-weight: 600;
+}
+.herbarium-plate {
+  margin: 0; display: grid; gap: 5px; justify-items: start; flex: none; max-width: 100%;
+}
+.herbarium-frame {
+  padding: 3px; background: var(--bg);
+  border: 1px solid var(--ink); border-radius: 4px; width: fit-content;
+}
+.dossier-img {
+  width: 112px; height: 112px; border-radius: 2px; object-fit: cover; display: block;
+  background: var(--surface-alt); flex: none;
+}
+:root[data-theme="dark"] .dossier-img { filter: brightness(0.92); }
+.herbarium-credit {
+  font-size: 12px; line-height: 1.35; color: var(--text-muted); max-width: 240px;
+}
+.nowrap { white-space: nowrap; }
 .ph-track {
   position: relative; height: 10px; border-radius: 999px;
   background: var(--surface-alt); border: 1px solid var(--border); margin-block: 10px 6px;
@@ -1020,10 +1042,36 @@ input[type="range"] { accent-color: var(--accent); width: 100%; min-height: 44px
 .ph-pin-sub { background: var(--surface); border: 2px solid var(--text); width: 6px; opacity: 1; }
 .bullet-track-pad { margin-top: 14px; }
 .bullet-scale {
-  display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--text-muted);
+  display: flex; justify-content: space-between; gap: 8px;
+  font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums;
 }
 .bullet-scale span:first-child, .bullet-scale span:last-child { white-space: nowrap; }
 .bullet-scale span:nth-child(2) { text-align: center; }
+.fp-pins-row {
+  display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center;
+  font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums;
+}
+.fp-pin-item { display: inline-flex; align-items: center; gap: 5px; }
+.fp-ico { display: inline-block; flex: none; }
+.fp-ico-today { width: 4px; height: 13px; border-radius: 2px; background: var(--accent); }
+.fp-ico-2050 { width: 6px; height: 13px; border-radius: 2px; background: var(--surface); border: 2px solid var(--text); }
+.fp-ico-frost { width: 8px; height: 8px; background: var(--winter-ink); transform: rotate(45deg); margin-inline: 1px; }
+.fp-ico-tri { width: 11px; height: 11px; display: inline-block; flex: none; }
+.ph-marker {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 12px; height: 12px; display: grid; place-items: center;
+}
+.ph-marker svg { width: 12px; height: 12px; display: block; overflow: visible; }
+.scale-plate-wrap { display: grid; gap: 6px; }
+.scale-plate-svg {
+  width: 100%; height: auto; display: block;
+  border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
+}
+.scale-meta {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px;
+  font-size: 12.5px; color: var(--text-secondary); font-variant-numeric: tabular-nums;
+}
+.scale-meta strong { color: var(--text); }
 .sun-spec {
   display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px;
 }
@@ -1098,13 +1146,20 @@ input[type="range"] { accent-color: var(--accent); width: 100%; min-height: 44px
 /* ---------- v7.2: Living Guild Cross-Section & Climate/Guild Atlas ---------- */
 .guild-profile-plate {
   border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--bg); padding: 8px 10px 6px; display: grid; gap: 4px; min-width: 0; overflow: hidden;
+  background: var(--bg); padding: 10px 12px 8px; display: grid; gap: 6px; min-width: 0; overflow: hidden;
 }
 .guild-profile-head {
   display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap;
-  font-size: 11px; color: var(--text-muted);
+  font-size: 12px; color: var(--text-secondary);
 }
-.guild-profile-svg { width: 100%; height: auto; display: block; }
+.guild-profile-scroll {
+  overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch;
+}
+.guild-profile-svg { width: 780px; min-width: 780px; height: auto; display: block; }
+@media (min-width: 960px) {
+  .guild-profile-svg { width: 100%; min-width: 780px; }
+}
+.elev-h { font-variant-numeric: tabular-nums; }
 .guild-sil-btn { cursor: pointer; transition: opacity 120ms ease; }
 .guild-sil-btn:hover { opacity: 0.82; }
 .plant-row[data-pair-hl="true"] {

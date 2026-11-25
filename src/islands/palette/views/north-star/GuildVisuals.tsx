@@ -5,6 +5,14 @@
 // - renderWalterLieth (L3476)
 // - Dossier Mature Scale & Root SVG (L4056-4098)
 // Zero raw hex colours (100% design tokens). Axe-clean accessible SVG controls.
+import {
+  buildPersonGeometry,
+  buildSilhouetteGeometry,
+  classifyHabitSilhouette,
+  computeCanopyLightBands,
+  wrapElevationLabel,
+  type HabitSilhouetteKind,
+} from '../../../../lib/botanical-silhouettes.ts';
 import type { EffectiveSiteClimate, PaletteReport, PlantId, Taxon } from '../../../../lib/palette/index.ts';
 import { months as MONTHS } from '../../../../lib/palette/index.ts';
 import { T } from '../../strings.ts';
@@ -45,9 +53,9 @@ export function PlantThumb({ taxon, size = 44 }: { taxon: Taxon; size?: number }
   );
 }
 
-/** Verbatim port of mockup-v73.html renderBotanicalSilhouette (L2804). Strictly habit-derived. */
+/** Shared botanical contour silhouette renderer powered by src/lib/botanical-silhouettes.ts. */
 function BotanicalSilhouette({
-  taxon,
+  kind,
   cx,
   soilY,
   plantH,
@@ -55,8 +63,9 @@ function BotanicalSilhouette({
   strokeCol,
   fillCol,
   dashed,
+  includeRootHint = true,
 }: {
-  taxon: Taxon;
+  kind: HabitSilhouetteKind;
   cx: number;
   soilY: number;
   plantH: number;
@@ -64,105 +73,97 @@ function BotanicalSilhouette({
   strokeCol: string;
   fillCol: string;
   dashed: boolean;
+  includeRootHint?: boolean;
 }) {
-  const hab = (taxon.traits.habit ?? '').toLowerCase();
+  const geom = buildSilhouetteGeometry(kind, cx, soilY, plantH, plantW, includeRootHint);
   const dash = dashed ? '4 3' : undefined;
-  const op = dashed ? '0.12' : '0.24';
-  const rW = Math.max(8, plantW / 2);
-  const topY = soilY - plantH;
+  const op = dashed ? '0.09' : '0.18';
 
-  if (hab.includes('climber') || hab.includes('vine')) {
-    const x1 = cx - Math.min(12, rW * 0.4);
-    const x2 = cx + Math.min(12, rW * 0.4);
-    const midY = soilY - plantH * 0.5;
-    return (
-      <>
-        <path d={`M${cx} ${soilY} C${x1} ${soilY - plantH * 0.3}, ${x2} ${soilY - plantH * 0.7}, ${cx} ${topY.toFixed(1)}`} fill="none" stroke={strokeCol} stroke-width="2" stroke-dasharray={dash} stroke-linecap="round" />
-        <ellipse cx={(cx - 7).toFixed(1)} cy={(midY + 6).toFixed(1)} rx="6" ry="3.5" transform={`rotate(-25 ${(cx - 7).toFixed(1)} ${(midY + 6).toFixed(1)})`} fill={fillCol} fill-opacity={op} stroke={strokeCol} stroke-width="1.3" />
-        <ellipse cx={(cx + 7).toFixed(1)} cy={(midY - 8).toFixed(1)} rx="6" ry="3.5" transform={`rotate(25 ${(cx + 7).toFixed(1)} ${(midY - 8).toFixed(1)})`} fill={fillCol} fill-opacity={op} stroke={strokeCol} stroke-width="1.3" />
-        <ellipse cx={cx} cy={(topY + 4).toFixed(1)} rx="5" ry="3" fill={fillCol} fill-opacity={op} stroke={strokeCol} stroke-width="1.3" />
-      </>
-    );
-  }
-  if (hab.includes('ground')) {
-    const gh = Math.max(5, Math.min(16, plantH));
-    return (
-      <path
-        d={`M${(cx - rW).toFixed(1)} ${soilY} Q${(cx - rW * 0.5).toFixed(1)} ${(soilY - gh * 1.15).toFixed(1)} ${cx} ${(soilY - gh).toFixed(1)} Q${(cx + rW * 0.5).toFixed(1)} ${(soilY - gh * 1.15).toFixed(1)} ${(cx + rW).toFixed(1)} ${soilY} Z`}
-        fill={fillCol}
-        fill-opacity={op}
-        stroke={strokeCol}
-        stroke-width="1.6"
-        stroke-dasharray={dash}
-      />
-    );
-  }
-  if (hab.includes('tree') || hab.includes('palm')) {
-    const trunkTop = soilY - plantH * 0.58;
-    const cy = soilY - plantH * 0.64;
-    const ry = Math.max(8, plantH * 0.36);
-    const rx = Math.max(10, rW);
-    return (
-      <>
-        <path
-          d={`M${cx} ${soilY} L${cx} ${trunkTop.toFixed(1)} M${cx} ${(soilY - plantH * 0.42).toFixed(1)} L${(cx - rx * 0.38).toFixed(1)} ${(soilY - plantH * 0.56).toFixed(1)} M${cx} ${(soilY - plantH * 0.46).toFixed(1)} L${(cx + rx * 0.35).toFixed(1)} ${(soilY - plantH * 0.59).toFixed(1)}`}
-          stroke="var(--soil-2)"
-          stroke-width={Math.max(1.8, Math.min(3.5, plantH * 0.045)).toFixed(1)}
-          stroke-linecap="round"
-        />
-        <path
-          d={`M${(cx - rx * 0.85).toFixed(1)} ${(cy + ry * 0.35).toFixed(1)} C${(cx - rx * 1.12).toFixed(1)} ${(cy - ry * 0.25).toFixed(1)}, ${(cx - rx * 0.62).toFixed(1)} ${(cy - ry * 1.05).toFixed(1)}, ${cx} ${topY.toFixed(1)} C${(cx + rx * 0.62).toFixed(1)} ${(cy - ry * 1.05).toFixed(1)}, ${(cx + rx * 1.12).toFixed(1)} ${(cy - ry * 0.25).toFixed(1)}, ${(cx + rx * 0.85).toFixed(1)} ${(cy + ry * 0.35).toFixed(1)} Q${cx} ${(cy + ry * 0.68).toFixed(1)} ${(cx - rx * 0.85).toFixed(1)} ${(cy + ry * 0.35).toFixed(1)} Z`}
-          fill={fillCol}
-          fill-opacity={op}
-          stroke={strokeCol}
-          stroke-width="1.7"
-          stroke-dasharray={dash}
-        />
-      </>
-    );
-  }
-  if (hab.includes('shrub') || hab.includes('bush')) {
-    const cy = soilY - plantH * 0.52;
-    const ry = Math.max(7, plantH * 0.46);
-    const rx = Math.max(9, rW);
-    return (
-      <>
-        <path
-          d={`M${cx} ${soilY} L${(cx - rx * 0.3).toFixed(1)} ${(soilY - plantH * 0.45).toFixed(1)} M${cx} ${soilY} L${(cx + rx * 0.3).toFixed(1)} ${(soilY - plantH * 0.45).toFixed(1)} M${cx} ${soilY} L${cx} ${(soilY - plantH * 0.55).toFixed(1)}`}
-          stroke="var(--soil-2)"
-          stroke-width="1.6"
-          stroke-linecap="round"
-        />
-        <path
-          d={`M${(cx - rx * 0.9).toFixed(1)} ${(soilY - plantH * 0.14).toFixed(1)} C${(cx - rx * 1.05).toFixed(1)} ${(cy - ry * 0.5).toFixed(1)}, ${(cx - rx * 0.45).toFixed(1)} ${topY.toFixed(1)}, ${cx} ${(topY + 2).toFixed(1)} C${(cx + rx * 0.45).toFixed(1)} ${topY.toFixed(1)}, ${(cx + rx * 1.05).toFixed(1)} ${(cy - ry * 0.5).toFixed(1)}, ${(cx + rx * 0.9).toFixed(1)} ${(soilY - plantH * 0.14).toFixed(1)} Q${cx} ${(soilY - plantH * 0.04).toFixed(1)} ${(cx - rx * 0.9).toFixed(1)} ${(soilY - plantH * 0.14).toFixed(1)} Z`}
-          fill={fillCol}
-          fill-opacity={op}
-          stroke={strokeCol}
-          stroke-width="1.6"
-          stroke-dasharray={dash}
-        />
-      </>
-    );
-  }
-  // Herbaceous perennial / annual tuft
-  const spread = Math.max(8, Math.min(26, rW * 0.85));
   return (
     <>
-      <path
-        d={`M${cx} ${soilY} Q${(cx - spread * 0.7).toFixed(1)} ${(soilY - plantH * 0.6).toFixed(1)} ${(cx - spread).toFixed(1)} ${(soilY - plantH * 0.82).toFixed(1)} Q${(cx - spread * 0.2).toFixed(1)} ${(soilY - plantH * 0.4).toFixed(1)} ${cx} ${soilY} M${cx} ${soilY} Q${(cx + spread * 0.7).toFixed(1)} ${(soilY - plantH * 0.6).toFixed(1)} ${(cx + spread).toFixed(1)} ${(soilY - plantH * 0.82).toFixed(1)} Q${(cx + spread * 0.2).toFixed(1)} ${(soilY - plantH * 0.4).toFixed(1)} ${cx} ${soilY} M${cx} ${soilY} L${cx} ${topY.toFixed(1)}`}
-        fill={fillCol}
-        fill-opacity={op}
-        stroke={strokeCol}
-        stroke-width="1.6"
-        stroke-dasharray={dash}
-        stroke-linecap="round"
-      />
-      <circle cx={cx} cy={topY.toFixed(1)} r="2.2" fill={strokeCol} />
+      {geom.rootHintD && (
+        <path
+          d={geom.rootHintD}
+          fill="none"
+          stroke="var(--soil-2)"
+          stroke-width="1.1"
+          stroke-linecap="round"
+          stroke-dasharray={dash}
+          opacity="0.65"
+        />
+      )}
+      {geom.stemD && (
+        <path
+          d={geom.stemD}
+          fill="none"
+          stroke="var(--soil-2)"
+          stroke-width={geom.stemWidth.toFixed(1)}
+          stroke-linecap="round"
+          stroke-dasharray={dash}
+        />
+      )}
+      {geom.crownD && (
+        <path
+          d={geom.crownD}
+          fill={geom.crownFill ? fillCol : 'none'}
+          fill-opacity={geom.crownFill ? op : undefined}
+          stroke={strokeCol}
+          stroke-width={geom.crownStrokeWidth.toFixed(1)}
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-dasharray={dash}
+        />
+      )}
+      {geom.leaves?.map((lf, idx) => (
+        <ellipse
+          key={idx}
+          cx={lf.cx.toFixed(1)}
+          cy={lf.cy.toFixed(1)}
+          rx={lf.rx.toFixed(1)}
+          ry={lf.ry.toFixed(1)}
+          transform={lf.rot ? `rotate(${lf.rot} ${lf.cx.toFixed(1)} ${lf.cy.toFixed(1)})` : undefined}
+          fill={fillCol}
+          fill-opacity={op}
+          stroke={strokeCol}
+          stroke-width="1.3"
+          stroke-dasharray={dash}
+        />
+      ))}
+      {geom.tipDot && (
+        <circle cx={geom.tipDot.cx.toFixed(1)} cy={geom.tipDot.cy.toFixed(1)} r={geom.tipDot.r.toFixed(1)} fill={strokeCol} />
+      )}
     </>
   );
 }
 
-/** Verbatim port of mockup-v73.html renderGuildProfile (L2848). */
+/** Shared proportional 1.75 m human silhouette, identical in Light & Dark. */
+function PersonSilhouette({ cx, soilY, h }: { cx: number; soilY: number; h: number }) {
+  const g = buildPersonGeometry(cx, soilY, h);
+  if (g.compact && g.line) {
+    return (
+      <line
+        aria-hidden="true"
+        x1={g.line[0].toFixed(1)}
+        y1={g.line[1].toFixed(1)}
+        x2={g.line[2].toFixed(1)}
+        y2={g.line[3].toFixed(1)}
+        stroke="var(--text-secondary)"
+        stroke-width="2.2"
+        stroke-linecap="round"
+      />
+    );
+  }
+  return (
+    <g aria-hidden="true" fill="var(--text-secondary)" stroke="var(--text-secondary)" stroke-linecap="round" stroke-linejoin="round">
+      {g.head && <circle cx={g.head.cx.toFixed(1)} cy={g.head.cy.toFixed(1)} r={g.head.r.toFixed(1)} stroke="none" />}
+      {g.torsoD && <path d={g.torsoD} stroke="none" />}
+      {g.leftLeg && <line x1={g.leftLeg[0].toFixed(1)} y1={g.leftLeg[1].toFixed(1)} x2={g.leftLeg[2].toFixed(1)} y2={g.leftLeg[3].toFixed(1)} stroke-width="1.9" />}
+      {g.rightLeg && <line x1={g.rightLeg[0].toFixed(1)} y1={g.rightLeg[1].toFixed(1)} x2={g.rightLeg[2].toFixed(1)} y2={g.rightLeg[3].toFixed(1)} stroke-width="1.9" />}
+    </g>
+  );
+}
+
+/** A2 Guild Elevation Profile: botanical contour silhouettes, canopy-derived light bands, horizontal wrapped labels. */
 export function GuildProfileSvg({ rep }: { rep: PaletteReport }) {
   if (!rep.taxa.length) return null;
   const activeScenShort = scenarioShort(nsScenario.value);
@@ -173,32 +174,55 @@ export function GuildProfileSvg({ rep }: { rep: PaletteReport }) {
   const maxH = Math.max(3, ...shown.map((p) => p.traits.height_m?.max ?? 0));
   const maxRoomM = rep.eff.roomLimitM;
   const scaleTopM = Math.max(maxH, maxRoomM != null && maxH <= maxRoomM * 1.4 ? maxRoomM + 1 : 0);
-  const W = 720, H = 148, soilY = 112, aboveH = 84, leftPad = 68, rightPad = 24;
+  const W = 780, soilY = 148, aboveH = 114, leftPad = 136, rightPad = 22;
+  const plotLeft = 78;
+  const topY = soilY - aboveH;
   const pxPerM = aboveH / scaleTopM;
-  const humanH = Math.min(54, 1.75 * pxPerM);
+  const humanH = Math.min(58, Math.max(12, 1.75 * pxPerM));
   const roomLineY = maxRoomM != null && maxRoomM <= scaleTopM ? (soilY - maxRoomM * pxPerM) : null;
   const slotW = (W - leftPad - rightPad) / Math.max(1, shown.length);
+  const staggerRows = shown.length >= 7 ? 3 : shown.length > 4 ? 2 : 1;
+  const H = staggerRows === 3 ? 286 : staggerRows === 2 ? 248 : 210;
 
   const pairKey = nsActivePairKey.value;
   const activePair = pairKey ? rep.interactions.find((it) => `${it.a}|${it.b}` === pairKey) ?? null : null;
   const posById = new Map<PlantId, { cx: number; topY: number }>();
 
+  const placed = shown.map((p, idx) => {
+    const cx = leftPad + (idx + 0.5) * slotW;
+    const hVal = p.traits.height_m?.max ?? null;
+    const wVal = p.traits.width_max_m ?? null;
+    const kind = classifyHabitSilhouette(p.traits.habit, hVal, wVal);
+    const pH = hVal != null ? Math.max(10, Math.min(aboveH - 4, hVal * pxPerM)) : 38;
+    const pW = wVal != null ? Math.max(16, Math.min(slotW * 0.9, wVal * pxPerM)) : Math.max(18, Math.min(slotW * 0.72, pH * 0.65));
+    posById.set(p.id, { cx, topY: soilY - pH });
+    return { p, idx, cx, hVal, wVal, kind, pH, pW };
+  });
+
+  const bands = computeCanopyLightBands(
+    placed.map((x) => ({ kind: x.kind, heightM: x.hVal, cx: x.cx, plantW: x.pW })),
+    plotLeft,
+    W - 10,
+  );
+  const yCanopyBase = soilY - bands.canopyBaseM * pxPerM;
+  const yShrubTop = soilY - bands.shrubTopM * pxPerM;
+  const shadeW = Math.max(24, bands.shadeRightX - bands.shadeLeftX);
+
   let stressedCount = 0;
-  const items = shown.map((p, idx) => {
+  const items = placed.map(({ p, idx, cx, hVal, wVal, kind, pH, pW }) => {
     const v = rep.verdicts.get(p.id);
     const stressed = v != null && v.level !== 'fits';
     if (stressed) stressedCount++;
     const isPartner = activePair != null && (activePair.a === p.id || activePair.b === p.id);
-    const col = v?.level === 'fits' ? 'var(--pal-ok)' : v?.level === 'check' ? 'var(--accent)' : 'var(--pal-bad)';
-    const cx = leftPad + (idx + 0.5) * slotW;
-    const hVal = p.traits.height_m?.max ?? null;
-    const wVal = p.traits.width_max_m ?? null;
-    const pH = hVal != null ? Math.max(8, Math.min(aboveH - 4, hVal * pxPerM)) : 28;
-    const pW = wVal != null ? Math.max(14, Math.min(slotW * 0.9, wVal * pxPerM)) : Math.max(16, Math.min(slotW * 0.72, pH * 0.65));
-    posById.set(p.id, { cx, topY: soilY - pH });
+    const col = v?.level === 'fits' ? 'var(--plant-green)' : v?.level === 'check' ? 'var(--accent)' : 'var(--pal-bad)';
     const fullName = taxCommonName(p);
-    const shortNm = fullName.length > 11 ? `${fullName.slice(0, 10)}…` : fullName;
-    const hTag = hVal != null ? `${fmtNum(hVal)}m` : '?';
+    const lines = wrapElevationLabel(fullName, 12);
+    const hTag = hVal != null ? `${fmtNum(hVal)} m` : T('ns.elev.heightUnknown');
+    const lightNeed = lightSpanLabel(p);
+    const tier = staggerRows === 3 ? (idx % 3) : staggerRows === 2 ? (idx % 2) : 0;
+    const rowShift = tier * 36;
+    const baseY = soilY + 22 + rowShift;
+    const afterNameY = baseY + (lines.length === 2 ? 25 : 13);
     const open = () => { nsDrawer.value = { kind: 'dossier', id: p.id }; };
     return (
       <g key={p.id}>
@@ -206,7 +230,7 @@ export function GuildProfileSvg({ rep }: { rep: PaletteReport }) {
           class="guild-sil-btn"
           role="button"
           tabIndex={0}
-          aria-label={`${fullName} (${hTag} · ${lightSpanLabel(p)} · ${v ? verdictSymbolLabel(v.level) : ''})`}
+          aria-label={`${fullName} (${hTag} · ${lightNeed} · ${v ? verdictSymbolLabel(v.level) : ''})`}
           onClick={open}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -215,25 +239,40 @@ export function GuildProfileSvg({ rep }: { rep: PaletteReport }) {
             }
           }}
         >
-          <title>{`${fullName} (${p.traits.habit ?? 'habit unrecorded'} · ${hTag} · ${lightSpanLabel(p)})`}</title>
+          <title>{`${fullName} (${p.traits.habit ?? T('ns.unknown')} · ${hTag} · ${lightNeed})`}</title>
           {isPartner && (
             <circle cx={cx.toFixed(1)} cy={(soilY - pH * 0.5).toFixed(1)} r={Math.max(14, pW * 0.6).toFixed(1)} fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-dasharray="3 2" />
           )}
-          <BotanicalSilhouette taxon={p} cx={cx} soilY={soilY} plantH={pH} plantW={pW} strokeCol={col} fillCol={col} dashed={hVal == null || wVal == null} />
+          <BotanicalSilhouette
+            kind={kind}
+            cx={cx}
+            soilY={soilY}
+            plantH={pH}
+            plantW={pW}
+            strokeCol={col}
+            fillCol={col}
+            dashed={hVal == null || wVal == null}
+            includeRootHint
+          />
         </g>
         {stressed && v && (
           <g aria-hidden="true">
-            <rect x={(cx - 26).toFixed(1)} y={Math.max(4, soilY - pH - 18).toFixed(1)} width="52" height="14" rx="7" fill="var(--surface)" stroke={col} stroke-width="1.2" />
-            <text x={cx.toFixed(1)} y={Math.max(14, soilY - pH - 8).toFixed(1)} text-anchor="middle" font-size="9" font-weight="600" fill={v.level === 'check' ? 'var(--pal-warn)' : 'var(--pal-bad)'}>
-              {v.level === 'check' ? '▲ Check' : '✕ Risk'}
+            <rect x={(cx - 30).toFixed(1)} y={Math.max(4, soilY - pH - 19).toFixed(1)} width="60" height="15" rx="7" fill="var(--surface)" stroke={col} stroke-width="1.2" />
+            <text x={cx.toFixed(1)} y={Math.max(15, soilY - pH - 8).toFixed(1)} text-anchor="middle" font-size="10.5" font-weight="600" fill={v.level === 'check' ? 'var(--pal-warn)' : 'var(--pal-bad)'}>
+              {verdictSymbolLabel(v.level)}
             </text>
           </g>
         )}
-        <text aria-hidden="true" x={cx.toFixed(1)} y={soilY + 14} text-anchor="middle" font-size="10" font-weight="600" fill={isPartner ? 'var(--accent-ink)' : 'var(--text-secondary)'}>
-          {shortNm}
+        {rowShift > 0 && (
+          <line aria-hidden="true" x1={cx.toFixed(1)} y1={soilY + 9} x2={cx.toFixed(1)} y2={baseY - 12} stroke="var(--border-strong)" stroke-width="0.9" stroke-dasharray="2 2" />
+        )}
+        <text aria-hidden="true" x={cx.toFixed(1)} y={baseY} text-anchor="middle" font-size="11.5" font-weight="600" fill={isPartner ? 'var(--accent-ink)' : 'var(--text)'}>
+          {lines.map((ln, li) => (
+            <tspan key={li} x={cx.toFixed(1)} dy={li === 0 ? 0 : 13}>{ln}</tspan>
+          ))}
         </text>
-        <text aria-hidden="true" x={cx.toFixed(1)} y={soilY + 26} text-anchor="middle" font-size="9" fill="var(--text-muted)">
-          {hTag}
+        <text aria-hidden="true" x={cx.toFixed(1)} y={afterNameY} text-anchor="middle" font-size="11" fill="var(--text-muted)" class="elev-h">
+          {hTag} · {lightNeed}
         </text>
       </g>
     );
@@ -244,6 +283,7 @@ export function GuildProfileSvg({ rep }: { rep: PaletteReport }) {
   const midX = pA && pB ? (pA.cx + pB.cx) / 2 : 0;
   const arcY = pA && pB ? Math.max(12, Math.min(pA.topY, pB.topY) - 22) : 0;
   const pairLbl = activePair?.positive ? '↔ Yield-gain pairing' : '↔ Shared pest';
+  const shadeLabelCx = Math.max(leftPad + 24, Math.min(W - 34, (bands.shadeLeftX + bands.shadeRightX) / 2));
 
   return (
     <div class="guild-profile-plate">
@@ -252,47 +292,61 @@ export function GuildProfileSvg({ rep }: { rep: PaletteReport }) {
           <strong>{T('ns.elev.aria')} ({activeScenShort})</strong> · {T('ns.elev.caption')}
           {ordered.length > shown.length ? ` (10 / ${ordered.length})` : ''}
         </span>
-        <span>{T('ns.dossier.scaleAria')}</span>
+        <span>{T('ns.elev.canopyCaption')}</span>
       </div>
-      <svg
-        class="guild-profile-svg"
-        viewBox={`0 0 ${W} ${H}`}
-        role="img"
-        aria-label={`${T('ns.elev.aria')} (${activeScenShort}): ${shown.length - stressedCount} ${T('ns.verdict.fits')}, ${stressedCount} ${T('ns.verdict.check')}`}
-      >
-        <rect x="0" y={soilY} width={W} height={H - soilY} fill="var(--surface-alt)" rx="4" />
-        <line x1="10" y1={soilY} x2={W - 10} y2={soilY} stroke="var(--soil-2)" stroke-width="1.4" />
-        <text x="12" y={soilY - aboveH + 8} font-size="9" fill="var(--text-muted)">{fmtNum(scaleTopM, 0)} m</text>
-        <line x1="10" y1={soilY - aboveH} x2={W - 10} y2={soilY - aboveH} stroke="var(--border)" stroke-dasharray="2 4" stroke-width="1" />
-        {roomLineY != null && maxRoomM != null && (
-          <>
-            <line x1="10" y1={roomLineY.toFixed(1)} x2={W - 12} y2={roomLineY.toFixed(1)} stroke="var(--accent)" stroke-dasharray="4 3" stroke-width="1.1" />
-            <rect x="10" y={Math.max(2, roomLineY - 13).toFixed(1)} width="88" height="12" rx="3" fill="var(--surface)" opacity="0.92" />
-            <text x="14" y={Math.max(11, roomLineY - 4).toFixed(1)} text-anchor="start" font-size="9" font-weight="600" fill="var(--accent-ink)">
-              {T('ns.elev.yourRoom', { m: `${fmtNum(maxRoomM, 0)} m` })}
-            </text>
-          </>
-        )}
-        {humanH >= 10 ? (
-          <g aria-hidden="true">
-            <circle cx="34" cy={(soilY - humanH + 2.5).toFixed(1)} r={Math.min(3, humanH * 0.14).toFixed(1)} fill="var(--text-muted)" />
-            <line x1="34" y1={(soilY - humanH + 5).toFixed(1)} x2="34" y2={(soilY - humanH * 0.35).toFixed(1)} stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" />
-            <line x1="34" y1={(soilY - humanH * 0.35).toFixed(1)} x2="30.5" y2={soilY} stroke="var(--text-muted)" stroke-width="1.6" stroke-linecap="round" />
-            <line x1="34" y1={(soilY - humanH * 0.35).toFixed(1)} x2="37.5" y2={soilY} stroke="var(--text-muted)" stroke-width="1.6" stroke-linecap="round" />
-          </g>
-        ) : (
-          <line aria-hidden="true" x1="34" y1={(soilY - humanH).toFixed(1)} x2="34" y2={soilY} stroke="var(--text-muted)" stroke-width="2.2" stroke-linecap="round" />
-        )}
-        <text aria-hidden="true" x="34" y={soilY + 14} text-anchor="middle" font-size="9" fill="var(--text-muted)">1.75 m</text>
-        {items}
-        {pA && pB && (
-          <g aria-hidden="true">
-            <path d={`M${pA.cx.toFixed(1)} ${(pA.topY - 2).toFixed(1)} Q${midX.toFixed(1)} ${arcY.toFixed(1)} ${pB.cx.toFixed(1)} ${(pB.topY - 2).toFixed(1)}`} fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4 3" />
-            <rect x={(midX - 58).toFixed(1)} y={Math.max(2, arcY - 8).toFixed(1)} width="116" height="16" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.2" />
-            <text x={midX.toFixed(1)} y={Math.max(13, arcY + 3).toFixed(1)} text-anchor="middle" font-size="9.5" font-weight="600" fill="var(--accent-ink)">{pairLbl}</text>
-          </g>
-        )}
-      </svg>
+      <div class="guild-profile-scroll" tabIndex={0} role="region" aria-label={T('ns.elev.aria')}>
+        <svg
+          class="guild-profile-svg"
+          viewBox={`0 0 ${W} ${H}`}
+          role="img"
+          aria-label={`${T('ns.elev.aria')} (${activeScenShort}): ${shown.length - stressedCount} ${T('ns.verdict.fits')}, ${stressedCount} ${T('ns.verdict.check')}`}
+        >
+          {/* Canopy-derived light bands: Full sun across open sky; Part shade & Shade strictly under tree crowns */}
+          <rect x={plotLeft} y={topY} width={W - plotLeft - 10} height={aboveH} fill="var(--sun-full-bg)" />
+          <text x="10" y={(bands.hasTreeCanopy ? (topY + yCanopyBase) / 2 + 4 : topY + aboveH * 0.52).toFixed(1)} font-size="11.5" font-weight="600" fill="var(--sun-full-ink)">
+            {T('ns.elev.lightFull')}
+          </text>
+          {bands.hasTreeCanopy && (
+            <>
+              <rect x={bands.shadeLeftX.toFixed(1)} y={yCanopyBase.toFixed(1)} width={shadeW.toFixed(1)} height={Math.max(4, yShrubTop - yCanopyBase).toFixed(1)} fill="var(--sun-part-bg)" />
+              <rect x={bands.shadeLeftX.toFixed(1)} y={yShrubTop.toFixed(1)} width={shadeW.toFixed(1)} height={Math.max(4, soilY - yShrubTop).toFixed(1)} fill="var(--sun-shade-bg)" />
+              <line x1={bands.shadeLeftX.toFixed(1)} y1={yCanopyBase.toFixed(1)} x2={(bands.shadeLeftX + shadeW).toFixed(1)} y2={yCanopyBase.toFixed(1)} stroke="var(--sun-part)" stroke-width="0.8" stroke-dasharray="2 3" opacity="0.55" />
+              <line x1={bands.shadeLeftX.toFixed(1)} y1={yShrubTop.toFixed(1)} x2={(bands.shadeLeftX + shadeW).toFixed(1)} y2={yShrubTop.toFixed(1)} stroke="var(--sun-shade)" stroke-width="0.8" stroke-dasharray="2 3" opacity="0.55" />
+              <text x={shadeLabelCx.toFixed(1)} y={((yCanopyBase + yShrubTop) / 2 + 4).toFixed(1)} text-anchor="middle" font-size="11" font-weight="600" fill="var(--sun-part-ink)" paint-order="stroke" stroke="var(--bg)" stroke-width="3" stroke-linejoin="round">
+                {T('ns.elev.lightPart')}
+              </text>
+              <text x={shadeLabelCx.toFixed(1)} y={((yShrubTop + soilY) / 2 + 4).toFixed(1)} text-anchor="middle" font-size="11" font-weight="600" fill="var(--sun-shade-ink)" paint-order="stroke" stroke="var(--bg)" stroke-width="3" stroke-linejoin="round">
+                {T('ns.elev.lightShade')}
+              </text>
+            </>
+          )}
+
+          {/* Soil base */}
+          <rect x="0" y={soilY} width={W} height={H - soilY} fill="var(--surface-alt)" rx="4" />
+          <line x1="10" y1={soilY} x2={W - 10} y2={soilY} stroke="var(--soil-2)" stroke-width="1.4" />
+          <text x="10" y={topY + 12} font-size="11" fill="var(--text-muted)" class="elev-h">{fmtNum(scaleTopM, 0)} m</text>
+          <line x1={plotLeft} y1={topY} x2={W - 10} y2={topY} stroke="var(--border)" stroke-dasharray="2 4" stroke-width="1" />
+          {roomLineY != null && maxRoomM != null && (
+            <>
+              <line x1={plotLeft} y1={roomLineY.toFixed(1)} x2={W - 12} y2={roomLineY.toFixed(1)} stroke="var(--accent)" stroke-dasharray="4 3" stroke-width="1.1" />
+              <rect x={plotLeft + 4} y={Math.max(2, roomLineY - 15).toFixed(1)} width="112" height="14" rx="3" fill="var(--bg)" opacity="0.92" />
+              <text x={plotLeft + 8} y={Math.max(13, roomLineY - 4).toFixed(1)} text-anchor="start" font-size="11" font-weight="600" fill="var(--accent-ink)">
+                {T('ns.elev.yourRoom', { m: `${fmtNum(maxRoomM, 0)} m` })}
+              </text>
+            </>
+          )}
+          <PersonSilhouette cx={94} soilY={soilY} h={humanH} />
+          <text aria-hidden="true" x="94" y={soilY + 20} text-anchor="middle" font-size="11" fill="var(--text-muted)" class="elev-h">1.75 m</text>
+          {items}
+          {pA && pB && (
+            <g aria-hidden="true">
+              <path d={`M${pA.cx.toFixed(1)} ${(pA.topY - 2).toFixed(1)} Q${midX.toFixed(1)} ${arcY.toFixed(1)} ${pB.cx.toFixed(1)} ${(pB.topY - 2).toFixed(1)}`} fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4 3" />
+              <rect x={(midX - 58).toFixed(1)} y={Math.max(2, arcY - 8).toFixed(1)} width="116" height="16" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.2" />
+              <text x={midX.toFixed(1)} y={Math.max(13, arcY + 3).toFixed(1)} text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--accent-ink)">{pairLbl}</text>
+            </g>
+          )}
+        </svg>
+      </div>
     </div>
   );
 }
@@ -419,71 +473,67 @@ export function WalterLiethSvg({ eff, rep }: { eff: EffectiveSiteClimate; rep: P
   );
 }
 
-/** Verbatim port of mockup-v73.html Dossier Mature Scale & Root Diagram (L4056-4098). */
+/** A7 Herbarium Dossier Mature Scale & Root Diagram: shared silhouette + dashed unknown root fan + HTML labels (>=12px at all widths). */
 export function ScaleRootSvg({ taxon, roomLimitM }: { taxon: Taxon; roomLimitM: number | null }) {
   const hVal = taxon.traits.height_m?.max ?? null;
   const wVal = taxon.traits.width_max_m ?? null;
+  const kind = classifyHabitSilhouette(taxon.traits.habit, hVal, wVal);
   const scaleTopM = Math.max(3, hVal ?? 3, roomLimitM != null && hVal != null && hVal <= roomLimitM * 1.5 ? roomLimitM + 1 : 0);
-  const soilY = 122, aboveH = 104, cx = 250;
+  const soilY = 110, aboveH = 96, cx = 216;
   const pxPerM = aboveH / scaleTopM;
-  const humanH = Math.min(72, 1.75 * pxPerM);
-  const plantH = hVal != null ? Math.max(6, Math.min(aboveH - 4, hVal * pxPerM)) : 44;
-  const plantW = wVal != null ? Math.max(12, Math.min(180, wVal * pxPerM)) : Math.max(24, Math.min(90, plantH * 0.65));
+  const humanH = Math.min(68, Math.max(12, 1.75 * pxPerM));
+  const plantH = hVal != null ? Math.max(8, Math.min(aboveH - 4, hVal * pxPerM)) : 48;
+  const plantW = wVal != null ? Math.max(16, Math.min(150, wVal * pxPerM)) : Math.max(24, Math.min(82, plantH * 0.65));
   const rootCm = taxon.traits.root_depth_min_cm ?? null;
   const taproot = taxon.traits.taproot_persistent === true;
   const hasRootDepth = rootCm != null;
-  const rootDepthPx = hasRootDepth ? Math.max(12, Math.min(40, (rootCm / 150) * 40)) : (taproot ? 26 : 0);
+  const rootDepthPx = hasRootDepth ? Math.max(14, Math.min(40, (rootCm / 150) * 40)) : 36;
   const roomLineY = roomLimitM != null && roomLimitM <= scaleTopM ? (soilY - roomLimitM * pxPerM) : null;
 
+  const heightLabel = hVal != null ? T('ns.elev.heightVal', { m: `${fmtNum(hVal)} m` }) : T('ns.elev.heightUnknown');
+  const crownLabel = wVal != null ? T('ns.elev.crownVal', { m: `${fmtNum(wVal)} m` }) : T('ns.elev.crownUnknown');
+  const rootLabel = hasRootDepth
+    ? `${T('ns.elev.rootsMin', { depth: `${fmtNum(rootCm, 0)} cm` })}${taxon.traits.root_system_type ? ` (${taxon.traits.root_system_type})` : ''}`
+    : T('ns.elev.rootUnknown');
+
   return (
-    <svg class="wl-svg" viewBox="0 0 460 176" role="img" aria-label={T('ns.dossier.scaleAria')}>
-      <rect x="0" y={soilY} width="460" height={176 - soilY} fill="var(--surface-alt)" />
-      <line x1="12" y1={soilY} x2="448" y2={soilY} stroke="var(--soil-2)" stroke-width="1.5" />
-      <text x="16" y={soilY + 14} font-size="10" fill="var(--text-muted)">{T('ns.elev.soilLine')}</text>
-      {roomLineY != null && roomLimitM != null && (
-        <>
-          <line x1="90" y1={roomLineY.toFixed(1)} x2="444" y2={roomLineY.toFixed(1)} stroke="var(--accent)" stroke-dasharray="4 3" stroke-width="1.2" />
-          <text x="444" y={(roomLineY - 4).toFixed(1)} text-anchor="end" font-size="10" font-weight="600" fill="var(--accent-ink)">
-            {T('ns.elev.yourRoom', { m: `${fmtNum(roomLimitM, 0)} m` })}
-          </text>
-        </>
-      )}
-      {humanH >= 12 ? (
-        <g aria-hidden="true">
-          <circle cx="64" cy={(soilY - humanH + 3).toFixed(1)} r={Math.min(3.5, humanH * 0.14).toFixed(1)} fill="var(--text-muted)" />
-          <line x1="64" y1={(soilY - humanH + 6).toFixed(1)} x2="64" y2={(soilY - humanH * 0.35).toFixed(1)} stroke="var(--text-muted)" stroke-width="2.2" stroke-linecap="round" />
-          <line x1="64" y1={(soilY - humanH * 0.35).toFixed(1)} x2="60" y2={soilY} stroke="var(--text-muted)" stroke-width="1.8" stroke-linecap="round" />
-          <line x1="64" y1={(soilY - humanH * 0.35).toFixed(1)} x2="68" y2={soilY} stroke="var(--text-muted)" stroke-width="1.8" stroke-linecap="round" />
-        </g>
-      ) : (
-        <g aria-hidden="true">
-          <line x1="64" y1={(soilY - humanH).toFixed(1)} x2="64" y2={soilY} stroke="var(--text-muted)" stroke-width="2.5" stroke-linecap="round" />
-          <circle cx="64" cy={(soilY - humanH - 1.5).toFixed(1)} r="1.5" fill="var(--text-muted)" />
-        </g>
-      )}
-      <text x="64" y={soilY + 28} text-anchor="middle" font-size="10" fill="var(--text-muted)">{T('ns.elev.person')}</text>
-      <BotanicalSilhouette taxon={taxon} cx={cx} soilY={soilY} plantH={plantH} plantW={plantW} strokeCol="var(--pal-ok)" fillCol="var(--pal-ok)" dashed={hVal == null} />
-      <text x={cx} y={Math.max(14, soilY - plantH - 4).toFixed(1)} text-anchor="middle" font-size="11" font-weight="600" fill="var(--text)">
-        {hVal != null ? `${fmtNum(hVal)} m tall` : 'Height unrecorded'}{wVal != null ? ` · ${fmtNum(wVal)} m wide` : ' · crown unrecorded'}
-      </text>
-      {rootDepthPx > 0 ? (
-        <>
-          <path
-            d={`M${cx} ${soilY} L${cx} ${(soilY + rootDepthPx).toFixed(1)} M${cx} ${soilY + 6} Q${cx - 18} ${soilY + rootDepthPx * 0.6} ${cx - 28} ${(soilY + rootDepthPx * 0.85).toFixed(1)} M${cx} ${soilY + 6} Q${cx + 18} ${soilY + rootDepthPx * 0.6} ${cx + 28} ${(soilY + rootDepthPx * 0.85).toFixed(1)}`}
-            fill="none"
-            stroke="var(--soil-1)"
-            stroke-width={taproot ? '2.2' : '1.6'}
-            stroke-dasharray={!hasRootDepth ? '3 3' : undefined}
-            stroke-linecap="round"
-          />
-          <text x={cx + 34} y={(soilY + 18).toFixed(1)} font-size="10" font-weight="600" fill="var(--text-secondary)">
-            {hasRootDepth ? `Roots ≥ ${rootCm} cm` : 'Taproot · depth unrecorded'}{taxon.traits.root_system_type ? ` (${taxon.traits.root_system_type})` : ''}
-          </text>
-          <text x={cx + 34} y={(soilY + 32).toFixed(1)} font-size="10" fill="var(--text-muted)">{T('ns.elev.rootsNotScale')}</text>
-        </>
-      ) : (
-        <text x={cx} y={soilY + 26} text-anchor="middle" font-size="10" fill="var(--text-muted)">Root depth unrecorded</text>
-      )}
-    </svg>
+    <div class="scale-plate-wrap">
+      <div class="scale-meta">
+        <strong>{heightLabel} · {crownLabel}</strong>
+        <span class="muted">{T('ns.elev.person')}</span>
+      </div>
+      <svg class="scale-plate-svg" viewBox="0 0 340 162" role="img" aria-label={`${T('ns.dossier.scaleAria')}: ${heightLabel}, ${crownLabel}, ${rootLabel}`}>
+        <rect x="0" y={soilY} width="340" height={162 - soilY} fill="var(--surface-alt)" />
+        <line x1="10" y1={soilY} x2="330" y2={soilY} stroke="var(--soil-2)" stroke-width="1.5" />
+        {roomLineY != null && roomLimitM != null && (
+          <line x1="10" y1={roomLineY.toFixed(1)} x2="330" y2={roomLineY.toFixed(1)} stroke="var(--accent)" stroke-dasharray="4 3" stroke-width="1.2" />
+        )}
+        <PersonSilhouette cx={62} soilY={soilY} h={humanH} />
+        <BotanicalSilhouette
+          kind={kind}
+          cx={cx}
+          soilY={soilY}
+          plantH={plantH}
+          plantW={plantW}
+          strokeCol="var(--plant-green)"
+          fillCol="var(--plant-green)"
+          dashed={hVal == null || wVal == null}
+          includeRootHint={false}
+        />
+        {/* Recorded root depth = solid root fan; unknown root depth = dashed root fan */}
+        <path
+          d={`M${cx} ${soilY} L${cx} ${(soilY + rootDepthPx).toFixed(1)} M${cx} ${soilY + 6} Q${cx - 20} ${(soilY + rootDepthPx * 0.56).toFixed(1)} ${cx - 32} ${(soilY + rootDepthPx * 0.84).toFixed(1)} M${cx} ${soilY + 6} Q${cx + 20} ${(soilY + rootDepthPx * 0.56).toFixed(1)} ${cx + 32} ${(soilY + rootDepthPx * 0.84).toFixed(1)} M${cx} ${soilY + 11} Q${cx - 12} ${(soilY + rootDepthPx * 0.72).toFixed(1)} ${cx - 18} ${(soilY + rootDepthPx * 0.96).toFixed(1)} M${cx} ${soilY + 11} Q${cx + 12} ${(soilY + rootDepthPx * 0.72).toFixed(1)} ${cx + 18} ${(soilY + rootDepthPx * 0.96).toFixed(1)}`}
+          fill="none"
+          stroke="var(--soil-1)"
+          stroke-width={taproot && hasRootDepth ? '2.1' : '1.6'}
+          stroke-dasharray={!hasRootDepth ? '4 3' : undefined}
+          stroke-linecap="round"
+        />
+      </svg>
+      <div class="scale-meta">
+        <span><strong>{rootLabel}</strong></span>
+        <span class="muted">{T('ns.elev.soilLine')} · {T('ns.elev.rootsNotScale')}</span>
+      </div>
+    </div>
   );
 }

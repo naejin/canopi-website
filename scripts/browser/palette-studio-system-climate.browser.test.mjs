@@ -215,3 +215,50 @@ test('Walter-Lieth wet sites (Belém & Kyoto): true 1:10 scale never clamps rain
     assert.deepEqual(await pageErrorsOf(page), [], `preset ${presetIndex}: zero page errors`);
   }
 });
+
+test('Wave 2: A2 Guild Elevation silhouettes & canopy light bands + A7 Herbarium Dossier @real-data', async () => {
+  const page = await openSuggestedPalette({ width: 1440, theme: 'light' });
+
+  // 1. A2 Elevation profile: scrollable SVG, canopy light bands, horizontal wrapped labels (zero ellipsis truncation)
+  const elev = await page.evaluate(() => {
+    const plate = document.querySelector('.guild-profile-plate');
+    const scroll = plate?.querySelector('.guild-profile-scroll');
+    const svg = scroll?.querySelector('.guild-profile-svg');
+    const texts = [...(svg?.querySelectorAll('text') ?? [])].map((t) => t.textContent?.trim() ?? '');
+    return {
+      hasScroll: Boolean(scroll),
+      hasSvg: Boolean(svg),
+      hasFullSun: texts.some((t) => t.includes('Full sun')),
+      hasEllipsis: texts.some((t) => t.includes('…')),
+      silButtons: svg?.querySelectorAll('.guild-sil-btn').length ?? 0,
+    };
+  });
+  assert.ok(elev.hasScroll && elev.hasSvg, 'A2 Elevation renders inside .guild-profile-scroll');
+  assert.ok(elev.hasFullSun, 'A2 Elevation labels Full sun light band in words');
+  assert.equal(elev.hasEllipsis, false, 'A2 Elevation never truncates species names with ellipsis');
+  assert.ok(elev.silButtons > 0, 'A2 Elevation renders interactive botanical silhouettes');
+
+  // 2. Open A7 Herbarium Dossier via first silhouette click
+  await page.click('.guild-profile-svg .guild-sil-btn');
+  assert.ok(await has(page, '.drawer .herbarium-label', 6_000), 'A7 Herbarium Dossier specimen label renders');
+  const dossier = await page.evaluate(() => {
+    const dr = document.querySelector('.drawer');
+    const label = dr?.querySelector('.herbarium-label')?.textContent?.trim() ?? '';
+    const frame = dr?.querySelector('.herbarium-frame');
+    const credit = dr?.querySelector('.herbarium-credit')?.textContent?.trim() ?? '';
+    const pinsText = [...(dr?.querySelectorAll('.fp-pins-row') ?? [])].map((el) => el.textContent?.trim() ?? '').join(' | ');
+    const oldPinTags = dr?.querySelectorAll('.pin-tag').length ?? 0;
+    const phMarkers = dr?.querySelectorAll('.ph-marker polygon').length ?? 0;
+    const scaleMeta = [...(dr?.querySelectorAll('.scale-meta') ?? [])].map((el) => el.textContent?.trim() ?? '').join(' | ');
+    return { label, hasFrame: Boolean(frame), credit, pinsText, oldPinTags, phMarkers, scaleMeta };
+  });
+  assert.ok(dossier.label.length > 0, `A7 specimen label has text (${dossier.label})`);
+  assert.ok(dossier.hasFrame, 'A7 photo wrapped in 1 px ink keyline .herbarium-frame');
+  assert.ok(dossier.credit.length > 0, `A7 photo credit set in margin (${dossier.credit})`);
+  assert.ok(dossier.pinsText.includes('Your site today') && dossier.pinsText.includes('2050s'), `A7 Fit-Plate pins carry words (${dossier.pinsText})`);
+  assert.ok(dossier.pinsText.includes('Topsoil pH'), `A7 Soil pH pins carry words (${dossier.pinsText})`);
+  assert.equal(dossier.oldPinTags, 0, 'legacy cryptic T/50/Top/Sub .pin-tag labels removed from Dossier');
+  assert.ok(dossier.phMarkers >= 1, 'distinct triangle .ph-marker polygons render on pH track');
+  assert.ok(/Height|unknown/i.test(dossier.scaleMeta), `A7 Scale & Root HTML captions carry words (${dossier.scaleMeta})`);
+  assert.deepEqual(await pageErrorsOf(page), [], 'zero console/page errors across Wave 2 A2 + A7');
+});

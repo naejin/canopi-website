@@ -1086,13 +1086,25 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
 
   return (
     <div class="drawer-body">
-      {/* Plant Passport Hero */}
+      {/* Plant Passport Hero — Herbarium Photo Plate (1 px ink keyline + margin credit) */}
       <div class="dossier-hero">
-        {activePhoto.url ? (
-          <img class="dossier-img" src={activePhoto.url} width={112} height={112} alt={`${taxCommonName(taxon)} (${activePhoto.role})`} />
-        ) : (
-          <span class="dossier-img plant-thumb-fb" aria-hidden="true">{(taxCommonName(taxon)[0] ?? '?').toUpperCase()}</span>
-        )}
+        <figure class="herbarium-plate">
+          <div class="herbarium-frame">
+            {activePhoto.url ? (
+              <img class="dossier-img" src={activePhoto.url} width={112} height={112} alt={`${taxCommonName(taxon)} (${activePhoto.role})`} />
+            ) : (
+              <span class="dossier-img plant-thumb-fb" aria-hidden="true">{(taxCommonName(taxon)[0] ?? '?').toUpperCase()}</span>
+            )}
+          </div>
+          <figcaption class="herbarium-credit">
+            {activePhoto.credit
+              ? T('ns.dossier.photoCredit', { author: activePhoto.credit })
+              : T('ns.dossier.sourceCurated')}
+            {activePhoto.licence && (
+              <> <span class="nowrap">({activePhoto.licence})</span></>
+            )}
+          </figcaption>
+        </figure>
         <div style={{ display: 'grid', gap: '8px', flex: 1, minWidth: '200px' }}>
           <div class="passport-dials">
             <div class="passport-dial" data-lvl={vToday.level}>
@@ -1100,7 +1112,7 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
               <span class="passport-dial-v">{verdictSymbolLabel(vToday.level)}</span>
             </div>
             <div class="passport-dial" data-lvl={v2050.level}>
-              <span class="passport-dial-k">2050s</span>
+              <span class="passport-dial-k">{T('ns.dossier.pin2050')}</span>
               <span class="passport-dial-v">{verdictSymbolLabel(v2050.level)}</span>
             </div>
             <div class="passport-dial">
@@ -1133,23 +1145,21 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
               {v.alreadyOnSite ? `✓ ${T('ns.alreadyOnSite')}` : T('ns.alreadyOnSite')}
             </button>
           </div>
-          <div class="pulse-chips" role="group" aria-label={T('ns.dossier.title')}>
-            {galleryItems.map((g, i) => (
-              <button
-                key={g.role}
-                type="button"
-                class="proto-btn"
-                aria-pressed={i === roleIdx ? 'true' : 'false'}
-                onClick={() => setRoleIdx(i)}
-              >
-                {g.role}
-              </button>
-            ))}
-            <span class="small muted" style={{ alignSelf: 'center' }}>
-              {activePhoto.credit || T('ns.dossier.sourceCurated')}
-              {activePhoto.licence ? ` · ${activePhoto.licence}` : ''}
-            </span>
-          </div>
+          {galleryItems.length > 1 && (
+            <div class="pulse-chips" role="group" aria-label={T('ns.dossier.title')}>
+              {galleryItems.map((g, i) => (
+                <button
+                  key={g.role}
+                  type="button"
+                  class="proto-btn"
+                  aria-pressed={i === roleIdx ? 'true' : 'false'}
+                  onClick={() => setRoleIdx(i)}
+                >
+                  {g.role}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -1162,7 +1172,7 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
         </div>
       )}
 
-      {/* 1. Unified Site Fit Plate */}
+      {/* 1. Unified Site Fit Plate (pin icons with words — no cryptic T / 50 / ◆ letters) */}
       <div class="unified-plate">
         <div class="viz-head">
           <span>{T('ns.dossier.fitPlate', { site: siteShort })}</span>
@@ -1178,30 +1188,29 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
                 : T('ns.notRecorded')}
             </span>
           </div>
-          <div class="bullet-track bullet-track-pad" aria-label={T('ns.dossier.coldestNight')}>
+          <div class="bullet-track" aria-label={T('ns.dossier.coldestNight')}>
             {ex?.tminExtreme?.low != null && ex?.tminExtreme?.high != null && (
               <div class="bullet-range" style={{ left: `${pct(ex.tminExtreme.low, coldMin, coldMax)}%`, width: `${Math.max(2, pct(ex.tminExtreme.high, coldMin, coldMax) - pct(ex.tminExtreme.low, coldMin, coldMax))}%` }} />
             )}
             {frost?.valueC != null && (
-              <div class="bullet-frost" style={{ left: `${pct(frost.valueC, coldMin, coldMax)}%` }} title={`${frostSourceLabel(frost.kind)}: ${fmtNum(frost.valueC)} °C`} />
+              <div class="bullet-frost" style={{ left: `${pct(frost.valueC, coldMin, coldMax)}%` }} title={`${T('ns.dossier.pinFrost')} (${frostSourceLabel(frost.kind)}): ${fmtNum(frost.valueC)} °C`} />
             )}
             {rep.effToday.freeze10C != null && (
-              <div class="bullet-pin" style={{ left: `${pct(rep.effToday.freeze10C, coldMin, coldMax)}%` }} title={`${T('ns.today')}: ${fmtNum(rep.effToday.freeze10C)} °C`}>
-                <span class="pin-tag" aria-hidden="true">T</span>
-              </div>
+              <div class="bullet-pin" style={{ left: `${pct(rep.effToday.freeze10C, coldMin, coldMax)}%` }} title={`${T('ns.dossier.pinToday')}: ${fmtNum(rep.effToday.freeze10C)} °C`} />
             )}
             {rep.eff2050.freeze10C != null && (
-              <div class="bullet-pin bullet-pin-50" style={{ left: `${pct(rep.eff2050.freeze10C, coldMin, coldMax)}%` }} title={`2050s: ${fmtNum(rep.eff2050.freeze10C)} °C`}>
-                <span class="pin-tag" aria-hidden="true">50</span>
-              </div>
+              <div class="bullet-pin bullet-pin-50" style={{ left: `${pct(rep.eff2050.freeze10C, coldMin, coldMax)}%` }} title={`${T('ns.dossier.pin2050')}: ${fmtNum(rep.eff2050.freeze10C)} °C`} />
+            )}
+          </div>
+          <div class="fp-pins-row">
+            <span class="fp-pin-item"><span class="fp-ico fp-ico-today" aria-hidden="true" />{T('ns.dossier.pinToday')}: <strong>{fmtNum(rep.effToday.freeze10C)} °C</strong></span>
+            <span class="fp-pin-item"><span class="fp-ico fp-ico-2050" aria-hidden="true" />{T('ns.dossier.pin2050')}: <strong>{fmtNum(rep.eff2050.freeze10C)} °C</strong></span>
+            {frost?.valueC != null && (
+              <span class="fp-pin-item" title={frostSourceLabel(frost.kind)}><span class="fp-ico fp-ico-frost" aria-hidden="true" />{T('ns.dossier.pinFrost')}: <strong>{fmtNum(frost.valueC)} °C</strong></span>
             )}
           </div>
           <div class="bullet-scale">
             <span>−35 °C</span>
-            <span>
-              T: {fmtNum(rep.effToday.freeze10C)} °C · 50: {fmtNum(rep.eff2050.freeze10C)} °C
-              {frost?.valueC != null ? ` · ◆ ${frostSourceLabel(frost.kind)} ${fmtNum(frost.valueC)} °C` : ''}
-            </span>
             <span>+15 °C</span>
           </div>
         </div>
@@ -1215,24 +1224,23 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
                 : T('ns.notRecorded')}
             </span>
           </div>
-          <div class="bullet-track bullet-track-pad" aria-label={T('ns.dossier.hottestDay')}>
+          <div class="bullet-track" aria-label={T('ns.dossier.hottestDay')}>
             {ex?.tmaxExtreme?.low != null && ex?.tmaxExtreme?.high != null && (
               <div class="bullet-range" style={{ left: `${pct(ex.tmaxExtreme.low, heatMin, heatMax)}%`, width: `${Math.max(2, pct(ex.tmaxExtreme.high, heatMin, heatMax) - pct(ex.tmaxExtreme.low, heatMin, heatMax))}%` }} />
             )}
             {rep.effToday.heat10C != null && (
-              <div class="bullet-pin" style={{ left: `${pct(rep.effToday.heat10C, heatMin, heatMax)}%` }} title={`${T('ns.today')}: ${fmtNum(rep.effToday.heat10C)} °C`}>
-                <span class="pin-tag" aria-hidden="true">T</span>
-              </div>
+              <div class="bullet-pin" style={{ left: `${pct(rep.effToday.heat10C, heatMin, heatMax)}%` }} title={`${T('ns.dossier.pinToday')}: ${fmtNum(rep.effToday.heat10C)} °C`} />
             )}
             {rep.eff2050.heat10C != null && (
-              <div class="bullet-pin bullet-pin-50" style={{ left: `${pct(rep.eff2050.heat10C, heatMin, heatMax)}%` }} title={`2050s: ${fmtNum(rep.eff2050.heat10C)} °C`}>
-                <span class="pin-tag" aria-hidden="true">50</span>
-              </div>
+              <div class="bullet-pin bullet-pin-50" style={{ left: `${pct(rep.eff2050.heat10C, heatMin, heatMax)}%` }} title={`${T('ns.dossier.pin2050')}: ${fmtNum(rep.eff2050.heat10C)} °C`} />
             )}
+          </div>
+          <div class="fp-pins-row">
+            <span class="fp-pin-item"><span class="fp-ico fp-ico-today" aria-hidden="true" />{T('ns.dossier.pinToday')}: <strong>{fmtNum(rep.effToday.heat10C)} °C</strong></span>
+            <span class="fp-pin-item"><span class="fp-ico fp-ico-2050" aria-hidden="true" />{T('ns.dossier.pin2050')}: <strong>{fmtNum(rep.eff2050.heat10C)} °C</strong></span>
           </div>
           <div class="bullet-scale">
             <span>15 °C</span>
-            <span>T: {fmtNum(rep.effToday.heat10C)} °C · 50: {fmtNum(rep.eff2050.heat10C)} °C</span>
             <span>50 °C</span>
           </div>
         </div>
@@ -1242,24 +1250,35 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
             <strong>{T('ns.atlas.dualPh')}</strong>
             <span class="muted">{ph?.min != null ? `${fmtNum(ph.min)}–${fmtNum(ph.max)}` : T('ns.notRecorded')}</span>
           </div>
-          <div class="ph-track bullet-track-pad" style={{ marginBottom: '4px' }}>
+          <div class="ph-track">
             {phLeft != null && phRight != null && (
               <div class="ph-band" style={{ left: `${phLeft}%`, width: `${Math.max(3, phRight - phLeft)}%` }} />
             )}
             {rep.eff.soilPh != null && (
-              <div class="ph-pin" style={{ left: `${pct(rep.eff.soilPh, 4.0, 9.0)}%` }} title={`Top: ${fmtNum(rep.eff.soilPh)}`}>
-                <span class="pin-tag" aria-hidden="true">Top</span>
-              </div>
+              <span class="ph-marker" style={{ left: `${pct(rep.eff.soilPh, 4.0, 9.0)}%` }} title={`${T('ns.dossier.pinTopsoil')}: ${fmtNum(rep.eff.soilPh)}`}>
+                <svg viewBox="0 0 12 12" aria-hidden="true"><polygon points="6,1 11,11 1,11" fill="var(--accent)" stroke="var(--surface)" stroke-width="1" /></svg>
+              </span>
             )}
             {rep.eff.subsoilPh != null && (
-              <div class="ph-pin ph-pin-sub" style={{ left: `${pct(rep.eff.subsoilPh, 4.0, 9.0)}%` }} title={`Sub: ${fmtNum(rep.eff.subsoilPh)}`}>
-                <span class="pin-tag" aria-hidden="true" style={{ top: '20px' }}>Sub</span>
-              </div>
+              <span class="ph-marker" style={{ left: `${pct(rep.eff.subsoilPh, 4.0, 9.0)}%` }} title={`${T('ns.dossier.pinSubsoil')}: ${fmtNum(rep.eff.subsoilPh)}`}>
+                <svg viewBox="0 0 12 12" aria-hidden="true"><polygon points="1,1 11,1 6,11" fill="var(--surface)" stroke="var(--text)" stroke-width="1.8" /></svg>
+              </span>
             )}
           </div>
-          <div class="bullet-scale" style={{ marginTop: '8px' }}>
+          <div class="fp-pins-row">
+            <span class="fp-pin-item">
+              <svg class="fp-ico-tri" viewBox="0 0 12 12" aria-hidden="true"><polygon points="6,1 11,11 1,11" fill="var(--accent)" /></svg>
+              {T('ns.dossier.pinTopsoil')}: <strong>{fmtNum(rep.eff.soilPh)}</strong>
+            </span>
+            {rep.eff.subsoilPh != null && (
+              <span class="fp-pin-item">
+                <svg class="fp-ico-tri" viewBox="0 0 12 12" aria-hidden="true"><polygon points="1,1 11,1 6,11" fill="var(--surface)" stroke="var(--text)" stroke-width="1.8" /></svg>
+                {T('ns.dossier.pinSubsoil')}: <strong>{fmtNum(rep.eff.subsoilPh)}</strong>
+              </span>
+            )}
+          </div>
+          <div class="bullet-scale">
             <span>4.0</span>
-            <span>Top: {fmtNum(rep.eff.soilPh)}{rep.eff.subsoilPh != null ? ` · Sub: ${fmtNum(rep.eff.subsoilPh)}` : ''}</span>
             <span>9.0</span>
           </div>
         </div>
@@ -1505,7 +1524,9 @@ export function Drawers({ rep }: { rep: PaletteReport }) {
     ? T('ns.picker.kickerLive', { n: catalogCount })
     : drawer.kind === 'atlas'
       ? `${T('ns.atlas.title')} · ${rep.eff.koppen || '—'}${rep.eff.usdaZone ? ` · USDA ${rep.eff.usdaZone}` : ''}`
-      : `${dossierTaxon?.family ?? ''}${dossierTaxon?.traits.habit ? ` · ${dossierTaxon.traits.habit}` : ''}`;
+      : dossierTaxon?.family && dossierTaxon?.traits.habit
+        ? T('ns.dossier.specimenLabel', { family: dossierTaxon.family, habit: dossierTaxon.traits.habit })
+        : (dossierTaxon?.family ?? dossierTaxon?.traits.habit ?? '');
 
   const title = drawer.kind === 'picker'
     ? T('ns.picker.title')
@@ -1531,7 +1552,11 @@ export function Drawers({ rep }: { rep: PaletteReport }) {
         <div class="drawer-handle" />
         <header class="drawer-head">
           <div>
-            {kicker && <p class="pulse-kicker">{kicker}</p>}
+            {kicker && (
+              drawer.kind === 'dossier'
+                ? <p class="herbarium-label">{kicker}</p>
+                : <p class="pulse-kicker">{kicker}</p>
+            )}
             <h2 style={{ fontSize: '24px', marginTop: '2px' }}>{title}</h2>
             {dossierTaxon && <p class="muted" style={{ fontStyle: 'italic' }}>{dossierTaxon.canonical_name}</p>}
           </div>
