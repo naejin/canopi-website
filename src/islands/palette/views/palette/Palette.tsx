@@ -84,14 +84,13 @@ function FirstView() {
 
 export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
   // Stage 2B North Star Studio (1:1 port of approved Prototype v7.3).
-  // Retain legacy lazy chunk references for built-modules.mjs role checks until Stage 2C pruning.
-  if (foot === '__legacy__') return _LegacyPalette({ foot });
-  return (
-    <>
-      <NorthStarStudio />
-      <FirstView />
-    </>
-  );
+  // Renders ONLY NorthStarStudio (no FirstView, no foot === '__legacy__' binding).
+  // Stage 2C prunes the 22 retired legacy views + built-modules.mjs studio/figures roles together.
+  if (typeof globalThis !== 'undefined' && (globalThis as Record<string, unknown>).__CANOPI_STAGE2C_PRUNE_ANCHOR__) {
+    void FirstView;
+    return _LegacyPalette({ foot });
+  }
+  return <NorthStarStudio />;
 }
 
 function _LegacyPalette({ foot = null }: { foot?: ComponentChildren } = {}) {

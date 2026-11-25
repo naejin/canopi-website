@@ -5,6 +5,7 @@ import { useEffect } from 'preact/hooks';
 import type { ReportHorizonId } from '../../../../lib/palette/index.ts';
 import { REPORT_SCENARIOS } from '../../../../lib/palette/index.ts';
 import { T } from '../../strings.ts';
+import { scenarioShort } from './ns-helpers.ts';
 import { DesignBoard } from './DesignBoard.tsx';
 import { Drawers } from './Drawers.tsx';
 import { LandPanel } from './LandPanel.tsx';
@@ -63,7 +64,7 @@ export function NorthStarStudio() {
                 onChange={(e) => { nsScenario.value = (e.target as HTMLSelectElement).value as ReportHorizonId; }}
               >
                 {REPORT_SCENARIOS.map((sc) => (
-                  <option key={sc.id} value={sc.id}>{sc.short}</option>
+                  <option key={sc.id} value={sc.id}>{scenarioShort(sc.id)}</option>
                 ))}
               </select>
             </label>

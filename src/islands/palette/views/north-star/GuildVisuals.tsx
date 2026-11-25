@@ -157,24 +157,30 @@ export function GuildElevationSvg({ rep }: { rep: PaletteReport }) {
           const stroke = v?.level === 'at_risk' ? 'var(--danger)' : v?.level === 'check' ? 'var(--warning)' : 'var(--accent-ink)';
           const isDim = hovered !== null && hovered !== t.id && !partnerIds.has(t.id);
           return (
-            <g
-              key={t.id}
-              opacity={isDim ? 0.35 : 1}
-              style={{ cursor: 'pointer' }}
-              tabIndex={0}
-              role="button"
-              aria-label={`${taxCommonName(t)} (${fmtNum(hM, 1)} m)`}
-              onMouseEnter={() => { nsHoveredPlant.value = t.id; }}
-              onMouseLeave={() => { if (nsHoveredPlant.value === t.id) nsHoveredPlant.value = null; }}
-              onFocus={() => { nsHoveredPlant.value = t.id; }}
-              onBlur={() => { if (nsHoveredPlant.value === t.id) nsHoveredPlant.value = null; }}
-              onClick={() => { nsDrawer.value = { kind: 'dossier', id: t.id }; }}
-            >
-              {botanicalSilhouette(t, cx, soilY, hPx, wPx, stroke, stroke, v?.level === 'at_risk')}
-              <text x={cx} y={soilY + 14} text-anchor="middle" fill="var(--text-secondary)" font-size="9.5">
+            <g key={t.id} opacity={isDim ? 0.35 : 1}>
+              <g
+                style={{ cursor: 'pointer' }}
+                tabIndex={0}
+                role="button"
+                aria-label={`${taxCommonName(t)} (${fmtNum(hM, 1)} m)`}
+                onMouseEnter={() => { nsHoveredPlant.value = t.id; }}
+                onMouseLeave={() => { if (nsHoveredPlant.value === t.id) nsHoveredPlant.value = null; }}
+                onFocus={() => { nsHoveredPlant.value = t.id; }}
+                onBlur={() => { if (nsHoveredPlant.value === t.id) nsHoveredPlant.value = null; }}
+                onClick={() => { nsDrawer.value = { kind: 'dossier', id: t.id }; }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    nsDrawer.value = { kind: 'dossier', id: t.id };
+                  }
+                }}
+              >
+                {botanicalSilhouette(t, cx, soilY, hPx, wPx, stroke, stroke, v?.level === 'at_risk')}
+              </g>
+              <text x={cx} y={soilY + 14} text-anchor="middle" fill="var(--text-secondary)" font-size="9.5" aria-hidden="true">
                 {taxCommonName(t).slice(0, 11)}
               </text>
-              <text x={cx} y={soilY + 25} text-anchor="middle" fill="var(--text-muted)" font-size="8.5">
+              <text x={cx} y={soilY + 25} text-anchor="middle" fill="var(--text-muted)" font-size="8.5" aria-hidden="true">
                 {t.traits.height_m?.max != null ? `${fmtNum(t.traits.height_m.max, 1)}m` : '?'}
               </text>
             </g>

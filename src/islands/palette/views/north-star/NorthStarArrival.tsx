@@ -210,10 +210,10 @@ export function NorthStarArrival() {
             <span class="brief-k">{T('ns.brief.soilWater')}</span>
             <strong class="brief-v">
               {effToday.soilPh !== null ? `pH ${fmtNum(effToday.soilPh, 1)}` : T('ns.unknown')}
-              {effToday.tankDays !== null ? ` · ${effToday.tankDays} d` : ''}
+              {effToday.tankDays !== null ? ` · ${effToday.tankDays} ${T('ns.unit.dayShort')}` : ''}
             </strong>
             <span class="brief-sub">
-              {effToday.precipMm !== null ? `${effToday.precipMm} mm/yr` : T('ns.unknown')}
+              {effToday.precipMm !== null ? `${effToday.precipMm} ${T('ns.unit.mmYear')}` : T('ns.unknown')}
             </span>
           </div>
         </div>

@@ -35,7 +35,7 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
   const checked = nsCheckedIds.value;
   const nursery = rep.nurseryList;
   const checkedCount = nursery.filter((t) => checked.has(t.id)).length;
-  const placeLabel = store.location.value?.label ?? store.climate.value ?? 'site';
+  const placeLabel = store.location.value?.label ?? store.climate.value ?? T('ns.land.yourSite');
 
   const waveY1 = rep.taxa.filter((t) => harvestWaveOf(t) === 'y1');
   const waveY5 = rep.taxa.filter((t) => harvestWaveOf(t) === 'y5');
@@ -71,7 +71,7 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
           <p class="plan-big">
             <strong>{fmtNum(cb.totalCrownM2, 1)} m²</strong> / {cb.netPlotM2} m² {T('ns.land.net')} ({cb.budgetPct}%)
           </p>
-          <div class="budget-bar" role="progressbar" aria-valuenow={Math.min(100, cb.budgetPct)} aria-valuemin={0} aria-valuemax={100}>
+          <div class="budget-bar" role="progressbar" aria-label={T('ns.plan.budgetTitle')} aria-valuenow={Math.min(100, cb.budgetPct)} aria-valuemin={0} aria-valuemax={100}>
             <div class="budget-fill" data-over={cb.overBudget ? 'true' : 'false'} style={{ width: `${Math.min(100, cb.budgetPct)}%` }} />
           </div>
           {cb.overBudget && (

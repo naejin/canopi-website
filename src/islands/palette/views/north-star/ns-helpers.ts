@@ -3,10 +3,13 @@
 // Zero raw hex colours; zero PFAF / Plants For A Future strings.
 import type {
   EffectiveSiteClimate,
+  FrostFact,
   JobId,
   PaletteReport,
   Phase,
+  ReportHorizonId,
   ReportVerdictLevel,
+  ReportVerdictReason,
   Stratum,
   Taxon,
 } from '../../../../lib/palette/index.ts';
@@ -16,10 +19,116 @@ import { nameOf, pageLang, T } from '../../strings.ts';
 const PFAF_RE = /pfaf|plants for a future/i;
 
 export function sanitizeSourceLabel(id: string | null | undefined, label?: string | null): string {
+  const lowId = (id ?? '').toLowerCase();
+  if (lowId === 'llm-knowledge' || lowId === 'curated' || lowId === 'canopi' || lowId === 'canopi-curator') {
+    return T('ns.dossier.sourceCurated');
+  }
   const raw = (label ?? id ?? '').trim();
   if (!raw) return T('ns.sourceRef');
-  if (id?.toLowerCase() === 'pfaf' || PFAF_RE.test(raw)) return T('ns.sourceRef');
+  if (lowId === 'pfaf' || PFAF_RE.test(raw)) return T('ns.sourceRef');
+  if (/curator knowledge/i.test(raw)) return T('ns.dossier.sourceCurated');
   return raw;
+}
+
+export function frostSourceLabel(kind: FrostFact['kind'], rawSource?: string): string {
+  if (kind === 'ktmpr') return T('ns.dossier.frostDormant');
+  if (kind === 'ktmp') return T('ns.dossier.frostActive');
+  if (kind === 'class') return T('ns.dossier.frostClass');
+  return sanitizeSourceLabel(rawSource, rawSource);
+}
+
+export function traitFieldLabel(field: string): string {
+  switch (field) {
+    case 'sun_exposure_sunniest': return T('ns.field.sunSunniest');
+    case 'sun_exposure_shadiest': return T('ns.field.sunShadiest');
+    case 'sun_exposure_preferred': return T('ns.field.sunPreferred');
+    case 'habit': return T('ns.field.habit');
+    case 'frost_tender': return T('ns.field.frostTender');
+    case 'height_min_m':
+    case 'height_max_m': return T('ns.field.height');
+    case 'width_max_m': return T('ns.field.width');
+    case 'soil_ph_min':
+    case 'soil_ph_max': return T('ns.field.soilPh');
+    case 'drought_tolerance':
+    case 'moisture_use':
+    case 'well_drained': return T('ns.field.water');
+    case 'toxicity': return T('ns.field.toxicity');
+    default: return T('ns.field.other');
+  }
+}
+
+export function lightSpanLabel(t: Taxon): string {
+  const hi = t.light.sunniest ?? t.light.preferred ?? t.stratum?.value ?? null;
+  const lo = t.light.shadiest ?? hi;
+  if (hi && lo && hi !== lo) return `${stratumLabel(hi)} – ${stratumLabel(lo)}`;
+  if (hi) return stratumLabel(hi);
+  if (t.traits.sun && t.traits.full_shade) return `${stratumLabel('emergent')} – ${stratumLabel('low')}`;
+  if (t.traits.sun && t.traits.semi_shade) return `${stratumLabel('emergent')} – ${stratumLabel('medium')}`;
+  if (t.traits.sun) return stratumLabel('emergent');
+  if (t.traits.semi_shade) return stratumLabel('medium');
+  if (t.traits.full_shade) return stratumLabel('low');
+  return T('ns.unknown');
+}
+
+export function scenarioShort(id: ReportHorizonId): string {
+  switch (id) {
+    case 'today': return T('ns.scen.today.short');
+    case 'y2050': return T('ns.scen.y2050.short');
+    case 'y2050_ssp126': return T('ns.scen.y2050_ssp126.short');
+    case 'y2050_ssp370': return T('ns.scen.y2050_ssp370.short');
+    case 'y2050_ssp585': return T('ns.scen.y2050_ssp585.short');
+    case 'y2080_ssp245': return T('ns.scen.y2080_ssp245.short');
+    case 'y2080_ssp585': return T('ns.scen.y2080_ssp585.short');
+    case 'freeze': return T('ns.scen.freeze.short');
+    case 'heat': return T('ns.scen.heat.short');
+    case 'drought': return T('ns.scen.drought.short');
+  }
+}
+
+export function scenarioLabel(id: ReportHorizonId): string {
+  switch (id) {
+    case 'today': return T('ns.scen.today.label');
+    case 'y2050': return T('ns.scen.y2050.label');
+    case 'y2050_ssp126': return T('ns.scen.y2050_ssp126.label');
+    case 'y2050_ssp370': return T('ns.scen.y2050_ssp370.label');
+    case 'y2050_ssp585': return T('ns.scen.y2050_ssp585.label');
+    case 'y2080_ssp245': return T('ns.scen.y2080_ssp245.label');
+    case 'y2080_ssp585': return T('ns.scen.y2080_ssp585.label');
+    case 'freeze': return T('ns.scen.freeze.label');
+    case 'heat': return T('ns.scen.heat.label');
+    case 'drought': return T('ns.scen.drought.label');
+  }
+}
+
+export function localizedReason(r: ReportVerdictReason, eff: EffectiveSiteClimate, t: Taxon): string {
+  const cl = t.climate;
+  const ext = t.extremes;
+  const ph = t.traits.soil_ph;
+  const phRange = ph ? `${ph.min ?? '?'}–${ph.max ?? '?'}` : '?';
+  const dUnit = T('ns.unit.dayShort');
+  switch (r.code) {
+    case 'cold_monthly': return T('ns.reason.coldMonthly', { site: fmtC(eff.tminColdC), lim: fmtC(cl?.tminCold?.low) });
+    case 'cold_monthly_edge': return T('ns.reason.coldMonthlyEdge', { site: fmtC(eff.tminColdC), lim: fmtC(cl?.tminCold?.low) });
+    case 'heat_annual_cool_season': return T('ns.reason.heatAnnual', { site: fmtC(eff.tmaxWarmC), lim: fmtC(cl?.tmaxWarm?.high) });
+    case 'heat_monthly': return T('ns.reason.heatMonthly', { site: fmtC(eff.tmaxWarmC), lim: fmtC(cl?.tmaxWarm?.high) });
+    case 'heat_monthly_edge': return T('ns.reason.heatMonthlyEdge', { site: fmtC(eff.tmaxWarmC), lim: fmtC(cl?.tmaxWarm?.high) });
+    case 'cool_year': return T('ns.reason.coolYear', { site: fmtC(eff.tmeanYearC), lim: fmtC(cl?.tmeanYear?.low) });
+    case 'cool_year_edge': return T('ns.reason.coolYearEdge', { site: fmtC(eff.tmeanYearC), lim: fmtC(cl?.tmeanYear?.low) });
+    case 'cool_summer': return T('ns.reason.coolSummer', { site: fmtC(eff.tmeanWarmC), lim: fmtC(cl?.tmeanWarm?.low) });
+    case 'extreme_freeze': return T('ns.reason.extremeFreeze', { site: fmtC(eff.freeze10C), lim: fmtC(ext?.tminExtreme?.low ?? ext?.coldTailC) });
+    case 'extreme_freeze_edge': return T('ns.reason.extremeFreezeEdge', { site: fmtC(eff.freeze10C), lim: fmtC(ext?.tminExtreme?.low ?? ext?.coldTailC) });
+    case 'extreme_heat': return T('ns.reason.extremeHeat', { site: fmtC(eff.heat10C), lim: fmtC(ext?.tmaxExtreme?.high ?? ext?.heatDomeC) });
+    case 'extreme_heat_edge': return T('ns.reason.extremeHeatEdge', { site: fmtC(eff.heat10C), lim: fmtC(ext?.tmaxExtreme?.high ?? ext?.heatDomeC) });
+    case 'topsoil_ph': return T('ns.reason.topsoilPh', { site: fmtNum(eff.soilPh, 1), lim: phRange });
+    case 'subsoil_ph_trap': return T('ns.reason.subsoilPh', { site: fmtNum(eff.subsoilPh, 1), lim: phRange });
+    case 'summer_water_est': return T('ns.reason.summerWaterEst');
+    case 'dry_spell_water': return T('ns.reason.drySpell', { cdd: `~${eff.cddDays ?? '?'} ${dUnit}`, tank: `~${eff.tankDays ?? '?'} ${dUnit}` });
+    case 'waterlogged': return T('ns.reason.waterlogged');
+    case 'heavy_clay_prep': return T('ns.reason.heavyClay', { clay: `${eff.clayPct ?? '?'}%` });
+    case 'wind_sensitive': return T('ns.reason.windSensitive');
+    case 'room_tall': return T('ns.reason.roomTall', { maxH: `${fmtNum(t.traits.height_m?.max, 1)} m`, limitH: `${fmtNum(eff.roomLimitM, 1)} m` });
+    default: return r.detail;
+  }
 }
 
 export function taxCommonName(t: Taxon): string {

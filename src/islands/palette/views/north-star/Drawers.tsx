@@ -25,7 +25,9 @@ import { PlantThumb, ScaleRootSvg, WalterLiethSvg } from './GuildVisuals.tsx';
 import {
   fmtC,
   fmtNum,
+  frostSourceLabel,
   jobLabel,
+  localizedReason,
   nativeSummary,
   PHASE_LIST,
   phaseLabel,
@@ -33,8 +35,10 @@ import {
   photoUrlOf,
   pollinationNote,
   sanitizeSourceLabel,
+  scenarioLabel,
   stratumLabel,
   taxCommonName,
+  traitFieldLabel,
   verdictLabel,
   verdictTone,
 } from './ns-helpers.ts';
@@ -265,10 +269,10 @@ function AtlasDrawer({ rep, initialTab, swapFor }: { rep: PaletteReport; initial
   return (
     <div class="drawer-body">
       <div class="pill-group" role="tablist">
-        <button type="button" role="tab" aria-selected={tab === 'climate' ? 'true' : 'false'} class="site-pill-sm" aria-pressed={tab === 'climate' ? 'true' : 'false'} onClick={() => setTab('climate')}>
+        <button type="button" role="tab" aria-selected={tab === 'climate' ? 'true' : 'false'} class="site-pill-sm" onClick={() => setTab('climate')}>
           {T('ns.atlas.tabClimate')}
         </button>
-        <button type="button" role="tab" aria-selected={tab === 'swaps' ? 'true' : 'false'} class="site-pill-sm" aria-pressed={tab === 'swaps' ? 'true' : 'false'} onClick={() => setTab('swaps')}>
+        <button type="button" role="tab" aria-selected={tab === 'swaps' ? 'true' : 'false'} class="site-pill-sm" onClick={() => setTab('swaps')}>
           {T('ns.atlas.tabSwaps')}
         </button>
       </div>
@@ -306,7 +310,7 @@ function AtlasDrawer({ rep, initialTab, swapFor }: { rep: PaletteReport; initial
             <h4>{T('ns.land.waterTank')}{isFuture ? ` (${T('ns.today')})` : ''}</h4>
             <p>
               <strong>{rep.eff.tankDays !== null ? `${rep.eff.tankDays} ${T('ns.days')}` : T('ns.unknown')}</strong>{' '}
-              vs {rep.eff.cddDays !== null ? `${rep.eff.cddDays} d ${T('ns.land.drySpell')}` : T('ns.unknown')}
+              {T('ns.unit.vs')} {rep.eff.cddDays !== null ? `${rep.eff.cddDays} ${T('ns.unit.dayShort')} ${T('ns.land.drySpell')}` : T('ns.unknown')}
             </p>
           </section>
 
@@ -323,7 +327,7 @@ function AtlasDrawer({ rep, initialTab, swapFor }: { rep: PaletteReport; initial
                       class={`scenario-row${active ? ' is-active' : ''}`}
                       onClick={() => { nsScenario.value = sc.id; }}
                     >
-                      <span>{sc.label}</span>
+                      <span>{scenarioLabel(sc.id)}</span>
                       <strong>{sc.fitsCount}/{rep.taxa.length} {T('ns.verdict.fits')}</strong>
                     </button>
                   </li>
@@ -483,11 +487,11 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
         </p>
         {v.reasons.length > 0 && (
           <ul class="reason-list">
-            {v.reasons.map((r, i) => <li key={i}>{r.detail}</li>)}
+            {v.reasons.map((r, i) => <li key={i}>{localizedReason(r, rep.eff, taxon)}</li>)}
           </ul>
         )}
         {frost && (
-          <p class="ns-muted">{T('ns.dossier.frostHardiness')}: {fmtC(frost.valueC)} ({frost.kind.toUpperCase()})</p>
+          <p class="ns-muted">{T('ns.dossier.frostHardiness')}: {fmtC(frost.valueC)} ({frostSourceLabel(frost.kind)})</p>
         )}
       </section>
 
@@ -573,7 +577,7 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
             <ul class="reason-list">
               {details.traitSources.slice(0, 8).map((ts, idx) => (
                 <li key={idx}>
-                  <strong>{ts.field.replace(/_/g, ' ')}:</strong>{' '}
+                  <strong>{traitFieldLabel(ts.field)}:</strong>{' '}
                   {sanitizeSourceLabel(ts.source, details.sources[ts.source]?.label)}
                   {ts.quote && <blockquote>“{ts.quote}”</blockquote>}
                   {ts.sourceUrl && (

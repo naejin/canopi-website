@@ -12,6 +12,7 @@ import { GuildElevationSvg } from './GuildVisuals.tsx';
 import {
   fmtNum,
   jobLabel,
+  lightSpanLabel,
   PHASE_LIST,
   phaseShortLabel,
   photoUrlOf,
@@ -69,7 +70,7 @@ function PlantRow({ taxon, rep }: { taxon: Taxon; rep: PaletteReport }) {
           {!compact && (
             <div class="plant-row-meta">
               <span>{taxon.traits.height_m?.max != null ? `${fmtNum(taxon.traits.height_m.max, 1)} m` : T('ns.unknown')}</span>
-              <span>· {stratumLabel(taxon.light.preferred ?? taxon.stratum?.value)}</span>
+              <span>· {lightSpanLabel(taxon)}</span>
               {v?.alreadyOnSite && <span class="tag-pill">{T('ns.alreadyOnSite')}</span>}
               {showTox && tox.status === 'toxic' && (
                 <span class="tag-pill tag-warn">{T('ns.tox.caution')}: {tox.level}</span>
@@ -136,7 +137,7 @@ function SunSuccessionMatrix({ rep }: { rep: PaletteReport }) {
                   <strong>{stratumLabel(stratum)}</strong>
                   <span>{items.length}</span>
                 </div>
-                <div class="matrix-span-track" style={{ gridColumn: '2 / span 7' }}>
+                <div class="matrix-span-track" role="cell" style={{ gridColumn: '2 / span 7' }}>
                   {items.length === 0 ? (
                     <span class="ns-muted" style={{ fontSize: '12px' }}>—</span>
                   ) : (
@@ -333,7 +334,6 @@ export function DesignBoard({ rep }: { rep: PaletteReport }) {
               role="tab"
               aria-selected={mode === v ? 'true' : 'false'}
               class="site-pill-sm"
-              aria-pressed={mode === v ? 'true' : 'false'}
               onClick={() => { nsViewMode.value = v; }}
             >
               {T(`ns.view.${v}`)}

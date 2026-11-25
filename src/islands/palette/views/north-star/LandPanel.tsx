@@ -89,12 +89,12 @@ export function LandPanel({ rep }: { rep: PaletteReport }) {
               </dt>
               <dd>
                 {eff.tankDays !== null ? `${eff.tankDays} ${T('ns.days')}` : T('ns.unknown')}
-                {eff.cddDays !== null ? ` / ${eff.cddDays} d ${T('ns.land.drySpell')}` : ''}
+                {eff.cddDays !== null ? ` / ${eff.cddDays} ${T('ns.unit.dayShort')} ${T('ns.land.drySpell')}` : ''}
               </dd>
             </div>
             <div class="land-row">
               <dt>{T('ns.land.rain')}</dt>
-              <dd>{eff.precipMm !== null ? `${eff.precipMm} mm/yr` : T('ns.unknown')}</dd>
+              <dd>{eff.precipMm !== null ? `${eff.precipMm} ${T('ns.unit.mmYear')}` : T('ns.unknown')}</dd>
             </div>
             <div class="land-row">
               <dt>{T('ns.land.plot')}</dt>
