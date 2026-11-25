@@ -4,6 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   crownAreaM2,
+  evaluatePlantVerdict,
   isStructuralVine,
   resolveEffectiveSite,
   selectStarterPalette,
@@ -80,13 +81,41 @@ test('isStructuralVine includes grapevine and excludes sweet potato trailing gro
   assert.equal(vineSupportTree(grape, [grape]), null);
 });
 
-test('selectStarterPalette keeps toxic and invasive species eligible (inform, do not block)', () => {
+test('selectStarterPalette neither excludes nor penalizes toxic or invasive species (inform, do not block)', () => {
   const base = resolveEffectiveSite(null, 'today', { soilPh: 6.5, plotM2: 150 });
   const eff = { ...base, hasClimate: true, tminColdC: -2, tmaxWarmC: 26, tmeanYearC: 12, tmeanWarmC: 20, country: 'FR' };
-  const onlyPool = [
-    makeTaxon({ id: 'tox-apple', tox: 'Moderate', invasiveIn: [{ country: 'FR', sources: ['griis'] }] }),
-  ];
-  const chosen = selectStarterPalette(onlyPool, eff, { maxPlants: 8 });
+  const toxInv = makeTaxon({ id: 'tox-apple', canonical_name: 'Malus domestica', edibility: 5, tox: 'Severe', invasiveIn: [{ country: 'FR', sources: ['griis'] }] });
+  const weakerClean = makeTaxon({ id: 'clean-tree', canonical_name: 'Sorbus domestica', edibility: 3 });
+  const chosen = selectStarterPalette([weakerClean, toxInv], eff, { maxPlants: 1 });
   assert.equal(chosen.length, 1);
   assert.equal(chosen[0].id, 'tox-apple');
+});
+
+test('vineSupportTree excludes palms (Arecaceae) and trees shorter than 2 m', () => {
+  const grape = makeTaxon({ id: 'vitis', canonical_name: 'Vitis vinifera', genus: 'Vitis', habit: 'Climber', maxH: 15 });
+  const palm = makeTaxon({ id: 'phoenix', canonical_name: 'Phoenix dactylifera', genus: 'Phoenix', family: 'Arecaceae', habit: 'Tree', maxH: 20 });
+  const dwarf = makeTaxon({ id: 'dwarf', canonical_name: 'Dwarf tree', family: 'Rosaceae', habit: 'Tree', maxH: 1.5 });
+  assert.equal(vineSupportTree(grape, [palm, grape]), null);
+  assert.equal(vineSupportTree(grape, [dwarf, grape]), null);
+});
+
+test('selectStarterPalette Layer 3 requires perennial climber and evaluates climber without room_tall', () => {
+  const base = resolveEffectiveSite(null, 'today', { soilPh: 6.5, room: 'small', plotM2: 150 });
+  const eff = { ...base, hasClimate: true, tminColdC: -2, tmaxWarmC: 26, tmeanYearC: 12, tmeanWarmC: 20 };
+  const bean = makeTaxon({ id: 'bean', canonical_name: 'Phaseolus vulgaris', genus: 'Phaseolus', family: 'Fabaceae', habit: 'Climber', maxH: 3, annual: true, edibility: 5 });
+  const grape = makeTaxon({ id: 'vitis', canonical_name: 'Vitis vinifera', genus: 'Vitis', family: 'Vitaceae', habit: 'Climber', maxH: 35, annual: false, edibility: 4 });
+  const chosen = selectStarterPalette([bean, grape], eff, { maxPlants: 1 });
+  assert.equal(chosen[0]?.id, 'vitis');
+  const verdict = evaluatePlantVerdict(grape, eff);
+  assert.equal(verdict.notes.includes('room_tall'), false);
+});
+
+test('selectStarterPalette estimates NULL tree width instead of treating it as 0 m2', () => {
+  const base = resolveEffectiveSite(null, 'today', { soilPh: 6.5, room: 'small', plotM2: 150 });
+  const eff = { ...base, hasClimate: true, tminColdC: -2, tmaxWarmC: 26, tmeanYearC: 12, tmeanWarmC: 20 };
+  const nullWidthTree = makeTaxon({ id: 'null-w', en: 'NullWidth', habit: 'Tree', maxH: 6, widthM: null, edibility: 5 });
+  nullWidthTree.traits.width_max_m = null;
+  const apple = makeTaxon({ id: 'apple', en: 'Apple', habit: 'Tree', maxH: 15, widthM: 8, edibility: 5 });
+  const chosen = selectStarterPalette([nullWidthTree, apple], eff, { maxPlants: 1 });
+  assert.equal(chosen[0]?.id, 'apple');
 });

@@ -3631,5 +3631,6 @@
   "consortium.ns.lightbox.rolesAria": "Ракурсы растения",
   "consortium.ns.lightbox.sourceLink": "Источник",
   "consortium.ns.lightbox.unavailable": "Фото недоступно.",
+  "consortium.ns.arrival.noStarter": "Ни одно растение из этого климатического списка не подходит ко всем местным условиям — начните с нуля, чтобы просмотреть весь каталог.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

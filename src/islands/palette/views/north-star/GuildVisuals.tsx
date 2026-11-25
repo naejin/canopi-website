@@ -14,7 +14,7 @@ import {
   type HabitSilhouetteKind,
 } from '../../../../lib/botanical-silhouettes.ts';
 import type { EffectiveSiteClimate, PaletteReport, PlantId, Taxon } from '../../../../lib/palette/index.ts';
-import { months as MONTHS } from '../../../../lib/palette/index.ts';
+import { isStructuralVine, months as MONTHS, vineSupportTree } from '../../../../lib/palette/index.ts';
 import { T } from '../../strings.ts';
 import { Glyph } from '../kit/Glyph.tsx';
 import {
@@ -196,7 +196,10 @@ export function GuildProfileSvg({ rep }: { rep: PaletteReport }) {
     const k = classifyHabitSilhouette(p.traits.habit, p.traits.height_m?.max ?? null, p.traits.width_max_m ?? null);
     return k === 'round_tree' || k === 'columnar_tree' || k === 'spreading_tree';
   });
-  const anyTallerThanRoom = maxRoomM != null && shown.some((p) => p.traits.height_m?.max != null && p.traits.height_m.max > maxRoomM);
+  const anyTallerThanRoom = maxRoomM != null && shown.some((p) => {
+    const h = isStructuralVine(p) ? (vineSupportTree(p, rep.taxa)?.traits.height_m?.max ?? null) : (p.traits.height_m?.max ?? null);
+    return h != null && h > maxRoomM;
+  });
   const W = 780, soilY = 148, aboveH = 114, leftPad = 136, rightPad = hasAnyTree ? 106 : 22;
   const plotLeft = 78;
   const topY = soilY - aboveH;
@@ -243,7 +246,10 @@ export function GuildProfileSvg({ rep }: { rep: PaletteReport }) {
     const hTag = hVal != null ? `${fmtNum(hVal)} m` : T('ns.elev.heightUnknown');
     const lightNeed = lightSpanLabel(p);
     const metaText = `${hTag} · ${lightNeed}`;
-    const tallerNote = maxRoomM != null && hVal != null && hVal > maxRoomM ? T('ns.elev.tallerThanRoom') : null;
+    const isVine = isStructuralVine(p);
+    const vineSup = isVine ? vineSupportTree(p, rep.taxa) : null;
+    const effHForRoom = isVine ? (vineSup ? (vineSup.traits.height_m?.max ?? null) : null) : hVal;
+    const tallerNote = maxRoomM != null && effHForRoom != null && effHForRoom > maxRoomM ? T('ns.elev.tallerThanRoom') : null;
     const maxLabelW = Math.max(
       ...lines.map((ln) => estimateTextWidth(ln, 11.5)),
       estimateTextWidth(metaText, 11),

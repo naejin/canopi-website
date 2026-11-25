@@ -1703,7 +1703,15 @@ export function Drawers({ rep }: { rep: PaletteReport }) {
     if (prev instanceof HTMLElement && !prev.closest('.drawer')) {
       openerRef.current = prev;
     }
-    closeBtnRef.current?.focus();
+    // When returning to Picker from Dossier, PickerDrawer's own useLayoutEffect runs first (child
+    // before parent), focuses `button[data-picker-plant-id]`, and clears `nsPickerFocusId` — don't
+    // overwrite that restored row focus with Close.
+    const restoredPickerRow =
+      drawer.kind === 'picker'
+      && (Boolean(nsPickerFocusId.peek()) || (prev instanceof HTMLElement && prev.hasAttribute('data-picker-plant-id')));
+    if (!restoredPickerRow) {
+      closeBtnRef.current?.focus();
+    }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         const cur = nsDrawer.peek();
@@ -1798,8 +1806,13 @@ export function Drawers({ rep }: { rep: PaletteReport }) {
                 aria-pressed={dossierInPalette ? 'true' : 'false'}
                 onClick={() => {
                   if (dossierInPalette) {
-                    removePlantFromPalette(dossierTaxon.id);
-                    showNsToast(T('ns.dossier.removedToast', { plant: taxCommonName(dossierTaxon) }));
+                    const restoreId = dossierTaxon.id;
+                    const restoreZone = dossierGuestZone;
+                    removePlantFromPalette(restoreId);
+                    showNsToast(
+                      T('ns.dossier.removedToast', { plant: taxCommonName(dossierTaxon) }),
+                      () => addPlantToPalette(restoreId, restoreZone),
+                    );
                   } else {
                     addPlantToPalette(dossierTaxon.id, dossierGuestZone);
                     showNsToast(T('ns.dossier.addedToast', { plant: taxCommonName(dossierTaxon) }));

@@ -19,6 +19,7 @@ import {
   verdictSymbolLabel,
 } from './ns-helpers.ts';
 import {
+  activePool,
   currentLocale,
   effectiveOverrides,
   launchEmpty,
@@ -84,7 +85,9 @@ export function NorthStarArrival() {
   const dryMo50 = eff2050.dryMonths;
   const frostCal = loc?.lookup?.v07?.frostCalendar ?? null;
   const springP90Date = doyToDateLabel(frostCal?.lastSpringP90Doy);
-  const isHydrating = !loc?.lookup || loading || starter.length === 0;
+  const poolReady = store.load.value.status === 'ready' && activePool.value.length > 0;
+  const isHydrating = !loc?.lookup || loading || !poolReady;
+  const noStarter = !isHydrating && starter.length === 0;
   const countryCode = effToday.country;
   const countryInvasiveUnchecked = !isHydrating && !!countryCode
     && store.source.value?.countries().get(countryCode)?.invasiveChecked === false;
@@ -271,6 +274,8 @@ export function NorthStarArrival() {
           <p class="muted" style={{ marginTop: '6px' }}>
             {isHydrating ? (
               <span class="ns-skel ns-skel-sub" aria-hidden="true" />
+            ) : noStarter ? (
+              T('ns.arrival.noStarter')
             ) : allFit ? (
               T('ns.arrival.allFit', { ph: fmtNum(effToday.soilPh) })
             ) : (
@@ -356,6 +361,8 @@ export function NorthStarArrival() {
                 </div>
               </div>
             ))
+          ) : noStarter ? (
+            <p class="small muted" style={{ gridColumn: '1 / -1', margin: '4px 0' }}>{T('ns.arrival.noStarter')}</p>
           ) : (
             starter.map((p) => {
               const v = starterVerdicts.get(p.id);
@@ -371,7 +378,9 @@ export function NorthStarArrival() {
                   <div class="starter-mini-txt">
                     <div class="starter-mini-name">{taxCommonName(p)}</div>
                     <div class="starter-mini-bot">
-                      {climbNote ?? (pollWarn || (v ? verdictSymbolLabel(v.level) : p.canonical_name))}
+                      {pollWarn && <div>{pollWarn}</div>}
+                      {climbNote && <div>{climbNote}</div>}
+                      {!pollWarn && !climbNote && (v ? verdictSymbolLabel(v.level) : p.canonical_name)}
                     </div>
                   </div>
                 </div>
@@ -385,17 +394,19 @@ export function NorthStarArrival() {
         )}
 
         <div class="place-actions">
-          <button
-            type="button"
-            class="btn-primary"
-            disabled={isHydrating}
-            onClick={launchWithStarter}
-          >
-            {isHydrating
-              ? T('ns.arrival.preparing')
-              : (shortName ? T('ns.arrival.openPalette', { place: shortName }) : T('ns.arrival.startCta'))}
-          </button>
-          <button type="button" class="btn-ghost" onClick={launchEmpty}>
+          {!noStarter && (
+            <button
+              type="button"
+              class="btn-primary"
+              disabled={isHydrating}
+              onClick={launchWithStarter}
+            >
+              {isHydrating
+                ? T('ns.arrival.preparing')
+                : (shortName ? T('ns.arrival.openPalette', { place: shortName }) : T('ns.arrival.startCta'))}
+            </button>
+          )}
+          <button type="button" class={noStarter ? 'btn-primary' : 'btn-ghost'} onClick={launchEmpty}>
             {T('ns.arrival.scratchCta')}
           </button>
         </div>

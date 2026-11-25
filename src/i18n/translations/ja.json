@@ -3631,5 +3631,6 @@
   "consortium.ns.lightbox.rolesAria": "植物の写真ビュー",
   "consortium.ns.lightbox.sourceLink": "出典",
   "consortium.ns.lightbox.unavailable": "写真を表示できません。",
+  "consortium.ns.arrival.noStarter": "この気候リストには現地のすべての条件に合う植物がありません。最初から作成して全植物を閲覧できます。",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

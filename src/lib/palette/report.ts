@@ -587,8 +587,8 @@ export function evaluatePlantVerdict(
     reasons.push({ code: 'stony_soil', severity: 'note', detail: `Stony soil (${Math.round(eff.stonesPct)}% rock) may restrict deep roots` });
   }
 
-  // 6. Room height (note only, never blocks)
-  if (eff.roomLimitM !== null && taxon.traits.height_m?.max != null && taxon.traits.height_m.max > eff.roomLimitM) {
+  // 6. Room height (note only, never blocks; climbers are trained to their support/trellis)
+  if (eff.roomLimitM !== null && sizeClassOf(taxon) !== 'climber' && taxon.traits.height_m?.max != null && taxon.traits.height_m.max > eff.roomLimitM) {
     notes.add('room_tall');
     reasons.push({ code: 'room_tall', severity: 'note', detail: `Grows to ${taxon.traits.height_m.max} m — prune to fit ${eff.roomLimitM} m room` });
   }
@@ -871,10 +871,15 @@ export function isStructuralVine(taxon: Taxon): boolean {
   return true;
 }
 
-/** Returns the canopy tree a vine can climb in the guild, or null when it needs a trellis. */
+/** Returns the canopy tree a vine can climb in the guild (excludes palms and trees < 2 m), or null when it needs a trellis. */
 export function vineSupportTree(taxon: Taxon, guild: readonly Taxon[]): Taxon | null {
   if (!isStructuralVine(taxon)) return null;
-  return guild.find((t) => t.id !== taxon.id && sizeClassOf(t) === 'tree') ?? null;
+  return guild.find((t) =>
+    t.id !== taxon.id
+    && sizeClassOf(t) === 'tree'
+    && (t.family ?? '').toLowerCase() !== 'arecaceae'
+    && (t.traits.height_m?.max ?? 0) >= 2,
+  ) ?? null;
 }
 
 function isEdibleRootCrop(taxon: Taxon): boolean {
@@ -947,8 +952,9 @@ function sitePhScore(taxon: Taxon, eff: EffectiveSiteClimate): number {
 /**
  * Picks a balanced, per-site layered starter guild strictly from plants that `fits`
  * (0 outside climate/extremes/pH) while keeping total measured crown area <= eff.netPlotM2.
- * Never excludes toxic or invasive species (inform, don't block); ranks down severe toxicity
- * and local invasives softly while preferring regional staples, moisture/Koppen fit, and 2050 resilience.
+ * Never excludes or penalizes toxic or invasive species (Operator rule: inform, don't block);
+ * ranks purely on agroecological fit/utility (regional staples, moisture/Koppen fit, 2050 resilience)
+ * while the UI informs the grower clearly in words with warnings.
  */
 export function selectStarterPalette(
   pool: readonly Taxon[],
@@ -958,17 +964,19 @@ export function selectStarterPalette(
   const maxPlants = options.maxPlants ?? 8;
   const eff2050 = options.eff2050 ?? null;
   const nicheStratumOf = (t: Taxon): string => t.stratum?.value ?? t.light.preferred ?? t.light.sunniest ?? '';
-  const isSevereTox = (t: Taxon): boolean => (t.warnings.toxicity?.level ?? '').toLowerCase() === 'severe';
-  const isInvasiveHere = (t: Taxon): boolean =>
-    !!eff.country && (t.warnings.invasive_in?.some((r) => r.country === eff.country) ?? false);
 
   const fitsPool = pool
     .map((t) => {
       const verdict = evaluatePlantVerdict(t, eff, options.existingIds);
       const verdict2050 = eff2050 ? evaluatePlantVerdict(t, eff2050, options.existingIds) : null;
       const jobs = jobsOf(t);
-      const area = crownAreaM2(t) ?? 0;
       const sizeClass = sizeClassOf(t);
+      const rawArea = crownAreaM2(t);
+      const estW = sizeClass === 'tree' || sizeClass === 'shrub'
+        ? Math.max(1.5, (t.traits.height_m?.max ?? 4) * 0.55)
+        : 1.0;
+      const area = rawArea ?? (sizeClass === 'climber' ? 2.0 : Math.PI * (estW / 2) ** 2);
+      const unknownWidthPenalty = rawArea === null && (sizeClass === 'tree' || sizeClass === 'shrub') ? 10 : 0;
       const stratum = nicheStratumOf(t);
       const perennial = !isAnnualTaxon(t);
       const edibility = t.traits.edibility_rating ?? 0;
@@ -977,7 +985,7 @@ export function selectStarterPalette(
       const pScore = sitePhScore(t, eff);
       const v50Score = verdict2050 ? (verdict2050.level === 'fits' ? 16 : verdict2050.level === 'check' ? 4 : -18) : 0;
       const maxH = t.traits.height_m?.max ?? null;
-      const giantPenalty = eff.room === 'unsure' && sizeClass === 'tree' && maxH !== null && maxH > 18 ? 40 : 0;
+      const giantPenalty = sizeClass === 'tree' && maxH !== null && maxH > 22 ? 35 : 0;
       const baseScore =
         kScore + mScore + pScore + v50Score
         + (perennial ? 12 : 0)
@@ -985,8 +993,7 @@ export function selectStarterPalette(
         + (t.image ? 3 : 0)
         + jobs.length * 1.5
         - giantPenalty
-        - (isInvasiveHere(t) ? 120 : 0)
-        - (isSevereTox(t) ? 60 : 0)
+        - unknownWidthPenalty
         - (t.warnings.weed_potential ? 16 : 0)
         - (t.warnings.allelopathic ? 10 : 0)
         - (verdict.notes.includes('few_records') ? 6 : 0);
@@ -1049,24 +1056,20 @@ export function selectStarterPalette(
     return cands[0] ? addItem(cands[0]) : false;
   };
 
-  // Layer 1: Fruit or nut canopy tree sized for the room (weight yield/edibility above raw Koppen share)
+  // Layer 1: Fruit or nut canopy tree (pruned orchard staples 5–20 m are welcome even in small rooms)
   if ((eff.roomLimitM === null || eff.roomLimitM >= 3) && eff.netPlotM2 >= 25 && chosen.length < maxPlants) {
-    const maxTreeArea = eff.netPlotM2 * 0.65;
-    const isUnsureRoom = eff.room === 'unsure';
+    const maxTreeArea = eff.netPlotM2 * 0.68;
     pickBest(
       (x) => x.sizeClass === 'tree' && x.area <= maxTreeArea,
       (x) => {
         const h = x.taxon.traits.height_m?.max ?? 10;
-        let b = -x.kScore * 0.4;
+        let b = 0;
         if (x.jobs.includes('feeds_you')) b += 40 + x.edibility * 11;
         else b -= 35;
-        if (isUnsureRoom) {
-          if (h >= 5 && h <= 16.5) b += 22;
-          else if (h >= 3.5 && h < 5) b += 6;
-          else if (h > 18) b -= 35;
-        } else if (eff.roomLimitM !== null && h <= eff.roomLimitM) {
-          b += 15;
-        }
+        if (h >= 5 && h <= 20) b += 14;
+        else if (h >= 3.5 && h < 5) b += 4;
+        else if (h > 22) b -= 20;
+        if (eff.roomLimitM !== null && h <= eff.roomLimitM) b += 4;
         return b;
       },
     );
@@ -1081,10 +1084,10 @@ export function selectStarterPalette(
     );
   }
 
-  // Layer 3: Structural perennial edible climber (excludes low trailing ground crops)
+  // Layer 3: Structural perennial edible climber (excludes annual beans and low trailing ground crops)
   if (chosen.length < maxPlants) {
     pickBest(
-      (x) => x.isClimber && x.area <= eff.netPlotM2 * 0.25,
+      (x) => x.isClimber && x.perennial && x.area <= eff.netPlotM2 * 0.25,
       (x) => {
         const h = x.taxon.traits.height_m?.max ?? 2;
         let b = 0;

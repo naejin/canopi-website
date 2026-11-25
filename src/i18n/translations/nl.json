@@ -3631,5 +3631,6 @@
   "consortium.ns.lightbox.rolesAria": "Fotoaanzichten van de plant",
   "consortium.ns.lightbox.sourceLink": "Bron",
   "consortium.ns.lightbox.unavailable": "Foto niet beschikbaar.",
+  "consortium.ns.arrival.noStarter": "Geen enkele plant op deze klimaatlijst voldoet hier aan alle lokale voorwaarden — begin vanaf nul om alle planten te bekijken.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

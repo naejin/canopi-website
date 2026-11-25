@@ -3631,5 +3631,6 @@
   "consortium.ns.lightbox.rolesAria": "Plant photo views",
   "consortium.ns.lightbox.sourceLink": "Source",
   "consortium.ns.lightbox.unavailable": "Photo unavailable.",
+  "consortium.ns.arrival.noStarter": "No plants in this climate list fit every local constraint here — build from scratch to browse all plants.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

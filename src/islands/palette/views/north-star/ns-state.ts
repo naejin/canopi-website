@@ -239,13 +239,13 @@ export const nsAllNames = signal<readonly PlantNames[] | null>(null);
 export const nsAllTaxa = signal<readonly Taxon[] | null>(null);
 export const nsGuestZoneById = signal<ReadonlyMap<PlantId, ClimateZone>>(new Map());
 export const nsSiteLoading = signal<boolean>(false);
-export const nsToast = signal<string | null>(null);
+export const nsToast = signal<{ message: string; undo?: () => void } | null>(null);
 
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
-export function showNsToast(msg: string): void {
-  nsToast.value = msg;
+export function showNsToast(message: string, undo?: () => void): void {
+  nsToast.value = undo ? { message, undo } : { message };
   if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { nsToast.value = null; }, 3500);
+  toastTimer = setTimeout(() => { nsToast.value = null; }, undo ? 5500 : 3500);
 }
 
 export function toggleExisting(id: PlantId): void {

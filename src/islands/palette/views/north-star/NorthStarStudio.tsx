@@ -216,7 +216,20 @@ export function NorthStarStudio() {
 
       {toast && (
         <div class="ns-toast" role="status" aria-live="polite" style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', background: 'var(--tip-bg)', color: 'var(--tip-text)', padding: '10px 16px', borderRadius: '999px', fontSize: '13px', fontWeight: 600, zIndex: 90, boxShadow: 'var(--shadow)' }}>
-          {toast}
+          <span>{toast.message}</span>
+          {toast.undo && (
+            <button
+              type="button"
+              class="ns-toast-undo"
+              onClick={() => {
+                const fn = toast.undo;
+                nsToast.value = null;
+                fn?.();
+              }}
+            >
+              {T('undo')}
+            </button>
+          )}
         </div>
       )}
     </div>

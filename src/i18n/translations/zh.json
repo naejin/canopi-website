@@ -3631,5 +3631,6 @@
   "consortium.ns.lightbox.rolesAria": "植物照片视角",
   "consortium.ns.lightbox.sourceLink": "来源",
   "consortium.ns.lightbox.unavailable": "暂无照片。",
+  "consortium.ns.arrival.noStarter": "此气候清单中没有植物同时满足当地所有条件——从零开始即可浏览全部植物。",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

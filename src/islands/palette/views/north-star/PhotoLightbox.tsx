@@ -219,14 +219,13 @@ export function PhotoLightbox({
 
         <footer class="photo-lightbox-foot">
           {multi && (
-            <div class="photo-lightbox-roles" role="tablist" aria-label={T('ns.lightbox.rolesAria')}>
+            <div class="photo-lightbox-roles" role="group" aria-label={T('ns.lightbox.rolesAria')}>
               {validItems.map((it, i) => (
                 <button
                   key={`${it.role}-${i}`}
                   type="button"
-                  role="tab"
                   class="gallery-pill"
-                  aria-selected={i === safeIdx ? 'true' : 'false'}
+                  aria-pressed={i === safeIdx ? 'true' : 'false'}
                   onClick={() => setIdx(i)}
                 >
                   {roleLabel(it.role)}
