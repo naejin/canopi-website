@@ -3392,7 +3392,7 @@
   "consortium.ns.elev.soilLine": "Soil line (0 cm)",
   "consortium.ns.elev.rootsNotScale": "Roots not to scale",
   "consortium.ns.cal.growingYear": "Growing year",
-  "consortium.ns.cal.both": "Bloom and ripening / fruit",
+  "consortium.ns.cal.both": "Bloom and fruit",
   "consortium.ns.cal.monthsUnknown": "Months unknown",
   "consortium.ns.cal.speciesCol": "Species",
   "consortium.ns.atlas.shiftHead": "Future Climate Shift · {scen}",
@@ -3514,7 +3514,6 @@
   "consortium.ns.plan.ltOneYr": "<1 yr",
   "consortium.ns.pulse.interactions": "guild interaction(s)",
   "consortium.ns.picker.kickerLive": "{n} species · live-scored to your site",
-  "consortium.ns.cal.sow": "Sow",
   "consortium.ns.cal.thisMonth": "This month",
   "consortium.ns.cal.seasonSummary": "Season summary",
   "consortium.ns.cal.bloomUnknown": "Bloom: unknown",
@@ -3523,5 +3522,7 @@
   "consortium.ns.cal.speciesUnknown": "one: # species unknown | other: # species unknown",
   "consortium.ns.cal.mildWinterWindow": "Mild-winter window ({months})",
   "consortium.ns.cal.scrollHint": "Scroll sideways for all 12 months →",
+  "consortium.ns.cal.seasonNorth": "{year} · Northern Hemisphere (Spring {spring} · Autumn {autumn})",
+  "consortium.ns.cal.seasonSouth": "{year} · Southern Hemisphere (Summer {summer} · Winter {winter})",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

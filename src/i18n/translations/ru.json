@@ -3514,7 +3514,6 @@
   "consortium.ns.plan.ltOneYr": "<1 г.",
   "consortium.ns.pulse.interactions": "взаимод. гильдии",
   "consortium.ns.picker.kickerLive": "{n} видов · оценка для вашего участка",
-  "consortium.ns.cal.sow": "Посев",
   "consortium.ns.cal.thisMonth": "Этот месяц",
   "consortium.ns.cal.seasonSummary": "Сводка по сезону",
   "consortium.ns.cal.bloomUnknown": "Цветение: неизвестно",
@@ -3523,5 +3522,7 @@
   "consortium.ns.cal.speciesUnknown": "one: # вид неизвестен | few: # вида неизвестно | many: # видов неизвестно | other: # вида неизвестно",
   "consortium.ns.cal.mildWinterWindow": "Окно мягкой зимы ({months})",
   "consortium.ns.cal.scrollHint": "Прокрутите вбок, чтобы увидеть все 12 месяцев →",
+  "consortium.ns.cal.seasonNorth": "{year} · Северное полушарие (весна {spring} · осень {autumn})",
+  "consortium.ns.cal.seasonSouth": "{year} · Южное полушарие (лето {summer} · зима {winter})",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

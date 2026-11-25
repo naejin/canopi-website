@@ -3514,7 +3514,6 @@
   "consortium.ns.plan.ltOneYr": "<1 anno",
   "consortium.ns.pulse.interactions": "interazione/i di gilda",
   "consortium.ns.picker.kickerLive": "{n} specie · valutate per il tuo sito",
-  "consortium.ns.cal.sow": "Semina",
   "consortium.ns.cal.thisMonth": "Questo mese",
   "consortium.ns.cal.seasonSummary": "Riepilogo stagionale",
   "consortium.ns.cal.bloomUnknown": "Fioritura: sconosciuta",
@@ -3523,5 +3522,7 @@
   "consortium.ns.cal.speciesUnknown": "one: # specie sconosciuta | other: # specie sconosciute",
   "consortium.ns.cal.mildWinterWindow": "Finestra invernale mite ({months})",
   "consortium.ns.cal.scrollHint": "Scorri lateralmente per tutti i 12 mesi →",
+  "consortium.ns.cal.seasonNorth": "{year} · Emisfero nord (primavera {spring} · autunno {autumn})",
+  "consortium.ns.cal.seasonSouth": "{year} · Emisfero sud (estate {summer} · inverno {winter})",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

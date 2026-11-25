@@ -3514,7 +3514,6 @@
   "consortium.ns.plan.ltOneYr": "1年未満",
   "consortium.ns.pulse.interactions": "件の相互作用",
   "consortium.ns.picker.kickerLive": "{n} 種 · 敷地条件でリアルタイム評価",
-  "consortium.ns.cal.sow": "種まき",
   "consortium.ns.cal.thisMonth": "今月",
   "consortium.ns.cal.seasonSummary": "季節のまとめ",
   "consortium.ns.cal.bloomUnknown": "開花：不明",
@@ -3523,5 +3522,7 @@
   "consortium.ns.cal.speciesUnknown": "other: #種は不明",
   "consortium.ns.cal.mildWinterWindow": "冬の生育期（{months}）",
   "consortium.ns.cal.scrollHint": "横にスクロールして12か月を表示 →",
+  "consortium.ns.cal.seasonNorth": "{year} · 北半球（春 {spring} · 秋 {autumn}）",
+  "consortium.ns.cal.seasonSouth": "{year} · 南半球（夏 {summer} · 冬 {winter}）",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

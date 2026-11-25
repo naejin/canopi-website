@@ -3514,7 +3514,6 @@
   "consortium.ns.plan.ltOneYr": "1년 미만",
   "consortium.ns.pulse.interactions": "건의 길드 상호작용",
   "consortium.ns.picker.kickerLive": "{n}종 · 내 부지 기준 실시간 평가",
-  "consortium.ns.cal.sow": "파종",
   "consortium.ns.cal.thisMonth": "이번 달",
   "consortium.ns.cal.seasonSummary": "계절 요약",
   "consortium.ns.cal.bloomUnknown": "개화: 미상",
@@ -3523,5 +3522,7 @@
   "consortium.ns.cal.speciesUnknown": "other: #종 미상",
   "consortium.ns.cal.mildWinterWindow": "겨울 생육기 ({months})",
   "consortium.ns.cal.scrollHint": "옆으로 스크롤하여 12개월 모두 보기 →",
+  "consortium.ns.cal.seasonNorth": "{year} · 북반구 (봄 {spring} · 가을 {autumn})",
+  "consortium.ns.cal.seasonSouth": "{year} · 남반구 (여름 {summer} · 겨울 {winter})",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

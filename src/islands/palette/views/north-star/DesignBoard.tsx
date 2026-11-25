@@ -305,9 +305,18 @@ function GrowingYearCard({ rep }: { rep: PaletteReport }) {
   if (!rows.length) return null;
   const monthLabels = localizedMonthLabels();
   const isSouth = rep.eff.hemisphere === 'S';
+  const yearRange = `${monthLabels[0]}–${monthLabels[11]}`;
   const seasonLabel = isSouth
-    ? 'Jan–Dec · Southern Hemisphere (Summer Dec–Feb · Winter Jun–Aug)'
-    : 'Jan–Dec · Northern Hemisphere (Spring Mar–May · Autumn Sep–Nov)';
+    ? T('ns.cal.seasonSouth', {
+        year: yearRange,
+        summer: `${monthLabels[11]}–${monthLabels[1]}`,
+        winter: `${monthLabels[5]}–${monthLabels[7]}`,
+      })
+    : T('ns.cal.seasonNorth', {
+        year: yearRange,
+        spring: `${monthLabels[2]}–${monthLabels[4]}`,
+        autumn: `${monthLabels[8]}–${monthLabels[10]}`,
+      });
   const winMonthIdxs = new Set(isSouth ? [4, 5, 6, 7] : [10, 11, 0, 1]);
   const showMildWinter = rep.eff.isMildWinter;
   const mwRangeText = isSouth
@@ -415,9 +424,9 @@ function GrowingYearCard({ rep }: { rep: PaletteReport }) {
                 const f = fruitCnt[idx];
                 const bh = b > 0 ? Math.max(4, Math.round((b / maxCnt) * 20)) : 1;
                 const fh = f > 0 ? Math.max(4, Math.round((f / maxCnt) * 20)) : 1;
-                const sumText = `${monthLabels[idx]}: ${b} ${T('ns.cal.bloom').toLowerCase()}, ${f} ${T('ns.cal.fruit').toLowerCase()}`;
+                const sumText = `${b} ${T('ns.cal.bloom').toLowerCase()}, ${f} ${T('ns.cal.fruit').toLowerCase()}`;
                 return (
-                  <td key={m} class="yr-sum-cell" aria-label={sumText}>
+                  <td key={m} class="yr-sum-cell">
                     <div class="yr-sum-bars" aria-hidden="true">
                       <span class={b === 0 ? 'yr-sum-bar bloom zero' : 'yr-sum-bar bloom'} style={{ height: `${bh}px` }} />
                       <span class={f === 0 ? 'yr-sum-bar fruit zero' : 'yr-sum-bar fruit'} style={{ height: `${fh}px` }} />
@@ -469,10 +478,9 @@ function GrowingYearCard({ rep }: { rep: PaletteReport }) {
                     const r = runs[idx];
                     const gName = st === 'both' ? 'bloom-fruit' : st || null;
                     const stateWord = st === 'both' ? T('ns.cal.both') : st === 'fruit' ? T('ns.cal.fruit') : st === 'bloom' ? T('ns.cal.bloom') : '';
-                    const cellLabel = stateWord ? `${spName}, ${monthLabels[idx]}: ${stateWord}` : `${spName}, ${monthLabels[idx]}`;
                     const cellCls = ['yr-cell', isMw ? 'yr-mw' : '', isNow ? 'yr-now' : ''].filter(Boolean).join(' ');
                     return (
-                      <td key={MONTHS[idx]} class={cellCls} data-k={st || 'none'} aria-label={cellLabel}>
+                      <td key={MONTHS[idx]} class={cellCls} data-k={st || 'none'}>
                         {st && <span class={`yr-ribbon ${st} ${r.seg}`.trim()} aria-hidden="true" />}
                         {gName && r.peak && (
                           <span class="yr-peak-glyph" aria-hidden="true">
@@ -483,7 +491,7 @@ function GrowingYearCard({ rep }: { rep: PaletteReport }) {
                             />
                           </span>
                         )}
-                        {stateWord && <span class="sr-only">{cellLabel}</span>}
+                        {stateWord && <span class="sr-only">{stateWord}</span>}
                       </td>
                     );
                   })}

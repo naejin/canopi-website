@@ -3514,7 +3514,6 @@
   "consortium.ns.plan.ltOneYr": "<1 J.",
   "consortium.ns.pulse.interactions": "Gilden-Interaktion(en)",
   "consortium.ns.picker.kickerLive": "{n} Arten · live für deinen Standort bewertet",
-  "consortium.ns.cal.sow": "Aussaat",
   "consortium.ns.cal.thisMonth": "Dieser Monat",
   "consortium.ns.cal.seasonSummary": "Saisonübersicht",
   "consortium.ns.cal.bloomUnknown": "Blüte: unbekannt",
@@ -3523,5 +3522,7 @@
   "consortium.ns.cal.speciesUnknown": "one: # Art unbekannt | other: # Arten unbekannt",
   "consortium.ns.cal.mildWinterWindow": "Mildwinter-Fenster ({months})",
   "consortium.ns.cal.scrollHint": "Seitlich scrollen für alle 12 Monate →",
+  "consortium.ns.cal.seasonNorth": "{year} · Nordhalbkugel (Frühling {spring} · Herbst {autumn})",
+  "consortium.ns.cal.seasonSouth": "{year} · Südhalbkugel (Sommer {summer} · Winter {winter})",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

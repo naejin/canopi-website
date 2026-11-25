@@ -3514,14 +3514,15 @@
   "consortium.ns.plan.ltOneYr": "<1 年",
   "consortium.ns.pulse.interactions": "项群落互作",
   "consortium.ns.picker.kickerLive": "{n} 个物种 · 按你的场地实时评分",
-  "consortium.ns.cal.sow": "播种",
   "consortium.ns.cal.thisMonth": "本月",
   "consortium.ns.cal.seasonSummary": "季节汇总",
   "consortium.ns.cal.bloomUnknown": "花期：未知",
   "consortium.ns.cal.fruitUnknown": "果期：未知",
   "consortium.ns.cal.bloomFruitUnknown": "花期与果期：未知",
   "consortium.ns.cal.speciesUnknown": "other: # 种未知",
-  "consortium.ns.cal.mildWinterWindow": "暖冬生长期（{months}）",
+  "consortium.ns.cal.mildWinterWindow": "冬季生长期（{months}）",
   "consortium.ns.cal.scrollHint": "横向滚动查看全部 12 个月 →",
+  "consortium.ns.cal.seasonNorth": "{year} · 北半球（春季 {spring} · 秋季 {autumn}）",
+  "consortium.ns.cal.seasonSouth": "{year} · 南半球（夏季 {summer} · 冬季 {winter}）",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

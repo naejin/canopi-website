@@ -1073,9 +1073,9 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
             const on = active[i];
             const barCls = on ? `pheno-bar ${caps[i]}`.trim() : 'pheno-bar';
             return (
-              <div key={m} class="pheno-bar-cell" title={`${monthLabels[i]}${on ? `: ${label}` : ''}`}>
+              <div key={m} class="pheno-bar-cell" title={on ? `${monthLabels[i]}: ${label}` : undefined}>
                 <div class={barCls} data-k={on ? k : 'none'} />
-                <span class="sr-only">{monthLabels[i]}: {on ? label : '—'}</span>
+                {on && <span class="sr-only">{monthLabels[i]}: {label}</span>}
               </div>
             );
           })
@@ -1309,7 +1309,7 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
             const isMw = rep.eff.isMildWinter && winMonths.has(i + 1);
             return <div key={m} class="pheno-m" data-mw={isMw ? 'true' : 'false'}>{monthLabels[i]}</div>;
           })}
-          {renderPhenoRow(T('ns.cal.sow'), sowSet, 'sow')}
+          {renderPhenoRow(T('studio.act.sow'), sowSet, 'sow')}
           {renderPhenoRow(T('ns.cal.bloom'), blmSet, 'bloom')}
           {renderPhenoRow(T('ns.cal.fruit'), frtSet, 'fruit')}
         </div>

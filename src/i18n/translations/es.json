@@ -3514,7 +3514,6 @@
   "consortium.ns.plan.ltOneYr": "<1 año",
   "consortium.ns.pulse.interactions": "interacción(es) de gremio",
   "consortium.ns.picker.kickerLive": "{n} especies · evaluadas para tu sitio",
-  "consortium.ns.cal.sow": "Siembra",
   "consortium.ns.cal.thisMonth": "Este mes",
   "consortium.ns.cal.seasonSummary": "Resumen estacional",
   "consortium.ns.cal.bloomUnknown": "Floración: desconocida",
@@ -3523,5 +3522,7 @@
   "consortium.ns.cal.speciesUnknown": "one: # especie desconocida | other: # especies desconocidas",
   "consortium.ns.cal.mildWinterWindow": "Ventana de invierno suave ({months})",
   "consortium.ns.cal.scrollHint": "Desplaza lateralmente para ver los 12 meses →",
+  "consortium.ns.cal.seasonNorth": "{year} · Hemisferio norte (primavera {spring} · otoño {autumn})",
+  "consortium.ns.cal.seasonSouth": "{year} · Hemisferio sur (verano {summer} · invierno {winter})",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

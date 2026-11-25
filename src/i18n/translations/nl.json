@@ -3514,7 +3514,6 @@
   "consortium.ns.plan.ltOneYr": "<1 jr",
   "consortium.ns.pulse.interactions": "gilde-interactie(s)",
   "consortium.ns.picker.kickerLive": "{n} soorten · live gescoord voor jouw plek",
-  "consortium.ns.cal.sow": "Zaaien",
   "consortium.ns.cal.thisMonth": "Deze maand",
   "consortium.ns.cal.seasonSummary": "Seizoensoverzicht",
   "consortium.ns.cal.bloomUnknown": "Bloei: onbekend",
@@ -3523,5 +3522,7 @@
   "consortium.ns.cal.speciesUnknown": "one: # soort onbekend | other: # soorten onbekend",
   "consortium.ns.cal.mildWinterWindow": "Milde-wintervenster ({months})",
   "consortium.ns.cal.scrollHint": "Scroll opzij voor alle 12 maanden →",
+  "consortium.ns.cal.seasonNorth": "{year} · Noordelijk halfrond (lente {spring} · herfst {autumn})",
+  "consortium.ns.cal.seasonSouth": "{year} · Zuidelijk halfrond (zomer {summer} · winter {winter})",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }
