@@ -5,7 +5,7 @@ description: Framework-free logic shared by the Worker endpoints, the page scrip
 resource: ../../src/lib
 tags: [module]
 status: stable
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:36Z }
+generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:40:02Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:21:18Z }
@@ -14,8 +14,8 @@ sources:
   - id: lib
     resource: ../../src/lib
     title: src/lib/
-    digest: sha256:b5b254f7da8e2393
-    last_modified: 2026-11-23T21:01:36Z
+    digest: sha256:0089c771d9e397cb
+    last_modified: 2026-11-25T11:39:24Z
   - id: contact-api
     resource: ../../src/pages/api/contact.ts
     title: src/pages/api/contact.ts
@@ -39,18 +39,18 @@ sources:
   - id: index-ts
     resource: ../../src/lib/palette/index.ts
     title: src/lib/palette/index.ts
-    digest: sha256:daa1389e174a2f90
-    last_modified: 2026-11-23T11:30:44Z
+    digest: sha256:0d25a6b89828a55e
+    last_modified: 2026-11-25T11:27:38Z
   - id: site-change-ts
     resource: ../../src/lib/palette/site-change.ts
     title: src/lib/palette/site-change.ts
     digest: sha256:77188e48536af621
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: site-inputs-ts
     resource: ../../src/lib/palette/site-inputs.ts
     title: src/lib/palette/site-inputs.ts
     digest: sha256:579c7c0952cb3f5c
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
 ---
 
 # Responsibility
@@ -80,7 +80,7 @@ Pure ES modules with no Astro or Cloudflare imports, so `node --test` can run th
 # Dependencies
 
 - Used by [src/pages](/modules/src-pages.md) (`api/contact.ts` and `api/correction.ts` pass the Worker `env` from `cloudflare:workers`), [src/scripts](/modules/src-scripts.md) (`downloads.js`), the consortium island in `src/islands/palette/` (through `consortium/index.ts`, `types.ts` or `source.ts`) and [src/data](/modules/src-data.md) (`source-credits.ts`).
-- Tested by [scripts](/modules/scripts.md): `contact.test.mjs`, `correction.test.mjs`, `source-credits.test.mjs`, `try-references.test.mjs`, `homepage.test.mjs`, `consortium-boundary.test.mjs`.
+- Tested by [scripts](/modules/scripts.md): `contact.test.mjs`, `correction.test.mjs`, `source-credits.test.mjs`, `try-references.test.mjs`, `homepage.test.mjs`, `palette-boundary.test.mjs`.
 - No external libraries.
 
 # Gotchas

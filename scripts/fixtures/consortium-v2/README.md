@@ -11,7 +11,7 @@ Plausible but **invented** plant values for testing consortium v2 without the re
   (with `documented_cells`), `plant_climate` (variables with `tmean_year`, basis `thinned_cells`, `blocks`,
   `low_source`, `high_source`, `weak`) and `plant_koppen`. canopi-data's `check_export` passed on the schema 1
   `export/`; it was not re-run on the schema 2 or 3 ones.
-- **Schema 4 (PP-C commit 0, 0b):** the build is schema 4 (`scripts/consortium-schema.mjs` `DDL_4`, copied from
+- **Schema 4 (PP-C commit 0, 0b):** the build is schema 4 (`scripts/palette-schema.mjs` `DDL_4`, copied from
   the staging export `r-c15a216b9663d2fa`) plus 4.2's declared `plant_toxicity_parts` (`TOXICITY_PARTS_DDL`,
   canopi-data `docs/website-handoff/2026-11-17-toxicity-parts.md`) and 4.3's declared `plant_invasive_areas`
   (`INVASIVE_AREAS_DDL`, `docs/website-handoff/2026-11-17-invasive-scope.md`), 4.5's declared light span

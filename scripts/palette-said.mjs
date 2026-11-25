@@ -1,5 +1,5 @@
 // The locale files and a core Line said in them, shared by the unit files that check words
-// (consortium-pf-f.test.mjs, consortium-pp-c2.test.mjs; check:dup, M43).
+// (palette-pf-f.test.mjs, palette-pp-c2.test.mjs; check:dup, M43).
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 

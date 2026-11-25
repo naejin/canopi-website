@@ -3,7 +3,7 @@ type: Module
 title: Plant palette figures panel
 description: The PP-C pf-d panel that shows every site input the Plant palette checks read, what limits plants at a place, and the summary of what an edit changed.
 tags: [consortium, module]
-generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:09:42Z }
+generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:39:54Z }
 verified:
   - { by: antigravity/gemini, at: 2026-11-23T15:46:00Z }
   - { by: antigravity/gemini-3-pro, at: 2026-11-23T22:35:59Z }
@@ -47,12 +47,12 @@ sources:
     resource: ../../src/components/palette/PalettePage.astro
     title: src/components/palette/PalettePage.astro
     digest: sha256:8d5b992f4939045d
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: consortium-pf-d-test-mjs
     resource: ../../scripts/palette-pf-d.test.mjs
     title: scripts/palette-pf-d.test.mjs
     digest: sha256:26e78ce0fec33c37
-    last_modified: 2026-11-25T11:07:24Z
+    last_modified: 2026-11-25T11:27:38Z
 ---
 
 # Plant palette figures panel (PP-C pf-d)
@@ -72,11 +72,11 @@ the h3 fix rounds and chunk 4 (C2). Related: [Site inputs](/modules/consortium-s
 | `siteChangeLines`, `changeDetailLines`, `nightsSidesLine`, `warmthLine`, `holdsWater`, `textureLine`, `PH_BANDS`, `LIMIT_LINES` | `src/lib/palette/site-change-line.ts` | the change summary's words and the rows' sentences (keys `consortium.figures.*`), the pH word bands (middles 5.0, 6.0, 6.9, 7.6, 8.5) |
 | `soilTextureOf`, `isDryland`, `tempsTogether` | `src/lib/palette/site-inputs.ts` | the soil map's texture as a reading (never a hint, A8); a dryland (aridity index under 0.65, UNCCD); the two temperature shifts set as one |
 | `SiteTuner` | `src/islands/palette/views/place/SiteTuner.tsx` | Field Studio onboarding site-tuning studio (`<details class="tuner-details">`): live climate/soil/microclimate sliders and condition pills writing `store.setSiteEdits` and `microclimate` |
-| styles | `src/styles/palette/field-studio.css` | consolidated page-level Field Studio stylesheet imported by `ConsortiumPage.astro` (retired legacy `figures.css` and `base.css` deleted in Stage 2A; no stylesheet loads with a lazy chunk, check-built-site A14) |
+| styles | `src/styles/palette/field-studio.css` | consolidated page-level Field Studio stylesheet imported by `PalettePage.astro` (retired legacy `figures.css` and `base.css` deleted in Stage 2A; no stylesheet loads with a lazy chunk, check-built-site A14) |
 
 ## When the panels stand
 - **Your place in figures** (`slots.tsx` `PlaceFigures`, R16): only once there is a place to say figures for, a location or a chosen climate (spec F5: with a climate and no location its soil and water lines can still be set). On Start before either, nothing is drawn, so the panel never lands after the first paint and pushes the page down.
-- **The slot reserve** (PFD49; chunk 4 C2 R5): the slot (`.fg-slot`, `display: contents`) stands as soon as the panel is due (a place, a climate, or a kept location still being looked up, `locationAtStart`) and stays empty while the data, the place and the chunk come. `base.css` keeps `#ct-root` a small-viewport screen tall (`100svh`) while `.fg-slot` is empty, and before the island renders when the head carries `data-kept` (set by the inline head script in `ConsortiumPage.astro` when `persist.ts` `LOCATION_STORE` or `SITE_CLIMATE` is in localStorage, or the page opens as a palette), so the release line and the footer never move when the panel lands. A fresh Start or a short state keeps no screen-tall gap. If the `figures` chunk does not load, each part says so in place with Reload (`retryableImport`, `lazyPart` `retry`), which asks again in place (and by itself once back online), so a slot is never left empty for good and its reserve ends (PFD61).
+- **The slot reserve** (PFD49; chunk 4 C2 R5): the slot (`.fg-slot`, `display: contents`) stands as soon as the panel is due (a place, a climate, or a kept location still being looked up, `locationAtStart`) and stays empty while the data, the place and the chunk come. `base.css` keeps `#ct-root` a small-viewport screen tall (`100svh`) while `.fg-slot` is empty, and before the island renders when the head carries `data-kept` (set by the inline head script in `PalettePage.astro` when `persist.ts` `LOCATION_STORE` or `SITE_CLIMATE` is in localStorage, or the page opens as a palette), so the release line and the footer never move when the panel lands. A fresh Start or a short state keeps no screen-tall gap. If the `figures` chunk does not load, each part says so in place with Reload (`retryableImport`, `lazyPart` `retry`), which asks again in place (and by itself once back online), so a slot is never left empty for good and its reserve ends (PFD61).
 - **What limits plants here** (chunk 4 T15, ruling GR-B7 vs T15; follow-up F1): `slots.tsx` asks for its part only at a located place with climate figures (`location.lookup` and a nights value), so a failed chunk is said where the card would stand. Its memory is the card's own **visit** (`PaletteLimits`, a `useRef` `Visit` `{ key, pool, answered, limited, rows }`), begun again for each place (`placeKey`, climate and location) and loaded list, and ended when the palette leaves the screen (the component unmounts). Before a ready count it shows its counting or failed line (never left out: unknown is never a hole); a ready count with no limiting line (`limitsOf` empty, no member drier here, `drierFrom`) leaves it out (boards Palette and Main draw no card). Once a count found a limiting line the card stays for the visit with every row it showed: a row that no longer limits says "Not a limit for this list." (`notLimitNights` / `notLimitDays` / `notLimitHead`), and with none left the card says "No climate line limits plants here." (`limitsNone`), so an edit made in the card never takes it, or the focused row, from under the reader.
 - **The phone's closed card** (RULED (a), pf-decisions 2026-11-19, Palette vs SiteMendoza 390): below 640 px the card stands closed to its head and one line (`.fg-limits-short`): the main limit (`limitSummary`, `figures.limitsSummary`; warmth over the year by the year's mean, today → 2071–2099, `limitsWarmth`), else "No climate line limits plants here." with the members drier here (`limitsDry`); the disclosure says "Show the N limits" (`limitsShow`, N = `limitsOf` plus one for the drier members), "Show more" (`limitsShowAll`) with none now, "Hide the limits" open; the Water card closes with it (`figures.css`). Open for this visit only; from 640 px the card is open and the disclosure is not drawn.
 

@@ -3,7 +3,7 @@ type: Reference
 title: Field Guide components
 description: Every component, prop, allowed value and limit a Field Guide's MDX can use, and what fails the build or the tests.
 tags: [guides, reference]
-generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:09:58Z }
+generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:40:04Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-10-28T09:55:54Z }
 sources:
@@ -11,12 +11,12 @@ sources:
     resource: ../../src/components/guides/index.ts
     title: src/components/guides/index.ts
     digest: sha256:356eb3f2b34fbcd6
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: guides
     resource: ../../src/components/guides
     title: src/components/guides/
     digest: sha256:b144048944d9150c
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: content-config-ts
     resource: ../../src/content.config.ts
     title: src/content.config.ts
@@ -61,12 +61,12 @@ sources:
     resource: ../../src/components/guides/TryPalette.astro
     title: src/components/guides/TryPalette.astro
     digest: sha256:a8e9ed3f3475b0f7
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: try-consortium-ts
     resource: ../../src/components/guides/try-palette.ts
     title: src/components/guides/try-palette.ts
     digest: sha256:989b06358212de9d
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: en-json
     resource: ../../src/i18n/guides/en.json
     title: src/i18n/guides/en.json
@@ -184,7 +184,7 @@ check-built-site fails on a missing `#id`. Index order: `order` runs 1..n within
 - `<Figure title="…" caption="…">` any diagram `</Figure>` — both optional.
 - `<NextGuides slugs={["saving-seed"]} />` — `slugs` required; only published guides are listed,
   so a section may name a guide before it is written; nothing renders if none is published.
-- `<TryConsortium plant="Artocarpus altilis" climate="tropical" name="Breadfruit" />` — opens the
+- `<TryPalette plant="Artocarpus altilis" climate="tropical" name="Breadfruit" />` — opens the
   consortium tool ("Plant palette", beta) with the guide's plant kept and its climate set:
   `consortiumPath(lang)?plant=<canonical_name>&climate=<id>` (`/palette/`, fr `/fr/palette/` since PP-B commit 0b, [decision row "Plant palette name"](/decisions/consortium-user-decisions.md); the old `/consortium/` paths 301-redirect with the query kept).
   `plant` required: a `canonical_name` placed in a beta climate (`names` of `src/data/palette-index.json`, written by the installer); `name`

@@ -300,7 +300,7 @@ test('month layers: every PFAF month row of the export carries its source region
 
 // ---- review of 619e6a7 ----
 
-// PP-C 0b: the schema the reader reads (consortium-schema.mjs DDL_READ: the base statements and every
+// PP-C 0b: the schema the reader reads (palette-schema.mjs DDL_READ: the base statements and every
 // required 4.2 to 4.7 addition) against the installed export, allowing declared additive-tier extensions
 // (4.8–4.10+ tables and trailing columns declared in index.schema_additions).
 test('schema module: every base table, column and statement matches the installed export; extras are declared in schema_additions', async () => {

@@ -307,7 +307,7 @@ function schema4Problem(m) {
     if ('index' in a && ('column' in a || 'value' in a)) return `manifest.json schema_additions: ${what} has an index with a column or value.`;
     if (!Number.isInteger(a.since) || a.since < 1 || a.since > m.schema_minor) return `manifest.json schema_additions: ${what}: since is not from 1 to schema_minor ${m.schema_minor}.`;
   }
-  // The additions the reader reads unconditionally (consortium-schema.mjs REQUIRED_ADDITIONS).
+  // The additions the reader reads unconditionally (palette-schema.mjs REQUIRED_ADDITIONS).
   const keyOf = (a) => [a.table, a.column ?? '', a.index ?? '', a.value ?? ''].join('|');
   const have = new Set(m.schema_additions.map(keyOf));
   const lacking = REQUIRED_ADDITIONS.find((a) => !have.has(keyOf(a)));
@@ -392,7 +392,7 @@ function structureProblem(file, have, want, manifest) {
   return null;
 }
 
-// Schema 4's open vocabularies (consortium-schema.mjs VOCABULARIES_4, and VOCABULARIES_42 of the
+// Schema 4's open vocabularies (palette-schema.mjs VOCABULARIES_4, and VOCABULARIES_42 of the
 // required 4.2 table plant_toxicity_parts): a stored value outside the base list and the
 // declared values is refused (a declared value may have no rows yet). The first problem, or null.
 function vocabularyProblem(file, all, manifest) {

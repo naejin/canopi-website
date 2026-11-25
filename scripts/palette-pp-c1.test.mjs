@@ -123,7 +123,7 @@ test('PP-C-u5 (c1 search shared names): a name shared by several plants finds ea
 });
 
 // Normalization v1 as is (canopi-types; coordinator row 2026-11-17: some matches change to match the
-// app). The three fold cases of consortium-source.test.mjs:223-234 are rewritten by c1 to these.
+// app). The three fold cases of palette-source.test.mjs:223-234 are rewritten by c1 to these.
 // The v1 corpus: canopi-types/species-search-normalization.json (canopi repo, normalization_version 1,
 // sha256 below), copied unchanged into scripts/fixtures/canopi-types/. The fold is the browser's native
 // normalize('NFKD') (design check c1 6.2), so a scalar newer than v1's pinned Unicode 15.0 may fold

@@ -112,7 +112,7 @@ const aud = (a) => line.factLines({ disputes: null, audiences: [a], traitSources
 const src1 = (t) => line.factLines({ disputes: null, traitSources: [t], shipped: {} })[0] ?? null;
 const SHIPPED = { field: 'toxicity', kind: 'queue', value: 'Moderate', unit: null, derived: false, scope: null, source: 'NC State' };
 // (None of these changes a verdict, a filter or NextStep's grouping: disputes, audiences, trait sources
-// and frost reach Details only, never the pool's Taxon those read: consortium-source.test.mjs.)
+// and frost reach Details only, never the pool's Taxon those read: palette-source.test.mjs.)
 test('PP-C-u11 (c2 disputes): the shipped value plus "Sources disagree: <source>[: <stricter value>]", derived rows labelled, toxicity NULL or None with a PFAF flag in words, audience rows, range disputes as a dashed limit with both values, the invasive, weed and allelopathy disputes', () => {
   // Hedera helix: shipped Slight, NC State Moderate: the chip keeps Slight, the line names the stricter one.
   const ivy = say(line.disputeLine(SHIPPED, 'Slight'));

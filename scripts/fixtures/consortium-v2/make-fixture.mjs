@@ -218,7 +218,7 @@ const TRAIT_SOURCE = { 'Zingiber officinale': 'canopi-knowledge', 'Mangifera ind
 // (since 3: INVASIVE_AREAS_ADDITIONS), so the fixture is 4.3.
 // Schema 4.5 (canopi-data docs/website-handoff/2026-11-17-light-span.md): three plants columns and their
 // trait_sources field values, since 5 (no 4.4 entry: flammability stays a test variant, DECLARED_COLUMN).
-// (LIGHT_SPAN_ADDITIONS and LIGHT_SPAN_DDL live in scripts/consortium-schema.mjs.)
+// (LIGHT_SPAN_ADDITIONS and LIGHT_SPAN_DDL live in scripts/palette-schema.mjs.)
 // The 4.5 values: one span (Malus domestica, Full sun to Mostly sun, both ends PFAF-derived) with a
 // preferred level inside it (Ellenberg); one preferred level with no span (Sambucus nigra, Part shade),
 // an AI estimate with no source ([canonical, sunniest, shadiest, preferred, [field, source, kind]...]).

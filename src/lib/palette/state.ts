@@ -126,7 +126,7 @@ export function cellCentre(lookup: SiteLookup | null): LinkOrigin | null {
   return c ? { lat: c.cellLat, lon: c.cellLon } : null;
 }
 // The climate grid's cell size in degrees (canopi-climate v0.2, src/lib/climate/grid.ts; the core may
-// not import the reader, so consortium-link-v5.test.mjs checks this snap against the reader's cellOf).
+// not import the reader, so palette-link-v5.test.mjs checks this snap against the reader's cellOf).
 const LINK_CELL_DEG = 0.1;
 const CELLS_LAT = 1800, CELLS_LON = 3600, SNAP_EPS = 1e-9;
 // The centre of the 0.1° cell holding a point, as the climate grid finds it (rows from the north, a

@@ -331,7 +331,7 @@ test('alternatives: the closest in years first, members and removed plants left 
   const alts = alternatives(member.id, [member, other], pool, { ...ctx(), removed: [removed.id] });
   assert.deepEqual(alts.map((a) => a.id), [longer.id, high.id], 'the one covering more years first; members and removed plants are not offered');
   // The hole diff itself (swapChange, internal since c2 fix round 1 B7) is pinned through alternatives
-  // in consortium-pp-c2.test.mjs (u15, A1).
+  // in palette-pp-c2.test.mjs (u15, A1).
   assert.equal(alts[1].strataGain, true, 'high: a stratum no member stands in');
   // A candidate that warns (high conflict) comes after one that does not, with its flags.
   const walnut = T('Juglans regia'), malus = T('Malus domestica'), pear = T('Pyrus communis');

@@ -15,7 +15,7 @@ export const formatNumber = (n: number, lang: string, max = 1): string => number
 // ---- measures (PP-B commit 0; plant-palette-architecture 3 "Names and numbers") ----
 // Every measure the palette writes goes through one of these, in the page language, with its unit
 // (Intl style 'unit'); new keys take the result as {len}, {area}, {depth}, {temp} or {tempDiff} and
-// never write a unit after a placeholder (consortium-keys.test.mjs). Behaviour is metric; these are
+// never write a unit after a placeholder (palette-keys.test.mjs). Behaviour is metric; these are
 // the single switch point should imperial units ever be offered.
 const unitFormats = new Map<string, Intl.NumberFormat>();
 function unitFormat(lang: string, unit: string, max: number, signed = false): Intl.NumberFormat {

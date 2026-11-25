@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium per-chunk caps and first-view ratchet (ADR-2)
 description: The consortium page caps each built chunk by role and the first run, keeps no total cap, and ratchets time to first view from nightly runner medians.
 tags: [consortium, performance]
-generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:09:34Z }
+generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:39:49Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:14Z }
   - { by: antigravity/gemini, at: 2026-11-23T12:36:25Z }
@@ -18,12 +18,12 @@ sources:
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
     digest: sha256:26ec9eb01fbd7a27
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/palette-timing.mjs
     title: scripts/browser/palette-timing.mjs
     digest: sha256:52fa4275f4ecd4aa
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: sheet-tsx
     resource: ../../src/islands/palette/views/kit/sheet.tsx
     title: src/islands/palette/views/kit/sheet.tsx
@@ -33,17 +33,17 @@ sources:
     resource: ../../astro.config.mjs
     title: astro.config.mjs
     digest: sha256:85453d34141dd7db
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: timing-json
     resource: ../../scripts/browser/timing.json
     title: scripts/browser/timing.json
     digest: sha256:74244c42c704d685
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: nightly-yml
     resource: ../../.github/workflows/nightly.yml
     title: .github/workflows/nightly.yml
     digest: sha256:090b52cf5ef033d3
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: app-tsx
     resource: ../../src/islands/palette/App.tsx
     title: src/islands/palette/App.tsx
@@ -88,7 +88,7 @@ Before B4 the consortium page had a first-run cap (43 KB gzip, 40 KB from the ch
 - **No late stylesheet**: no island chunk's `__vite__mapDeps` preload list names a CSS file (MapLibre's CSS aside), read from the built output.
 - **Modulepreload (A5, L5)**: consortium pages preload only what the first view awaits (`modulepreloadChunks`: the page script's static imports, the island entry and its static imports, the data loader with the sqlite glue); no part, feature or MapLibre chunk. The check asserts the first run and glue are preloaded and no lazy chunk is (from the graph and roles; the exact list comparison was dropped as circular).
 - **Test hook**: the `testHook` role (`test-hook.ts`) exists only in the browser-test build; a production build with it fails. Since E6 chunk 5 no build preloads it (`astro.config.mjs` passes no extra chunk to `modulepreloadChunks`): main.ts awaits it with `#ct-root` `aria-busy`, and the browser tests that read Start wait for the render (coordinator row "E6 chunk-5 merge choices"). E6-2 leaves the role out of the lazy parts it checks.
-- **First-view ratchet.** The mark `ct:matrix` becomes `ct:first-view`, emitted where the consortium is first on screen (the matrix today, Palette in F1a); R4 renamed it in Matrix.tsx, and the timing script and browser tests read only `ct:first-view` (the `ct:matrix` fallbacks dropped at the R4 merge). `consortium-timing.mjs --ratchet scripts/browser/timing.json` compares cold and warm medians per profile (desktop, phone): above a value a warning, above 1.5× exit 1. The file ships with null values (not compared; a `::warning::` annotation when all are null) until the coordinator copies the first nightly runner's `timing-json:` line after push B. Values come from CI runner runs only, never local ones.
+- **First-view ratchet.** The mark `ct:matrix` becomes `ct:first-view`, emitted where the consortium is first on screen (the matrix today, Palette in F1a); R4 renamed it in Matrix.tsx, and the timing script and browser tests read only `ct:first-view` (the `ct:matrix` fallbacks dropped at the R4 merge). `palette-timing.mjs --ratchet scripts/browser/timing.json` compares cold and warm medians per profile (desktop, phone): above a value a warning, above 1.5× exit 1. The file ships with null values (not compared; a `::warning::` annotation when all are null) until the coordinator copies the first nightly runner's `timing-json:` line after push B. Values come from CI runner runs only, never local ones.
 
 ## Consequences
 

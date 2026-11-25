@@ -3,7 +3,7 @@ type: Convention
 title: Field Guide writing
 description: The writing, safety, attribution and language rules every Field Guide follows, and how they are checked.
 tags: [convention, guides]
-generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:09:33Z }
+generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:39:48Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:04Z }
 sources:
@@ -11,7 +11,7 @@ sources:
     resource: ../../src/content/guides
     title: src/content/guides/
     digest: sha256:b8aeb1b101f5f416
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
@@ -33,12 +33,12 @@ sources:
     resource: ../../scripts/guides-palette.test.mjs
     title: scripts/guides-palette.test.mjs
     digest: sha256:4da1c5ab8ea9efb5
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: en-mdx
     resource: ../../src/content/guides/homes-for-pollinators/en.mdx
     title: src/content/guides/homes-for-pollinators/en.mdx
     digest: sha256:321ef806eb9fa79f
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: en-mdx-2
     resource: ../../src/content/guides/mulch/en.mdx
     title: src/content/guides/mulch/en.mdx
@@ -54,7 +54,7 @@ Every Field Guide (`src/content/guides/<slug>/{en,fr}.mdx`) follows these rules,
 - **Our own words.** No quotes from the book, no close paraphrase (no sentence following its wording or order), none of its images. Each guide lists its sources as bibliography book ids with chapter titles.
 - **No structural paraphrase.** Never follow the book's sentences, lists or anecdotes in its order with the words swapped. Build each section from the reader's question, keep an anecdote to one sentence, and pick two or three examples from a list in your own order.
 - **No chapter substitute.** A guide, or two guides together, must not keep most of one chapter's points even when each section is reordered: keep what the reader needs to act, and leave the author's incidental specifics (his containers, his recipes, his rankings, his lists of crops) in the book. Check coverage per chapter, not only per sentence.
-- **Warn, don't remove** (owner, 2026-10-26). Useful information stays even when it is dangerous: the guide keeps it and puts a clear warning beside it, so the site carries no liability. Food risks appear as `<FoodCaution risk>`, whose fixed text names the danger plainly and sends readers to their food-safety authority; a kitchen guide may also say in prose what a practice is, why it is done and what makes it dangerous, attributing the source's practice to its author. Never any figures for anything eaten, toxic or caustic: no ratios, doses, times or temperatures. Specs written before 2026-10-26 tag some items [OMIT]; those not yet re-audited stay out until the owner reviews them. Nothing goes between a plant list and its `<FoodCaution>` or `<Safety>` box: a `<TryConsortium>` link comes after the caution, as the last thing in its climate block (`scripts/guides-palette.test.mjs`).
+- **Warn, don't remove** (owner, 2026-10-26). Useful information stays even when it is dangerous: the guide keeps it and puts a clear warning beside it, so the site carries no liability. Food risks appear as `<FoodCaution risk>`, whose fixed text names the danger plainly and sends readers to their food-safety authority; a kitchen guide may also say in prose what a practice is, why it is done and what makes it dangerous, attributing the source's practice to its author. Never any figures for anything eaten, toxic or caustic: no ratios, doses, times or temperatures. Specs written before 2026-10-26 tag some items [OMIT]; those not yet re-audited stay out until the owner reviews them. Nothing goes between a plant list and its `<FoodCaution>` or `<Safety>` box: a `<TryPalette>` link comes after the caution, as the last thing in its climate block (`scripts/guides-palette.test.mjs`).
 - **Nothing in the mouth, as a step.** No test, check or selection the reader is told to do puts anything in the mouth. When the book's author does (raw tasting, "nibble and spit", seeds in the mouth), the guide reports it as his practice inside a `<Safety>` box that names the danger, next to `<FoodCaution risk="raw-tasting" />` (owner, 2026-10-26); `npm test` fails a mouth word outside a `<Safety>` box.
 - **House tasting rule.** Choosing by flavour happens at the table, never in the garden: only fruit of a crop the reader already eats, prepared the way they always prepare it, with the matching `<FoodCaution>` beside it. Nothing raw that is normally cooked, no unripe fruit, no leaves from plants going to seed, no seeds; a bitter fruit is not eaten and its seed is thrown out. The full wording is in Choosing seed parents ("Judge what you harvest"); other guides link to it rather than restate it.
 - **Attribute.** [ATTRIBUTE] and [HIS GARDEN] items are the author's view or his garden ("in Lofthouse's experience", `<HisGarden>`), never rules; his estimates (shares, lists of crops) name him. No outside figures: a general tip that is not from the book gives no counts, times or rates and is tagged `{/* general tip, not from the book */}`.

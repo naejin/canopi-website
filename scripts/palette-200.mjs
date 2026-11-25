@@ -1,5 +1,5 @@
 // The shared 200-plant palette (owner directive 2026-11-14: the tool scales smoothly to 200 plants),
-// built from the real export's ids, for the unit budgets (consortium-pp-b2.test.mjs), the browser scale
+// built from the real export's ids, for the unit budgets (palette-pp-b2.test.mjs), the browser scale
 // scenario (browser/consortium-pp-b2.browser.test.mjs PP-B29) and b3's Your plants. Deterministic: the
 // same export gives the same palette.
 //

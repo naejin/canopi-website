@@ -2,7 +2,7 @@
 type: Architecture Decision
 title: Plant palette chunk-2 hand-off rulings (D1-D10)
 description: The agent rulings of 2026-11-18 on the PP-C chunk-2 hand-offs, as auto-approved under the owner's autonomy rule, and where each lives in the code.
-generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:09:37Z }
+generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:39:50Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:16Z }
   - { by: antigravity/gemini, at: 2026-11-23T18:52:39Z }
@@ -20,8 +20,8 @@ sources:
   - id: state-ts
     resource: ../../src/lib/palette/state.ts
     title: src/lib/palette/state.ts
-    digest: sha256:023783ecbccd0096
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:2e0eca30c5b18733
+    last_modified: 2026-11-25T11:39:24Z
   - id: place-search-ts
     resource: ../../src/lib/location/place-search.ts
     title: src/lib/location/place-search.ts
@@ -31,7 +31,7 @@ sources:
     resource: ../../src/components/palette/PalettePage.astro
     title: src/components/palette/PalettePage.astro
     digest: sha256:8d5b992f4939045d
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: holes-ts
     resource: ../../src/lib/palette/holes.ts
     title: src/lib/palette/holes.ts
@@ -51,7 +51,7 @@ sources:
     resource: ../../src/islands/palette/state/location.ts
     title: src/islands/palette/state/location.ts
     digest: sha256:86dd45160353ac46
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: suggest-wait-ts
     resource: ../../src/islands/palette/state/suggest-wait.ts
     title: src/islands/palette/state/suggest-wait.ts
@@ -78,7 +78,7 @@ all as the chunk-2 triage recommended; auto-approved under the owner's autonomy 
 | D5 | Find keeps the board subtitle; "Fits your place" adds "· N already in your palette" | `views/find/Find.tsx`, `find.fitsInPalette` |
 | D6 | The sender's place name travels in the link (`n`, beside `o`) with "Include my place"; no reverse lookup on open. Only a town-level name travels (h2 R4): `SiteLocation.placeLevel` is set for a search answer or reverse lookup of a D7 kind and for a link's own `n`, kept in the saved location record; a road, building or farm label stays on the page | `lib/palette/state.ts` `encodePlace`; `state/persist.ts` `linkName`; `state/location.ts` `take`, `lookUpName` |
 | D7 | Search answers show a place-type word for 8 kinds (city, town, village, suburb, county, state, region, country), none for the rest | `lib/location/place-search.ts` `PLACE_TYPES` |
-| D8 | The long beta note and `consortium.betaNote` go; the board's "beta" words stay | `ConsortiumPage.astro` |
+| D8 | The long beta note and `consortium.betaNote` go; the board's "beta" words stay | `PalettePage.astro` |
 | D9 | A keep-as-mine store action | done in chunk 4 (T18): `state/draft.ts` `keepShownAsMine` |
 | D10 | No shared multi-answer Nominatim fixture | dropped |
 
@@ -91,7 +91,7 @@ Find, Weigh) through `holes.ts` `fillerGroup`; "Fits your place" still lists jud
   are "sent nowhere": it names "Look up its name", which sends the centre of the typed point's 0.1°
   climate-grid square (`state/location.ts` `lookUpName`, `snapOrigin`) to Nominatim on the press only
   (h2 R3). The privacy page (`privacy.location.search`, `privacy.location.link`) and the Share note say
-  the same, in 11 locales; `consortium-p5-seams-s5f.test.mjs` pins the town word and the button name.
+  the same, in 11 locales; `palette-p5-seams-s5f.test.mjs` pins the town word and the button name.
 - Board Loading's "Suggested before the climate was read" (with "Read it again") is said inside the
   suggestion's own toast, after its words and beside its Undo (`store.ts` `suggestMembers(note)`,
   `state/suggest-wait.ts`), never as a second toast that would replace the Undo (h2 R1).

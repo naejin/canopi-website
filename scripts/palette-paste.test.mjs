@@ -1,6 +1,6 @@
 // Stream S3's paste helpers (consortium v2, design check §2 port table): reading a pasted list of
 // plant names and matching it against the climate lists (views/find/paste.ts, ported from v1 scale.js on
-// S1's `fold`). The layer values' helpers are tested in consortium-layers.test.mjs.
+// S1's `fold`). The layer values' helpers are tested in palette-layers.test.mjs.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 

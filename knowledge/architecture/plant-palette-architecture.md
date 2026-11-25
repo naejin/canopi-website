@@ -4,7 +4,7 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:25:09Z }
+generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:39:46Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:20Z }
   - { by: antigravity/gemini, at: 2026-11-23T18:52:34Z }
@@ -20,7 +20,7 @@ sources:
     resource: ../../.dependency-cruiser.cjs
     title: .dependency-cruiser.cjs
     digest: sha256:91ca040088fb4842
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: redirects
     resource: ../../public/_redirects
     title: public/_redirects
@@ -30,12 +30,12 @@ sources:
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
     digest: sha256:b8cbb2e5aa5ee385
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
     digest: sha256:97b1665139099464
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: built-links-test-mjs
     resource: ../../scripts/built-links.test.mjs
     title: scripts/built-links.test.mjs
@@ -50,17 +50,17 @@ sources:
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
     digest: sha256:26ec9eb01fbd7a27
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/palette-boundary.test.mjs
     title: scripts/palette-boundary.test.mjs
     digest: sha256:a3995b1e88daada2
-    last_modified: 2026-11-25T11:07:24Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: guides-consortium-test-mjs
     resource: ../../scripts/guides-palette.test.mjs
     title: scripts/guides-palette.test.mjs
     digest: sha256:4da1c5ab8ea9efb5
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: arch-rules-test-mjs
     resource: ../../scripts/quality/arch-rules.test.mjs
     title: scripts/quality/arch-rules.test.mjs
@@ -75,12 +75,12 @@ sources:
     resource: ../../src/components/guides/TryPalette.astro
     title: src/components/guides/TryPalette.astro
     digest: sha256:a8e9ed3f3475b0f7
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: consortium-path-js
     resource: ../../src/i18n/palette-path.js
     title: src/i18n/palette-path.js
-    digest: sha256:f2e51ba89fdab93e
-    last_modified: 2026-11-25T11:23:11Z
+    digest: sha256:c0385885f55b05a2
+    last_modified: 2026-11-25T11:39:35Z
   - id: app-tsx
     resource: ../../src/islands/palette/App.tsx
     title: src/islands/palette/App.tsx
@@ -95,12 +95,12 @@ sources:
     resource: ../../src/islands/palette/data/search.ts
     title: src/islands/palette/data/search.ts
     digest: sha256:286bf7b5a040d571
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: sqlite-source-ts
     resource: ../../src/islands/palette/data/sqlite-source.ts
     title: src/islands/palette/data/sqlite-source.ts
     digest: sha256:a58999987775c520
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: focus-ts
     resource: ../../src/islands/palette/focus.ts
     title: src/islands/palette/focus.ts
@@ -109,13 +109,13 @@ sources:
   - id: format-ts
     resource: ../../src/islands/palette/format.ts
     title: src/islands/palette/format.ts
-    digest: sha256:8f5252bea4821008
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:6db091bc1135adfd
+    last_modified: 2026-11-25T11:39:24Z
   - id: main-ts
     resource: ../../src/islands/palette/main.ts
     title: src/islands/palette/main.ts
     digest: sha256:9847778fd30d00b1
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: site-fit-ts
     resource: ../../src/islands/palette/rules/site-fit.ts
     title: src/islands/palette/rules/site-fit.ts
@@ -125,12 +125,12 @@ sources:
     resource: ../../src/islands/palette/rules/suggest-block.ts
     title: src/islands/palette/rules/suggest-block.ts
     digest: sha256:51a5393d3f865b17
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: arrival-ts
     resource: ../../src/islands/palette/state/arrival.ts
     title: src/islands/palette/state/arrival.ts
     digest: sha256:06b523117639a398
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: draft-ts
     resource: ../../src/islands/palette/state/draft.ts
     title: src/islands/palette/state/draft.ts
@@ -140,7 +140,7 @@ sources:
     resource: ../../src/islands/palette/state/location.ts
     title: src/islands/palette/state/location.ts
     digest: sha256:86dd45160353ac46
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: persist-ts
     resource: ../../src/islands/palette/state/persist.ts
     title: src/islands/palette/state/persist.ts
@@ -165,12 +165,12 @@ sources:
     resource: ../../src/islands/palette/store.ts
     title: src/islands/palette/store.ts
     digest: sha256:2db1720b440cca21
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: strings-ts
     resource: ../../src/islands/palette/strings.ts
     title: src/islands/palette/strings.ts
     digest: sha256:c88a1a97eadc670a
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: actions-tsx
     resource: ../../src/islands/palette/views/Actions.tsx
     title: src/islands/palette/views/Actions.tsx
@@ -180,7 +180,7 @@ sources:
     resource: ../../src/islands/palette/views/Correction.tsx
     title: src/islands/palette/views/Correction.tsx
     digest: sha256:6ce20d305fc65484
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: futureslot-tsx
     resource: ../../src/islands/palette/views/FutureSlot.tsx
     title: src/islands/palette/views/FutureSlot.tsx
@@ -220,7 +220,7 @@ sources:
     resource: ../../src/islands/palette/views/kit/names.ts
     title: src/islands/palette/views/kit/names.ts
     digest: sha256:ace99fa6a4571d8b
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: later-ts
     resource: ../../src/islands/palette/views/later.ts
     title: src/islands/palette/views/later.ts
@@ -230,7 +230,7 @@ sources:
     resource: ../../src/islands/palette/views/layers.ts
     title: src/islands/palette/views/layers.ts
     digest: sha256:cdfda5e04372b771
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: lazy-tsx
     resource: ../../src/islands/palette/views/lazy.tsx
     title: src/islands/palette/views/lazy.tsx
@@ -245,7 +245,7 @@ sources:
     resource: ../../src/islands/palette/views/side.ts
     title: src/islands/palette/views/side.ts
     digest: sha256:1de8040e9b608b78
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: lookup-ts
     resource: ../../src/lib/climate/lookup.ts
     title: src/lib/climate/lookup.ts
@@ -260,7 +260,7 @@ sources:
     resource: ../../src/lib/palette/canopi-file.ts
     title: src/lib/palette/canopi-file.ts
     digest: sha256:96c2533671b8b111
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: conflicts-ts
     resource: ../../src/lib/palette/conflicts.ts
     title: src/lib/palette/conflicts.ts
@@ -270,7 +270,7 @@ sources:
     resource: ../../src/lib/palette/fold.ts
     title: src/lib/palette/fold.ts
     digest: sha256:71e9ad0f814f568b
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: future-ts
     resource: ../../src/lib/palette/future.ts
     title: src/lib/palette/future.ts
@@ -280,7 +280,7 @@ sources:
     resource: ../../src/lib/palette/index.ts
     title: src/lib/palette/index.ts
     digest: sha256:0d25a6b89828a55e
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: jobs-ts
     resource: ../../src/lib/palette/jobs.ts
     title: src/lib/palette/jobs.ts
@@ -329,8 +329,8 @@ sources:
   - id: state-ts
     resource: ../../src/lib/palette/state.ts
     title: src/lib/palette/state.ts
-    digest: sha256:023783ecbccd0096
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:2e0eca30c5b18733
+    last_modified: 2026-11-25T11:39:24Z
   - id: suggest-ts
     resource: ../../src/lib/palette/suggest.ts
     title: src/lib/palette/suggest.ts
@@ -340,12 +340,12 @@ sources:
     resource: ../../src/lib/palette/types.ts
     title: src/lib/palette/types.ts
     digest: sha256:442b3a87d9b94d8f
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: zones-ts
     resource: ../../src/lib/palette/zones.ts
     title: src/lib/palette/zones.ts
     digest: sha256:2b37f13a2c38852d
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
   - id: place-ts
     resource: ../../src/lib/palette/place.ts
     title: src/lib/palette/place.ts
@@ -375,7 +375,7 @@ sources:
     resource: ../../src/islands/palette/state/save.ts
     title: src/islands/palette/state/save.ts
     digest: sha256:c8b55124c1b5eb75
-    last_modified: 2026-11-25T11:09:08Z
+    last_modified: 2026-11-25T11:27:38Z
 ---
 
 **State (2026-11-19):** PP-B and PP-C are built and live (master 398558aa); the module concepts ([page](/modules/consortium-page.md), [palette page](/modules/consortium-palette-page.md), [state](/modules/consortium-state.md), [core](/modules/consortium-core.md)) describe the code as it is. The owner's island architecture of 2026-11-19 ([user decisions](/decisions/consortium-user-decisions.md) "Owner decisions, 2026-11-19") changes this target in the coming commit 0 and one-pool stream: two stored records with one owner each (link as an overlay until "Use it"), the store split by domain, thin views over view models, one pool (a climate list is a label, never a scope; the guest path deleted) and no browser country guess. Until those land, the sections on storage, the store and guests describe the current code.
@@ -439,7 +439,7 @@ The core stays flat (no subfolder of `src/lib/palette/`): whether the boundary t
 | Link and save | `state.ts` (codec, `linkVersionStatus`), `state/persist.ts` (record, address, `canopi-place`) | v4 (`state.ts:32`) | section 8 |
 | Filter and grouping of offered plants | `rules/find-query.ts` (PP-C) | `rules/list-query.ts:14-51` | rewrite on verdict levels and warnings |
 | Picture geometry | `rules/picture-*.ts`; `rules/months.ts` (`monthRuns`, `monthsText`, `scopeText` from `views/layers.ts:44,61`, moved by g1); `heightFrac`, `usualHeight` from `views/side.ts` to `rules/heights.ts` (b2, for print) | `views/tracks.ts`, `views/side.ts`, `views/layers.ts` | rules may not import views (L2) |
-| Names and numbers | `views/kit/names.ts` (gains `collatorFor`, `nameOrder` from `views/tracks.ts:18-30`), `format.ts:13` | `formatNumber` only; 14 `en.json` keys write a unit after a placeholder (`consortium.room.tall`, `side.metres`, `range.side.*`, `location.meansNear`, …) | PP-B commit 0 adds `formatLength`, `formatDepthCm`, `formatTemp`, `formatTempDiff` (a difference converts without +32) with Intl `style:'unit'`, `formatArea` (`formatNumber` + " m²"; Intl has no square-metre unit) and `parsePlotSize`; new keys take a preformatted `{len}`, `{area}`, `{depth}`, `{temp}` or `{tempDiff}`, and a policy check in `consortium-keys.test.mjs` bans a unit after a placeholder in new consortium keys; existing keys move when their stream rewrites them. Behaviour stays metric; imperial is not planned and the formatters are its single switch point |
+| Names and numbers | `views/kit/names.ts` (gains `collatorFor`, `nameOrder` from `views/tracks.ts:18-30`), `format.ts:13` | `formatNumber` only; 14 `en.json` keys write a unit after a placeholder (`consortium.room.tall`, `side.metres`, `range.side.*`, `location.meansNear`, …) | PP-B commit 0 adds `formatLength`, `formatDepthCm`, `formatTemp`, `formatTempDiff` (a difference converts without +32) with Intl `style:'unit'`, `formatArea` (`formatNumber` + " m²"; Intl has no square-metre unit) and `parsePlotSize`; new keys take a preformatted `{len}`, `{area}`, `{depth}`, `{temp}` or `{tempDiff}`, and a policy check in `palette-keys.test.mjs` bans a unit after a placeholder in new consortium keys; existing keys move when their stream rewrites them. Behaviour stays metric; imperial is not planned and the formatters are its single switch point |
 | Lazy loading and its failure line | `views/lazy.tsx` (`LoadFailed` `:62`; the retryable import is core `retry-import.ts` `retryableImport` since the 2026-11-14 simplify pass) | same | keep; `balancePanel` (`:161`) deleted |
 | Search | `data/search.ts` `searchIndex` (`:27`) over `pool()` and `borrowed()` taxa; `readPool` (`sqlite-source.ts:152`) already loads names in every locale | same | Find reuses it (no `PlantSource` or SQL change) |
 
@@ -580,7 +580,7 @@ Owner, 2026-11-14 (row "Plant palette plan check answers" (4)): start from the a
 | `--level-fits`, `--level-unknown` | existing `--text`, `--text-secondary` | same tokens | site | fits and not checked are told by icon and words, no colour of their own |
 | `--focus` | `#1F5F8B` | `#7FB8E0` | Fable | no app token |
 
-Commit 0 checks contrast in both themes (text 4.5:1, graphics 3:1 against `--bg` and `--surface`); a token that fails gets an ink outline in the picture or, by a coordinator row, Fable's value (Fable's `--layer-light` `#A8651C`/`#D4A060` for light graphics, Fable's food `#4F7132`). Later pushes add their meaning tokens to this block, never to stream CSS. `views/kit/flags.ts` holds the one map from level, severity and job to a token. `scripts/palette-css.test.mjs` allows `--role-*` and `[data-job]`, forbids raw hex in consortium CSS and TSX (`print.css` excepted) and drops the comment citing the replaced "no green" rule (`consortium-css.test.mjs:5-8`). Amber sharing is settled by rule: kind is told by icon and words (row "Fable advice answers" (7)).
+Commit 0 checks contrast in both themes (text 4.5:1, graphics 3:1 against `--bg` and `--surface`); a token that fails gets an ink outline in the picture or, by a coordinator row, Fable's value (Fable's `--layer-light` `#A8651C`/`#D4A060` for light graphics, Fable's food `#4F7132`). Later pushes add their meaning tokens to this block, never to stream CSS. `views/kit/flags.ts` holds the one map from level, severity and job to a token. `scripts/palette-css.test.mjs` allows `--role-*` and `[data-job]`, forbids raw hex in consortium CSS and TSX (`print.css` excepted) and drops the comment citing the replaced "no green" rule (`palette-css.test.mjs:5-8`). Amber sharing is settled by rule: kind is told by icon and words (row "Fable advice answers" (7)).
 
 ### 3.6 Palette state (`state/schema.ts`)
 
@@ -653,7 +653,7 @@ A module exported from `index.ts` but used by one lazy chunk only lives in that 
 | `views/Start.tsx` | moved into `views/place/` (commit 0 creates `Place.tsx` re-exporting Start and points `App.tsx:16` at it), then rewritten and deleted there; country line (`:60-70`), climate cards and today's light, soil and water questions (until PP-F) kept as parts; the `markStart()` call moves with it | b1a |
 | `views/pool/pool.tsx`, `PoolSlot.tsx`, `rules/suggest-block.ts` | port to `poolVerdicts`; the count folds into Place. **As built (b1b, amended by the chunk-2 drift check, 2026-11-15):** the pool role and panel are kept as the lazy home of the count line (`pool.tsx` `CountLine` from `store.countFits`, 0 B on the first run), shown in Place's form and the "Your place" sheet; Place's head keeps the needs lines only (`PoolSlot` `head`); `poolCounts` and the panel's edge and left lines went; `suggest-block.ts` keeps `suggestBlock` and `nothingFits` and gains `countKind` | b1b (chunk 2, after b2's verdict engine) |
 | `views/LocationSlot.tsx`, `views/location/**` | keep, inside Place | b1a |
-| `views/Matrix.tsx`, `PhoneMatrix.tsx`, `matrix-parts.tsx`, `Jobs.tsx`, `PlantList.tsx`, `StageStepper.tsx`, `matrix.css` (the shared rules kept views use to `shell.css`, the side drawing's rules to `print.css`, slices section 2), `palette.css` (F1a era, empty) | delete first (owner, 2026-11-14): commit 0a' deletes them with their tests and owns their importers (the matrix `lazyPart` in `App.tsx`, the `SideView`, Jobs and PlantList re-exports in `views/later.ts`, `ConsortiumPage.astro`'s two imports); b3 later mounts YourPlants and Weigh in `views/palette/Palette.tsx` | commit 0a' |
+| `views/Matrix.tsx`, `PhoneMatrix.tsx`, `matrix-parts.tsx`, `Jobs.tsx`, `PlantList.tsx`, `StageStepper.tsx`, `matrix.css` (the shared rules kept views use to `shell.css`, the side drawing's rules to `print.css`, slices section 2), `palette.css` (F1a era, empty) | delete first (owner, 2026-11-14): commit 0a' deletes them with their tests and owns their importers (the matrix `lazyPart` in `App.tsx`, the `SideView`, Jobs and PlantList re-exports in `views/later.ts`, `PalettePage.astro`'s two imports); b3 later mounts YourPlants and Weigh in `views/palette/Palette.tsx` | commit 0a' |
 | `views/tracks.ts` | helpers moved in commit 0a: `PHASE_ORDS` (`:40`), `Order`, `collatorFor`, `nameOrder` (`:18-30`), `warningCounts` (`:139`), `stepStage` (`:153`) to `views/kit/phase.ts` and `names.ts`; `spanOf` to `years.ts` (`views/kit/span.ts` deleted; `side.ts`, `SideView`, `StageBar`, `StageStepper` and `views/kit/sheet.tsx` (`:14`) repointed to `years.ts` `spanOf`); deleted in 0a' with `scripts/palette-tracks.test.mjs` (its print cases move to `scripts/palette-print.test.mjs`); `stepStage` and `PHASE_ORDS` deleted in 0a'; `warningCounts` stays in `kit/phase.ts` (StageBar's `warnings` and `Marks`, drawn in print) | commit 0a, 0a' |
 | `views/StageBar.tsx` | commit 0a' deletes `StageStrip`, `cellName`, `plantLabel`, `openSwap` (no reader after PlantList) and the kept and main-crop marks, and (built) `StageBar`, `Explain` and `openAdd`, which had no reader left; `Marks`, `warnings` (module-private), `openDetails`, `jobFind`, `byName` stay until their last readers go (`future.tsx:17` in PP-E, `Add.tsx:24` in PP-C, print); `App.tsx` imports it and `PlantMarks.tsx` to keep them in the first run (the future part's cap, one build) | commit 0a', c1, e2 |
 | `views/SideView.tsx`, `side.ts`, `draw.ts`, `PrintSheet.tsx` | print only: commit 0a' deletes the on-screen side view (its stage chips) and "At a glance" (`PrintSheet.tsx:34` reads `matrix`), keeping `SideDrawing` and the plant table; the side drawing shows the year step chosen in Through the years (coordinator choice, 2026-11-14; inventory E9 keeps it), the jobs and years tables follow in d2 | commit 0a', b2 (off `stage`, PP-B18), d2 (print) |
@@ -679,7 +679,7 @@ Each commit 0 and each stream hand-off runs `npm run check:dead` and a grep for 
 6. **Climate values decoded and dropped** (`lookup.ts:43-46,141-143` vs `types.ts:368-378`) → `SitePeriod` gains them.
 7. **Role without a module**: `ROLE_ENTRIES.structure` names `views/Structure.tsx` (`scripts/built-modules.mjs:165`) → renamed `matrix` in PP-B commit 0.
 8. **Stale test constant** `VIEW_KEY = 'y'` (`scripts/browser/consortium-f1a-palette.browser.test.mjs:37`) → goes with marker P3; v5 gives `y` to the period.
-9. **Version gates outside the decoder**: `persist.ts` `readRecord` (`:105`) and `oldRecord` (`:111-118`), `restore.ts:133-143` and `ConsortiumPage.astro:117` (`hp.get('v') === '4'`) each test the version → one `linkVersionStatus`; the page-head check treats any fragment with `v` or `a` as a link (`isLinkFragment` rule).
+9. **Version gates outside the decoder**: `persist.ts` `readRecord` (`:105`) and `oldRecord` (`:111-118`), `restore.ts:133-143` and `PalettePage.astro:117` (`hp.get('v') === '4'`) each test the version → one `linkVersionStatus`; the page-head check treats any fragment with `v` or `a` as a link (`isLinkFragment` rule).
 10. No import cycle exists today (L7 `error`). New risk `holes.ts` ⇄ `verdict.ts` ⇄ `suggest.ts`: `holes.ts` imports verdict types only, `suggest.ts` may import both, neither imports `suggest.ts`.
 
 ## 8. URL and storage contract
@@ -773,7 +773,7 @@ The privacy text this storage must match is `privacy.tool.device`, owner-approve
 
 ### 8.4 The move to `/palette/` (PP-B commit 0; no forwarding since 2026-11-17)
 
-- `src/i18n/palette-path.js` returns `/palette/` and `/${lang}/palette/`; the pages are `src/pages/palette.astro` and `src/pages/[lang]/palette.astro`, and `ConsortiumPage.astro` builds its canonical, hreflang and og:url through `consortiumPath`. Data path `/data/consortium/*.sqlite.gz`, storage keys, key prefixes, folders and chunk roles keep the name "consortium".
+- `src/i18n/palette-path.js` returns `/palette/` and `/${lang}/palette/`; the pages are `src/pages/palette.astro` and `src/pages/[lang]/palette.astro`, and `PalettePage.astro` builds its canonical, hreflang and og:url through `consortiumPath`. Data path `/data/consortium/*.sqlite.gz`, storage keys, key prefixes, folders and chunk roles keep the name "consortium".
 - **The old `/consortium/` and `/<lang>/consortium/` addresses answer 404** (owner row "No /consortium/ forwarding", 2026-11-17, [user decisions](/decisions/consortium-user-decisions.md): few users yet). PP-B's 22 `public/_redirects` lines were removed; they never applied in production anyway (Workers Builds ignores `public/_redirects`). There is no stub page at the old address and no redirect plan left: this supersedes the earlier 301 lines, their wrangler-dev probe and the stub-page fallback.
 - `scripts/check-built-site.mjs` holds it: `_redirects` has no `/consortium/` rule (and keeps the `/app/:route` line first), no old page is built, the sitemap has none, and no built page links one. Old share links (`/consortium/#v=…`) are not rewritten; a reader who has one lands on the 404 page.
 - What still says "consortium" on purpose: the internal names above, and `public/_redirects`' comment that records the decision.

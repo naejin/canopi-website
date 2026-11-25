@@ -93,7 +93,7 @@ test('b1a arrival with the v5 record { fragment, place, at, src, country? }: the
   assert.equal(arrivalM.placeOfSeed(null), null);
 });
 
-// The store on the installed export, as consortium-memory.test.mjs sets it up.
+// The store on the installed export, as palette-memory.test.mjs sets it up.
 const index = JSON.parse(readFileSync(new URL('../src/data/palette-index.json', import.meta.url), 'utf8'));
 const real = await openBytes(new Uint8Array(gunzipSync(readFileSync(new URL(`../public${index.files[0].url}`, import.meta.url)))), { releaseId: index.release_id, climates: index.climates });
 const realSource = createSqliteSource(real.db, { images: {} });

@@ -156,7 +156,7 @@ test('the manifest: format 4 and schema 4 only, by name; release id, split, clim
 });
 
 // E6 R1: the zone list (src/lib/palette/zones.ts; the installer keeps a copy, checked equal by
-// consortium-zones.test.mjs) is the only climate ids an export may name. A zone id outside it in the
+// palette-zones.test.mjs) is the only climate ids an export may name. A zone id outside it in the
 // manifest is refused before anything is written; the committed index (today's export) names only
 // zones of the list.
 test('a zone id outside the zone list is refused, in the manifest and the index; today\'s export passes', async (t) => {
