@@ -9,6 +9,7 @@ import { T } from '../../strings.ts';
 import { markStart } from '../kit/start-mark.ts';
 import { PlantThumb } from './GuildVisuals.tsx';
 import {
+  doyToDateLabel,
   fmtNum,
   freezeText,
   heatText,
@@ -17,13 +18,13 @@ import {
   verdictSymbolLabel,
 } from './ns-helpers.ts';
 import {
-  currentLocale,
   effectiveOverrides,
   launchEmpty,
   launchWithStarter,
   NS_PRESETS,
   nsSiteLoading,
   pickCoordinates,
+  siteAnalogueLabel,
   starterPreview,
 } from './ns-state.ts';
 
@@ -47,6 +48,7 @@ export function NorthStarArrival() {
   const [hits, setHits] = useState<PlaceHit[]>([]);
   const [searching, setSearching] = useState(false);
   const [searchErr, setSearchErr] = useState<string | null>(null);
+  const [mapPickOpen, setMapPickOpen] = useState(false);
   const [climatePickOpen, setClimatePickOpen] = useState(false);
 
   const loc = store.location.value;
@@ -54,6 +56,7 @@ export function NorthStarArrival() {
   const ov = effectiveOverrides.value;
   const loading = nsSiteLoading.value;
   const starter = starterPreview.value;
+  const analogue = siteAnalogueLabel.value;
 
   // Auto-load default Montpellier site on clean first arrival so live climate & 8-plant starter appear immediately
   useEffect(() => {
@@ -74,6 +77,8 @@ export function NorthStarArrival() {
   const texture = loc?.lookup?.soil?.texture ?? 'loam';
   const dryMoT = effToday.dryMonths;
   const dryMo50 = eff2050.dryMonths;
+  const frostCal = loc?.lookup?.v07?.frostCalendar ?? null;
+  const springP90Date = doyToDateLabel(frostCal?.lastSpringP90Doy);
 
   async function onSearchSubmit(e: Event) {
     e.preventDefault();
@@ -84,9 +89,9 @@ export function NorthStarArrival() {
     try {
       const { results } = await findPlaces(q);
       setHits(results.slice(0, 6).map((h) => ({ label: placeName(h), lat: h.lat, lon: h.lon })));
-      if (!results.length) setSearchErr('No matching place found.');
+      if (!results.length) setSearchErr(T('ns.unknown'));
     } catch {
-      setSearchErr('Could not search places right now.');
+      setSearchErr(T('ns.arrival.geoDenied'));
     } finally {
       setSearching(false);
     }
@@ -107,6 +112,21 @@ export function NorthStarArrival() {
       { timeout: 10_000 },
     );
   }
+
+  const renderPresetChip = (p: (typeof NS_PRESETS)[number], fullLabel: boolean, onPicked?: () => void) => (
+    <button
+      key={p.id}
+      type="button"
+      class="sample-chip"
+      aria-pressed={loc?.label === p.label ? 'true' : 'false'}
+      onClick={() => {
+        onPicked?.();
+        void pickCoordinates(p.lat, p.lon, p.label, p.zone, p.country);
+      }}
+    >
+      {fullLabel ? p.label : p.label.split(',')[0]}
+    </button>
+  );
 
   return (
     <div class="wrap arrival-wrap">
@@ -158,19 +178,42 @@ export function NorthStarArrival() {
             </button>
             <button
               type="button"
-              class="link-button small tap-link"
-              onClick={() => setClimatePickOpen(!climatePickOpen)}
+              class="btn-ghost"
+              aria-expanded={mapPickOpen ? 'true' : 'false'}
+              onClick={() => {
+                setMapPickOpen(!mapPickOpen);
+                if (!mapPickOpen) setClimatePickOpen(false);
+              }}
             >
-              No location? Pick a climate
+              {T('ns.arrival.pickMap')}
+            </button>
+            <button
+              type="button"
+              class="link-button small tap-link"
+              onClick={() => {
+                setClimatePickOpen(!climatePickOpen);
+                if (!climatePickOpen) setMapPickOpen(false);
+              }}
+            >
+              {T('ns.arrival.noLocClimate')}
             </button>
           </div>
         </form>
 
         {searchErr && <p class="ns-err" role="alert">{searchErr}</p>}
 
+        {mapPickOpen && (
+          <div class="land-alert" style={{ background: 'var(--bg)', borderColor: 'var(--border-strong)' }}>
+            <strong>{T('ns.arrival.pickMapTitle')}</strong>
+            <div class="sample-strip" style={{ margin: 0 }}>
+              {NS_PRESETS.map((p) => renderPresetChip(p, true, () => setMapPickOpen(false)))}
+            </div>
+          </div>
+        )}
+
         {climatePickOpen && (
           <div class="land-alert" style={{ background: 'var(--bg)', borderColor: 'var(--border-strong)' }}>
-            <strong>Pick a climate directly</strong>
+            <strong>{T('ns.arrival.pickClimateTitle')}</strong>
             <div class="sample-strip" style={{ margin: 0 }}>
               {DIRECT_CLIMATES.map((dc) => {
                 const pr = NS_PRESETS.find((x) => x.id === dc.presetId)!;
@@ -196,24 +239,11 @@ export function NorthStarArrival() {
       </div>
 
       <div class="sample-strip" aria-label={T('ns.arrival.presetsAria')}>
-        <span class="small muted">Try a place:</span>
-        {NS_PRESETS.map((p) => {
-          const active = loc?.label === p.label;
-          return (
-            <button
-              key={p.id}
-              type="button"
-              class="sample-chip"
-              aria-pressed={active ? 'true' : 'false'}
-              onClick={() => void pickCoordinates(p.lat, p.lon, p.label, p.zone, p.country)}
-            >
-              {p.label.split(',')[0]}
-            </button>
-          );
-        })}
+        <span class="small muted">{T('ns.arrival.tryPlace')}</span>
+        {NS_PRESETS.map((p) => renderPresetChip(p, false))}
       </div>
 
-      <section class="arrival-card" aria-label="Site preview">
+      <section class="arrival-card" aria-label={T('ns.arrival.placeCardAria')}>
         <div>
           <p class="pulse-kicker">
             {effToday.koppen || zone || '—'} → {eff2050.koppen || effToday.koppen || '—'} (2050s)
@@ -224,8 +254,8 @@ export function NorthStarArrival() {
           </h2>
           <p class="muted" style={{ marginTop: '6px' }}>
             {allFit
-              ? `Every starter plant fits your pH ${fmtNum(effToday.soilPh)} soil and climate.`
-              : `${starterThrives} of ${starter.length} starter plants thrive rain-fed.`}
+              ? T('ns.arrival.allFit', { ph: fmtNum(effToday.soilPh) })
+              : T('ns.arrival.someFit', { ok: starterThrives, total: starter.length })}
           </p>
         </div>
 
@@ -233,30 +263,39 @@ export function NorthStarArrival() {
           <strong>{T('ns.brief.shift2050')}:</strong>{' '}
           {T('ns.land.freeze10')} {freezeText(effToday)} → {freezeText(eff2050)} ·{' '}
           {T('ns.land.heat10')} {heatText(effToday)} → {heatText(eff2050)}
-          {dryMoT != null && dryMo50 != null ? ` · dry months ${dryMoT} → ${dryMo50}/yr` : ''}
+          {dryMoT != null && dryMo50 != null ? ` · ${T('ns.arrival.dryMonths', { a: dryMoT, b: dryMo50 })}` : ''}
+          {analogue ? <> · <strong>{T('ns.arrival.resembles', { place: analogue })}</strong></> : null}
         </div>
 
         <div class="arrival-metrics">
           <div class="metric-box">
-            <div class="metric-k">{T('ns.land.freeze10')}</div>
+            <div class="metric-k">{T('ns.arrival.coldCard')}</div>
             <div class="metric-v">{freezeText(effToday)}</div>
             <div class="metric-sub">
-              {effToday.tminColdC != null ? `Coldest month avg min ${fmtNum(effToday.tminColdC)} °C` : T('ns.unknown')}
+              {frostCal?.frostFree
+                ? T('ns.arrival.frostFreeDays', { n: 365 })
+                : springP90Date
+                  ? T('ns.arrival.lateSpringFrost', { date: springP90Date })
+                  : frostCal?.frostFreeDays != null
+                    ? T('ns.arrival.frostFreeDays', { n: frostCal.frostFreeDays })
+                    : T('ns.unknown')}
             </div>
           </div>
           <div class="metric-box">
-            <div class="metric-k">{T('ns.land.heat10')}</div>
+            <div class="metric-k">{T('ns.arrival.heatCard')}</div>
             <div class="metric-v">{heatText(effToday)}</div>
             <div class="metric-sub">
-              {effToday.tmaxWarmC != null ? `Warmest month avg max ${fmtNum(effToday.tmaxWarmC)} °C` : T('ns.unknown')}
+              {effToday.tmaxWarmC != null
+                ? T('ns.arrival.heatAvgMax', { t: `${fmtNum(effToday.tmaxWarmC)} °C` })
+                : T('ns.unknown')}
             </div>
           </div>
           <div class="metric-box">
-            <div class="metric-k">{T('ns.land.soilPh')} &amp; {T('ns.land.waterTank')}</div>
+            <div class="metric-k">{T('ns.arrival.soilWaterCard')}</div>
             <div class="metric-v">pH {fmtNum(effToday.soilPh)} · {texture}</div>
             <div class="metric-sub">
               {effToday.tankDays != null && effToday.cddDays != null
-                ? `Soil holds ~${effToday.tankDays} ${T('ns.days')} · longest dry spell ~${effToday.cddDays} ${T('ns.days')}`
+                ? T('ns.arrival.waterTankSub', { tank: effToday.tankDays, cdd: effToday.cddDays, d: T('ns.days') })
                 : T('ns.unknown')}
             </div>
           </div>
@@ -284,7 +323,7 @@ export function NorthStarArrival() {
             disabled={loading || starter.length === 0}
             onClick={launchWithStarter}
           >
-            {shortName ? `Open my ${shortName} palette →` : T('ns.arrival.startCta')}
+            {shortName ? T('ns.arrival.openPalette', { place: shortName }) : T('ns.arrival.startCta')}
           </button>
           <button type="button" class="btn-ghost" onClick={launchEmpty}>
             {T('ns.arrival.scratchCta')}

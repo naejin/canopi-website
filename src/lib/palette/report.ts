@@ -60,17 +60,27 @@ export const REPORT_SCENARIOS: readonly ReportScenarioMeta[] = [
 
 export const CORE_SHOCK_HORIZONS: readonly ReportHorizonId[] = ['today', 'y2050', 'freeze', 'heat', 'drought'];
 
+export type SiteAspect = 'neutral' | 'south' | 'north';
+export type SiteColdAir = 'normal' | 'hollow' | 'higher';
+export type SiteLightChoice = 'full_sun' | 'part_shade' | 'shade';
+
 export interface ReportSiteOverrides {
   soilPh?: number | null;
   drainage?: Drainage | null;
   watering?: Watering | null;
   room?: Room | null;
   plotM2?: number | null;
-  wind?: InputWind | null;
+  wind?: InputWind | 'moderate' | null;
+  siteLight?: SiteLightChoice | null;
   clayPct?: number | null;
   stonesPct?: number | null;
   elevM?: number | null;
   slopeDeg?: number | null;
+  aspect?: SiteAspect | null;
+  coldAir?: SiteColdAir | null;
+  freeze10?: number | null;
+  heat10?: number | null;
+  cddDays?: number | null;
   nightsShiftC?: number;
   daysShiftC?: number;
 }
@@ -109,7 +119,16 @@ export interface EffectiveSiteClimate {
   cddDays: number | null;
   drainage: Drainage | null;
   watering: Watering;
-  wind: InputWind | null;
+  wind: InputWind | 'moderate' | null;
+  siteLight: SiteLightChoice;
+  elevBase: number | null;
+  elevEff: number | null;
+  elevDeltaC: number;
+  slopeDeg: number | null;
+  aspect: SiteAspect;
+  aspectDeltaC: number;
+  coldAir: SiteColdAir;
+  hollowDeltaC: number;
   room: Room;
   roomLimitM: number | null;
   plotM2: number;
@@ -143,8 +162,18 @@ export function resolveEffectiveSite(
   const activeSlot = meta.kind === 'whatif' ? todaySlot : findPeriod(periods, meta.period, meta.scenario);
   const v07 = lookup?.v07 ?? null;
 
-  const nightsShift = overrides.nightsShiftC ?? 0;
-  const daysShift = overrides.daysShiftC ?? 0;
+  const elevBase = v07?.terrain?.elevM ?? null;
+  const elevEff = overrides.elevM != null ? overrides.elevM : elevBase;
+  const elevDeltaC = elevBase != null && elevEff != null ? round1(((elevBase - elevEff) / 100) * 0.65) : 0;
+  const aspect: SiteAspect = overrides.aspect ?? 'neutral';
+  const aspectDeltaC = aspect === 'south' ? 1.0 : aspect === 'north' ? -1.0 : 0;
+  const coldAir: SiteColdAir = overrides.coldAir ?? 'normal';
+  const hollowDeltaC = coldAir === 'hollow' ? -2.5 : coldAir === 'higher' ? -1.5 : 0;
+  const coldTerrainShift = round1(elevDeltaC + hollowDeltaC + aspectDeltaC);
+  const warmTerrainShift = round1(elevDeltaC + aspectDeltaC);
+
+  const nightsShift = (overrides.nightsShiftC ?? 0) + coldTerrainShift;
+  const daysShift = (overrides.daysShiftC ?? 0) + warmTerrainShift;
   const freezeDelta = horizon === 'freeze' ? -4 : 0;
   const heatDelta = horizon === 'heat' ? 4 : 0;
   const droughtExtraDays = horizon === 'drought' ? 20 : 0;
@@ -173,8 +202,12 @@ export function resolveEffectiveSite(
 
   if (activeSlot !== null) {
     if (horizon === 'today' || meta.kind === 'whatif') {
-      freeze10C = todayFreeze10 !== null ? round1(todayFreeze10 + nightsShift + freezeDelta) : null;
-      heat10C = todayHeat10 !== null ? round1(todayHeat10 + daysShift + heatDelta) : null;
+      freeze10C = overrides.freeze10 != null
+        ? round1(overrides.freeze10 + freezeDelta)
+        : (todayFreeze10 !== null ? round1(todayFreeze10 + nightsShift + freezeDelta) : null);
+      heat10C = overrides.heat10 != null
+        ? round1(overrides.heat10 + heatDelta)
+        : (todayHeat10 !== null ? round1(todayHeat10 + daysShift + heatDelta) : null);
       extremesEst = meta.kind === 'whatif';
     } else {
       const slotExt = v07?.extremes?.periods?.find((p) => p.period === meta.period && p.scenario === meta.scenario) ?? null;
@@ -184,8 +217,12 @@ export function resolveEffectiveSite(
       const slotTmax = slotExt?.tmaxExtremeC
         ?? (horizon === 'y2050' ? (v07?.extremes?.futureTmaxExtremeC ?? null)
           : horizon === 'y2080_ssp245' ? (v07?.extremes?.lateTmaxExtremeC ?? null) : null);
-      freeze10C = slotTmin !== null && tminGap !== null ? round1(slotTmin + tminGap + nightsShift) : null;
-      heat10C = slotTmax !== null && tmaxGap !== null ? round1(slotTmax + tmaxGap + daysShift) : null;
+      freeze10C = overrides.freeze10 != null
+        ? round1(overrides.freeze10)
+        : (slotTmin !== null && tminGap !== null ? round1(slotTmin + tminGap + nightsShift) : null);
+      heat10C = overrides.heat10 != null
+        ? round1(overrides.heat10)
+        : (slotTmax !== null && tmaxGap !== null ? round1(slotTmax + tmaxGap + daysShift) : null);
       extremesEst = freeze10C !== null || heat10C !== null;
     }
   }
@@ -228,9 +265,11 @@ export function resolveEffectiveSite(
   const room: Room = overrides.room ?? 'unsure';
   const plotM2 = Math.max(1, Math.round(overrides.plotM2 ?? 150));
   const netPlotM2 = Math.max(1, Math.round(plotM2 * 0.8));
-  const baseCdd = v07?.waterBalance?.cddDays ?? null;
+  const baseCdd = overrides.cddDays != null ? overrides.cddDays : (v07?.waterBalance?.cddDays ?? null);
   const cddDays = baseCdd !== null ? Math.round(baseCdd + droughtExtraDays) : null;
   const tankDays = v07?.soilPlus?.dryDaysReserve != null ? Math.round(v07.soilPlus.dryDaysReserve) : null;
+  const slopeDeg = overrides.slopeDeg != null ? overrides.slopeDeg : (v07?.terrain?.slopeDeg ?? null);
+  const siteLight: SiteLightChoice = overrides.siteLight ?? 'full_sun';
 
   return {
     horizon,
@@ -267,6 +306,15 @@ export function resolveEffectiveSite(
     drainage: overrides.drainage ?? null,
     watering: overrides.watering ?? 'rain',
     wind: overrides.wind ?? null,
+    siteLight,
+    elevBase,
+    elevEff,
+    elevDeltaC,
+    slopeDeg,
+    aspect,
+    aspectDeltaC,
+    coldAir,
+    hollowDeltaC,
     room,
     roomLimitM: ROOM_HEIGHT_LIMIT_M[room],
     plotM2,
@@ -506,6 +554,22 @@ export function evaluatePlantVerdict(
       level = elevate(level, 'check');
       reasons.push({ code: 'wind_sensitive', severity: 'check', detail: 'Recorded as wind-sensitive (UK records)' });
     }
+  }
+
+  // 5b. Site light check (mockup-v73.html L2129-2136)
+  const prefLight = taxon.light.preferred ?? taxon.light.sunniest ?? taxon.stratum?.value ?? null;
+  const sunOnly = prefLight === 'emergent' && (taxon.light.shadiest == null || taxon.light.shadiest === 'emergent');
+  if (eff.siteLight === 'shade' && (prefLight === 'emergent' || prefLight === 'high' || (taxon.traits.sun && !taxon.traits.full_shade && !taxon.traits.semi_shade))) {
+    level = elevate(level, 'check');
+    reasons.push({ code: 'site_light', severity: 'check', detail: 'Prefers sunnier exposure (site light: shady)' });
+  } else if (eff.siteLight === 'part_shade' && (sunOnly || (taxon.traits.sun && !taxon.traits.semi_shade && !taxon.traits.full_shade))) {
+    level = elevate(level, 'check');
+    reasons.push({ code: 'site_light', severity: 'check', detail: 'Prefers full sun (site light: part shade)' });
+  }
+
+  // 5c. Stony soil trap note (mockup-v73.html L2119-2121)
+  if (eff.stonesPct !== null && eff.stonesPct >= 25 && isDeepRooted) {
+    reasons.push({ code: 'stony_soil', severity: 'note', detail: `Stony soil (${Math.round(eff.stonesPct)}% rock) may restrict deep roots` });
   }
 
   // 6. Room height (note only, never blocks)
@@ -799,7 +863,7 @@ export function selectStarterPalette(
       edibility: t.traits.edibility_rating ?? 0,
     }))
     .filter((x) => x.verdict.level === 'fits' && x.jobs.length > 0 && !x.verdict.subsoilPhTrap)
-    .filter((x) => eff.roomLimitM === null || x.taxon.traits.height_m?.max == null || x.taxon.traits.height_m.max <= eff.roomLimitM);
+    .filter((x) => eff.roomLimitM === null || eff.roomLimitM > 2 || x.taxon.traits.height_m?.max == null || x.taxon.traits.height_m.max <= eff.roomLimitM);
 
   const chosen: Taxon[] = [];
   const chosenIds = new Set<PlantId>();
@@ -817,8 +881,12 @@ export function selectStarterPalette(
     return true;
   };
 
+  const isSevereTox = (t: Taxon): boolean =>
+    (t.warnings.toxicity?.level ?? '').toLowerCase() === 'severe';
+
   const compareTieBreak = (a: (typeof fitsPool)[number], b: (typeof fitsPool)[number]): number =>
-    ((b.perennial ? 1 : 0) - (a.perennial ? 1 : 0))
+    ((isSevereTox(a.taxon) ? 1 : 0) - (isSevereTox(b.taxon) ? 1 : 0))
+    || ((b.perennial ? 1 : 0) - (a.perennial ? 1 : 0))
     || (((b.taxon.family && !usedFamilies.has(b.taxon.family)) ? 1 : 0) - ((a.taxon.family && !usedFamilies.has(a.taxon.family)) ? 1 : 0))
     || ((b.taxon.image ? 1 : 0) - (a.taxon.image ? 1 : 0))
     || (b.jobs.length - a.jobs.length)
@@ -855,14 +923,24 @@ export function selectStarterPalette(
     const maxTreeArea = eff.netPlotM2 * 0.40;
     pickBest(
       (x) => x.sizeClass === 'tree' && x.area <= maxTreeArea,
-      (a, b) => ((b.jobs.includes('feeds_you') ? 1 : 0) - (a.jobs.includes('feeds_you') ? 1 : 0)) || (b.edibility - a.edibility),
+      (a, b) => {
+        const aSev = isSevereTox(a.taxon) ? 1 : 0;
+        const bSev = isSevereTox(b.taxon) ? 1 : 0;
+        const aSensible = (a.taxon.traits.height_m?.max ?? 99) <= 20 ? 0 : 1;
+        const bSensible = (b.taxon.traits.height_m?.max ?? 99) <= 20 ? 0 : 1;
+        return (aSev - bSev)
+          || (aSensible - bSensible)
+          || ((b.jobs.includes('feeds_you') ? 1 : 0) - (a.jobs.includes('feeds_you') ? 1 : 0))
+          || (b.edibility - a.edibility);
+      },
     );
   }
   if ((eff.roomLimitM === null || eff.roomLimitM >= 1.5) && eff.netPlotM2 >= 12 && chosen.length < maxPlants) {
     const maxShrubArea = eff.netPlotM2 * 0.25;
     pickBest(
       (x) => x.sizeClass === 'shrub' && x.area <= maxShrubArea,
-      (a, b) => ((b.jobs.includes('feeds_you') || b.jobs.includes('helpers') ? 1 : 0) - (a.jobs.includes('feeds_you') || a.jobs.includes('helpers') ? 1 : 0)),
+      (a, b) => ((isSevereTox(a.taxon) ? 1 : 0) - (isSevereTox(b.taxon) ? 1 : 0))
+        || ((b.jobs.includes('feeds_you') || b.jobs.includes('helpers') ? 1 : 0) - (a.jobs.includes('feeds_you') || a.jobs.includes('helpers') ? 1 : 0)),
     );
   }
   if (chosen.length < maxPlants && !chosen.some((t) => jobsOf(t).includes('feeds_soil'))) {

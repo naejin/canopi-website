@@ -249,8 +249,8 @@ export function GuildProfileSvg({ rep }: { rep: PaletteReport }) {
     <div class="guild-profile-plate">
       <div class="guild-profile-head">
         <span>
-          <strong>{T('ns.elev.aria')} ({activeScenShort})</strong> · by habit &amp; mature height (m) vs 1.75 m person · dashed = height or crown unrecorded
-          {ordered.length > shown.length ? ` (10 of ${ordered.length} species)` : ''}
+          <strong>{T('ns.elev.aria')} ({activeScenShort})</strong> · {T('ns.elev.caption')}
+          {ordered.length > shown.length ? ` (10 / ${ordered.length})` : ''}
         </span>
         <span>{T('ns.dossier.scaleAria')}</span>
       </div>
@@ -269,7 +269,7 @@ export function GuildProfileSvg({ rep }: { rep: PaletteReport }) {
             <line x1="10" y1={roomLineY.toFixed(1)} x2={W - 12} y2={roomLineY.toFixed(1)} stroke="var(--accent)" stroke-dasharray="4 3" stroke-width="1.1" />
             <rect x="10" y={Math.max(2, roomLineY - 13).toFixed(1)} width="88" height="12" rx="3" fill="var(--surface)" opacity="0.92" />
             <text x="14" y={Math.max(11, roomLineY - 4).toFixed(1)} text-anchor="start" font-size="9" font-weight="600" fill="var(--accent-ink)">
-              Your room: {fmtNum(maxRoomM, 0)} m
+              {T('ns.elev.yourRoom', { m: `${fmtNum(maxRoomM, 0)} m` })}
             </text>
           </>
         )}
@@ -397,12 +397,12 @@ export function ScaleRootSvg({ taxon, roomLimitM }: { taxon: Taxon; roomLimitM: 
     <svg class="wl-svg" viewBox="0 0 460 176" role="img" aria-label={T('ns.dossier.scaleAria')}>
       <rect x="0" y={soilY} width="460" height={176 - soilY} fill="var(--surface-alt)" />
       <line x1="12" y1={soilY} x2="448" y2={soilY} stroke="var(--soil-2)" stroke-width="1.5" />
-      <text x="16" y={soilY + 14} font-size="10" fill="var(--text-muted)">Soil line (0 cm)</text>
+      <text x="16" y={soilY + 14} font-size="10" fill="var(--text-muted)">{T('ns.elev.soilLine')}</text>
       {roomLineY != null && roomLimitM != null && (
         <>
           <line x1="90" y1={roomLineY.toFixed(1)} x2="444" y2={roomLineY.toFixed(1)} stroke="var(--accent)" stroke-dasharray="4 3" stroke-width="1.2" />
           <text x="444" y={(roomLineY - 4).toFixed(1)} text-anchor="end" font-size="10" font-weight="600" fill="var(--accent-ink)">
-            Your room: {fmtNum(roomLimitM, 0)} m
+            {T('ns.elev.yourRoom', { m: `${fmtNum(roomLimitM, 0)} m` })}
           </text>
         </>
       )}
@@ -419,7 +419,7 @@ export function ScaleRootSvg({ taxon, roomLimitM }: { taxon: Taxon; roomLimitM: 
           <circle cx="64" cy={(soilY - humanH - 1.5).toFixed(1)} r="1.5" fill="var(--text-muted)" />
         </g>
       )}
-      <text x="64" y={soilY + 28} text-anchor="middle" font-size="10" fill="var(--text-muted)">1.75 m person</text>
+      <text x="64" y={soilY + 28} text-anchor="middle" font-size="10" fill="var(--text-muted)">{T('ns.elev.person')}</text>
       <BotanicalSilhouette taxon={taxon} cx={cx} soilY={soilY} plantH={plantH} plantW={plantW} strokeCol="var(--pal-ok)" fillCol="var(--pal-ok)" dashed={hVal == null} />
       <text x={cx} y={Math.max(14, soilY - plantH - 4).toFixed(1)} text-anchor="middle" font-size="11" font-weight="600" fill="var(--text)">
         {hVal != null ? `${fmtNum(hVal)} m tall` : 'Height unrecorded'}{wVal != null ? ` · ${fmtNum(wVal)} m wide` : ' · crown unrecorded'}
@@ -437,7 +437,7 @@ export function ScaleRootSvg({ taxon, roomLimitM }: { taxon: Taxon; roomLimitM: 
           <text x={cx + 34} y={(soilY + 18).toFixed(1)} font-size="10" font-weight="600" fill="var(--text-secondary)">
             {hasRootDepth ? `Roots ≥ ${rootCm} cm` : 'Taproot · depth unrecorded'}{taxon.traits.root_system_type ? ` (${taxon.traits.root_system_type})` : ''}
           </text>
-          <text x={cx + 34} y={(soilY + 32).toFixed(1)} font-size="10" fill="var(--text-muted)">Roots not to scale</text>
+          <text x={cx + 34} y={(soilY + 32).toFixed(1)} font-size="10" fill="var(--text-muted)">{T('ns.elev.rootsNotScale')}</text>
         </>
       ) : (
         <text x={cx} y={soilY + 26} text-anchor="middle" font-size="10" fill="var(--text-muted)">Root depth unrecorded</text>

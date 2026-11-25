@@ -18,12 +18,14 @@ import type {
 } from '../../../../lib/palette/index.ts';
 import {
   computeReport,
+  formatAreaName,
+  formatCountryName,
   locales,
   resolveEffectiveSite,
   selectStarterPalette,
 } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
-import { buildMonthlyV07, buildTier1V07, buildTier2AV07 } from '../../state/climate-v07.ts';
+import { buildMonthlyV07, buildTier1V07, buildTier2AV07, loadSiteAnalogues, siteAnalogue } from '../../state/climate-v07.ts';
 import { pageLang } from '../../strings.ts';
 
 export function currentLocale(): Locale {
@@ -94,6 +96,8 @@ const nsExistingIds = signal<ReadonlySet<PlantId>>(readIdSet(EXISTING_KEY));
 export const nsCheckedIds = signal<ReadonlySet<PlantId>>(readIdSet(CHECKED_KEY));
 export const nsLayerValues = signal<ReadonlyMap<PlantId, readonly LayerValue[]>>(new Map());
 export const nsAllNames = signal<readonly PlantNames[] | null>(null);
+export const nsAllTaxa = signal<readonly Taxon[] | null>(null);
+export const nsGuestZoneById = signal<ReadonlyMap<PlantId, ClimateZone>>(new Map());
 export const nsSiteLoading = signal<boolean>(false);
 export const nsToast = signal<string | null>(null);
 
@@ -145,9 +149,19 @@ export function setRoomChoice(r: Room): void {
 
 export const effectiveOverrides = computed<ReportSiteOverrides>(() => ({
   ...nsOverrides.value,
-  room: nsOverrides.value.room ?? store.room.value ?? 'unsure',
+  room: nsOverrides.value.room ?? (store.room.value && store.room.value !== 'unsure' ? store.room.value : 'small'),
   plotM2: nsOverrides.value.plotM2 ?? store.plot.value ?? 150,
 }));
+
+export const siteAnalogueLabel = computed<string | null>(() => {
+  const m = siteAnalogue.value?.result.matches[0];
+  if (!m) return null;
+  const loc = currentLocale();
+  const area = m.wgsrpd_l3 ? formatAreaName(m.wgsrpd_l3, loc) : null;
+  const country = m.iso_a2 ? formatCountryName(m.iso_a2, loc) : null;
+  if (area && country && area.toLowerCase() !== country.toLowerCase()) return `${area}, ${country}`;
+  return area || country || null;
+});
 
 export const activePool = computed<readonly Taxon[]>(() => {
   const z = store.climate.value;
@@ -210,6 +224,41 @@ export async function ensureAllNamesLoaded(): Promise<void> {
   } catch { /* ignore */ }
 }
 
+let catalogLoading = false;
+export async function ensureAllCatalogLoaded(): Promise<void> {
+  if (nsAllTaxa.value !== null || catalogLoading) return;
+  const src = store.source.value;
+  if (!src) return;
+  catalogLoading = true;
+  try {
+    const activeZ = store.climate.peek();
+    const curated = store.curatedClimates.peek();
+    const ordered: ClimateZone[] = activeZ
+      ? [activeZ, ...curated.filter((c) => c !== activeZ)]
+      : [...curated];
+    const pools = await Promise.all(
+      ordered.map(async (c) => ({ c, list: store.pools.peek()[c] ?? await src.pool(c).catch(() => [] as Taxon[]) })),
+    );
+    const seen = new Set<PlantId>();
+    const merged: Taxon[] = [];
+    const guestZones = new Map<PlantId, ClimateZone>();
+    for (const { c, list } of pools) {
+      for (const t of list) {
+        if (seen.has(t.id)) continue;
+        seen.add(t.id);
+        merged.push(t);
+        if (activeZ && c !== activeZ) guestZones.set(t.id, c);
+      }
+    }
+    batch(() => {
+      nsAllTaxa.value = merged;
+      nsGuestZoneById.value = guestZones;
+    });
+  } finally {
+    catalogLoading = false;
+  }
+}
+
 function koppenToZone(koppen: string | null | undefined): ClimateZone {
   const k = (koppen ?? '').trim();
   if (k.startsWith('Af') || k.startsWith('Am') || k.startsWith('Aw')) return 'Tropical';
@@ -262,6 +311,7 @@ export async function pickCoordinates(
           ...(monthlyV07 ? { monthly: monthlyV07 } : {}),
         },
       };
+      void loadSiteAnalogues({ ...locObj, lookup }, '2041-2070');
     }
 
     const todayKoppen = lookup?.climate?.periods?.find((p) => p.period === '1991-2020')?.koppen ?? '';

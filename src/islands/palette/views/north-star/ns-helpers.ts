@@ -191,6 +191,16 @@ export function fmtNum(v: number | null | undefined, dec = 1): string {
   return String(rounded).replace('-', '−');
 }
 
+export function doyToDateLabel(doy: number | null | undefined): string | null {
+  if (doy == null || !Number.isFinite(doy) || doy <= 0 || doy >= 366) return null;
+  const d = new Date(Date.UTC(2025, 0, Math.round(doy)));
+  try {
+    return new Intl.DateTimeFormat(pageLang() || 'en', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(d);
+  } catch {
+    return d.toISOString().slice(5, 10);
+  }
+}
+
 function fmtC(v: number | null | undefined): string {
   if (v === null || v === undefined || !Number.isFinite(v)) return T('ns.unknown');
   return `${fmtNum(v, 1)} °C`;

@@ -248,7 +248,7 @@
   border: 1px solid var(--border-strong); border-radius: var(--radius);
   background: var(--bg); font-size: 14px;
 }
-input[type="range"] { accent-color: var(--accent); width: 100%; min-height: 36px; }
+input[type="range"] { accent-color: var(--accent); width: 100%; min-height: 44px; }
 .tap-link {
   display: inline-flex; align-items: center; min-height: 44px;
   padding: 0 4px;
@@ -650,7 +650,7 @@ input[type="range"] { accent-color: var(--accent); width: 100%; min-height: 36px
   display: flex; align-items: center; gap: 5px; width: 100%; text-align: left;
   min-height: 36px; padding: 4px 8px; border: 1px solid var(--pal-ok);
   border-radius: var(--radius); background: var(--pal-ok-bg); color: var(--text);
-  font-size: 13px; min-width: 0; cursor: pointer;
+  font-size: 13px; min-width: 0; overflow: hidden; cursor: pointer;
 }
 .matrix-span-bar:hover { border-color: var(--text); }
 .matrix-span-bar .badge { white-space: nowrap; flex: none; padding: 1px 6px; font-size: 11px; }

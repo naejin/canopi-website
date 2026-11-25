@@ -49,12 +49,12 @@ const JOB_TARGETS: Record<JobId, string> = {
 function MiniYear({ rep, id }: { rep: PaletteReport; id: PlantId }) {
   const track = rep.growingYear.tracks.get(id);
   if (!track || (!track.bloom.length && !track.fruiting.length)) {
-    return <span class="small muted">Months unknown</span>;
+    return <span class="small muted">{T('ns.cal.monthsUnknown')}</span>;
   }
   const bSet = new Set(track.bloom);
   const fSet = new Set(track.fruiting);
   return (
-    <div class="mini-year" title="Jan–Dec bloom & ripening / fruit">
+    <div class="mini-year" title={T('ns.cal.both')}>
       {MONTHS.map((m) => {
         const k = bSet.has(m) && fSet.has(m) ? 'both' : fSet.has(m) ? 'fruit' : bSet.has(m) ? 'bloom' : 'none';
         return <span key={m} class="mini-dot" data-kind={k} />;
@@ -134,11 +134,15 @@ function PlantRow({ taxon, rep, primaryJobId }: { taxon: Taxon; rep: PaletteRepo
             {tox && <span class={`badge ${tox.cls}`}>{tox.text}</span>}
             {pollWarn && <span class="badge badge-warn">{pollWarn}</span>}
             {onSite && <span class="badge badge-ok">{T('ns.alreadyOnSite')}</span>}
-            {roomReason && <span class="badge badge-warn">Needs pruning (≤{fmtNum(rep.eff.roomLimitM, 0)} m)</span>}
-            {waterReason && rep.eff.watering === 'rain' && v?.level !== 'fits' && (
-              <span class="badge badge-warn">May need summer water</span>
+            {roomReason && rep.eff.roomLimitM != null && hMax != null && (
+              <span class="badge badge-warn">
+                {T('ns.board.pruneTag', { h: `${fmtNum(hMax, 0)} m`, lim: `${Math.max(2, Math.round(rep.eff.roomLimitM - 1))} m` })}
+              </span>
             )}
-            {v?.subsoilPhTrap && <span class="badge badge-warn">Root/subsoil check</span>}
+            {waterReason && rep.eff.watering === 'rain' && v?.level !== 'fits' && (
+              <span class="badge badge-warn">{T('ns.board.summerWaterTag')}</span>
+            )}
+            {v?.subsoilPhTrap && <span class="badge badge-warn">{T('ns.board.rootCheckTag')}</span>}
             {ints.slice(0, 2).map((it, idx) => {
               const other = byId.get(it.a === taxon.id ? it.b : it.a);
               const otherName = other ? taxCommonName(other) : '';
@@ -181,30 +185,30 @@ function PulseCard({ rep }: { rep: PaletteReport }) {
   const waterWord = eff.watering === 'rain' ? T('ns.water.rain') : eff.watering === 'first-years' ? T('ns.water.firstYears') : T('ns.water.allYear');
 
   const backupPart = missingJobs.length > 0
-    ? `${missingJobs.length} job gap${missingJobs.length > 1 ? 's' : ''}`
+    ? T('ns.pulse.jobGaps', { n: missingJobs.length })
     : noBackupJobs.length > 0
-      ? `${noBackupJobs.length} without backup`
-      : 'all backed up';
+      ? T('ns.pulse.noBackup', { n: noBackupJobs.length })
+      : T('ns.pulse.allBackedUp');
 
   const breaksLine = counts.atRisk > 0
     ? `${counts.atRisk} ${T('ns.verdict.atRisk')} (${activeScenShort})`
     : counts.check > 0
       ? `${counts.check} ${T('ns.verdict.check')} (${activeScenShort})`
-      : `All thrive (${activeScenShort})`;
+      : T('ns.pulse.allThrive', { scen: activeScenShort });
 
   const budgetPill = crownBudget.budgetPct > 300
-    ? `Mature crowns need ~${Math.round(crownBudget.budgetPct / 100)}× your plot`
-    : `${Math.round(crownBudget.budgetPct)}% of ${Math.round(crownBudget.netPlotM2)} m² crown budget`;
+    ? T('ns.pulse.crownOver', { x: Math.round(crownBudget.budgetPct / 100) })
+    : T('ns.pulse.crownBudget', { pct: Math.round(crownBudget.budgetPct), m2: `${Math.round(crownBudget.netPlotM2)} m²` });
 
   const weakestLabel = missingJobs.length > 0
-    ? 'job gap'
+    ? T('ns.pillar.jobs')
     : robustness.monocultureWarn
-      ? 'family concentration'
+      ? T('ns.pillar.families')
       : robustness.survivesAllCore < rep.taxa.length && robustness.worstScenario
         ? scenarioShort(robustness.worstScenario.id)
         : !robustness.seasonalityOk
-          ? 'seasonal coverage'
-          : 'none';
+          ? T('ns.pillar.months')
+          : null;
 
   const lightCounts: Record<LightKey, number> = { full_sun: 0, mostly_sun: 0, part_shade: 0, shade: 0, unknown: 0 };
   for (const t of rep.taxa) lightCounts[plantLightKey(t)]++;
@@ -216,10 +220,10 @@ function PulseCard({ rep }: { rep: PaletteReport }) {
   return (
     <section class="pulse-card" aria-label={T('ns.pulse.title')}>
       <div class="pulse-kicker">
-        Guild pulse · {activeScenLabel} · {waterWord}
+        {T('ns.pulse.title')} · {activeScenLabel} · {waterWord}
       </div>
       <h1 class="pulse-h1">
-        {counts.fits} of {counts.total} plants thrive · {coveredJobs}/6 jobs · {backupPart}
+        {T('ns.pulse.headline', { fits: counts.fits, total: counts.total, jobs: coveredJobs, backup: backupPart })}
       </h1>
       <div class="pulse-chips">
         <span class={`pill ${counts.atRisk > 0 ? 'pill-bad' : counts.check > 0 ? 'pill-warn' : 'pill-ok'}`}>
@@ -231,7 +235,8 @@ function PulseCard({ rep }: { rep: PaletteReport }) {
           class={`pill pill-btn ${robustness.strongPillars < 4 ? 'pill-warn' : 'pill-ok'}`}
           onClick={() => { nsDrawer.value = { kind: 'atlas', tab: 'climate' }; }}
         >
-          Robustness: {robustness.strongPillars} of 4 strong{weakestLabel !== 'none' ? ` · weakest: ${weakestLabel}` : ''} →
+          {T('ns.pulse.robustness', { strong: robustness.strongPillars })}
+          {weakestLabel ? ` · ${T('ns.pulse.weakest', { what: weakestLabel })}` : ''} →
         </button>
         {firstPairKey && (
           <button
@@ -240,11 +245,11 @@ function PulseCard({ rep }: { rep: PaletteReport }) {
             aria-pressed={pairActive ? 'true' : 'false'}
             onClick={() => { nsActivePairKey.value = pairActive ? null : firstPairKey; }}
           >
-            ↔ {interactions.length} guild interaction{interactions.length > 1 ? 's' : ''}{pairActive ? ' (showing pair)' : ''}
+            ↔ {interactions.length}
           </button>
         )}
         {subsoilTrapCount > 0 && (
-          <span class="pill pill-warn">{subsoilTrapCount} root/subsoil check{subsoilTrapCount > 1 ? 's' : ''}</span>
+          <span class="pill pill-warn">{T('ns.pulse.subsoilChecks', { n: subsoilTrapCount })}</span>
         )}
         {missingJobs.map((j) => (
           <button
@@ -253,7 +258,7 @@ function PulseCard({ rep }: { rep: PaletteReport }) {
             class="pill pill-btn pill-warn"
             onClick={() => { nsDrawer.value = { kind: 'picker', job: j }; }}
           >
-            + Gap: {jobLabel(j)}
+            {T('ns.pulse.gapCta', { job: jobLabel(j) })}
           </button>
         ))}
         {noBackupJobs.map((j) => (
@@ -263,14 +268,14 @@ function PulseCard({ rep }: { rep: PaletteReport }) {
             class="pill pill-btn pill-warn"
             onClick={() => { nsDrawer.value = { kind: 'picker', job: j }; }}
           >
-            + Backup: {jobLabel(j)}
+            {T('ns.pulse.backupCta', { job: jobLabel(j) })}
           </button>
         ))}
       </div>
 
       <p class="light-summary">
-        Preferred light: {lightCounts.full_sun} full sun · {lightCounts.mostly_sun} mostly sun · {lightCounts.part_shade} part shade · {lightCounts.shade} shade
-        {lightCounts.unknown > 0 ? ` · ${lightCounts.unknown} light unknown` : ''}
+        {T('ns.pulse.prefLight')}: {lightCounts.full_sun} {lightKeyLabel('full_sun').toLowerCase()} · {lightCounts.mostly_sun} {lightKeyLabel('mostly_sun').toLowerCase()} · {lightCounts.part_shade} {lightKeyLabel('part_shade').toLowerCase()} · {lightCounts.shade} {lightKeyLabel('shade').toLowerCase()}
+        {lightCounts.unknown > 0 ? ` · ${lightCounts.unknown} ${T('ns.unknown').toLowerCase()}` : ''}
       </p>
 
       <GuildProfileSvg rep={rep} />
@@ -278,10 +283,10 @@ function PulseCard({ rep }: { rep: PaletteReport }) {
       <div class="job-strip" role="region" aria-label={T('ns.jobs.stripAria')}>
         {rep.jobStats.map((js) => {
           const sub = js.total === 0
-            ? 'Gap — add plant'
+            ? T('ns.jobs.gapAdd')
             : js.total === 1
-              ? '1 / 2 · No backup'
-              : `${js.total} plants · Backed up`;
+              ? T('ns.jobs.oneNoBackup')
+              : T('ns.jobs.backedUp', { n: js.total });
           return (
             <button
               key={js.job}
@@ -316,19 +321,19 @@ function GrowingYearCard({ rep }: { rep: PaletteReport }) {
   return (
     <section class="year-card" aria-label={T('ns.cal.title')}>
       <div>
-        <p class="pulse-kicker">Growing year · {seasonLabel}</p>
+        <p class="pulse-kicker">{T('ns.cal.growingYear')} · {seasonLabel}</p>
         <h2 style={{ fontSize: '22px', marginTop: '4px' }}>{T('ns.cal.title')}</h2>
         <p class="small muted" style={{ marginTop: '4px' }}>
-          <strong>B</strong> = {T('ns.cal.bloom')} · <strong>F</strong> = {T('ns.cal.fruit')} · <strong>✦</strong> = both
-          {showMildWinter ? ' · ● Tinted columns = mild-winter growing window (winter-rain crops & cover crops)' : ''}
-          {unknownCount > 0 ? ` · ${unknownCount} species with months unknown in this region` : ''}
+          <strong>B</strong> = {T('ns.cal.bloom')} · <strong>F</strong> = {T('ns.cal.fruit')} · <strong>✦</strong> = {T('ns.cal.both')}
+          {showMildWinter ? ` · ${T('ns.cal.mildWinterLegend')}` : ''}
+          {unknownCount > 0 ? ` · ${unknownCount} (${T('ns.cal.monthsUnknown').toLowerCase()})` : ''}
         </p>
       </div>
       <div class="year-scroll" tabIndex={0} role="region" aria-label={T('ns.cal.title')}>
         <table class="year-table">
           <thead>
             <tr>
-              <th>Species</th>
+              <th>{T('ns.cal.speciesCol')}</th>
               {MONTHS.map((m, i) => (
                 <th key={m} class={showMildWinter && winMonths.has(i + 1) ? 'yr-th-winter' : undefined}>{m}</th>
               ))}
@@ -349,7 +354,7 @@ function GrowingYearCard({ rep }: { rep: PaletteReport }) {
                     MONTHS.map((m, i) => {
                       const k = b.has(m) && f.has(m) ? 'both' : f.has(m) ? 'fruit' : b.has(m) ? 'bloom' : 'none';
                       const sym = k === 'both' ? '✦' : k === 'fruit' ? 'F' : k === 'bloom' ? 'B' : '';
-                      const sr = k === 'both' ? 'Bloom and ripening / fruit' : k === 'fruit' ? 'Ripening / fruit' : k === 'bloom' ? 'Bloom' : '';
+                      const sr = k === 'both' ? T('ns.cal.both') : k === 'fruit' ? T('ns.cal.fruit') : k === 'bloom' ? T('ns.cal.bloom') : '';
                       return (
                         <td key={m} class={showMildWinter && winMonths.has(i + 1) ? 'yr-td-winter' : undefined}>
                           <span class="yr-cell" data-k={k} title={sr || undefined}>
@@ -361,7 +366,7 @@ function GrowingYearCard({ rep }: { rep: PaletteReport }) {
                     })
                   ) : (
                     <td colSpan={12} class="muted" style={{ textAlign: 'left' }}>
-                      Months unknown for this region
+                      {T('ns.cal.monthsUnknown')}
                     </td>
                   )}
                 </tr>
@@ -410,12 +415,12 @@ export function DesignBoard({ rep }: { rep: PaletteReport }) {
   if (byLight.unknown.length > 0) activeLights.push('unknown');
 
   const spanShort = (p: Taxon) => {
-    if (!p.phases) return 'Stage unknown';
+    if (!p.phases) return T('ns.board.stageUnknown');
     const s = phaseOrd(p.phases.start), e = phaseOrd(p.phases.end);
     return s === e ? PHASE_SHORT_NAMES[s] : `${PHASE_SHORT_NAMES[s]}→${PHASE_SHORT_NAMES[e]}`;
   };
   const spanFull = (p: Taxon) => {
-    if (!p.phases) return 'Stage unknown';
+    if (!p.phases) return T('ns.board.stageUnknown');
     return p.phases.start === p.phases.end
       ? phaseLabel(p.phases.start)
       : `${phaseLabel(p.phases.start)} → ${phaseLabel(p.phases.end)}`;
@@ -428,10 +433,10 @@ export function DesignBoard({ rep }: { rep: PaletteReport }) {
       {kidsPets && (
         <div class="return-banner" style={{ margin: 0 }}>
           <span>
-            <strong>Kids / Pets toxicity lens:</strong> {toxCount} toxic (highlighted first) · {unkToxCount} toxicity unknown · {safeToxCount} recorded non-toxic. All species stay visible.
+            {T('ns.board.toxLensBanner', { tox: toxCount, unk: unkToxCount, safe: safeToxCount })}
           </span>
           <button type="button" class="proto-btn" onClick={() => { nsKidsPets.value = false; }}>
-            Turn off lens
+            {T('ns.board.toxLensOff')}
           </button>
         </div>
       )}
@@ -450,12 +455,12 @@ export function DesignBoard({ rep }: { rep: PaletteReport }) {
         </div>
 
         <div class="board-filters">
-          <label class="sr-only" for="palette-filter">Filter your palette</label>
+          <label class="sr-only" for="palette-filter">{T('ns.board.filterPlaceholder')}</label>
           <input
             id="palette-filter"
             class="filter-input"
             type="search"
-            placeholder="Filter your palette..."
+            placeholder={T('ns.board.filterPlaceholder')}
             value={nsSearch.value}
             onInput={(e) => { nsSearch.value = (e.target as HTMLInputElement).value; }}
           />
@@ -465,7 +470,7 @@ export function DesignBoard({ rep }: { rep: PaletteReport }) {
             aria-pressed={kidsPets ? 'true' : 'false'}
             onClick={() => { nsKidsPets.value = !kidsPets; }}
           >
-            {kidsPets ? '✓ Toxicity lens on' : T('ns.kidsPets')}
+            {kidsPets ? T('ns.board.toxLensOn') : T('ns.kidsPets')}
           </button>
         </div>
       </div>
@@ -498,24 +503,31 @@ export function DesignBoard({ rep }: { rep: PaletteReport }) {
                 <div class="job-group-head">
                   <h2>{jobLabel(js.job)}</h2>
                   <span class="job-group-meta">
-                    {list.length} primary{also > 0 ? ` (+${also} also help)` : ''} · target {JOB_TARGETS[js.job]}
+                    {T('ns.jobs.primaryMeta', {
+                      n: list.length,
+                      also: also > 0 ? T('ns.jobs.alsoHelp', { n: also }) : '',
+                      target: JOB_TARGETS[js.job],
+                    })}
                   </span>
                 </div>
                 {list.length > 0 ? (
                   list.map((p) => <PlantRow key={p.id} taxon={p} rep={rep} primaryJobId={js.job} />)
                 ) : js.total > 0 ? (
                   <p class="small muted" style={{ padding: '6px 0' }}>
-                    Covered by {js.total} multi-job species ({helperNames.slice(0, 4).join(', ')}{helperNames.length > 4 ? ', …' : ''}).
+                    {T('ns.jobs.coveredBy', {
+                      n: js.total,
+                      names: `${helperNames.slice(0, 4).join(', ')}${helperNames.length > 4 ? ', …' : ''}`,
+                    })}
                   </p>
                 ) : (
                   <div class="land-alert" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-                    <span>No species cover this job yet.</span>
+                    <span>{T('ns.jobs.noneYet')}</span>
                     <button
                       type="button"
                       class="btn-ghost"
                       onClick={() => { nsDrawer.value = { kind: 'picker', job: js.job }; }}
                     >
-                      + Add {jobLabel(js.job).toLowerCase()} plant
+                      + {T('ns.add')} ({jobLabel(js.job)})
                     </button>
                   </div>
                 )}
@@ -555,12 +567,12 @@ export function DesignBoard({ rep }: { rep: PaletteReport }) {
                   <div key={l} class="matrix-sun-row">
                     <div class="matrix-sun-label">
                       <span>{lightKeyLabel(l)}</span>
-                      <span class="small muted" style={{ fontWeight: 400 }}>{list.length} species</span>
+                      <span class="small muted" style={{ fontWeight: 400 }}>{T('ns.board.speciesCount', { n: list.length })}</span>
                     </div>
                     <div class="matrix-lanes">
                       {known.length === 0 && unk.length === 0 && (
                         <span class="small muted" style={{ gridColumn: '1 / 8', padding: '6px 4px' }}>
-                          Open niche — no plants in this light tier
+                          {T('ns.board.openNiche')}
                         </span>
                       )}
                       {known.slice(0, 24).map((p, idx) => {
@@ -588,7 +600,7 @@ export function DesignBoard({ rep }: { rep: PaletteReport }) {
                               </span>
                             )}
                             {isTox && <span class="badge badge-warn">{spanCols >= 3 ? '⚠ Toxic' : '⚠'}</span>}
-                            <PlantThumb taxon={p} size={22} />
+                            {spanCols >= 2 && <PlantThumb taxon={p} size={22} />}
                           </button>
                         );
                       })}
@@ -624,10 +636,10 @@ export function DesignBoard({ rep }: { rep: PaletteReport }) {
                 <div key={l} class="job-group">
                   <div class="job-group-head">
                     <h3>{lightKeyLabel(l)}</h3>
-                    <span class="job-group-meta">{list.length} species</span>
+                    <span class="job-group-meta">{T('ns.board.speciesCount', { n: list.length })}</span>
                   </div>
                   {list.length === 0 ? (
-                    <p class="small muted">Open niche — no plants in this light tier.</p>
+                    <p class="small muted">{T('ns.board.openNiche')}</p>
                   ) : (
                     list.slice(0, 20).map((p) => {
                       const v = rep.verdicts.get(p.id);

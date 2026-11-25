@@ -27,7 +27,7 @@ interface SiteAnalogueView {
 /** Latest Rust WASM adjustMicroclimate() output for the active site & tuner state. */
 export const wasmMicro = signal<MicroclimateAdjustment | null>(null);
 /** Latest in-browser analogues.bin findAnalogues() result for the active site & horizon. */
-const siteAnalogue = signal<SiteAnalogueView | null>(null);
+export const siteAnalogue = signal<SiteAnalogueView | null>(null);
 const analogueStatus = signal<'idle' | 'loading' | 'ready' | 'unavailable'>('idle');
 /** Latest Rust WASM evaluateTrajectory() results keyed by PlantId. */
 const wasmTrajectories = signal<ReadonlyMap<PlantId, TrajectoryResult>>(new Map());
@@ -345,7 +345,7 @@ async function loadSiteMonthly(loc: SiteLocation | null): Promise<void> {
 
 let analogueInFlight: string | null = null;
 /** Tier 2B: On-demand in-browser analogues.bin k-NN lookup via Rust WASM findAnalogues(). */
-async function loadSiteAnalogues(
+export async function loadSiteAnalogues(
   loc: SiteLocation | null,
   horizon: '2041-2070' | '2071-2099' = '2041-2070',
 ): Promise<void> {

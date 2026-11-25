@@ -62,8 +62,8 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
   }
 
   const budgetHeadline = budgetPct > 300
-    ? `Mature crowns need ~${Math.round(budgetPct / 100)}× your ${netM2} m² plot — fine as a species list; pick a subset to plant`
-    : `${knownCrownM2} m² known mature crowns in ${netM2} m² net space (${budgetPct}%)`;
+    ? T('ns.pulse.crownOver', { x: Math.round(budgetPct / 100) })
+    : T('ns.plan.budgetKnown', { known: `${knownCrownM2} m²`, net: `${netM2} m²`, pct: budgetPct });
 
   const rootTraps = rep.taxa
     .filter((p) => rep.verdicts.get(p.id)?.subsoilPhTrap)
@@ -105,7 +105,7 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
             />
           </div>
           <div class="tuner-group">
-            <label class="tuner-label" for="path-pct">Pathways %</label>
+            <label class="tuner-label" for="path-pct">{T('ns.plan.pathways')}</label>
             <select
               id="path-pct"
               class="tuner-select"
@@ -130,8 +130,8 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
 
       <section class="plan-card">
         <div>
-          <p class="pulse-kicker">Year 1 → Year 5 → Year 15 harvest timeline</p>
-          <h2 style={{ fontSize: '22px', marginTop: '4px' }}>When your guild begins producing</h2>
+          <p class="pulse-kicker">{T('ns.plan.y1')} → {T('ns.plan.y5')} → {T('ns.plan.y15')}</p>
+          <h2 style={{ fontSize: '22px', marginTop: '4px' }}>{T('ns.plan.timelineHead')}</h2>
         </div>
         <div class="timeline-grid">
           {([
@@ -152,7 +152,7 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
 
       <section class="plan-card">
         <div>
-          <p class="pulse-kicker">Staged planting waves &amp; climate-adapted timing</p>
+          <p class="pulse-kicker">{T('ns.plan.wavesHead')}</p>
           <h2 style={{ fontSize: '22px', marginTop: '4px' }}>
             {eff.isMildWinter ? 'Autumn / Winter establishment → Canopy' : 'Wave 1 pioneer bridge → Wave 2 canopy'}
           </h2>
@@ -190,7 +190,7 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
         <div>
           <p class="pulse-kicker">Mobile-ready nursery pocket checklist</p>
           <h2 style={{ fontSize: '22px', marginTop: '4px' }}>
-            {T('ns.plan.nurseryTitle')} ({toBuy.length} to source)
+            {T('ns.plan.nurseryTitle')} ({T('ns.plan.toSource', { n: toBuy.length })})
           </h2>
           <p class="small muted" style={{ marginTop: '4px' }}>
             Checkmarks save on this device. Mark established plants &ldquo;Already on site&rdquo; to keep them in guild jobs, canopy, and pollination checks while hiding them from your shopping list.

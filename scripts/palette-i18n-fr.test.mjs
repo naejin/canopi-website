@@ -66,4 +66,29 @@ test('fr locale: scenarios, frost sources, light spans, units and reasons contai
   const reasonFr = localizedReason({ code: 'extreme_freeze', severity: 'at_risk', detail: 'English fallback' }, eff, fakeTaxon);
   assert.ok(reasonFr.includes('Gel décennal'), `expected French reason, got: ${reasonFr}`);
   assert.ok(!/below observed extreme/i.test(reasonFr));
+
+  // 7. North Star Studio strings localized in French (zero English leaks for Guild Pulse, jobs, Atlas, Dossier, Arrival)
+  const frMustLocalize = [
+    'consortium.ns.arrival.title',
+    'consortium.ns.arrival.allFit',
+    'consortium.ns.arrival.waterTankSub',
+    'consortium.ns.pulse.headline',
+    'consortium.ns.pulse.crownBudget',
+    'consortium.ns.pulse.robustness',
+    'consortium.ns.jobs.backedUp',
+    'consortium.ns.jobs.coveredBy',
+    'consortium.ns.board.filterPlaceholder',
+    'consortium.ns.elev.caption',
+    'consortium.ns.cal.both',
+    'consortium.ns.atlas.pillarsStrong',
+    'consortium.ns.atlas.dualPh',
+    'consortium.ns.atlas.clickHorizon',
+    'consortium.ns.swaps.title',
+    'consortium.ns.swaps.compare',
+  ];
+  const en = JSON.parse(readFileSync(join(ROOT, 'src/i18n/translations/en.json'), 'utf8'));
+  for (const key of frMustLocalize) {
+    assert.ok(typeof fr[key] === 'string' && fr[key].length > 0, `missing fr key ${key}`);
+    assert.notEqual(fr[key], en[key], `fr key ${key} fell back to English: ${fr[key]}`);
+  }
 });
