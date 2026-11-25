@@ -11,6 +11,7 @@
 * [Field Guides](field-guides.md) - The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data.
 * [mockup](mockup.md) - The approved October 2026 static HTML mockup and its implementation contract; a tracked design reference, not shipped by the build.
 * [Plant palette figures panel](consortium-figures.md) - The PP-C pf-d panel that shows every site input the Plant palette checks read, what limits plants at a place, and the summary of what an edit changed.
+* [Plant Palette North Star UI](palette-north-star.md) - Clean-sheet North Star Plant Palette Builder UI (Arrival, Design Board, Plan Surface, Picker/Atlas/Dossier drawers) wired to computeReport() and Schema 4.11 across 11 locales.
 * [Privacy page and tool credits](privacy-and-credits.md) - The /privacy/ page in 11 locales, its footer link, and the consortium tool's climate, occurrence, map and search credits on /data-sources/.
 * [scripts](scripts.md) - Node build helpers, tests, post-build checks, the legacy Web Edition installer, and Python asset generators.
 * [src/data](src-data.md) - Build-time content and link authorities for the site (release URLs, site links, network organisations, the bibliography).

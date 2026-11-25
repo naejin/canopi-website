@@ -23,7 +23,7 @@ function land(found: HTMLElement | null): HTMLElement | null {
 // soon: explicit landings still to come; the safety net leaves the focus to them (one move, not two:
 // each focus() may scroll the page).
 let soon = 0;
-export function focusSoon(find: () => HTMLElement | null, then?: (el: HTMLElement) => void): void {
+function focusSoon(find: () => HTMLElement | null, then?: (el: HTMLElement) => void): void {
   soon++;
   requestAnimationFrame(() => requestAnimationFrame(() => {
     soon--;
@@ -116,7 +116,7 @@ export function focusAfterAdd(find: () => HTMLElement | null): void {
 }
 // After a Next step's Add: the Next step's title, which every state of the card shows (its next hole,
 // or none left), else the page title (Focus board; slices b2 P8).
-export const focusNextStep = (): void => focusAfterAdd(() => document.getElementById('ct-next-t') ?? viewHeading());
+const focusNextStep = (): void => focusAfterAdd(() => document.getElementById('ct-next-t') ?? viewHeading());
 // Returns the region of the control that raised the toast (focusPlant's `from`), null for none.
 export function noteToastOpener(): Element | null {
   if (typeof document === 'undefined') return null;

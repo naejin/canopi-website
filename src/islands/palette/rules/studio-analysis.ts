@@ -38,8 +38,6 @@ import { T } from '../strings.ts';
 
 const fb = (v: string, d: string): string => (v.startsWith('studio.') ? d : v);
 
-export { siteClimateProfile } from './climate-words.ts';
-
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
 
 export type YearFocus = 'all' | 'bloom' | 'harvest' | 'prune';
@@ -178,14 +176,14 @@ const SEASON_MONTHS: readonly (readonly number[])[] = [
   [8, 9, 10],
 ];
 
-export interface PlantActivityTracks {
+interface PlantActivityTracks {
   winter: boolean[];
   sow: boolean[];
   bloom: boolean[];
   harvest: boolean[];
 }
 
-export function activityTracksOf(t: Taxon): PlantActivityTracks {
+function activityTracksOf(t: Taxon): PlantActivityTracks {
   const spark = activityMonthsOf(t);
   const isAnnual = t.traits.is_annual === true || t.traits.grown_as_annual === true;
   const isEvergreen = Boolean(t.traits.deciduous_evergreen && /evergreen/i.test(t.traits.deciduous_evergreen));
@@ -215,7 +213,7 @@ function isTaxonActiveInSeason(t: Taxon, seasonIdx: number): boolean {
 }
 
 /** Exact 6x4 Role x Season active slot count shared by StudioHeader Health Ribbon and LivingSystemTab. */
-export function countRoleSeasonSlots(members: readonly Taxon[]): number {
+function countRoleSeasonSlots(members: readonly Taxon[]): number {
   const ledger = buildRoleLedger(members);
   let total = 0;
   for (const row of ledger) {
@@ -382,7 +380,7 @@ export const STRESS_PRESETS: readonly StressPreset[] = [
   { id: 'polar', label: 'Polar plunge (-4 °C)', stress: { heatDeltaC: 0, droughtPct: 0, winterDeltaC: -4, falseSpringDeltaPct: 10, windExposure: 2, extremeRainPct: 5 } },
 ];
 
-export interface PlantTriageItem {
+interface PlantTriageItem {
   taxon: Taxon;
   code: TrajectoryCode;
   breachedLimits: string[];

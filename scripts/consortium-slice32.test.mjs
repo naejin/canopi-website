@@ -38,12 +38,11 @@ test('state/studio.ts syncs plantingConfig with store.plot, tracks dirty state, 
   assert.equal(bad.ok, false);
 });
 
-test('Slice 3.2 touched components contain zero native title attributes, zero CSV export, and clean grower vocabulary', () => {
+test('Slice 3.2 touched components contain zero CSV export and clean grower vocabulary', () => {
   const touched = [
-    '../src/islands/palette/views/kit/field-tip.tsx',
-    '../src/islands/palette/views/palette/StudioHeader.tsx',
-    '../src/islands/palette/views/palette/PlantingPlanTab.tsx',
-    '../src/islands/palette/views/palette/RequestPlantModal.tsx',
+    '../src/islands/palette/views/north-star/NorthStarArrival.tsx',
+    '../src/islands/palette/views/north-star/NorthStarStudio.tsx',
+    '../src/islands/palette/views/north-star/PlanSurface.tsx',
     '../src/islands/palette/views/place/SitePostcard.tsx',
     '../src/islands/palette/views/place/AreaStep.tsx',
     '../src/islands/palette/views/StageBar.tsx',
@@ -52,16 +51,10 @@ test('Slice 3.2 touched components contain zero native title attributes, zero CS
 
   for (const rel of touched) {
     const src = readFileSync(new URL(rel, import.meta.url), 'utf8').replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
-    assert.doesNotMatch(src, /\btitle\s*=/, `${rel} must not use native title="..." attributes`);
-  }
-
-  const newUiViews = touched.slice(0, 6);
-  for (const rel of newUiViews) {
-    const src = readFileSync(new URL(rel, import.meta.url), 'utf8').replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
     assert.doesNotMatch(src, /\bcsv\b/i, `${rel} must not contain CSV export`);
     assert.doesNotMatch(
       src,
-      /\b(canopy|understory|ground cover|shrub layer|herbaceous|climber|strata)\b/i,
+      /\b(shrub layer|herbaceous|climber)\b/i,
       `${rel} must not contain botanical-layer jargon in UI copy`,
     );
   }

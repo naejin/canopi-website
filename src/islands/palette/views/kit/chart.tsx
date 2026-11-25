@@ -29,7 +29,7 @@ import { MoreList } from './more.tsx';
 // Every name while the palette has 40 plants or fewer and the group 12 or fewer; else the count cell
 // (views/kit/more.tsx MoreList: its first names, "+ N more", then 10, then all, "Show fewer").
 export const SIZE_PALETTE = 40;
-export const inlineNames = (n: number, size: number): boolean => size <= SIZE_PALETTE && n <= 12;
+const inlineNames = (n: number, size: number): boolean => size <= SIZE_PALETTE && n <= 12;
 
 // The boards' plain list of names ("Olive, Almond, Fig"; "橄榄、杏仁、无花果"): rules/picture.ts plainList.
 const plainNames = (items: string[]): string => plainList(items, pageLang());
@@ -42,7 +42,7 @@ const plainNames = (items: string[]): string => plainList(items, pageLang());
 // `closed`: the names a closed count cell shows. `few`: a sentence naming a handful whatever the
 // palette's size (board ManyDesk: "Cashew, outside its climate range, is toxic too"), inline up to that
 // many names. `group`: the list's name for its "+ N more" (MoreList group).
-export function Names({ ids, name, size, closed = 3, few = 0, and = false, text, lead, render, group }: {
+function Names({ ids, name, size, closed = 3, few = 0, and = false, text, lead, render, group }: {
   ids: readonly PlantId[]; name: (id: PlantId) => string; size: number; closed?: number; few?: number; and?: boolean; group?: string;
   text?: (names: string) => ComponentChildren; lead?: ComponentChildren; render?: (id: PlantId) => ComponentChildren;
 }) {
@@ -57,7 +57,7 @@ export function Names({ ids, name, size, closed = 3, few = 0, and = false, text,
   return <>{lead}<MoreList items={sorted} keyOf={(id) => id} paletteSize={size} closed={Math.max(1, closed)} class="ct-cell-names" render={render ?? name} group={group} /></>;
 }
 
-export interface PlantButtons {
+interface PlantButtons {
   holeWords: (holeId: string) => string; // a hole's title ("Full sun: nobody in the first 3 years")
   onHole: (holeId: string) => void;
   onPlant: (id: PlantId) => void;
@@ -85,7 +85,7 @@ const toxOf = (flags: readonly Flag[] | undefined): Tox | null => {
 // already, fix C1). `decorative`: beside its words already (a Warnings head), hidden from assistive
 // technology.
 const TOX_MARKS: Record<Tox, string> = { slight: '●○○', moderate: '●●○', severe: '●●●' };
-export function ToxMark({ tox, decorative = false, word = false }: { tox: Tox; decorative?: boolean; word?: boolean }) {
+function ToxMark({ tox, decorative = false, word = false }: { tox: Tox; decorative?: boolean; word?: boolean }) {
   const says = T(`palette.warningsTox_${tox}`);
   return (
     <>
@@ -138,12 +138,12 @@ const NameButton = ({ id, p, b }: { id: PlantId; p: Picture; b: PlantButtons }) 
 );
 // A hole's title with its lane in bold, the part before the first colon ("**Part shade:** nobody, at
 // any time"; BC8): holeWords' one form, consortium.palette.holeTitle, puts the lane first.
-export function HoleTitle({ words }: { words: string }) {
+function HoleTitle({ words }: { words: string }) {
   const m = /^([^:：]+[:：])\s*(.*)$/s.exec(words);
   return m ? <><strong>{m[1]}</strong> {m[2]}</> : <>{words}</>;
 }
 // A hole as a dashed button: its title, then "Find" (a laptop's grid) or "Find a plant".
-export const HoleButton = ({ id, b, find, span }: { id: string; b: PlantButtons; find: string; span?: Span }) => (
+const HoleButton = ({ id, b, find, span }: { id: string; b: PlantButtons; find: string; span?: Span }) => (
   <button type="button" class="ct-hole-button" {...spanAttrs(span)} data-hole={id} onClick={() => b.onHole(id)}>
     <span>{b.holeWords(id)}</span> <span class="ct-hole-find">{find}</span>
   </button>
@@ -192,11 +192,11 @@ function YearsGridView({ p, b, size }: { p: Picture; b: PlantButtons; size: numb
     </div>
   );
 }
-export const YearsGrid = memo(YearsGridView);
+const YearsGrid = memo(YearsGridView);
 
 // One time span, each level its plants standing then (or its hole): every name at 12 or fewer, else
 // the level's count cell (C1).
-export function StepLevels({ p, column, b, size }: { p: Picture; column: number; b: PlantButtons; size: number }) {
+function StepLevels({ p, column, b, size }: { p: Picture; column: number; b: PlantButtons; size: number }) {
   return (
     <ul class="ct-levels">
       {p.rows.map((r) => {
@@ -216,7 +216,7 @@ export function StepLevels({ p, column, b, size }: { p: Picture; column: number;
 // Past 40 plants: each level a group "Full sun: 10 plants" with its count cell. `standing(key)`: the
 // level's plants standing then that count (not outside their range).
 // loading: a member's list is being read (Years, store.listsLoading): each count reads "Loading…" (F26).
-export function CountCells({ p, column, size, standing, b, loading = false }: { p: Picture; column: number; size: number; standing: (r: PictureRow) => PlantId[]; b: PlantButtons; loading?: boolean }) {
+function CountCells({ p, column, size, standing, b, loading = false }: { p: Picture; column: number; size: number; standing: (r: PictureRow) => PlantId[]; b: PlantButtons; loading?: boolean }) {
   return (
     <div class="ct-cells">
       {p.rows.map((r) => {
@@ -238,7 +238,7 @@ export function CountCells({ p, column, size, standing, b, loading = false }: { 
 
 // The key (board Main): "Colour and icon show each plant's main job:", then the six jobs in order,
 // each its icon white in a square of the job's colour (BC6), and "No job recorded" when a bar has none.
-export function JobKey({ p }: { p: Picture }) {
+function JobKey({ p }: { p: Picture }) {
   const none = p.rows.some((r) => r.marks.some((m) => m.job === null));
   const jobs: (JobId | null)[] = [...jobIds, ...(none ? [null] : [])];
   return (
@@ -260,7 +260,7 @@ export function JobKey({ p }: { p: Picture }) {
 // open until closed; Escape inside it closes it, the focus back on its button.
 const OVERLAY = '(min-width: 960px)';
 const overlayNow = (): boolean => typeof matchMedia === 'function' && matchMedia(OVERLAY).matches;
-export function HowToRead({ children }: { children: ComponentChildren }) {
+function HowToRead({ children }: { children: ComponentChildren }) {
   const [open, setOpen] = useState(false);
   const [overlay, setOverlay] = useState(overlayNow);
   const id = useId();
@@ -317,4 +317,4 @@ function SrTableView({ p, holeWords }: { p: Picture; holeWords: (id: string) => 
     </table></div>
   );
 }
-export const SrTable = memo(SrTableView);
+const SrTable = memo(SrTableView);

@@ -132,8 +132,8 @@ function Router() {
 // Each opens Find through store.openFind(); the empty palette's "Find plants" row is NextStep's own.
 // The bar's height is --ct-bar-room (find.css sets it while the bar shows; details.css reads it for
 // the toast offset, the root padding and scroll-padding-bottom).
-export type FindEntryPlace = 'head' | 'bar';
-export function FindEntry({ where }: { where: FindEntryPlace }) {
+type FindEntryPlace = 'head' | 'bar';
+function FindEntry({ where }: { where: FindEntryPlace }) {
   const open = () => store.openFind();
   if (where === 'bar') {
     return (
@@ -174,11 +174,11 @@ function PanelFrame({ titleId, head, foot, children, class: cls = '' }: FramePro
 // grid ('grid', FindPanelSlot), or in place of Your plants' table past 40 plants ('list', its "Add
 // plants": the panel stays open while the reader adds, Done brings the table back and the focus to
 // "Add plants" through the opener above). Back to 'grid' once Find closes.
-export const findIn = signal<'grid' | 'list'>('grid');
-export function openFindInList(): void { findIn.value = 'list'; store.openFind(); }
+const findIn = signal<'grid' | 'list'>('grid');
+function openFindInList(): void { findIn.value = 'list'; store.openFind(); }
 // Find under a plant's Details (h3 R2) is still open, so the panel keeps its place.
 if (typeof document !== 'undefined') effect(() => { if (!store.findSheet.value && findIn.peek() !== 'grid') findIn.value = 'grid'; });
-export function FindPanel({ where = 'grid' }: { where?: 'grid' | 'list' }) {
+function FindPanel({ where = 'grid' }: { where?: 'grid' | 'list' }) {
   const s = store.findSheet.value;
   if (!s || !deskFind.value || store.load.value.status !== 'ready' || findIn.value !== where) return null;
   return <find.View key={s.n} Frame={PanelFrame} />;

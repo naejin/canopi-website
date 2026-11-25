@@ -8,6 +8,7 @@ verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:54Z }
   - { by: antigravity/gemini, at: 2026-11-23T18:52:40Z }
   - { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:01Z }
+  - { by: antigravity/gemini-4-neon, at: 2026-11-25T02:05:20Z }
 sources:
   - id: pool-tsx
     resource: ../../src/islands/palette/views/pool/pool.tsx
@@ -17,8 +18,8 @@ sources:
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
-    digest: sha256:c35923d10b1d644f
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:55c8188716a13288
+    last_modified: 2026-11-25T00:03:33Z
   - id: main-ts
     resource: ../../src/islands/palette/main.ts
     title: src/islands/palette/main.ts
@@ -27,8 +28,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/palette/store.ts
     title: src/islands/palette/store.ts
-    digest: sha256:a2d405853d85b528
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:2178af2010e79f79
+    last_modified: 2026-11-23T23:48:40Z
   - id: strings-ts
     resource: ../../src/islands/palette/strings.ts
     title: src/islands/palette/strings.ts
@@ -72,8 +73,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:7eb74c8505c7b909
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:bd045c94846cdef6
+    last_modified: 2026-11-25T01:45:23Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -87,8 +88,8 @@ sources:
   - id: consortium-commit0-browser-test-mjs
     resource: ../../scripts/browser/consortium-studio-onboarding.browser.test.mjs
     title: scripts/browser/consortium-studio-onboarding.browser.test.mjs
-    digest: sha256:0eab406ff596c398
-    last_modified: 2026-11-23T21:58:22Z
+    digest: sha256:8a2bdb6e25877d80
+    last_modified: 2026-11-25T02:00:12Z
   - id: browser-tests-test-mjs
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
@@ -102,13 +103,13 @@ sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:eeaab36bba2abe93
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:2fe92fff56d143ac
+    last_modified: 2026-11-25T01:44:35Z
   - id: start-tsx
     resource: ../../src/islands/palette/views/place/Place.tsx
     title: src/islands/palette/views/place/Place.tsx
-    digest: sha256:8310681ad9758fb1
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:70d05d76fdfcd22c
+    last_modified: 2026-11-25T00:34:20Z
   - id: actions-tsx
     resource: ../../src/islands/palette/views/Actions.tsx
     title: src/islands/palette/views/Actions.tsx
@@ -132,8 +133,8 @@ sources:
   - id: consortium-s4-browser-test-mjs
     resource: ../../scripts/browser/consortium-studio-palette.browser.test.mjs
     title: scripts/browser/consortium-studio-palette.browser.test.mjs
-    digest: sha256:c5a293143d9b88c2
-    last_modified: 2026-11-23T21:58:22Z
+    digest: sha256:a69979df1f86b8be
+    last_modified: 2026-11-25T02:00:15Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
@@ -147,8 +148,8 @@ sources:
   - id: lazy-tsx
     resource: ../../src/islands/palette/views/lazy.tsx
     title: src/islands/palette/views/lazy.tsx
-    digest: sha256:be4f158b7f10cafd
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:344fe88870182c63
+    last_modified: 2026-11-25T01:46:11Z
   - id: later-ts
     resource: ../../src/islands/palette/views/later.ts
     title: src/islands/palette/views/later.ts
@@ -157,8 +158,8 @@ sources:
   - id: focus-ts
     resource: ../../src/islands/palette/focus.ts
     title: src/islands/palette/focus.ts
-    digest: sha256:2a09db72632e81bd
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:b817636ccebcdd3e
+    last_modified: 2026-11-25T01:46:11Z
   - id: test-hook-ts
     resource: ../../src/islands/palette/test-hook.ts
     title: src/islands/palette/test-hook.ts
@@ -167,8 +168,8 @@ sources:
   - id: consortium-keys-test-mjs
     resource: ../../scripts/consortium-keys.test.mjs
     title: scripts/consortium-keys.test.mjs
-    digest: sha256:7c46a38a93360da6
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:2d1959588ef2018b
+    last_modified: 2026-11-25T01:54:12Z
   - id: search-ts
     resource: ../../src/islands/palette/data/search.ts
     title: src/islands/palette/data/search.ts
@@ -187,8 +188,8 @@ sources:
   - id: climate-page-data-ts
     resource: ../../src/data/climate-page-data.ts
     title: src/data/climate-page-data.ts
-    digest: sha256:57c0f94de8b34b02
-    last_modified: 2026-11-11T16:35:59Z
+    digest: sha256:a2485365de192b06
+    last_modified: 2026-11-24T18:04:54Z
   - id: future-panel-tsx
     resource: ../../src/islands/palette/views/future/future.tsx
     title: src/islands/palette/views/future/future.tsx
@@ -197,8 +198,8 @@ sources:
   - id: locationslot-tsx
     resource: ../../src/islands/palette/views/LocationSlot.tsx
     title: src/islands/palette/views/LocationSlot.tsx
-    digest: sha256:49df7d766bb12039
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:fa8ea75f87d7fccb
+    last_modified: 2026-11-23T23:58:53Z
   - id: location-fixtures-mjs
     resource: ../../scripts/browser/location-fixtures.mjs
     title: scripts/browser/location-fixtures.mjs
@@ -207,8 +208,8 @@ sources:
   - id: consortium-grid-check-mjs
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
-    digest: sha256:9def0d1d684cb01f
-    last_modified: 2026-11-23T11:35:01Z
+    digest: sha256:4c9f1994711e0af1
+    last_modified: 2026-11-24T18:04:54Z
   - id: location-tsx
     resource: ../../src/islands/palette/views/location/location.tsx
     title: src/islands/palette/views/location/location.tsx
@@ -242,8 +243,8 @@ sources:
   - id: flags-ts
     resource: ../../src/islands/palette/views/kit/flags.ts
     title: src/islands/palette/views/kit/flags.ts
-    digest: sha256:e629db37f6148c1f
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:11c68d787431cee5
+    last_modified: 2026-11-25T01:46:11Z
   - id: icons-tsx
     resource: ../../src/islands/palette/views/kit/icons.tsx
     title: src/islands/palette/views/kit/icons.tsx
@@ -257,8 +258,8 @@ sources:
   - id: consortium-seams-layout-browser-test-mjs
     resource: ../../scripts/browser/consortium-studio-plan-i18n.browser.test.mjs
     title: scripts/browser/consortium-studio-plan-i18n.browser.test.mjs
-    digest: sha256:e3692063b5f468af
-    last_modified: 2026-11-23T21:58:22Z
+    digest: sha256:5cd53e5b7ce63b4a
+    last_modified: 2026-11-25T01:48:12Z
   - id: suggest-block-ts
     resource: ../../src/islands/palette/rules/suggest-block.ts
     title: src/islands/palette/rules/suggest-block.ts
@@ -282,8 +283,8 @@ sources:
   - id: sheets-tsx
     resource: ../../src/islands/palette/views/Sheets.tsx
     title: src/islands/palette/views/Sheets.tsx
-    digest: sha256:b1e6bc8619935c95
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:ef008491be8016f4
+    last_modified: 2026-11-25T01:46:11Z
   - id: timing-json
     resource: ../../scripts/browser/timing.json
     title: scripts/browser/timing.json

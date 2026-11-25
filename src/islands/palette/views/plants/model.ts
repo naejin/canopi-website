@@ -11,8 +11,8 @@ import { fold, jobsOf, strata, yearsOf } from '../../../../lib/palette/index.ts'
 
 export type SortKey = 'fit' | 'name' | 'light' | 'job' | 'years';
 export type GroupKey = 'light' | 'job' | 'fit' | 'family' | 'none';
-export const SORTS: readonly SortKey[] = ['fit', 'name', 'light', 'job', 'years'];
-export const GROUPS: readonly GroupKey[] = ['light', 'job', 'fit', 'family', 'none'];
+const SORTS: readonly SortKey[] = ['fit', 'name', 'light', 'job', 'years'];
+const GROUPS: readonly GroupKey[] = ['light', 'job', 'fit', 'family', 'none'];
 // A row's line: outside, a second look, fits (with a mark or not), not checked.
 type FitLevel = 'outside' | 'look' | 'fits' | 'unknown';
 type Reason = WarnReason | 'mild' | null;

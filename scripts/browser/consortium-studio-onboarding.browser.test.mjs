@@ -1,92 +1,58 @@
-// Field Studio browser tests — Onboarding & Location Postcard (Screen 1 & 2).
+// North Star Plant Palette browser tests — Arrival (Screen 0).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { loadState } from './harness.mjs';
-import { aria, h, has, useHarness } from './helpers.mjs';
-import { openCards } from './location-fixtures.mjs';
-import { openSuggestedPalette, pageErrorsOf } from './studio-helpers.mjs';
+import { has, useHarness } from './helpers.mjs';
+import { horizontalOverflow, openArrival, pageErrorsOf, PFAF_PATTERN, RAW_TECH_PATTERN } from './studio-helpers.mjs';
 
 useHarness();
 
-test('P1: SQLite-WASM loads real catalog & climate tiles, keeps Header.astro untouched and StudioHeader hidden on onboarding @real-data', async () => {
-  const page = await h.open('/palette/', { width: 1280, theme: 'light' });
-  assert.equal(await loadState(page), 'ready', 'real catalog SQLite-WASM loads ready');
+test('P1: SQLite-WASM + climate tiles load ready on Arrival, Header.astro intact, 6 presets, Land Brief, 2050s Shift Line, and Starter Preview @real-data', async () => {
+  const page = await openArrival({ width: 1280, theme: 'light' });
 
-  const initial = await page.evaluate(() => ({
+  const info = await page.evaluate(() => ({
     hasHeader: !!document.querySelector('header.site-header, body > header'),
-    hasStudioHeader: !!document.querySelector('[data-studio-header]'),
-    hasPlaceStep: !!document.querySelector('.ct-place, [data-place-show], [data-place-climates]'),
-    nativeTitles: document.querySelectorAll('#ct-root [title]').length,
+    hasStudioBar: !!document.querySelector('.studio-bar'),
+    presets: document.querySelectorAll('.preset-row .site-pill-sm').length,
+    starterChips: document.querySelectorAll('.starter-chip').length,
+    hasShiftLine: !!document.querySelector('.shift-line'),
+    text: document.querySelector('main')?.innerText ?? '',
   }));
-  assert.ok(initial.hasHeader, 'site Header.astro is present');
-  assert.equal(initial.hasStudioHeader, false, 'StudioHeader stays hidden on onboarding');
-  assert.ok(initial.hasPlaceStep, 'onboarding place step is visible');
-  assert.equal(initial.nativeTitles, 0, 'zero native title attributes on onboarding');
-  assert.deepEqual(await pageErrorsOf(page), [], 'zero console/page errors');
+
+  assert.ok(info.hasHeader, 'site Header.astro is present');
+  assert.equal(info.hasStudioBar, false, 'studio bar stays hidden on Arrival');
+  assert.ok(info.presets >= 6, `at least 6 global presets render (got ${info.presets})`);
+  assert.ok(info.starterChips >= 4, `photo-rich starter preview shows species (got ${info.starterChips})`);
+  assert.ok(info.hasShiftLine, '2050s SSP2-4.5 Shift Line renders on Arrival');
+  assert.ok(!PFAF_PATTERN.test(info.text), 'zero PFAF mentions on Arrival');
+  assert.ok(!RAW_TECH_PATTERN.test(info.text), 'zero raw technical jargon on Arrival');
+  assert.ok((await horizontalOverflow(page)) <= 1, 'zero horizontal overflow on Arrival');
+  assert.deepEqual(await pageErrorsOf(page), [], 'zero console/page errors on Arrival');
 });
 
-test('Onboarding: SiteTuner collapsed by default, Planting Area controls, and Path A/B @real-data', async () => {
-  const page = await h.open('/palette/', { width: 1280, theme: 'light' });
-  assert.equal(await loadState(page), 'ready');
+test('Arrival: switching site preset updates Land Brief and launches populated Studio @real-data', async () => {
+  const page = await openArrival({ width: 1280, theme: 'light' });
 
-  // Pick a climate zone so SiteTuner & Planting Area render
-  await openCards(page);
-  await page.locator(aria('radio', 'Temperate')).click();
-  assert.ok(await has(page, '[data-area-step]', 6_000), 'Planting Area step renders');
-
-  // SiteTuner starts collapsed behind <details class="tuner-details" data-microclimate>
-  const advBefore = await page.evaluate(() => {
-    const d = document.querySelector('details.tuner-details[data-microclimate]');
-    return d ? { exists: true, open: d.open, summary: d.querySelector('summary')?.textContent?.trim() ?? '' } : { exists: false };
+  // Switch from preset 0 (Montpellier) to preset 1 (Lyon)
+  await page.evaluate(() => {
+    const pills = document.querySelectorAll('.preset-row .site-pill-sm');
+    if (pills[1]) pills[1].click();
   });
-  assert.ok(advBefore.exists, 'SiteTuner disclosure exists');
-  assert.equal(advBefore.open, false, 'SiteTuner is collapsed by default');
-  assert.match(advBefore.summary, /tune|climate|microclimate/i);
+  await page.waitForFunction(() => /Lyon/i.test(document.querySelector('.arrival-wrap')?.innerText ?? ''), { timeout: 15_000 });
+  assert.ok(await has(page, '.starter-acts .btn-primary:not([disabled])', 15_000), 'starter CTA ready for Lyon');
 
-  const areaInfo = await page.evaluate(() => {
-    const unitBtns = [...document.querySelectorAll('[data-area-step] .ink-seg-btn')].map((b) => b.textContent?.trim());
-    const hasSuggest = !!document.querySelector('[data-place-suggest]') || [...document.querySelectorAll('#ct-root button')].some((el) => /suggest/i.test(el.textContent ?? ''));
-    return { unitBtns, hasSuggest, text: document.querySelector('#ct-root')?.textContent ?? '' };
-  });
-  assert.ok(areaInfo.unitBtns.length >= 4, 'area unit selector provides m² | ha | ft² | ac pills');
-  assert.ok(areaInfo.hasSuggest, 'Path A suggest control is available');
-  assert.match(areaInfo.text, /net/i, 'net planting area readout is visible');
+  // Launch studio
+  await page.locator('.starter-acts .btn-primary').click();
+  assert.ok(await has(page, '.studio-shell .plant-row', 15_000), 'Studio opens with Lyon starter plants');
+  const studioText = await page.evaluate(() => document.querySelector('main')?.innerText ?? '');
+  assert.match(studioText, /Lyon/i, 'Land Panel shows selected place Lyon');
+  assert.ok((await horizontalOverflow(page)) <= 1, 'zero horizontal overflow after launch');
+  assert.deepEqual(await pageErrorsOf(page), [], 'zero console/page errors after launch');
 });
 
-test('Onboarding: Location postcard (hairline rows, SiteTuner Microclimate, ODbL 1.0) and #v=5 shareable link restore @real-data', async () => {
-  const page = await h.open('/palette/', { width: 1280, theme: 'light', nominatim: 'fixture' });
-  assert.equal(await loadState(page), 'ready');
-
-  // Search for Lyon via Nominatim fixture (single result auto-selects and renders SitePostcard)
-  const searchInput = await page.waitForSelector('#ct-root input[data-location-search]', { timeout: 6_000 });
-  await searchInput.type('Lyon');
-  await page.keyboard.press('Enter');
-
-  assert.ok(await has(page, '[data-site-postcard]', 12_000), 'SitePostcard renders after location lookup');
-  const postcard = await page.evaluate(() => {
-    const card = document.querySelector('[data-site-postcard]');
-    return {
-      rows: card?.querySelectorAll('.ob-force-row').length ?? 0,
-      hasTuner: !!document.querySelector('[data-site-tuner]'),
-      hasMicro: !!document.querySelector('details.tuner-details[data-microclimate]'),
-      hasOdbl: /ODbL|OpenStreetMap/i.test(document.querySelector('#ct-root')?.textContent ?? ''),
-      hasDuplicateWeRead: !!document.querySelector('[data-place-read]'),
-    };
-  });
-  assert.ok(postcard.rows >= 3, 'SitePostcard shows at least 3 data rows');
-  assert.ok(postcard.hasTuner, 'SiteTuner renders alongside SitePostcard');
-  assert.ok(postcard.hasMicro, 'Microclimate slope/aspect/landform controls render inside SiteTuner');
-  assert.ok(postcard.hasOdbl, 'ODbL 1.0 / OpenStreetMap attribution is present');
-  assert.equal(postcard.hasDuplicateWeRead, false, 'duplicate WeRead is suppressed when lookup postcard is active');
-
-  // Verify #v=5 shareable link restore round-trip
-  const palPage = await openSuggestedPalette({ width: 1280, theme: 'light', hook: true });
-  const linkHash = await palPage.evaluate(() => {
-    const { store, encodeLink } = window.__ctTest;
-    return encodeLink ? encodeLink(store) : location.hash;
-  });
-  assert.ok(linkHash && linkHash.includes('v='), 'shareable link encodes palette state');
-  const restored = await h.open(`/palette/${linkHash.startsWith('#') ? linkHash : `#${linkHash}`}`, { width: 1280, theme: 'light' });
-  assert.equal(await loadState(restored), 'ready');
-  assert.ok(await has(restored, '[data-studio-header], [data-place-notice="shared"]', 12_000), '#v=5 link restores palette or shared notice');
+test('Arrival: Dark theme renders with zero overflow and zero console errors @real-data', async () => {
+  const page = await openArrival({ width: 1280, theme: 'dark' });
+  const theme = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
+  assert.equal(theme, 'dark', 'dark theme active on Arrival');
+  assert.ok((await horizontalOverflow(page)) <= 1, 'zero horizontal overflow on Dark Arrival');
+  assert.deepEqual(await pageErrorsOf(page), [], 'zero console/page errors on Dark Arrival');
 });

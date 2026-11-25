@@ -7,12 +7,13 @@ verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:09Z }
   - { by: antigravity/gemini, at: 2026-11-23T18:52:42Z }
   - { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:02Z }
+  - { by: antigravity/gemini-4-neon, at: 2026-11-25T02:05:22Z }
 sources:
   - id: palette-tsx
     resource: ../../src/islands/palette/views/palette/Palette.tsx
     title: src/islands/palette/views/palette/Palette.tsx
-    digest: sha256:32defe8479504c15
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:6334abc75d73f0cf
+    last_modified: 2026-11-25T01:44:31Z
   - id: nextstep-tsx
     resource: ../../src/islands/palette/views/palette/NextStep.tsx
     title: src/islands/palette/views/palette/NextStep.tsx
@@ -26,8 +27,8 @@ sources:
   - id: chart-tsx
     resource: ../../src/islands/palette/views/kit/chart.tsx
     title: src/islands/palette/views/kit/chart.tsx
-    digest: sha256:e9c5f58e40e15dcb
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:ef7bc5c49f8b5146
+    last_modified: 2026-11-25T01:46:11Z
   - id: fit-tsx
     resource: ../../src/islands/palette/views/kit/fit.tsx
     title: src/islands/palette/views/kit/fit.tsx
@@ -46,13 +47,13 @@ sources:
   - id: lazy-tsx
     resource: ../../src/islands/palette/views/lazy.tsx
     title: src/islands/palette/views/lazy.tsx
-    digest: sha256:be4f158b7f10cafd
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:344fe88870182c63
+    last_modified: 2026-11-25T01:46:11Z
   - id: store-ts
     resource: ../../src/islands/palette/store.ts
     title: src/islands/palette/store.ts
-    digest: sha256:a2d405853d85b528
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:2178af2010e79f79
+    last_modified: 2026-11-23T23:48:40Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
@@ -86,8 +87,8 @@ sources:
   - id: pf-b-test
     resource: ../../scripts/consortium-pf-b.test.mjs
     title: scripts/consortium-pf-b.test.mjs
-    digest: sha256:9d29199fe3f3ac31
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:eddf8283a2d9a66b
+    last_modified: 2026-11-25T01:52:25Z
   - id: find-tsx
     resource: ../../src/islands/palette/views/find/Find.tsx
     title: src/islands/palette/views/find/Find.tsx
@@ -116,13 +117,13 @@ sources:
   - id: state-ts
     resource: ../../src/islands/palette/views/plants/state.ts
     title: src/islands/palette/views/plants/state.ts
-    digest: sha256:e730362ff34c8c8f
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:3ebbb396c6cf4fbe
+    last_modified: 2026-11-25T01:46:11Z
   - id: model-ts
     resource: ../../src/islands/palette/views/plants/model.ts
     title: src/islands/palette/views/plants/model.ts
-    digest: sha256:68b80d3f4c781556
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:9e42968eb3c347b7
+    last_modified: 2026-11-25T01:46:11Z
   - id: head-link-tsx
     resource: ../../src/islands/palette/views/plants/head-link.tsx
     title: src/islands/palette/views/plants/head-link.tsx
@@ -141,8 +142,8 @@ sources:
   - id: sheets-tsx
     resource: ../../src/islands/palette/views/Sheets.tsx
     title: src/islands/palette/views/Sheets.tsx
-    digest: sha256:b1e6bc8619935c95
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:ef008491be8016f4
+    last_modified: 2026-11-25T01:46:11Z
   - id: toast-tsx
     resource: ../../src/islands/palette/views/Toast.tsx
     title: src/islands/palette/views/Toast.tsx
@@ -151,8 +152,8 @@ sources:
   - id: flags-ts
     resource: ../../src/islands/palette/views/kit/flags.ts
     title: src/islands/palette/views/kit/flags.ts
-    digest: sha256:e629db37f6148c1f
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:11c68d787431cee5
+    last_modified: 2026-11-25T01:46:11Z
   - id: yourplants-tsx
     resource: ../../src/islands/palette/views/palette/YourPlants.tsx
     title: src/islands/palette/views/palette/YourPlants.tsx

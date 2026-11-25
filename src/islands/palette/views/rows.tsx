@@ -23,11 +23,11 @@ const NONE: readonly Taxon[] = [];
 // everywhere. A site misfit or a conflict keeps its sentence: it names its reason. `look`: why the plant needs a second look (core lookChipLine, PFA-B1): "Near the edge of
 // its range" for a range edge only (BC11), else the cause itself ("Wetter here than where it is
 // recorded"), the group heading already saying "Needs a second look".
-export const markWords = (t: Taxon, l: FlagLine, country: string | null): string =>
+const markWords = (t: Taxon, l: FlagLine, country: string | null): string =>
   l.kind === 'toxicity' && t.warnings.toxicity ? T(`tox.${t.warnings.toxicity.level}`)
     : l.kind === 'invasive' && country ? T('find.invasiveShort', { country: countryName(country) })
       : l.text;
-export const sentenceCase = (s: string): string => s.charAt(0).toLocaleUpperCase(pageLang()) + s.slice(1);
+const sentenceCase = (s: string): string => s.charAt(0).toLocaleUpperCase(pageLang()) + s.slice(1);
 export function Marks({ t, lines, country, look = null }: { t: Taxon; lines: readonly FlagLine[]; country: string | null; look?: Line | null }) {
   if (!lines.length && !look) return null;
   return (
@@ -108,7 +108,7 @@ export function holeFillers(h: Hole, members: readonly Taxon[], open: readonly H
 // one ordered rule. The plants that fit, else in the card's group order those that need a second look,
 // then those on the lists not checked ("3 on your lists not checked", apart from the palette's own
 // "N plants not checked"); none of them, no plant fits.
-export function holeFillerParts(f: Pick<Fillers, 'look' | 'unknown'>): string[] {
+function holeFillerParts(f: Pick<Fillers, 'look' | 'unknown'>): string[] {
   return [
     f.look.length ? P('palette.next.countLook', f.look.length) : '',
     f.unknown.length ? P('palette.next.countUncheckedLists', f.unknown.length) : '',

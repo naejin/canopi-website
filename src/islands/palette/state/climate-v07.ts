@@ -18,7 +18,7 @@ import type { MicroAspect, MicroclimateState, MicroLandform } from './studio.ts'
 import * as store from '../store.ts';
 import { microclimate } from './studio.ts';
 
-export interface SiteAnalogueView {
+interface SiteAnalogueView {
   horizon: '2041-2070' | '2071-2099';
   result: AnalogueResult;
   queryMs: number;
@@ -27,10 +27,10 @@ export interface SiteAnalogueView {
 /** Latest Rust WASM adjustMicroclimate() output for the active site & tuner state. */
 export const wasmMicro = signal<MicroclimateAdjustment | null>(null);
 /** Latest in-browser analogues.bin findAnalogues() result for the active site & horizon. */
-export const siteAnalogue = signal<SiteAnalogueView | null>(null);
-export const analogueStatus = signal<'idle' | 'loading' | 'ready' | 'unavailable'>('idle');
+const siteAnalogue = signal<SiteAnalogueView | null>(null);
+const analogueStatus = signal<'idle' | 'loading' | 'ready' | 'unavailable'>('idle');
 /** Latest Rust WASM evaluateTrajectory() results keyed by PlantId. */
-export const wasmTrajectories = signal<ReadonlyMap<PlantId, TrajectoryResult>>(new Map());
+const wasmTrajectories = signal<ReadonlyMap<PlantId, TrajectoryResult>>(new Map());
 
 let sharedSource: TileSource | null = null;
 async function ensureTileSource(provided?: TileSource | null): Promise<TileSource | null> {
@@ -319,7 +319,7 @@ export function scheduleTier2APrefetch(
 
 let monthlyInFlight: string | null = null;
 /** Tier 2B: On-demand monthly + monthly_precip fetch (Walter-Lieth & Growing Year sparkline). */
-export async function loadSiteMonthly(loc: SiteLocation | null): Promise<void> {
+async function loadSiteMonthly(loc: SiteLocation | null): Promise<void> {
   if (!loc?.lookup?.climate || loc.lookup.v07?.monthly) return;
   const key = `${loc.lat.toFixed(3)},${loc.lon.toFixed(3)}`;
   if (monthlyInFlight === key) return;
@@ -345,7 +345,7 @@ export async function loadSiteMonthly(loc: SiteLocation | null): Promise<void> {
 
 let analogueInFlight: string | null = null;
 /** Tier 2B: On-demand in-browser analogues.bin k-NN lookup via Rust WASM findAnalogues(). */
-export async function loadSiteAnalogues(
+async function loadSiteAnalogues(
   loc: SiteLocation | null,
   horizon: '2041-2070' | '2071-2099' = '2041-2070',
 ): Promise<void> {
@@ -460,7 +460,7 @@ export async function syncWasmMicroclimate(loc: SiteLocation | null, mc: Microcl
 
 let trajSeq = 0;
 /** Engine 4: Run Rust WASM evaluateTrajectory() for active palette members. */
-export async function syncWasmTrajectories(
+async function syncWasmTrajectories(
   members: readonly Taxon[],
   loc: SiteLocation | null,
   winterDeltaC = 0,

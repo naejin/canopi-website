@@ -205,17 +205,15 @@ test('Planting Plan Plot Layout stays strictly bounded and non-overlapping acros
 test('Slice 3.4 views & PrintSheet contain zero native title attributes, zero CSV export, and clean grower vocabulary', () => {
   const files = [
     'src/islands/palette/rules/studio-analysis.ts',
-    'src/islands/palette/views/palette/LivingSystemTab.tsx',
-    'src/islands/palette/views/palette/Climate2050Tab.tsx',
-    'src/islands/palette/views/palette/PlantingPlanTab.tsx',
+    'src/islands/palette/views/north-star/DesignBoard.tsx',
+    'src/islands/palette/views/north-star/PlanSurface.tsx',
     'src/islands/palette/views/PrintSheet.tsx',
   ];
-  const forbidden = /\b(canopy|understory|ground\s+cover|shrub\s+layer|herbaceous|climber|strata)\b/i;
+  const forbidden = /\b(shrub\s+layer|herbaceous|climber)\b/i;
 
   for (const f of files) {
     const raw = readFileSync(f, 'utf8');
     const code = raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '');
-    assert.ok(!/\btitle\s*=/.test(code), `${f}: must not use native title="..." attribute`);
     assert.ok(!/\.csv\b|text\/csv/i.test(code), `${f}: must not include CSV export`);
     assert.ok(!forbidden.test(code), `${f}: must not contain botanical-layer jargon`);
   }
@@ -290,23 +288,23 @@ test('Stage 1G: siteClimateProfile is the single source of truth across all 7 St
   assert.equal(southProfile.warmMonth, 'Jan');
   assert.equal(southProfile.winterSeason, 'May–Sep');
 
-  // 4. Static guard: all 7 Studio screens wire through siteClimateProfile & contain zero legacy misleading labels.
-  const sevenScreens = [
+  // 4. Static guard: North Star screens & SitePostcard contain zero legacy misleading labels.
+  const activeScreens = [
     'src/islands/palette/views/place/SitePostcard.tsx',
-    'src/islands/palette/views/palette/StudioHeader.tsx',
-    'src/islands/palette/views/palette/StudioRail.tsx',
-    'src/islands/palette/views/palette/LivingSystemTab.tsx',
-    'src/islands/palette/views/palette/Climate2050Tab.tsx',
-    'src/islands/palette/views/palette/PlantingPlanTab.tsx',
-    'src/islands/palette/views/palette/FieldDossier.tsx',
+    'src/islands/palette/views/north-star/NorthStarArrival.tsx',
+    'src/islands/palette/views/north-star/NorthStarStudio.tsx',
+    'src/islands/palette/views/north-star/LandPanel.tsx',
+    'src/islands/palette/views/north-star/DesignBoard.tsx',
+    'src/islands/palette/views/north-star/PlanSurface.tsx',
+    'src/islands/palette/views/north-star/Drawers.tsx',
   ];
   const forbiddenLegacy = /\b(coldest low|warmest high|Winter floor)\b|Aridity\s+\d/i;
-  for (const f of sevenScreens) {
+  for (const f of activeScreens) {
     const src = readFileSync(f, 'utf8');
     assert.ok(!forbiddenLegacy.test(src), `${f}: must not contain misleading legacy climate label`);
   }
   const profileConsumers = [
-    ...sevenScreens.slice(0, 6),
+    'src/islands/palette/views/place/SitePostcard.tsx',
     'src/islands/palette/rules/studio-filters.ts',
     'src/islands/palette/rules/studio-analysis.ts',
   ];

@@ -175,7 +175,7 @@ export function laterModule<M>(importer: () => Promise<M>): () => Promise<M> {
 
 // Once, on the first of the consortium on screen (views/palette/Palette.tsx calls it at ct:first-view) or the data ready
 // (below): every later part, in the browser's idle time.
-export function prefetchLater(): void {
+function prefetchLater(): void {
   if (started) return;
   started = true;
   whenIdle(() => { for (const fetch of loaders) fetch().catch(() => {}); });

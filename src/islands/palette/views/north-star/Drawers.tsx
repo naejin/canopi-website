@@ -310,7 +310,7 @@ function AtlasDrawer({ rep, initialTab, swapFor }: { rep: PaletteReport; initial
             <h4>{T('ns.land.waterTank')}{isFuture ? ` (${T('ns.today')})` : ''}</h4>
             <p>
               <strong>{rep.eff.tankDays !== null ? `${rep.eff.tankDays} ${T('ns.days')}` : T('ns.unknown')}</strong>{' '}
-              {T('ns.unit.vs')} {rep.eff.cddDays !== null ? `${rep.eff.cddDays} ${T('ns.unit.dayShort')} ${T('ns.land.drySpell')}` : T('ns.unknown')}
+              {T('ns.unit.vs')} {rep.eff.cddDays !== null ? `${rep.eff.cddDays} ${T('ns.days')} (${T('ns.land.drySpell')})` : T('ns.unknown')}
             </p>
           </section>
 

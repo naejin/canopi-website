@@ -1,39 +1,45 @@
-// Shared helpers for the Field Studio browser specs (Phase 3 Plant Palette Redesign).
+// Shared helpers for the North Star Plant Palette browser specs (Stage 2C).
 import assert from 'node:assert/strict';
 import { loadState } from './harness.mjs';
-import { aria, h, has } from './helpers.mjs';
-import { openCards } from './location-fixtures.mjs';
+import { h, has } from './helpers.mjs';
 
-export const BOTANICAL_JARGON = /\b(canopy|understory|ground cover|shrub layer|herbaceous|climber|strata|stratum)\b/i;
+export const PFAF_PATTERN = /\bPFAF\b|Plants For A Future/i;
+export const RAW_TECH_PATTERN = /\bKTMPR\b|\(emergent\)|\(émergent\)|llm-knowledge/i;
 
-export async function openSuggestedPalette(opts = {}) {
-  const { path = '/palette/', width = 1280, theme = 'light', climate = 'Temperate', climateValue = null, suggestLabel = null, hook = false, nominatim = null } = opts;
+export async function openArrival(opts = {}) {
+  const { path = '/palette/', width = 1280, theme = 'light', hook = false, nominatim = null } = opts;
   const page = await h.open(path, { width, theme, hook, nominatim });
+  assert.ok(await has(page, '.arrival-wrap', 20_000), 'North Star Arrival renders');
+  assert.ok(await has(page, '.starter-acts .btn-primary:not([disabled])', 20_000), 'starter CTA enables');
   assert.equal(await loadState(page), 'ready', 'tool loads ready');
-  await openCards(page);
-  if (climateValue) await page.locator(`input[name="ct-climate"][value="${climateValue}"]`).click();
-  else await page.locator(aria('radio', climate)).click();
-  if (suggestLabel) await page.locator(aria('button', suggestLabel)).click();
-  else await page.locator('[data-place-suggest]').click();
-  assert.ok(await has(page, '[data-studio-header]', 15_000), 'StudioHeader renders');
-  assert.ok(await has(page, '#ct-root [data-plant-id]', 15_000), 'suggested species render');
   return page;
 }
 
-const TAB_IDS = {
-  'My Palette': 'palette',
-  'Living System': 'system',
-  '2050 Climate': 'climate',
-  'Planting Plan': 'plan',
-};
-
-export async function clickStudioTab(page, tabName) {
-  const id = TAB_IDS[tabName];
-  if (id) {
-    await page.locator(`[data-studio-tab="${id}"]`).click();
-    return;
+export async function openSuggestedPalette(opts = {}) {
+  const { presetIndex = null } = opts;
+  const page = await openArrival(opts);
+  if (typeof presetIndex === 'number') {
+    await page.evaluate((idx) => {
+      const pills = document.querySelectorAll('.preset-row .site-pill-sm');
+      if (pills[idx]) pills[idx].click();
+    }, presetIndex);
+    await page.waitForSelector('.starter-acts .btn-primary:not([disabled])', { timeout: 20_000 });
   }
-  await page.locator(aria('tab', tabName)).click();
+  await clickNth(page, '.starter-acts .btn-primary:not([disabled])', 0);
+  assert.ok(await has(page, '.studio-shell', 15_000), 'North Star Studio renders');
+  assert.ok(await has(page, '.studio-shell .plant-row', 15_000), 'starter species render');
+  return page;
+}
+
+export async function clickNth(page, sel, idx = 0) {
+  await page.waitForSelector(sel, { timeout: 15_000 });
+  const ok = await page.evaluate(({ s, i }) => {
+    const els = document.querySelectorAll(s);
+    if (!els[i]) return false;
+    els[i].click();
+    return true;
+  }, { s: sel, i: idx });
+  assert.ok(ok, `could not click ${sel}[${idx}]`);
 }
 
 export async function pageErrorsOf(page) {

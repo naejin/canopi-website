@@ -58,8 +58,8 @@ export function flagLines(t: Taxon, flags: Flag[], scene: FlagScene, { low = fal
 // recorded there: "Recorded invasive in Kenya", warning tone (a second look); no country: "Recorded
 // invasive in N countries", soft (ink), never a second look; a country chosen but not recorded there:
 // "Recorded invasive in N other countries", soft. null: recorded nowhere (or GRIIS not read).
-export interface InvasiveChip { text: string; tone: 'warning' | 'soft' }
-export function invasiveChip(t: Taxon, country: string | null): InvasiveChip | null {
+interface InvasiveChip { text: string; tone: 'warning' | 'soft' }
+function invasiveChip(t: Taxon, country: string | null): InvasiveChip | null {
   const where = t.warnings.invasive_in ?? [];
   if (!where.length) return null;
   if (country && where.some((r) => r.country === country)) return { text: T('chip.invasiveIn', { country: countryName(country) }), tone: 'warning' };

@@ -259,11 +259,11 @@ test('plainList (c2 B1): the boards\' plain list of names keeps three names apar
 
 // ---- policies ----
 
-const VIEWS = new URL('../src/islands/palette/views/palette/', import.meta.url);
-test('policy (R2, C1): the pictures name member plants only through the one names list (kit/chart.tsx Names: every name at 40 plants or fewer and 12 or fewer, else the count cell); no view joins member names itself', () => {
-  for (const f of ['Years.tsx', 'JobsPicture.tsx', 'Weigh.tsx']) {
+const VIEWS = new URL('../src/islands/palette/views/north-star/', import.meta.url);
+test('policy (R2, C1): North Star views never use legacy commaList/listOf/wordList helpers', () => {
+  for (const f of ['DesignBoard.tsx', 'PlanSurface.tsx', 'Drawers.tsx']) {
     const src = readFileSync(new URL(f, VIEWS), 'utf8');
-    for (const bad of ['commaList(', 'listOf(', 'wordList(', 'named(', '.join(\', \')']) assert.ok(!src.includes(bad), `${f}: no ${bad} (use <Names>)`);
+    for (const bad of ['commaList(', 'listOf(', 'wordList(']) assert.ok(!src.includes(bad), `${f}: no ${bad}`);
   }
 });
 

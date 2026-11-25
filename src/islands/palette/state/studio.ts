@@ -13,10 +13,10 @@ import * as store from '../store.ts';
 export type MicroAspect = 'flat' | 'south' | 'east' | 'west' | 'north';
 export type MicroLandform = 'ridge' | 'mid-slope' | 'valley';
 
-export type StudioTab = 'palette' | 'system' | 'climate' | 'plan';
-export type PaletteViewMode = 'cards' | 'compact';
-export type PaletteGroupMode = 'none' | 'sun' | 'stage' | 'status';
-export type RailTab = 'coach' | 'all';
+type StudioTab = 'palette' | 'system' | 'climate' | 'plan';
+type PaletteViewMode = 'cards' | 'compact';
+type PaletteGroupMode = 'none' | 'sun' | 'stage' | 'status';
+type RailTab = 'coach' | 'all';
 export type WateringMode = 'Rain-fed' | 'Occasional' | 'Irrigated';
 
 export interface ClimateStressState {
@@ -56,12 +56,12 @@ const DEFAULT_MICROCLIMATE: MicroclimateState = {
   elevOffsetM: 0,
 };
 
-export const studioTab = signal<StudioTab>('palette');
-export const paletteViewMode = signal<PaletteViewMode>('cards');
-export const paletteGroupMode = signal<PaletteGroupMode>('none');
-export const railTab = signal<RailTab>('coach');
-export const poolOpen = signal<boolean>(true);
-export const wateringMode = signal<WateringMode>('Rain-fed');
+const studioTab = signal<StudioTab>('palette');
+const paletteViewMode = signal<PaletteViewMode>('cards');
+const paletteGroupMode = signal<PaletteGroupMode>('none');
+const railTab = signal<RailTab>('coach');
+const poolOpen = signal<boolean>(true);
+const wateringMode = signal<WateringMode>('Rain-fed');
 
 export interface PlantPoolPreset {
   tab?: RailTab;
@@ -72,8 +72,8 @@ export interface PlantPoolPreset {
   banner?: string | null;
 }
 
-export const railPreset = signal<PlantPoolPreset | null>(null);
-export const mobilePoolOpen = signal<boolean>(false);
+const railPreset = signal<PlantPoolPreset | null>(null);
+const mobilePoolOpen = signal<boolean>(false);
 
 export function openPlantPool(preset: PlantPoolPreset = {}): void {
   batch(() => {
@@ -84,7 +84,7 @@ export function openPlantPool(preset: PlantPoolPreset = {}): void {
   });
 }
 
-export function closePlantPool(): void {
+function closePlantPool(): void {
   if (typeof window !== 'undefined' && window.innerWidth < 960) {
     mobilePoolOpen.value = false;
   } else {
@@ -106,7 +106,7 @@ const EDIT_TO_WATERING: Record<'rain' | 'first-years' | 'all-year', WateringMode
   'first-years': 'Occasional',
   'all-year': 'Irrigated',
 };
-export function cycleWateringMode(): void {
+function cycleWateringMode(): void {
   const idx = WATERING_CYCLE.indexOf(wateringMode.peek());
   const next = WATERING_CYCLE[(idx + 1) % WATERING_CYCLE.length];
   batch(() => {
@@ -116,16 +116,16 @@ export function cycleWateringMode(): void {
 }
 export const designName = signal<string>('');
 export const designDirty = signal<boolean>(false);
-export const autoSaveEnabled = signal<boolean>(false);
+const autoSaveEnabled = signal<boolean>(false);
 const lastSavedAt = signal<string | null>(null);
 export const plantingConfig = signal<PlantingPlanConfig>({ ...DEFAULT_PLANTING_PLAN_CONFIG });
 export const microclimate = signal<MicroclimateState>({ ...DEFAULT_MICROCLIMATE });
-export const designEnvelope = signal<DesignEnvelope>('typical');
-export const climateStress = signal<ClimateStressState>({ ...DEFAULT_CLIMATE_STRESS });
-export const requestPlantOpen = signal<boolean>(false);
+const designEnvelope = signal<DesignEnvelope>('typical');
+const climateStress = signal<ClimateStressState>({ ...DEFAULT_CLIMATE_STRESS });
+const requestPlantOpen = signal<boolean>(false);
 const customPlants = signal<readonly CanopiCustomPlant[]>([]);
 export const dossierId = signal<PlantId | null>(null);
-export const dossierList = signal<readonly PlantId[]>([]);
+const dossierList = signal<readonly PlantId[]>([]);
 
 export function setQuantityOverride(id: PlantId, qty: number | null): void {
   const cur = plantingConfig.peek();
@@ -170,11 +170,11 @@ interface FileSystemFileHandleLike {
 }
 let activeFileHandle: FileSystemFileHandleLike | null = null;
 
-export function hasActiveFileHandle(): boolean {
+function hasActiveFileHandle(): boolean {
   return activeFileHandle !== null;
 }
 
-export function supportsFileSystemAccess(): boolean {
+function supportsFileSystemAccess(): boolean {
   return typeof window !== 'undefined' && typeof (window as unknown as { showSaveFilePicker?: unknown }).showSaveFilePicker === 'function';
 }
 
@@ -223,7 +223,7 @@ export function buildStudioCanopiText(members: readonly Taxon[] = store.memberTa
  * Save the active palette as a .canopi v9 file.
  * Uses File System Access API when supported and requested/linked; falls back to Blob download.
  */
-export async function saveStudioCanopi(opts: { saveAs?: boolean } = {}): Promise<boolean> {
+async function saveStudioCanopi(opts: { saveAs?: boolean } = {}): Promise<boolean> {
   const text = buildStudioCanopiText();
   const filename = canopiFileName(designName.peek().trim() || 'My Field Palette');
 
@@ -334,7 +334,7 @@ let unloadGuardBound = false;
  * Watch member/edit changes to mark dirty while in studio, and install a clean
  * beforeunload guard that prompts ONLY when unsaved changes exist.
  */
-export function ensureStudioGuards(): void {
+function ensureStudioGuards(): void {
   if (!dirtyWatchBound) {
     dirtyWatchBound = true;
     let prevSig = '';

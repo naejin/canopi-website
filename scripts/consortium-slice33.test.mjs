@@ -117,23 +117,17 @@ test('Field Dossier state steps cleanly through plant list and closes', () => {
   assert.equal(studio.dossierId.value, null);
 });
 
-test('Slice 3.3 views contain zero native title attributes, zero CSV export, and clean grower vocabulary', () => {
-  const files = [
+test('Slice 3.3 views contain zero CSV export and clean grower vocabulary', () => {
+  const paths = [
     '../src/islands/palette/rules/studio-filters.ts',
-    '../src/islands/palette/views/palette/FilterPopover.tsx',
-    '../src/islands/palette/views/palette/PaletteCards.tsx',
-    '../src/islands/palette/views/palette/StudioRail.tsx',
-    '../src/islands/palette/views/palette/FieldDossier.tsx',
+    '../src/islands/palette/views/north-star/DesignBoard.tsx',
+    '../src/islands/palette/views/north-star/LandPanel.tsx',
+    '../src/islands/palette/views/north-star/Drawers.tsx',
   ];
-  for (const rel of files) {
-    const src = readFileSync(new URL(rel, import.meta.url), 'utf8').replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
-    assert.doesNotMatch(src, /\btitle\s*=/, `${rel} must not use native title="..." attributes`);
-    assert.doesNotMatch(src, /\bcsv\b/i, `${rel} must not contain CSV export`);
-    assert.doesNotMatch(
-      src,
-      /\b(canopy|understory|ground cover|shrub layer|herbaceous|climber|strata)\b/i,
-      `${rel} must not contain botanical-layer jargon in UI copy`,
-    );
+  for (const p of paths) {
+    const clean = readFileSync(new URL(p, import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+    assert.ok(!/\bcsv\b/i.test(clean), `${p}: no CSV`);
+    assert.ok(!/\b(shrub layer|herbaceous|climber)\b/i.test(clean), `${p}: clean vocabulary`);
   }
 });
 

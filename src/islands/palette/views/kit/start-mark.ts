@@ -13,7 +13,7 @@ export function markStart(): void {
 // performance.mark('ct:first-view') once per page, when the palette is first on screen with its Next
 // step (design check A7: the timing script waits for it). Called from an effect, after that commit.
 let first = false;
-export function markFirstView(): boolean {
+function markFirstView(): boolean {
   if (first || typeof performance === 'undefined') return false;
   first = true;
   performance.mark('ct:first-view');

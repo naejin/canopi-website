@@ -12,9 +12,8 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { loadState } from '../harness.mjs';
 import { BUILDS } from '../serve.mjs';
-import { aria, en, h, has, useHarness } from '../helpers.mjs';
+import { h, has, useHarness } from '../helpers.mjs';
 import { compareCounts } from '../../quality/ratchet.mjs';
-import { openCards } from '../location-fixtures.mjs';
 
 const require = createRequire(import.meta.url);
 const AXE_FILE = require.resolve('axe-core/axe.min.js');
@@ -71,10 +70,9 @@ test('axe (dist/, WCAG 2.x A/AA): no new rule id and no higher count than the ba
       const page = await h.open(p.path, v);
       if (p.ready) assert.equal(await loadState(page), 'ready', `${p.name}: the tool loads`);
       if (p.matrix) {
-        await openCards(page);
-        await page.locator(aria('radio', 'Temperate')).click();
-        await page.locator(aria('button', en['consortium.start.suggest'])).click();
-        assert.ok(await has(page, '#ct-root [data-plant-id]', 15_000), `${p.name}: members in the matrix`);
+        assert.ok(await has(page, '.starter-acts .btn-primary:not([disabled])', 20_000), `${p.name}: starter CTA ready`);
+        await page.locator('.starter-acts .btn-primary').click();
+        assert.ok(await has(page, '.studio-shell .plant-row', 15_000), `${p.name}: members in the studio`);
       }
       for (const r of await axeCounts(page)) {
         const key = `${p.name} @ ${v.width}px ${v.theme}|${r.id}`;

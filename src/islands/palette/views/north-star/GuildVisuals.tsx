@@ -178,7 +178,7 @@ export function GuildElevationSvg({ rep }: { rep: PaletteReport }) {
                 {botanicalSilhouette(t, cx, soilY, hPx, wPx, stroke, stroke, v?.level === 'at_risk')}
               </g>
               <text x={cx} y={soilY + 14} text-anchor="middle" fill="var(--text-secondary)" font-size="9.5" aria-hidden="true">
-                {taxCommonName(t).slice(0, 11)}
+                {taxCommonName(t).length > 11 ? `${taxCommonName(t).slice(0, 10)}…` : taxCommonName(t)}
               </text>
               <text x={cx} y={soilY + 25} text-anchor="middle" fill="var(--text-muted)" font-size="8.5" aria-hidden="true">
                 {t.traits.height_m?.max != null ? `${fmtNum(t.traits.height_m.max, 1)}m` : '?'}

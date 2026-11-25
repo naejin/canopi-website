@@ -800,6 +800,12 @@ export function selectStarterPalette(
   const canAdd = (item: (typeof fitsPool)[number]): boolean =>
     !chosenIds.has(item.taxon.id) && usedArea + item.area <= eff.netPlotM2;
 
+  const compareTieBreak = (a: (typeof fitsPool)[number], b: (typeof fitsPool)[number]): number =>
+    (b.jobs.length - a.jobs.length)
+    || ((b.taxon.image ? 1 : 0) - (a.taxon.image ? 1 : 0))
+    || (a.area - b.area)
+    || a.taxon.canonical_name.localeCompare(b.taxon.canonical_name);
+
   const pickBestForJob = (job: JobId, preferSmall = false): boolean => {
     const maxSingleArea = eff.netPlotM2 * 0.35;
     const cands = fitsPool
@@ -809,11 +815,7 @@ export function selectStarterPalette(
         const bBig = b.area > maxSingleArea ? 1 : 0;
         if (aBig !== bBig) return aBig - bBig;
         if (preferSmall && a.area !== b.area) return a.area - b.area;
-        const multiDiff = b.jobs.length - a.jobs.length;
-        if (multiDiff !== 0) return multiDiff;
-        const imgDiff = (b.taxon.image ? 1 : 0) - (a.taxon.image ? 1 : 0);
-        if (imgDiff !== 0) return imgDiff;
-        return a.area - b.area || a.taxon.canonical_name.localeCompare(b.taxon.canonical_name);
+        return compareTieBreak(a, b);
       });
     const best = cands[0];
     if (!best) return false;
@@ -822,6 +824,27 @@ export function selectStarterPalette(
     usedArea += best.area;
     return true;
   };
+
+  // Pass 0: on garden/field plots with vertical room (>= 2.5 m, >= 25 m²), anchor the guild
+  // with at least one woody tree or shrub so starters have real multi-strata structure.
+  if ((eff.roomLimitM === null || eff.roomLimitM >= 2.5) && eff.netPlotM2 >= 25 && chosen.length < maxPlants) {
+    const maxAnchorArea = eff.netPlotM2 * 0.45;
+    const woodyAnchor = fitsPool
+      .filter((x) => {
+        const sc = sizeClassOf(x.taxon);
+        return (sc === 'tree' || sc === 'shrub') && x.area <= maxAnchorArea && canAdd(x);
+      })
+      .sort((a, b) => {
+        const aFeed = a.jobs.includes('feeds_you') || a.jobs.includes('shelter') ? 0 : 1;
+        const bFeed = b.jobs.includes('feeds_you') || b.jobs.includes('shelter') ? 0 : 1;
+        return (aFeed - bFeed) || compareTieBreak(a, b);
+      })[0];
+    if (woodyAnchor) {
+      chosen.push(woodyAnchor.taxon);
+      chosenIds.add(woodyAnchor.taxon.id);
+      usedArea += woodyAnchor.area;
+    }
+  }
 
   // Pass 1: cover all 6 canonical jobs
   for (const job of jobIds) {

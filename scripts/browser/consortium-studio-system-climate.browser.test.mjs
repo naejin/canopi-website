@@ -1,103 +1,58 @@
-// Field Studio browser tests — Living System & 2050 Climate tabs (Screens 4 & 5).
+// North Star Plant Palette browser tests — Climate & Guild Atlas (Why?), Scenarios, Swaps & Calendar.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { aria, has, useHarness } from './helpers.mjs';
-import { clickStudioTab, openSuggestedPalette, pageErrorsOf } from './studio-helpers.mjs';
+import { has, useHarness } from './helpers.mjs';
+import { clickNth, horizontalOverflow, openSuggestedPalette, pageErrorsOf, PFAF_PATTERN, RAW_TECH_PATTERN } from './studio-helpers.mjs';
 
 useHarness();
 
-test('Living System: 4-pill summary strip, 4x6 Sun x Succession matrix, 1-click Dossier from matrix, 6-Role Redundancy Ledger, and Your Growing Year @real-data', async () => {
+test('Climate & Guild Atlas (Why?): Shift Passport, Walter-Lieth SVG, Water Tank, and 10-Scenario Matrix @real-data', async () => {
   const page = await openSuggestedPalette({ width: 1280, theme: 'light' });
-  await clickStudioTab(page, 'Living System');
-  assert.ok(await has(page, '[data-living-system-tab]', 8_000), 'Living System tab mounts lazily');
 
-  // Expand all Sun x Succession rows so continuous species span bars render
-  await page.locator('[data-ssm-toggle-all]').click();
-  assert.ok(await has(page, '[data-ssm-bar-plant]', 4_000), 'expanded matrix shows continuous species span bars');
+  // Open Atlas drawer via Why?
+  await clickNth(page, '.why-btn', 0);
+  assert.ok(await has(page, '.drawer[role="dialog"]', 8_000), 'Climate & Guild Atlas drawer opens');
 
-  const sys = await page.evaluate(() => ({
-    pills: document.querySelectorAll('.ls-summary-strip .ls-sum-btn').length,
-    matrixRows: document.querySelectorAll('.ssm-grid [data-ssm-row]').length,
-    matrixCols: document.querySelectorAll('.ssm-grid-head .ssm-col-head').length,
-    bars: document.querySelectorAll('[data-ssm-bar-plant]').length,
-    roleRows: document.querySelectorAll('#ct-sys-roles tbody tr').length,
-    yearBtns: document.querySelectorAll('#ct-sys-year .cal-focus-btn').length,
+  const atlasInfo = await page.evaluate(() => ({
+    hasWlSvg: !!document.querySelector('.drawer svg'),
+    scenarioRows: document.querySelectorAll('.drawer .scenario-row').length,
+    tabs: document.querySelectorAll('.drawer [role="tab"]').length,
+    text: document.querySelector('.drawer')?.innerText ?? '',
   }));
-  assert.equal(sys.pills, 3, '3 summary anchor pills render');
-  assert.equal(sys.matrixRows, 4, '4 Preferred Sun rows render');
-  assert.equal(sys.matrixCols, 6, '6 Succession columns render');
-  assert.ok(sys.bars >= 4, 'species span bars populate the matrix');
-  assert.equal(sys.roleRows, 6, '6-Role Redundancy Ledger renders all 6 roles');
-  assert.ok(sys.yearBtns >= 4, 'Growing Year filter buttons render');
+  assert.ok(atlasInfo.hasWlSvg, 'Walter-Lieth SVG renders inside Atlas');
+  assert.equal(atlasInfo.scenarioRows, 10, '10-scenario SSP + what-if matrix renders all 10 scenarios');
+  assert.equal(atlasInfo.tabs, 2, 'Atlas has Climate & Swaps tabs');
+  assert.ok(!PFAF_PATTERN.test(atlasInfo.text), 'zero PFAF in Atlas');
+  assert.ok(!RAW_TECH_PATTERN.test(atlasInfo.text), 'zero raw jargon in Atlas');
 
-  // 1-click FieldDossier directly from a matrix species button
-  await page.locator('[data-ssm-bar-plant] .ssm-plant-btn').click();
-  assert.ok(await has(page, '[data-field-dossier] .dossier-drawer[role="dialog"]', 8_000), 'matrix species button opens FieldDossier');
+  // Select a future 2050s scenario from the 10-scenario matrix
+  await clickNth(page, '.drawer .scenario-row', 1);
+  const activeScenario = await page.evaluate(() => document.querySelector('.scenario-select')?.value ?? '');
+  assert.notEqual(activeScenario, 'today', 'clicking a scenario row updates the active studio horizon');
+
+  // Close Atlas via Escape
   await page.keyboard.press('Escape');
-  assert.deepEqual(await pageErrorsOf(page), [], 'zero console/page errors');
+  await page.waitForFunction(() => !document.querySelector('.drawer'), { timeout: 5_000 });
+  assert.ok((await horizontalOverflow(page)) <= 1, 'zero horizontal overflow after Atlas scenario switch');
+  assert.deepEqual(await pageErrorsOf(page), [], 'zero console/page errors in Atlas');
 });
 
-test('2050 Climate: Typical vs Extreme envelope, Typical 2050s Winter floor warming & Dry-spell delta parity, 5 stress presets & 6-lever Extremes Lab @real-data', async () => {
-  const page = await openSuggestedPalette({ width: 1280, theme: 'dark' });
-  await clickStudioTab(page, '2050 Climate');
-  assert.ok(await has(page, '[data-climate-2050-tab]', 8_000), '2050 Climate tab mounts lazily');
-
-  // Verify Typical 2050s math: Winter nights & hard freezes + Longest summer dry spell days without rain
-  const typicalForces = await page.evaluate(() =>
-    [...document.querySelectorAll('.cb-force-row')].map((row) => ({
-      text: row.textContent?.trim() ?? '',
-      delta: row.querySelector('.cb-force-v')?.textContent?.trim() ?? '',
-    })),
-  );
-  assert.ok(typicalForces.length >= 3, 'Climate shift forces render');
-  const winter = typicalForces.find((f) => /winter nights/i.test(f.text));
-  assert.ok(winter, 'Winter nights & hard freezes force row renders');
-  assert.match(winter.text, /1-in-10-yr freeze/i, `Winter force shows explicit 1-in-10-yr freeze (got ${winter.text})`);
-
-  const dry = typicalForces.find((f) => /longest summer dry spell/i.test(f.text));
-  assert.ok(dry, 'Longest summer dry spell force row renders');
-  const dayMatch = dry.text.match(/~?(\d+)d\s*→\s*(\d+)d/);
-  assert.ok(dayMatch, `Dry spell shows today -> future days (${dry.text})`);
-  const expectedDelta = Number(dayMatch[2]) - Number(dayMatch[1]);
-  assert.ok(dry.text.includes(`+${expectedDelta}d`), `Dry spell delta matches future - today (${dry.text} vs +${expectedDelta}d)`);
-
-  // Switch to 1-in-10-yr Extreme and open Extremes Lab (6 levers)
-  await page.locator(aria('button', '⚡ 1-in-10-yr Extreme')).click();
-  await page.locator('.sb-actions button[aria-expanded]').click();
-  assert.ok(await has(page, '.extreme-sliders-grid input[type="range"]', 4_000), 'Extremes Lab opens');
-  const lab = await page.evaluate(() => ({
-    presets: document.querySelectorAll('.sb-presets .scenario-btn').length,
-    sliders: document.querySelectorAll('.extreme-sliders-grid input[type="range"]').length,
-  }));
-  assert.equal(lab.presets, 5, '5 compound stress presets render');
-  assert.ok(lab.sliders >= 6, '6-lever Extremes Lab sliders render');
-});
-
-test('2050 Climate: 4-layer Plant Triage, Climate Twin Swap & Undo, Opportunities, 12-month Climate Shift chart, and lazy Climate Twin check @real-data', async () => {
+test('Atlas Like-for-like Swaps tab and site-scoped Bloom & Fruit Calendar @real-data', async () => {
   const page = await openSuggestedPalette({ width: 1280, theme: 'light' });
-  await clickStudioTab(page, '2050 Climate');
-  assert.ok(await has(page, '[data-climate-2050-tab]', 8_000));
 
-  const sections = await page.evaluate(() => {
-    const root = document.querySelector('[data-climate-2050-tab]');
-    return {
-      shiftMonths: root?.querySelectorAll('[data-climate-shift-studio] .cshift-chart .cshift-mo').length ?? 0,
-      triageCards: root?.querySelectorAll('.triage-card').length ?? 0,
-      hasCheckTwin: [...(root?.querySelectorAll('button') ?? [])].some((b) => /twin|analogue/i.test(b.textContent ?? '')),
-      text: root?.textContent ?? '',
-    };
-  });
-  assert.equal(sections.shiftMonths, 12, '12-month Climate Shift chart renders all 12 months');
-  assert.ok(sections.triageCards >= 1, 'Plant Triage renders species cards');
-  assert.match(sections.text, /thrives|needs care|at risk|opportunit/i, 'triage and opportunities sections render');
-  assert.ok(sections.hasCheckTwin || /analogue|twin/i.test(sections.text), 'Climate Twin lookup control is present');
+  // Open Atlas -> Swaps tab
+  await clickNth(page, '.why-btn', 0);
+  assert.ok(await has(page, '.drawer[role="dialog"]', 8_000), 'Atlas drawer opens');
+  await clickNth(page, '.drawer [role="tab"]', 1);
+  const swapsText = await page.evaluate(() => document.querySelector('.drawer')?.innerText ?? '');
+  assert.ok(swapsText.length > 20, 'Swaps tab renders like-for-like swap options');
+  assert.ok(!PFAF_PATTERN.test(swapsText), 'zero PFAF in Swaps tab');
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => !document.querySelector('.drawer'), { timeout: 5_000 });
 
-  // Verify Heat dome (+3 C) stress preset live-updates StudioRail Coach active conditions indicator
-  const heatBtn = await page.waitForSelector('.sb-presets button:nth-child(2)');
-  await heatBtn.click();
-  assert.ok(await has(page, '[data-coach-active-conditions]', 4_000), 'StudioRail Coach shows active stress condition badge when Heat dome is activated');
-  const condText = await page.evaluate(() => document.querySelector('[data-coach-active-conditions]')?.textContent ?? '');
-  assert.match(condText, /\+3\s*°C/, `Coach active-conditions chip reflects +3 °C heat dome (${condText})`);
-
-  assert.deepEqual(await pageErrorsOf(page), [], 'zero console/page errors');
+  // Verify Bloom & Fruit Calendar renders on Design Board with 12 month headers
+  assert.ok(await has(page, '.cal-table', 6_000), 'site-scoped Bloom & Fruit calendar renders');
+  const monthHeaders = await page.evaluate(() => document.querySelectorAll('.cal-table thead th').length);
+  assert.ok(monthHeaders >= 13, `calendar table shows plant column + 12 months (got ${monthHeaders})`);
+  assert.deepEqual(await pageErrorsOf(page), [], 'zero console/page errors across Swaps + Calendar');
 });

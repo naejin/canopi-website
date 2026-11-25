@@ -8,7 +8,7 @@ import { photoperiodHours, siteClimateProfile, type MicroclimateParams } from '.
 
 const fb = (v: string, d: string): string => (v.startsWith('studio.') ? d : v);
 
-export type FitFilter = 'fit' | 'care' | 'risk';
+type FitFilter = 'fit' | 'care' | 'risk';
 
 export interface StudioFilterState {
   fits: FitFilter[];
@@ -32,7 +32,7 @@ export const EMPTY_STUDIO_FILTERS: StudioFilterState = {
   extremeHardy: false,
 };
 
-export const FIT_OPTIONS: readonly { id: FitFilter; label: string }[] = [
+const FIT_OPTIONS: readonly { id: FitFilter; label: string }[] = [
   { id: 'fit', label: '✓ Thrives' },
   { id: 'care', label: '⚠ Needs care' },
   { id: 'risk', label: '✕ At risk' },
@@ -45,7 +45,7 @@ export const SUN_TIER_OPTIONS: readonly { id: Stratum; label: string }[] = [
   { id: 'low', label: 'Shade' },
 ];
 
-export const ROLE_OPTIONS: readonly { id: JobId; label: string }[] = [
+const ROLE_OPTIONS: readonly { id: JobId; label: string }[] = [
   { id: 'feeds_you', label: 'Food & harvest' },
   { id: 'feeds_soil', label: 'Soil builder' },
   { id: 'helpers', label: 'Pollinators & helpers' },
@@ -71,7 +71,7 @@ function primarySunTier(t: Taxon): Stratum {
   return t.light?.preferred ?? t.light?.sunniest ?? t.stratum?.value ?? 'high';
 }
 
-export const sunTierOf = primarySunTier;
+const sunTierOf = primarySunTier;
 
 export function sunTierLabel(t: Taxon): string {
   const tier = primarySunTier(t);

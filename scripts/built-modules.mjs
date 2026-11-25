@@ -175,10 +175,6 @@ export const ROLE_ENTRIES = {
   // The verdict rule (core verdict-load.ts), the range checks with it (PP-C c2 folded the range and
   // markProviders roles away with the mark providers).
   verdict: { entry: /\/src\/lib\/palette\/verdict\.ts$/, chunks: 1 }, // b2 writes the body
-  // v14 pf commit 0W (chk #39): the figures panel behind views/figures/slots.tsx (pf-d fills it).
-  figures: { entry: /\/src\/islands\/palette\/views\/figures\/Figures\.tsx$/, chunks: 1 },
-  // Phase 3 / Slice 3.4: on-demand Field Studio tabs & Field Dossier drawer (lazy-loaded from Palette.tsx).
-  studio: { entry: /\/src\/islands\/palette\/views\/palette\/(FieldDossier|LivingSystemTab|Climate2050Tab|PlantingPlanTab)\.tsx$/, chunks: 4 },
   // Goal #40: canopi-climate v0.7.0 Rust WASM glue (lazy-loaded on demand by wasm-bridge.ts).
   climateWasm: { entry: /\/src\/lib\/climate\/wasm\/canopi_climate\.js$/, chunks: 1 },
 };

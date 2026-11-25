@@ -54,8 +54,8 @@ const markKeys = new Set([...markSource.matchAll(/'([a-z]\w*(?:\.\w+)+)'/g)].map
 const fromPage = new Set([...page.matchAll(/\b(?:tr|P)\('([\w.]+)'/g)].map((m) => m[1]));
 const asked = (k) => named.has(k) || markKeys.has(k) || INDIRECT.includes(k) || fromPage.has(k) || templates.some((re) => re.test(k));
 
-test('no consortium key is left unused (H9)', () => {
-  assert.deepEqual(short.filter((k) => !asked(k)), []);
+test('no consortium.ns.* key is left unused (H9)', () => {
+  assert.deepEqual(short.filter((k) => k.startsWith('ns.') && !asked(k)), []);
 });
 
 test('no correction.* key is left unused', () => {

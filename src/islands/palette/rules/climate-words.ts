@@ -34,7 +34,7 @@ export function localMonthShort(idx: number): string {
   }
 }
 
-export function localMonthLong(idx: number): string {
+function localMonthLong(idx: number): string {
   const EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] as const;
   const lang = pageLang();
   if (!lang || lang === 'en') return EN[idx] ?? 'January';
@@ -45,7 +45,7 @@ export function localMonthLong(idx: number): string {
   }
 }
 
-export function localMonthInitial(idx: number): string {
+function localMonthInitial(idx: number): string {
   const EN = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'] as const;
   const lang = pageLang();
   if (!lang || lang === 'en') return EN[idx] ?? 'J';
