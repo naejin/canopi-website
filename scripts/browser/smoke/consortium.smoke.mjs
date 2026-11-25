@@ -15,8 +15,8 @@ test('smoke (dist/, no hook): the tool loads ready, Starter launches North Star 
   const page = await h.open('/palette/');
   assert.equal(await loadState(page), 'ready');
   assert.ok(await has(page, '.arrival-wrap', 15_000), 'North Star Arrival renders');
-  assert.ok(await has(page, '.starter-acts .btn-primary:not([disabled])', 20_000), 'starter CTA enables after catalog + climate load');
-  await page.locator('.starter-acts .btn-primary').click();
+  assert.ok(await has(page, '.arrival-card .btn-primary:not([disabled])', 20_000), 'starter CTA enables after catalog + climate load');
+  await page.locator('.arrival-card .btn-primary').click();
   assert.ok(await has(page, '.studio-shell .plant-row', 15_000), 'members render in North Star Studio');
   assert.deepEqual(
     await page.evaluate(() => ({ hook: typeof window.__ctTest, timeouts: typeof window.__ctTimeouts })),

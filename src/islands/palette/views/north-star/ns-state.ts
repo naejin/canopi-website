@@ -1,5 +1,5 @@
-// Reactive state layer for the North Star Palette Builder (Stage 2B).
-// Bridges existing store.ts signals with computeReport() single source of truth,
+// Reactive state layer for the North Star Plant Palette Studio.
+// Bridges store.ts signals with computeReport() single source of truth,
 // live canopi-climate v0.7.0 tile lookups, and full 761-species SQLite search.
 import { batch, computed, effect, signal } from '@preact/signals';
 import type {
@@ -35,13 +35,14 @@ export type NsSurface = 'design' | 'plan';
 export type NsViewMode = 'job' | 'matrix' | 'grid';
 export type NsDrawer =
   | { kind: 'picker'; job: JobId | 'all' }
-  | { kind: 'atlas'; tab: 'climate' | 'swaps'; swapFor?: PlantId }
+  | { kind: 'atlas'; tab?: 'climate' | 'swaps'; swapFor?: PlantId }
   | { kind: 'dossier'; id: PlantId }
   | null;
 
 export interface NsPresetSite {
   id: string;
   label: string;
+  sub: string;
   lat: number;
   lon: number;
   zone: ClimateZone;
@@ -49,12 +50,12 @@ export interface NsPresetSite {
 }
 
 export const NS_PRESETS: readonly NsPresetSite[] = [
-  { id: 'montpellier', label: 'Montpellier, FR', lat: 43.61, lon: 3.88, zone: 'Mediterranean', country: 'FR' },
-  { id: 'lyon', label: 'Lyon, FR', lat: 45.76, lon: 4.84, zone: 'Temperate', country: 'FR' },
-  { id: 'kyoto', label: 'Kyoto, JP', lat: 35.01, lon: 135.77, zone: 'Subtropical', country: 'JP' },
-  { id: 'capetown', label: 'Cape Town, ZA', lat: -33.92, lon: 18.42, zone: 'Mediterranean', country: 'ZA' },
-  { id: 'briancon', label: 'Briançon, FR', lat: 44.90, lon: 6.64, zone: 'Continental', country: 'FR' },
-  { id: 'belem', label: 'Belém, BR', lat: -1.45, lon: -48.50, zone: 'Tropical', country: 'BR' },
+  { id: 'montpellier', label: 'Montpellier, France', sub: 'Mediterranean (Csa) · pH 7.7', lat: 43.61, lon: 3.88, zone: 'Mediterranean', country: 'FR' },
+  { id: 'lyon', label: 'Lyon, France', sub: 'Temperate (Cfb)', lat: 45.76, lon: 4.84, zone: 'Temperate', country: 'FR' },
+  { id: 'kyoto', label: 'Kyoto, Japan', sub: 'Subtropical (Cfa)', lat: 35.01, lon: 135.77, zone: 'Subtropical', country: 'JP' },
+  { id: 'capetown', label: 'Cape Town, South Africa', sub: 'Southern Mediterranean (Csb)', lat: -33.92, lon: 18.42, zone: 'Mediterranean', country: 'ZA' },
+  { id: 'briancon', label: 'Briançon, France', sub: 'Mountain / Continental (Dfb)', lat: 44.90, lon: 6.64, zone: 'Continental', country: 'FR' },
+  { id: 'belem', label: 'Belém, Brazil', sub: 'Tropical (Af)', lat: -1.45, lon: -48.50, zone: 'Tropical', country: 'BR' },
 ];
 
 const EXISTING_KEY = 'canopi-ns-existing';
@@ -82,9 +83,12 @@ export const nsScenario = signal<ReportHorizonId>('today');
 export const nsKidsPets = signal<boolean>(false);
 export const nsLandOpen = signal<boolean>(true);
 export const nsTuneOpen = signal<boolean>(false);
+export const nsMoreOpen = signal<boolean>(false);
 export const nsDrawer = signal<NsDrawer>(null);
-export const nsHoveredPlant = signal<PlantId | null>(null);
-export const nsJobFilter = signal<JobId | 'all'>('all');
+export const nsActivePairKey = signal<string | null>(null);
+export const nsSearch = signal<string>('');
+export const nsPathPct = signal<number>(20);
+export const nsQtyById = signal<Record<string, number>>({});
 export const nsOverrides = signal<ReportSiteOverrides>({});
 const nsExistingIds = signal<ReadonlySet<PlantId>>(readIdSet(EXISTING_KEY));
 export const nsCheckedIds = signal<ReadonlySet<PlantId>>(readIdSet(CHECKED_KEY));
@@ -116,6 +120,13 @@ export function toggleChecked(id: PlantId): void {
   writeIdSet(CHECKED_KEY, next);
 }
 
+export function stepQty(id: PlantId, delta: number, defaultQty: number): void {
+  const cur = nsQtyById.peek();
+  const prev = cur[id] ?? defaultQty;
+  const next = Math.max(1, Math.min(50, prev + delta));
+  nsQtyById.value = { ...cur, [id]: next };
+}
+
 export function updateOverrides(patch: Partial<ReportSiteOverrides>): void {
   nsOverrides.value = { ...nsOverrides.peek(), ...patch };
   if (patch.room !== undefined && patch.room !== null) store.room.value = patch.room;
@@ -125,10 +136,6 @@ export function updateOverrides(patch: Partial<ReportSiteOverrides>): void {
 export function handlePlotM2Input(e: Event): void {
   const n = Number((e.target as HTMLInputElement).value);
   if (Number.isFinite(n) && n >= 1) updateOverrides({ plotM2: Math.round(n) });
-}
-
-export function resetOverrides(): void {
-  nsOverrides.value = {};
 }
 
 export function setRoomChoice(r: Room): void {
@@ -203,7 +210,6 @@ export async function ensureAllNamesLoaded(): Promise<void> {
   } catch { /* ignore */ }
 }
 
-/** Map Köppen climate class to Canopi curated ClimateZone. */
 function koppenToZone(koppen: string | null | undefined): ClimateZone {
   const k = (koppen ?? '').trim();
   if (k.startsWith('Af') || k.startsWith('Am') || k.startsWith('Aw')) return 'Tropical';
@@ -216,7 +222,6 @@ function koppenToZone(koppen: string | null | undefined): ClimateZone {
   return 'Temperate';
 }
 
-/** Load live canopi-climate v0.7.0 tiles for any lat/lon using the production builders. */
 export async function pickCoordinates(
   lat: number,
   lon: number,
@@ -280,6 +285,7 @@ export function launchWithStarter(): void {
     store.view.value = 'matrix';
     nsSurface.value = 'design';
     nsScenario.value = 'today';
+    nsMoreOpen.value = false;
   });
 }
 

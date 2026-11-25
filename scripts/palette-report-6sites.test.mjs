@@ -298,9 +298,13 @@ test('6-site agronomic invariants: starter validity, per-slot extremes, zero fal
         assert.equal(scEff.tmaxWarmC, round1(rawSlot.tmaxWarmC), `${site.name} ${sc.id}: uses slot tmaxWarmC, not Today`);
       }
 
-      // Invariant 2: Truth-first starter validity (0 outside climate/extremes/pH; crown <= net area)
+      // Invariant 2: Truth-first starter validity (0 outside climate/extremes/pH; crown <= net area; multi-layer guild)
       const starter = selectStarterPalette(pool, effToday, { maxPlants: 8 });
-      assert.ok(starter.length >= 4, `${site.name}: expected >= 4 starter plants, got ${starter.length}`);
+      assert.equal(starter.length, 8, `${site.name}: expected 8 starter plants, got ${starter.length}`);
+      const woodyCount = starter.filter((t) => /tree|shrub|palm|bamboo/i.test(t.traits.habit ?? '')).length;
+      assert.ok(woodyCount >= 2, `${site.name}: expected >= 2 woody tree/shrub anchors in starter guild, got ${woodyCount}`);
+      const perennialCount = starter.filter((t) => t.traits.is_annual !== true).length;
+      assert.ok(perennialCount >= 6, `${site.name}: expected >= 6 perennial plants in starter guild, got ${perennialCount}`);
 
       const lvMap = await source.layerValues(starter.map((t) => t.id), site.zone);
       const existingIds = new Set([starter[0].id]);

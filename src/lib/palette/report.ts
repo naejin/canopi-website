@@ -789,61 +789,84 @@ export function selectStarterPalette(
 ): Taxon[] {
   const maxPlants = options.maxPlants ?? 8;
   const fitsPool = pool
-    .map((t) => ({ taxon: t, verdict: evaluatePlantVerdict(t, eff, options.existingIds), jobs: jobsOf(t), area: crownAreaM2(t) ?? 0 }))
+    .map((t) => ({
+      taxon: t,
+      verdict: evaluatePlantVerdict(t, eff, options.existingIds),
+      jobs: jobsOf(t),
+      area: crownAreaM2(t) ?? 0,
+      sizeClass: sizeClassOf(t),
+      perennial: t.traits.is_annual !== true,
+      edibility: t.traits.edibility_rating ?? 0,
+    }))
     .filter((x) => x.verdict.level === 'fits' && x.jobs.length > 0 && !x.verdict.subsoilPhTrap)
     .filter((x) => eff.roomLimitM === null || x.taxon.traits.height_m?.max == null || x.taxon.traits.height_m.max <= eff.roomLimitM);
 
   const chosen: Taxon[] = [];
   const chosenIds = new Set<PlantId>();
+  const usedFamilies = new Set<string>();
   let usedArea = 0;
 
   const canAdd = (item: (typeof fitsPool)[number]): boolean =>
     !chosenIds.has(item.taxon.id) && usedArea + item.area <= eff.netPlotM2;
 
+  const addItem = (item: (typeof fitsPool)[number]): boolean => {
+    chosen.push(item.taxon);
+    chosenIds.add(item.taxon.id);
+    usedArea += item.area;
+    if (item.taxon.family) usedFamilies.add(item.taxon.family);
+    return true;
+  };
+
   const compareTieBreak = (a: (typeof fitsPool)[number], b: (typeof fitsPool)[number]): number =>
-    (b.jobs.length - a.jobs.length)
+    ((b.perennial ? 1 : 0) - (a.perennial ? 1 : 0))
+    || (((b.taxon.family && !usedFamilies.has(b.taxon.family)) ? 1 : 0) - ((a.taxon.family && !usedFamilies.has(a.taxon.family)) ? 1 : 0))
     || ((b.taxon.image ? 1 : 0) - (a.taxon.image ? 1 : 0))
+    || (b.jobs.length - a.jobs.length)
+    || (b.edibility - a.edibility)
     || (a.area - b.area)
     || a.taxon.canonical_name.localeCompare(b.taxon.canonical_name);
 
+  const pickBest = (
+    pred: (item: (typeof fitsPool)[number]) => boolean,
+    extraSort?: (a: (typeof fitsPool)[number], b: (typeof fitsPool)[number]) => number,
+  ): boolean => {
+    const cands = fitsPool
+      .filter((x) => canAdd(x) && pred(x))
+      .sort((a, b) => (extraSort ? extraSort(a, b) : 0) || compareTieBreak(a, b));
+    return cands[0] ? addItem(cands[0]) : false;
+  };
+
   const pickBestForJob = (job: JobId, preferSmall = false): boolean => {
     const maxSingleArea = eff.netPlotM2 * 0.35;
-    const cands = fitsPool
-      .filter((x) => x.jobs.includes(job) && canAdd(x))
-      .sort((a, b) => {
+    return pickBest(
+      (x) => x.jobs.includes(job),
+      (a, b) => {
         const aBig = a.area > maxSingleArea ? 1 : 0;
         const bBig = b.area > maxSingleArea ? 1 : 0;
         if (aBig !== bBig) return aBig - bBig;
         if (preferSmall && a.area !== b.area) return a.area - b.area;
-        return compareTieBreak(a, b);
-      });
-    const best = cands[0];
-    if (!best) return false;
-    chosen.push(best.taxon);
-    chosenIds.add(best.taxon.id);
-    usedArea += best.area;
-    return true;
+        return 0;
+      },
+    );
   };
 
-  // Pass 0: on garden/field plots with vertical room (>= 2.5 m, >= 25 m²), anchor the guild
-  // with at least one woody tree or shrub so starters have real multi-strata structure.
-  if ((eff.roomLimitM === null || eff.roomLimitM >= 2.5) && eff.netPlotM2 >= 25 && chosen.length < maxPlants) {
-    const maxAnchorArea = eff.netPlotM2 * 0.45;
-    const woodyAnchor = fitsPool
-      .filter((x) => {
-        const sc = sizeClassOf(x.taxon);
-        return (sc === 'tree' || sc === 'shrub') && x.area <= maxAnchorArea && canAdd(x);
-      })
-      .sort((a, b) => {
-        const aFeed = a.jobs.includes('feeds_you') || a.jobs.includes('shelter') ? 0 : 1;
-        const bFeed = b.jobs.includes('feeds_you') || b.jobs.includes('shelter') ? 0 : 1;
-        return (aFeed - bFeed) || compareTieBreak(a, b);
-      })[0];
-    if (woodyAnchor) {
-      chosen.push(woodyAnchor.taxon);
-      chosenIds.add(woodyAnchor.taxon.id);
-      usedArea += woodyAnchor.area;
-    }
+  // Pass 0: build true multi-strata agroecological structure (tree canopy + shrub + perennial N-fixer)
+  if ((eff.roomLimitM === null || eff.roomLimitM >= 3) && eff.netPlotM2 >= 25 && chosen.length < maxPlants) {
+    const maxTreeArea = eff.netPlotM2 * 0.40;
+    pickBest(
+      (x) => x.sizeClass === 'tree' && x.area <= maxTreeArea,
+      (a, b) => ((b.jobs.includes('feeds_you') ? 1 : 0) - (a.jobs.includes('feeds_you') ? 1 : 0)) || (b.edibility - a.edibility),
+    );
+  }
+  if ((eff.roomLimitM === null || eff.roomLimitM >= 1.5) && eff.netPlotM2 >= 12 && chosen.length < maxPlants) {
+    const maxShrubArea = eff.netPlotM2 * 0.25;
+    pickBest(
+      (x) => x.sizeClass === 'shrub' && x.area <= maxShrubArea,
+      (a, b) => ((b.jobs.includes('feeds_you') || b.jobs.includes('helpers') ? 1 : 0) - (a.jobs.includes('feeds_you') || a.jobs.includes('helpers') ? 1 : 0)),
+    );
+  }
+  if (chosen.length < maxPlants && !chosen.some((t) => jobsOf(t).includes('feeds_soil'))) {
+    pickBest((x) => x.jobs.includes('feeds_soil') && x.area <= eff.netPlotM2 * 0.25);
   }
 
   // Pass 1: cover all 6 canonical jobs
@@ -853,7 +876,7 @@ export function selectStarterPalette(
     pickBestForJob(job, false);
   }
 
-  // Pass 2: add backups (preferring compact plants to stay inside crown budget)
+  // Pass 2: reinforce single-species jobs with diverse perennial backups
   for (const job of jobIds) {
     if (chosen.length >= maxPlants) break;
     const count = chosen.filter((t) => jobsOf(t).includes(job)).length;
@@ -861,23 +884,11 @@ export function selectStarterPalette(
     pickBestForJob(job, true);
   }
 
-  // Pass 3: ensure family biodiversity up to min(maxPlants, 6) when multi-job species filled all jobs early
-  const minTarget = Math.min(maxPlants, 6);
-  const usedFamilies = new Set(chosen.map((t) => t.family).filter(Boolean));
-  while (chosen.length < minTarget) {
-    const next = fitsPool
-      .filter((x) => canAdd(x))
-      .sort((a, b) => {
-        const aNewFam = a.taxon.family && !usedFamilies.has(a.taxon.family) ? 0 : 1;
-        const bNewFam = b.taxon.family && !usedFamilies.has(b.taxon.family) ? 0 : 1;
-        if (aNewFam !== bNewFam) return aNewFam - bNewFam;
-        return a.area - b.area || b.jobs.length - a.jobs.length || a.taxon.canonical_name.localeCompare(b.taxon.canonical_name);
-      })[0];
-    if (!next) break;
-    chosen.push(next.taxon);
-    chosenIds.add(next.taxon.id);
-    usedArea += next.area;
-    if (next.taxon.family) usedFamilies.add(next.taxon.family);
+  // Pass 3: fill remaining slots up to maxPlants (default 8) with diverse families & strata
+  while (chosen.length < maxPlants) {
+    if (!pickBest((x) => x.area <= eff.netPlotM2 * 0.25)) {
+      if (!pickBest(() => true)) break;
+    }
   }
 
   return chosen;

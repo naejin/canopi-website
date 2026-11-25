@@ -1,234 +1,257 @@
 /** @jsxImportSource preact */
-// Persistent collapsible "Your land" sidebar (mobile collapsible sheet) + "Tune site" controls.
-// Explicitly marks "(Today)" on the Water tank row under future scenarios (v7.3 P2 nit fix).
-import type { InputWind, PaletteReport, Watering } from '../../../../lib/palette/index.ts';
+// Verbatim 1:1 port of mockup-v73.html renderLandPanel (L2613).
+import type { Drainage, InputWind, PaletteReport, ReportHorizonId, Room, Watering } from '../../../../lib/palette/index.ts';
+import { REPORT_SCENARIOS } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
-import { fmtNum, freezeText, heatText, roomOptions } from './ns-helpers.ts';
+import { fmtNum, freezeText, heatText, roomOptions, scenarioLabel } from './ns-helpers.ts';
 import {
-  handlePlotM2Input,
+  effectiveOverrides,
+  NS_PRESETS,
+  nsDrawer,
   nsLandOpen,
   nsOverrides,
+  nsScenario,
   nsTuneOpen,
-  resetOverrides,
+  pickCoordinates,
   setRoomChoice,
   updateOverrides,
 } from './ns-state.ts';
 
-const WATERING_OPTS: readonly { id: Watering; label: () => string }[] = [
-  { id: 'rain', label: () => T('ns.water.rain') },
-  { id: 'first-years', label: () => T('ns.water.firstYears') },
-  { id: 'all-year', label: () => T('ns.water.allYear') },
-];
-
-const WIND_OPTS: readonly { id: InputWind; label: () => string }[] = [
-  { id: 'sheltered', label: () => T('ns.wind.sheltered') },
-  { id: 'windy', label: () => T('ns.wind.open') },
-  { id: 'sea', label: () => T('ns.wind.exposed') },
-];
-
-const ROOM_OPTS = roomOptions(false);
-
 export function LandPanel({ rep }: { rep: PaletteReport }) {
-  const eff = rep.eff;
-  const open = nsLandOpen.value;
   const tuneOpen = nsTuneOpen.value;
-  const ov = nsOverrides.value;
-  const placeLabel = store.location.value?.label ?? store.climate.value ?? T('ns.land.yourSite');
-  const isFuture = eff.horizon !== 'today';
-  const hasOverrides = Object.keys(ov).length > 0;
+  const ov = effectiveOverrides.value;
+  const rawOv = nsOverrides.value;
+  const loc = store.location.value;
+  const eff = rep.eff;
+  const basePh = loc?.lookup?.soil?.phH2o ?? null;
+  const baseTexture = loc?.lookup?.soil?.texture ?? 'loam';
+  const baseStones = loc?.lookup?.v07?.soilPlus?.cfvo0_30 ?? null;
+  const terrain = loc?.lookup?.v07?.terrain ?? null;
+
+  const phEdited = rawOv.soilPh != null && rawOv.soilPh !== basePh;
+  const drainEdited = rawOv.drainage != null;
+  const stonesEdited = rawOv.stonesPct != null && rawOv.stonesPct !== baseStones;
+  const waterEdited = rawOv.watering != null && rawOv.watering !== 'rain';
+  const windEdited = rawOv.wind != null && rawOv.wind !== 'sheltered';
+  const editCount = [phEdited, drainEdited, stonesEdited, waterEdited, windEdited].filter(Boolean).length;
+  const highRelief = terrain != null && terrain.reliefM != null && terrain.reliefM > 300;
 
   return (
     <aside class="land-panel" aria-label={T('ns.land.title')}>
       <div class="land-head">
-        <div>
-          <span class="land-kicker">{T('ns.land.title')}</span>
-          <h2 class="land-place">{placeLabel}</h2>
-          <p class="land-meta">
-            {eff.koppen || store.climate.value || '—'}
-            {eff.usdaZone ? ` · USDA ${eff.usdaZone}` : ''}
-            {eff.lat !== null && eff.lon !== null ? ` · ${fmtNum(eff.lat, 1)}°, ${fmtNum(eff.lon, 1)}°` : ''}
-          </p>
-        </div>
-        <div class="land-head-acts">
+        <h2>{T('ns.land.title')}</h2>
+        <button class="link-button small" type="button" onClick={() => { nsLandOpen.value = false; }}>
+          {T('ns.hide')}
+        </button>
+      </div>
+
+      <div class="site-switch-row" aria-label={T('ns.arrival.presetsAria')}>
+        {NS_PRESETS.map((m) => (
           <button
+            key={m.id}
             type="button"
-            class="land-toggle-btn"
-            aria-expanded={open ? 'true' : 'false'}
-            onClick={() => { nsLandOpen.value = !open; }}
+            class="site-pill-sm"
+            aria-pressed={loc?.label === m.label ? 'true' : 'false'}
+            onClick={() => void pickCoordinates(m.lat, m.lon, m.label, m.zone, m.country)}
           >
-            {open ? T('ns.hide') : T('ns.show')}
+            {m.label.split(',')[0]}
           </button>
+        ))}
+      </div>
+
+      <div class="land-kv">
+        <div class="land-row">
+          <span>Climate</span>
+          <strong>
+            {eff.koppen || store.climate.value || T('ns.unknown')}
+            {eff.usdaZone ? ` · USDA ${eff.usdaZone}` : ''}
+            {eff.precipMm != null ? ` · ${Math.round(eff.precipMm)} ${T('ns.unit.mmYear')}` : ''}
+          </strong>
+        </div>
+        <div class="land-row">
+          <span>{T('ns.land.freeze10')}</span>
+          <strong>{freezeText(eff)}</strong>
+        </div>
+        <div class="land-row">
+          <span>{T('ns.land.heat10')}</span>
+          <strong>{heatText(eff)}</strong>
+        </div>
+        <div class="land-row">
+          <span>{T('ns.land.waterTank')}</span>
+          <strong>
+            {eff.tankDays != null && eff.cddDays != null
+              ? `Soil holds ~${eff.tankDays} d · dry spell ~${eff.cddDays} d`
+              : T('ns.unknown')}
+          </strong>
+        </div>
+        <div class="land-row">
+          <span>{T('ns.land.soilPh')}</span>
+          <strong>
+            pH {fmtNum(eff.soilPh)} · {ov.drainage ?? baseTexture}
+            {eff.stonesPct != null ? ` · ${Math.round(eff.stonesPct)}% rock` : ''}
+          </strong>
         </div>
       </div>
 
-      {open && (
-        <div class="land-body">
-          <dl class="land-dl">
-            <div class="land-row">
-              <dt>{T('ns.land.freeze10')}</dt>
-              <dd>{freezeText(eff)}</dd>
-            </div>
-            <div class="land-row">
-              <dt>{T('ns.land.heat10')}</dt>
-              <dd>{heatText(eff)}</dd>
-            </div>
-            <div class="land-row">
-              <dt>{T('ns.land.soilPh')}</dt>
-              <dd>
-                {eff.soilPh !== null ? `pH ${fmtNum(eff.soilPh, 1)}` : T('ns.unknown')}
-                {eff.subsoilPh !== null && eff.soilPh !== null && Math.abs(eff.subsoilPh - eff.soilPh) >= 0.8
-                  ? ` (${T('ns.land.subsoil')} ${fmtNum(eff.subsoilPh, 1)})`
-                  : ''}
-              </dd>
-            </div>
-            <div class="land-row">
-              <dt>
-                {T('ns.land.waterTank')}
-                {isFuture ? ` (${T('ns.today')})` : ''}
-              </dt>
-              <dd>
-                {eff.tankDays !== null ? `${eff.tankDays} ${T('ns.days')}` : T('ns.unknown')}
-                {eff.cddDays !== null ? ` / ${eff.cddDays} ${T('ns.unit.dayShort')} ${T('ns.land.drySpell')}` : ''}
-              </dd>
-            </div>
-            <div class="land-row">
-              <dt>{T('ns.land.rain')}</dt>
-              <dd>{eff.precipMm !== null ? `${eff.precipMm} ${T('ns.unit.mmYear')}` : T('ns.unknown')}</dd>
-            </div>
-            <div class="land-row">
-              <dt>{T('ns.land.plot')}</dt>
-              <dd>{eff.plotM2} m² ({eff.netPlotM2} m² {T('ns.land.net')})</dd>
-            </div>
-          </dl>
-
-          <div class="land-actions">
-            <button
-              type="button"
-              class="btn-secondary"
-              aria-expanded={tuneOpen ? 'true' : 'false'}
-              onClick={() => { nsTuneOpen.value = !tuneOpen; }}
-            >
-              {tuneOpen ? T('ns.land.closeTune') : T('ns.land.tuneSite')}
-            </button>
-            <button
-              type="button"
-              class="link-btn"
-              onClick={() => { store.view.value = 'start'; }}
-            >
-              {T('ns.land.changePlace')}
-            </button>
-          </div>
-
-          {tuneOpen && (
-            <div class="tune-box" role="region" aria-label={T('ns.land.tuneSite')}>
-              <label class="tune-field">
-                <span>{T('ns.land.soilPh')}: <strong>{eff.soilPh !== null ? fmtNum(eff.soilPh, 1) : '6.5'}</strong></span>
-                <input
-                  type="range"
-                  min="4.0"
-                  max="9.0"
-                  step="0.1"
-                  value={eff.soilPh ?? 6.5}
-                  onInput={(e) => updateOverrides({ soilPh: Number((e.target as HTMLInputElement).value) })}
-                />
-              </label>
-
-              <div class="tune-field">
-                <span>{T('ns.tune.watering')}</span>
-                <div class="pill-group">
-                  {WATERING_OPTS.map((w) => (
-                    <button
-                      key={w.id}
-                      type="button"
-                      class="site-pill-sm"
-                      aria-pressed={eff.watering === w.id ? 'true' : 'false'}
-                      onClick={() => updateOverrides({ watering: w.id })}
-                    >
-                      {w.label()}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div class="tune-field">
-                <span>{T('ns.tune.wind')}</span>
-                <div class="pill-group">
-                  {WIND_OPTS.map((w) => (
-                    <button
-                      key={w.id}
-                      type="button"
-                      class="site-pill-sm"
-                      aria-pressed={eff.wind === w.id ? 'true' : 'false'}
-                      onClick={() => updateOverrides({ wind: w.id })}
-                    >
-                      {w.label()}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <label class="tune-field">
-                <span>{T('ns.tune.coldShift')}: <strong>{fmtNum(ov.nightsShiftC ?? 0, 0)} °C</strong></span>
-                <input
-                  type="range"
-                  min="-4"
-                  max="4"
-                  step="1"
-                  value={ov.nightsShiftC ?? 0}
-                  onInput={(e) => updateOverrides({ nightsShiftC: Number((e.target as HTMLInputElement).value) })}
-                />
-              </label>
-
-              <label class="tune-field">
-                <span>{T('ns.tune.heatShift')}: <strong>{fmtNum(ov.daysShiftC ?? 0, 0)} °C</strong></span>
-                <input
-                  type="range"
-                  min="-4"
-                  max="4"
-                  step="1"
-                  value={ov.daysShiftC ?? 0}
-                  onInput={(e) => updateOverrides({ daysShiftC: Number((e.target as HTMLInputElement).value) })}
-                />
-              </label>
-
-              <div class="tune-field">
-                <span>{T('ns.arrival.roomLabel')}</span>
-                <div class="pill-group">
-                  {ROOM_OPTS.map((r) => (
-                    <button
-                      key={r.id}
-                      type="button"
-                      class="site-pill-sm"
-                      aria-pressed={eff.room === r.id ? 'true' : 'false'}
-                      onClick={() => setRoomChoice(r.id)}
-                    >
-                      {r.label()}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <label class="tune-field">
-                <span>{T('ns.land.plot')} (m²)</span>
-                <input
-                  type="number"
-                  min="4"
-                  max="100000"
-                  value={eff.plotM2}
-                  onInput={handlePlotM2Input}
-                />
-              </label>
-
-              {hasOverrides && (
-                <button type="button" class="link-btn" onClick={resetOverrides}>
-                  {T('ns.tune.reset')}
-                </button>
-              )}
-            </div>
-          )}
+      {highRelief && terrain && (
+        <div class="land-alert">
+          <strong>Grid cell average {terrain.elevM?.toLocaleString() ?? '—'} m</strong>
+          <span>Mixed terrain in this grid cell ({terrain.reliefM} m relief).</span>
         </div>
       )}
+
+      <div class="tuner-group">
+        <label class="tuner-label" for="land-scenario">{T('ns.bar.scenarioAria')}</label>
+        <select
+          id="land-scenario"
+          class="tuner-select"
+          value={nsScenario.value}
+          onChange={(e) => { nsScenario.value = (e.target as HTMLSelectElement).value as ReportHorizonId; }}
+        >
+          {REPORT_SCENARIOS.map((sc) => (
+            <option key={sc.id} value={sc.id}>{scenarioLabel(sc.id)}</option>
+          ))}
+        </select>
+      </div>
+
+      <details
+        class="tune-details"
+        open={tuneOpen}
+        onToggle={(e) => { nsTuneOpen.value = (e.currentTarget as HTMLDetailsElement).open; }}
+      >
+        <summary>
+          <span>{T('ns.land.tuneSite')}{editCount > 0 ? ` (${editCount} edited)` : ''}</span>
+          <span aria-hidden="true">{tuneOpen ? '▾' : '▸'}</span>
+        </summary>
+        <div class="tune-body">
+          <div class="tune-subhead">Soil &amp; drainage</div>
+          <div class="tuner-group">
+            <div class="tuner-label">
+              <label for="ph-input">{T('ns.land.soilPh')}: {fmtNum(eff.soilPh)}</label>
+              {phEdited && (
+                <span class="edit-badge">
+                  Your edit ·{' '}
+                  <button type="button" class="edit-reset" onClick={() => updateOverrides({ soilPh: null })}>
+                    {T('ns.tune.reset')}
+                  </button>
+                </span>
+              )}
+            </div>
+            <input
+              id="ph-input"
+              type="range"
+              min="4.5"
+              max="8.8"
+              step="0.1"
+              value={eff.soilPh ?? 6.8}
+              onInput={(e) => updateOverrides({ soilPh: Number((e.target as HTMLInputElement).value) })}
+            />
+          </div>
+
+          <div class="tuner-group">
+            <div class="tuner-label">
+              <label for="drain-select">{'Drainage'}</label>
+              {drainEdited && (
+                <span class="edit-badge">
+                  Your edit ·{' '}
+                  <button type="button" class="edit-reset" onClick={() => updateOverrides({ drainage: null })}>
+                    {T('ns.tune.reset')}
+                  </button>
+                </span>
+              )}
+            </div>
+            <select
+              id="drain-select"
+              class="tuner-select"
+              value={ov.drainage ?? ''}
+              onChange={(e) => {
+                const v = (e.target as HTMLSelectElement).value;
+                updateOverrides({ drainage: v ? (v as Drainage) : null });
+              }}
+            >
+              <option value="">Loam / site default ({baseTexture})</option>
+              <option value="sandy">{'Free-draining / sandy'}</option>
+              <option value="loam">{'Balanced loam'}</option>
+              <option value="clay">{'Slow / heavy clay'}</option>
+              <option value="wet">{'Stays wet / waterlogged'}</option>
+            </select>
+          </div>
+
+          <div class="tuner-group">
+            <div class="tuner-label">
+              <label for="stones-input">Rockiness (% stones): {eff.stonesPct != null ? `${Math.round(eff.stonesPct)}%` : '0%'}</label>
+              {stonesEdited && (
+                <span class="edit-badge">
+                  Your edit ·{' '}
+                  <button type="button" class="edit-reset" onClick={() => updateOverrides({ stonesPct: null })}>
+                    {T('ns.tune.reset')}
+                  </button>
+                </span>
+              )}
+            </div>
+            <input
+              id="stones-input"
+              type="range"
+              min="0"
+              max="60"
+              step="5"
+              value={eff.stonesPct ?? 0}
+              onInput={(e) => updateOverrides({ stonesPct: Number((e.target as HTMLInputElement).value) })}
+            />
+          </div>
+
+          <div class="tune-subhead">Watering &amp; wind</div>
+          <div class="tuner-group">
+            <label class="tuner-label" for="water-select">{T('ns.tune.watering')}</label>
+            <select
+              id="water-select"
+              class="tuner-select"
+              value={eff.watering}
+              onChange={(e) => updateOverrides({ watering: (e.target as HTMLSelectElement).value as Watering })}
+            >
+              <option value="rain">{T('ns.water.rain')}</option>
+              <option value="first_years">{T('ns.water.firstYears')}</option>
+              <option value="dry_spells">{T('ns.water.allYear')}</option>
+            </select>
+          </div>
+
+          <div class="tuner-group">
+            <label class="tuner-label" for="wind-select">{T('ns.tune.wind')}</label>
+            <select
+              id="wind-select"
+              class="tuner-select"
+              value={ov.wind ?? 'sheltered'}
+              onChange={(e) => updateOverrides({ wind: (e.target as HTMLSelectElement).value as InputWind })}
+            >
+              <option value="sheltered">{T('ns.wind.sheltered')}</option>
+              <option value="windy">{T('ns.wind.exposed')}</option>
+            </select>
+          </div>
+
+          <div class="tuner-group">
+            <label class="tuner-label" for="room-select">{T('ns.arrival.roomLabel')}</label>
+            <select
+              id="room-select"
+              class="tuner-select"
+              value={eff.room}
+              onChange={(e) => setRoomChoice((e.target as HTMLSelectElement).value as Room)}
+            >
+              {roomOptions(true).map((r) => (
+                <option key={r.id} value={r.id}>{r.label()}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </details>
+
+      <button
+        class="btn-ghost"
+        type="button"
+        onClick={() => { nsDrawer.value = { kind: 'atlas', tab: 'climate' }; }}
+      >
+        {T('ns.why')} {T('ns.atlas.title')} →
+      </button>
     </aside>
   );
 }

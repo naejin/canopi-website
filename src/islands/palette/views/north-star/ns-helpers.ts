@@ -1,6 +1,5 @@
-// Pure display & formatting helpers for North Star Palette Builder (Stage 2B).
-// L4 compliant: imports only from lib/palette/index.ts and lib/palette/types.ts.
-// Zero raw hex colours; zero PFAF / Plants For A Future strings.
+// Pure display & formatting helpers for North Star Plant Palette Studio.
+// L4 compliant: imports only from lib/palette/index.ts. Zero raw hex colours; zero PFAF strings.
 import type {
   EffectiveSiteClimate,
   FrostFact,
@@ -13,7 +12,7 @@ import type {
   Stratum,
   Taxon,
 } from '../../../../lib/palette/index.ts';
-import { formatAreaName } from '../../../../lib/palette/index.ts';
+import { jobsOf, toxicityStatusOf } from '../../../../lib/palette/index.ts';
 import { nameOf, pageLang, T } from '../../strings.ts';
 
 const PFAF_RE = /pfaf|plants for a future/i;
@@ -55,6 +54,47 @@ export function traitFieldLabel(field: string): string {
     case 'toxicity': return T('ns.field.toxicity');
     default: return T('ns.field.other');
   }
+}
+
+export type LightKey = 'full_sun' | 'mostly_sun' | 'part_shade' | 'shade' | 'unknown';
+export const SUN_ORDER: readonly LightKey[] = ['full_sun', 'mostly_sun', 'part_shade', 'shade'];
+
+function stratumToLightKey(s: Stratum | null | undefined): LightKey {
+  if (s === 'emergent') return 'full_sun';
+  if (s === 'high') return 'mostly_sun';
+  if (s === 'medium') return 'part_shade';
+  if (s === 'low') return 'shade';
+  return 'unknown';
+}
+
+export function plantLightKey(t: Taxon): LightKey {
+  const pref = t.light.preferred ?? t.light.sunniest ?? t.stratum?.value ?? null;
+  if (pref) return stratumToLightKey(pref);
+  if (t.traits.sun) return 'full_sun';
+  if (t.traits.semi_shade) return 'part_shade';
+  if (t.traits.full_shade) return 'shade';
+  return 'unknown';
+}
+
+export function lightKeyLabel(k: LightKey): string {
+  switch (k) {
+    case 'full_sun': return T('ns.stratum.emergent');
+    case 'mostly_sun': return T('ns.stratum.high');
+    case 'part_shade': return T('ns.stratum.medium');
+    case 'shade': return T('ns.stratum.low');
+    default: return T('ns.unknown');
+  }
+}
+
+export function plantMatchesSunLevel(t: Taxon, lvl: LightKey): boolean {
+  const order: readonly LightKey[] = SUN_ORDER;
+  const hi = t.light.sunniest ? stratumToLightKey(t.light.sunniest) : plantLightKey(t);
+  const lo = t.light.shadiest ? stratumToLightKey(t.light.shadiest) : hi;
+  const iHi = order.indexOf(hi);
+  const iLo = order.indexOf(lo);
+  const iLvl = order.indexOf(lvl);
+  if (iHi < 0 || iLo < 0 || iLvl < 0) return false;
+  return iLvl >= Math.min(iHi, iLo) && iLvl <= Math.max(iHi, iLo);
 }
 
 export function lightSpanLabel(t: Taxon): string {
@@ -136,8 +176,13 @@ export function taxCommonName(t: Taxon): string {
 }
 
 export function photoUrlOf(t: Taxon): string | null {
-  if (!t.image?.url) return null;
-  return t.image.url;
+  return t.image?.url ?? null;
+}
+
+export function shortSiteName(label: string | null | undefined): string {
+  const raw = (label ?? '').trim();
+  if (!raw) return '';
+  return raw.split(',')[0].trim();
 }
 
 export function fmtNum(v: number | null | undefined, dec = 1): string {
@@ -146,7 +191,7 @@ export function fmtNum(v: number | null | undefined, dec = 1): string {
   return String(rounded).replace('-', '−');
 }
 
-export function fmtC(v: number | null | undefined): string {
+function fmtC(v: number | null | undefined): string {
   if (v === null || v === undefined || !Number.isFinite(v)) return T('ns.unknown');
   return `${fmtNum(v, 1)} °C`;
 }
@@ -172,7 +217,14 @@ export function jobLabel(job: JobId): string {
   }
 }
 
-export function stratumLabel(s: Stratum | null | undefined): string {
+
+export function primaryJobOf(t: Taxon): JobId {
+  const js = jobsOf(t);
+  if (js.includes('feeds_you')) return 'feeds_you';
+  return js[0] ?? 'feeds_you';
+}
+
+function stratumLabel(s: Stratum | null | undefined): string {
   switch (s) {
     case 'emergent': return T('ns.stratum.emergent');
     case 'high': return T('ns.stratum.high');
@@ -192,16 +244,15 @@ export const PHASE_LIST: readonly Phase[] = [
   'climax',
 ];
 
-export function phaseShortLabel(phase: Phase): string {
-  switch (phase) {
-    case 'placenta_i': return '0';
-    case 'placenta_ii': return '1';
-    case 'placenta_iii': return '2';
-    case 'secondary_i': return '3';
-    case 'secondary_ii': return '4';
-    case 'secondary_iii': return '5';
-    case 'climax': return '6';
-  }
+export const PHASE_SHORT_NAMES = ['P1', 'P2', 'P3', 'S1', 'S2', 'S3', 'Clx'] as const;
+
+export function phaseOrd(phase: Phase): number {
+  return Math.max(0, PHASE_LIST.indexOf(phase));
+}
+
+export function plantCoversPhase(t: Taxon, ord: number): boolean {
+  if (!t.phases) return false;
+  return ord >= phaseOrd(t.phases.start) && ord <= phaseOrd(t.phases.end);
 }
 
 export function phaseLabel(phase: Phase): string {
@@ -216,18 +267,28 @@ export function phaseLabel(phase: Phase): string {
   }
 }
 
-export function verdictLabel(level: ReportVerdictLevel): string {
-  if (level === 'fits') return T('ns.verdict.fits');
-  if (level === 'check') return T('ns.verdict.check');
-  if (level === 'at_risk') return T('ns.verdict.atRisk');
+export function verdictSymbolLabel(level: ReportVerdictLevel): string {
+  if (level === 'fits') return `✓ ${T('ns.verdict.fits')}`;
+  if (level === 'check') return `▲ ${T('ns.verdict.check')}`;
+  if (level === 'at_risk') return `✕ ${T('ns.verdict.atRisk')}`;
   return T('ns.verdict.unknown');
 }
 
-export function verdictTone(level: ReportVerdictLevel): 'ok' | 'warn' | 'bad' | 'muted' {
-  if (level === 'fits') return 'ok';
-  if (level === 'check') return 'warn';
-  if (level === 'at_risk') return 'bad';
-  return 'muted';
+export function verdictBadgeClass(level: ReportVerdictLevel): string {
+  if (level === 'fits') return 'badge-ok';
+  if (level === 'check') return 'badge-warn';
+  if (level === 'at_risk') return 'badge-bad';
+  return '';
+}
+
+export function toxBadgeInfo(t: Taxon): { cls: string; text: string } | null {
+  const tx = toxicityStatusOf(t);
+  if (tx.status === 'toxic') {
+    const lvl = (tx.level ?? '').toLowerCase();
+    const label = lvl === 'high' ? `⚠ ${T('ns.tox.caution')}` : `⚠ ${tx.level ?? T('ns.tox.caution')}`;
+    return { cls: lvl === 'high' ? 'badge-bad' : 'badge-warn', text: label };
+  }
+  return null;
 }
 
 export function pollinationNote(t: Taxon): string | null {
@@ -238,11 +299,18 @@ export function pollinationNote(t: Taxon): string | null {
   return null;
 }
 
-export function nativeSummary(codes: readonly string[] | null | undefined, max = 6): string {
-  if (!codes?.length) return T('ns.notRecorded');
-  const loc = pageLang();
-  const names = codes.slice(0, max).map((c) => formatAreaName(c, loc));
-  return codes.length > max ? `${names.join(', ')} +${codes.length - max}` : names.join(', ');
+export function pollinationShortWarn(t: Taxon): string | null {
+  const sys = (t.traits.sexual_system ?? '').toLowerCase();
+  if (sys.includes('dioec')) return T('ns.poll.dioecious');
+  if (t.traits.self_fertile === false) return T('ns.poll.needsPartner');
+  return null;
+}
+
+export function defaultQtyFor(t: Taxon): number {
+  const hab = (t.traits.habit ?? '').toLowerCase();
+  if (hab.includes('tree')) return 1;
+  if (hab.includes('shrub') || hab.includes('bush')) return 2;
+  return 3;
 }
 
 export function roomOptions(includeUnsure: boolean): readonly { id: 'pots' | 'small' | 'large' | 'field' | 'unsure'; label: () => string }[] {

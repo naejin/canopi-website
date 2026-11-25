@@ -70,8 +70,8 @@ test('axe (dist/, WCAG 2.x A/AA): no new rule id and no higher count than the ba
       const page = await h.open(p.path, v);
       if (p.ready) assert.equal(await loadState(page), 'ready', `${p.name}: the tool loads`);
       if (p.matrix) {
-        assert.ok(await has(page, '.starter-acts .btn-primary:not([disabled])', 20_000), `${p.name}: starter CTA ready`);
-        await page.locator('.starter-acts .btn-primary').click();
+        assert.ok(await has(page, '.arrival-card .btn-primary:not([disabled])', 20_000), `${p.name}: starter CTA ready`);
+        await page.locator('.arrival-card .btn-primary').click();
         assert.ok(await has(page, '.studio-shell .plant-row', 15_000), `${p.name}: members in the studio`);
       }
       for (const r of await axeCounts(page)) {

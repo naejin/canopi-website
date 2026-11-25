@@ -12,16 +12,16 @@ test('P1: SQLite-WASM + climate tiles load ready on Arrival, Header.astro intact
   const info = await page.evaluate(() => ({
     hasHeader: !!document.querySelector('header.site-header, body > header'),
     hasStudioBar: !!document.querySelector('.studio-bar'),
-    presets: document.querySelectorAll('.preset-row .site-pill-sm').length,
-    starterChips: document.querySelectorAll('.starter-chip').length,
-    hasShiftLine: !!document.querySelector('.shift-line'),
+    presets: document.querySelectorAll('.sample-strip .sample-chip').length,
+    starterMinis: document.querySelectorAll('.starter-mini').length,
+    hasShiftLine: !!document.querySelector('.arrival-shift-line'),
     text: document.querySelector('main')?.innerText ?? '',
   }));
 
   assert.ok(info.hasHeader, 'site Header.astro is present');
   assert.equal(info.hasStudioBar, false, 'studio bar stays hidden on Arrival');
   assert.ok(info.presets >= 6, `at least 6 global presets render (got ${info.presets})`);
-  assert.ok(info.starterChips >= 4, `photo-rich starter preview shows species (got ${info.starterChips})`);
+  assert.equal(info.starterMinis, 8, `photo-rich 8-plant multi-layer starter preview renders (got ${info.starterMinis})`);
   assert.ok(info.hasShiftLine, '2050s SSP2-4.5 Shift Line renders on Arrival');
   assert.ok(!PFAF_PATTERN.test(info.text), 'zero PFAF mentions on Arrival');
   assert.ok(!RAW_TECH_PATTERN.test(info.text), 'zero raw technical jargon on Arrival');
@@ -34,17 +34,17 @@ test('Arrival: switching site preset updates Land Brief and launches populated S
 
   // Switch from preset 0 (Montpellier) to preset 1 (Lyon)
   await page.evaluate(() => {
-    const pills = document.querySelectorAll('.preset-row .site-pill-sm');
+    const pills = document.querySelectorAll('.sample-strip .sample-chip');
     if (pills[1]) pills[1].click();
   });
   await page.waitForFunction(() => /Lyon/i.test(document.querySelector('.arrival-wrap')?.innerText ?? ''), { timeout: 15_000 });
-  assert.ok(await has(page, '.starter-acts .btn-primary:not([disabled])', 15_000), 'starter CTA ready for Lyon');
+  assert.ok(await has(page, '.arrival-card .btn-primary:not([disabled])', 15_000), 'starter CTA ready for Lyon');
 
   // Launch studio
-  await page.locator('.starter-acts .btn-primary').click();
+  await page.locator('.arrival-card .btn-primary').click();
   assert.ok(await has(page, '.studio-shell .plant-row', 15_000), 'Studio opens with Lyon starter plants');
   const studioText = await page.evaluate(() => document.querySelector('main')?.innerText ?? '');
-  assert.match(studioText, /Lyon/i, 'Land Panel shows selected place Lyon');
+  assert.match(studioText, /Lyon/i, 'Studio bar / Land Panel shows selected place Lyon');
   assert.ok((await horizontalOverflow(page)) <= 1, 'zero horizontal overflow after launch');
   assert.deepEqual(await pageErrorsOf(page), [], 'zero console/page errors after launch');
 });

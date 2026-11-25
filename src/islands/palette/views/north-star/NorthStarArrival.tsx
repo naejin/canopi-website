@@ -1,279 +1,296 @@
 /** @jsxImportSource preact */
-// Screen 0 — 1-Move Arrival (1:1 port of approved Prototype v7.3).
-// Live Nominatim place search, browser GPS, 6 global presets, Room pills,
-// 3-signal Land Brief, 2050s SSP2-4.5 Shift Line, and Photo-rich Starter Preview.
-import { useEffect, useRef, useState } from 'preact/hooks';
-import { resolveEffectiveSite } from '../../../../lib/palette/index.ts';
-import { createPlaceSearchController, type PlaceSearchController, type PlaceSearchResult } from '../../../../lib/location/place-search.ts';
-import { defaultGeocoderConfig } from '../../../../lib/location/registry.ts';
-import { geocodingTransport } from '../../../../lib/location/transport.ts';
+// Verbatim 1:1 port of mockup-v73.html renderArrival (L2459) onto live SQLite + canopi-climate v0.7.0.
+import { useEffect, useState } from 'preact/hooks';
+import type { ClimateZone } from '../../../../lib/palette/index.ts';
+import { evaluatePlantVerdict, resolveEffectiveSite } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
+import { findPlaces, placeName } from '../../state/location.ts';
 import { T } from '../../strings.ts';
-import { fmtC, fmtNum, freezeText, jobLabel, photoUrlOf, roomOptions, taxCommonName } from './ns-helpers.ts';
+import { markStart } from '../kit/start-mark.ts';
+import { PlantThumb } from './GuildVisuals.tsx';
 import {
+  fmtNum,
+  freezeText,
+  heatText,
+  shortSiteName,
+  taxCommonName,
+  verdictSymbolLabel,
+} from './ns-helpers.ts';
+import {
+  currentLocale,
   effectiveOverrides,
   launchEmpty,
   launchWithStarter,
   NS_PRESETS,
   nsSiteLoading,
   pickCoordinates,
-  setRoomChoice,
   starterPreview,
-  startNsWatchers,
 } from './ns-state.ts';
 
-const ROOMS = roomOptions(true);
+interface PlaceHit {
+  label: string;
+  lat: number;
+  lon: number;
+}
+
+const DIRECT_CLIMATES: readonly { id: ClimateZone; presetId: string; label: string }[] = [
+  { id: 'Mediterranean', presetId: 'montpellier', label: 'Mediterranean (Csa)' },
+  { id: 'Temperate', presetId: 'lyon', label: 'Temperate (Cfb)' },
+  { id: 'Subtropical', presetId: 'kyoto', label: 'Subtropical (Cfa)' },
+  { id: 'Continental', presetId: 'briancon', label: 'Mountain / Continental (Dfb)' },
+  { id: 'Tropical', presetId: 'belem', label: 'Tropical (Af)' },
+];
 
 export function NorthStarArrival() {
+  markStart();
   const [query, setQuery] = useState('');
-  const [hits, setHits] = useState<readonly PlaceSearchResult[]>([]);
+  const [hits, setHits] = useState<PlaceHit[]>([]);
   const [searching, setSearching] = useState(false);
-  const [geoErr, setGeoErr] = useState<string | null>(null);
-  const searchCtrlRef = useRef<PlaceSearchController | null>(null);
+  const [searchErr, setSearchErr] = useState<string | null>(null);
+  const [climatePickOpen, setClimatePickOpen] = useState(false);
 
+  const loc = store.location.value;
+  const zone = store.climate.value;
+  const ov = effectiveOverrides.value;
+  const loading = nsSiteLoading.value;
+  const starter = starterPreview.value;
+
+  // Auto-load default Montpellier site on clean first arrival so live climate & 8-plant starter appear immediately
   useEffect(() => {
-    startNsWatchers();
-    // Auto-select Montpellier on first visit if no location or climate is chosen yet
-    if (!store.location.peek() && !store.climate.peek()) {
-      const first = NS_PRESETS[0];
-      void pickCoordinates(first.lat, first.lon, first.label, first.zone, first.country);
+    if (!store.location.value && !nsSiteLoading.value) {
+      const def = NS_PRESETS[0];
+      void pickCoordinates(def.lat, def.lon, def.label, def.zone, def.country);
     }
-    return () => { searchCtrlRef.current?.dispose(); };
   }, []);
+
+  const effToday = resolveEffectiveSite(loc?.lookup ?? null, 'today', ov);
+  const eff2050 = resolveEffectiveSite(loc?.lookup ?? null, 'y2050', ov);
+  const starterVerdicts = new Map(starter.map((p) => [p.id, evaluatePlantVerdict(p, effToday)]));
+  const starterThrives = starter.filter((p) => starterVerdicts.get(p.id)?.level === 'fits').length;
+  const allFit = starter.length > 0 && starterThrives === starter.length;
+
+  const siteLabel = loc?.label ?? NS_PRESETS[0].label;
+  const shortName = shortSiteName(siteLabel);
+  const texture = loc?.lookup?.soil?.texture ?? 'loam';
+  const dryMoT = effToday.dryMonths;
+  const dryMo50 = eff2050.dryMonths;
 
   async function onSearchSubmit(e: Event) {
     e.preventDefault();
     const q = query.trim();
     if (!q) return;
     setSearching(true);
-    setGeoErr(null);
+    setSearchErr(null);
     try {
-      if (!searchCtrlRef.current) {
-        searchCtrlRef.current = createPlaceSearchController({
-          transport: geocodingTransport,
-          config: defaultGeocoderConfig(),
-          limit: 5,
-        });
-      }
-      await searchCtrlRef.current.search(q);
-      setHits(searchCtrlRef.current.results.value.slice(0, 5));
+      const { results } = await findPlaces(q);
+      setHits(results.slice(0, 6).map((h) => ({ label: placeName(h), lat: h.lat, lon: h.lon })));
+      if (!results.length) setSearchErr('No matching place found.');
     } catch {
-      setHits([]);
+      setSearchErr('Could not search places right now.');
     } finally {
       setSearching(false);
     }
   }
 
-  function onUseGps() {
+  function onUseMyLocation() {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      setGeoErr(T('ns.arrival.geoUnavailable'));
+      setSearchErr(T('ns.arrival.geoUnavailable'));
       return;
     }
-    setGeoErr(null);
+    setSearchErr(null);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const lat = Number(pos.coords.latitude.toFixed(3));
-        const lon = Number(pos.coords.longitude.toFixed(3));
-        void pickCoordinates(lat, lon, `${lat}, ${lon}`);
+        const { latitude, longitude } = pos.coords;
+        void pickCoordinates(latitude, longitude, `${latitude.toFixed(2)}°, ${longitude.toFixed(2)}°`);
       },
-      () => setGeoErr(T('ns.arrival.geoDenied')),
-      { timeout: 8000 },
+      () => setSearchErr(T('ns.arrival.geoDenied')),
+      { timeout: 10_000 },
     );
   }
 
-  const loc = store.location.value;
-  const lookup = loc?.lookup ?? null;
-  const ov = effectiveOverrides.value;
-  const effToday = resolveEffectiveSite(lookup, 'today', ov);
-  const eff2050 = resolveEffectiveSite(lookup, 'y2050', ov);
-  const starter = starterPreview.value;
-  const currentRoom = store.room.value ?? 'unsure';
-  const hasSaved = store.members.value.length > 0;
-  const loading = nsSiteLoading.value;
-
-  const shiftTemp = effToday.tmeanWarmC !== null && eff2050.tmeanWarmC !== null
-    ? fmtNum(eff2050.tmeanWarmC - effToday.tmeanWarmC, 1)
-    : null;
-
   return (
-    <div class="arrival-wrap">
-      {hasSaved && (
-        <div class="return-banner" role="region" aria-label={T('ns.arrival.returning')}>
-          <div>
-            <strong>{T('ns.arrival.returning')}</strong>{' '}
-            <span>{T('ns.arrival.returningCount', { n: store.members.value.length })}</span>
+    <div class="wrap arrival-wrap">
+      <p class="arrival-eyebrow">{T('ns.arrival.eyebrow')}</p>
+      <h1 class="arrival-h1">{T('ns.arrival.title')}</h1>
+      <p class="arrival-lede">{T('ns.arrival.lede')}</p>
+
+      <div class="place-bar">
+        <form class="place-bar-row" onSubmit={onSearchSubmit}>
+          <div class="place-input-wrap">
+            <label class="sr-only" for="place-search">{T('ns.arrival.placeCardAria')}</label>
+            <input
+              id="place-search"
+              class="place-input"
+              type="search"
+              value={query}
+              placeholder={T('ns.arrival.searchPlaceholder')}
+              autocomplete="off"
+              onInput={(e) => {
+                setQuery((e.target as HTMLInputElement).value);
+                if (hits.length) setHits([]);
+              }}
+            />
+            {hits.length > 0 && (
+              <ul class="place-suggest" role="listbox">
+                {hits.map((h) => (
+                  <li key={`${h.lat},${h.lon}`}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHits([]);
+                        setQuery(h.label);
+                        void pickCoordinates(h.lat, h.lon, h.label);
+                      }}
+                    >
+                      <strong>{h.label}</strong>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-          <button type="button" class="btn-primary" onClick={() => { store.view.value = 'matrix'; }}>
-            {T('ns.arrival.resume')}
-          </button>
-        </div>
-      )}
-
-      <header class="arrival-head">
-        <span class="eyebrow">{T('ns.arrival.eyebrow')}</span>
-        <h1 class="arrival-title">{T('ns.arrival.title')}</h1>
-        <p class="arrival-lede">{T('ns.arrival.lede')}</p>
-      </header>
-
-      <section class="place-card" aria-label={T('ns.arrival.placeCardAria')}>
-        <form class="place-bar" onSubmit={onSearchSubmit}>
-          <input
-            type="search"
-            class="place-input"
-            value={query}
-            onInput={(e) => setQuery((e.target as HTMLInputElement).value)}
-            placeholder={T('ns.arrival.searchPlaceholder')}
-            aria-label={T('ns.arrival.searchPlaceholder')}
-          />
-          <button type="submit" class="btn-secondary" disabled={searching}>
-            {searching ? T('ns.searching') : T('ns.search')}
-          </button>
-          <button type="button" class="btn-secondary" onClick={onUseGps}>
-            {T('ns.arrival.useGps')}
-          </button>
+          <div class="place-actions">
+            <button type="submit" class="btn-ghost" disabled={searching || !query.trim()}>
+              {searching ? '…' : T('ns.search')}
+            </button>
+            <button type="button" class="btn-ghost" onClick={onUseMyLocation}>
+              {T('ns.arrival.useGps')}
+            </button>
+            <button
+              type="button"
+              class="link-button small tap-link"
+              onClick={() => setClimatePickOpen(!climatePickOpen)}
+            >
+              No location? Pick a climate
+            </button>
+          </div>
         </form>
 
-        {geoErr && <p class="ns-err" role="alert">{geoErr}</p>}
+        {searchErr && <p class="ns-err" role="alert">{searchErr}</p>}
 
-        {hits.length > 0 && (
-          <ul class="place-hits" role="listbox" aria-label={T('ns.arrival.resultsAria')}>
-            {hits.map((h) => (
-              <li key={`${h.lat},${h.lon}`}>
-                <button
-                  type="button"
-                  class="place-hit-btn"
-                  onClick={() => {
-                    setHits([]);
-                    setQuery(h.label);
-                    void pickCoordinates(h.lat, h.lon, h.label);
-                  }}
-                >
-                  {h.label}
-                </button>
-              </li>
-            ))}
-          </ul>
+        {climatePickOpen && (
+          <div class="land-alert" style={{ background: 'var(--bg)', borderColor: 'var(--border-strong)' }}>
+            <strong>Pick a climate directly</strong>
+            <div class="sample-strip" style={{ margin: 0 }}>
+              {DIRECT_CLIMATES.map((dc) => {
+                const pr = NS_PRESETS.find((x) => x.id === dc.presetId)!;
+                const active = zone === dc.id;
+                return (
+                  <button
+                    key={dc.id}
+                    type="button"
+                    class="sample-chip"
+                    aria-pressed={active ? 'true' : 'false'}
+                    onClick={() => {
+                      setClimatePickOpen(false);
+                      void pickCoordinates(pr.lat, pr.lon, pr.label, pr.zone, pr.country);
+                    }}
+                  >
+                    {dc.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         )}
+      </div>
 
-        <div class="preset-row" role="group" aria-label={T('ns.arrival.presetsAria')}>
-          {NS_PRESETS.map((p) => {
-            const active = loc?.label === p.label;
-            return (
-              <button
-                key={p.id}
-                type="button"
-                class="site-pill-sm"
-                aria-pressed={active ? 'true' : 'false'}
-                onClick={() => void pickCoordinates(p.lat, p.lon, p.label, p.zone, p.country)}
-              >
-                {p.label}
-              </button>
-            );
-          })}
-        </div>
-
-        <div class="room-row" role="group" aria-label={T('ns.arrival.roomAria')}>
-          <span class="room-label">{T('ns.arrival.roomLabel')}</span>
-          {ROOMS.map((r) => (
+      <div class="sample-strip" aria-label={T('ns.arrival.presetsAria')}>
+        <span class="small muted">Try a place:</span>
+        {NS_PRESETS.map((p) => {
+          const active = loc?.label === p.label;
+          return (
             <button
-              key={r.id}
+              key={p.id}
               type="button"
-              class="site-pill-sm"
-              aria-pressed={currentRoom === r.id ? 'true' : 'false'}
-              onClick={() => setRoomChoice(r.id)}
+              class="sample-chip"
+              aria-pressed={active ? 'true' : 'false'}
+              onClick={() => void pickCoordinates(p.lat, p.lon, p.label, p.zone, p.country)}
             >
-              {r.label()}
+              {p.label.split(',')[0]}
             </button>
-          ))}
-        </div>
+          );
+        })}
+      </div>
 
-        {/* 3-Signal Land Brief + 2050s SSP2-4.5 Shift Line */}
-        <div class="land-brief" aria-busy={loading ? 'true' : undefined}>
-          <div class="brief-cell">
-            <span class="brief-k">{T('ns.brief.climate')}</span>
-            <strong class="brief-v">
-              {loc?.label ?? T('ns.arrival.pickPlace')}
-              {effToday.koppen ? ` · ${effToday.koppen}` : ''}
-            </strong>
-            <span class="brief-sub">
-              {effToday.usdaZone ? `USDA ${effToday.usdaZone}` : store.climate.value ?? ''}
-            </span>
-          </div>
-          <div class="brief-cell">
-            <span class="brief-k">{T('ns.brief.freeze')}</span>
-            <strong class="brief-v">{freezeText(effToday)}</strong>
-            <span class="brief-sub">
-              {T('ns.brief.heatShort')}: {effToday.heat10C !== null ? fmtC(effToday.heat10C) : T('ns.unknown')}
-            </span>
-          </div>
-          <div class="brief-cell">
-            <span class="brief-k">{T('ns.brief.soilWater')}</span>
-            <strong class="brief-v">
-              {effToday.soilPh !== null ? `pH ${fmtNum(effToday.soilPh, 1)}` : T('ns.unknown')}
-              {effToday.tankDays !== null ? ` · ${effToday.tankDays} ${T('ns.unit.dayShort')}` : ''}
-            </strong>
-            <span class="brief-sub">
-              {effToday.precipMm !== null ? `${effToday.precipMm} ${T('ns.unit.mmYear')}` : T('ns.unknown')}
-            </span>
-          </div>
-        </div>
-
-        {shiftTemp !== null && (
-          <p class="shift-line">
-            <strong>{T('ns.brief.shift2050')}:</strong>{' '}
-            {T('ns.brief.shiftDetail', {
-              warmDelta: `${shiftTemp} °C`,
-              freeze50: freezeText(eff2050),
-            })}
+      <section class="arrival-card" aria-label="Site preview">
+        <div>
+          <p class="pulse-kicker">
+            {effToday.koppen || zone || '—'} → {eff2050.koppen || effToday.koppen || '—'} (2050s)
+            {effToday.usdaZone ? ` · USDA ${effToday.usdaZone}` : ''}
           </p>
-        )}
-      </section>
+          <h2 style={{ fontSize: '26px', marginTop: '4px' }}>
+            {loading ? T('ns.loadingPlants') : siteLabel}
+          </h2>
+          <p class="muted" style={{ marginTop: '6px' }}>
+            {allFit
+              ? `Every starter plant fits your pH ${fmtNum(effToday.soilPh)} soil and climate.`
+              : `${starterThrives} of ${starter.length} starter plants thrive rain-fed.`}
+          </p>
+        </div>
 
-      {/* Photo-Rich Starter Preview */}
-      <section class="starter-card" aria-label={T('ns.arrival.starterAria')}>
-        <div class="starter-head">
-          <div>
-            <h2 class="starter-title">{T('ns.arrival.starterTitle', { n: starter.length })}</h2>
-            <p class="starter-sub">{T('ns.arrival.starterSub')}</p>
+        <div class="arrival-shift-line">
+          <strong>{T('ns.brief.shift2050')}:</strong>{' '}
+          {T('ns.land.freeze10')} {freezeText(effToday)} → {freezeText(eff2050)} ·{' '}
+          {T('ns.land.heat10')} {heatText(effToday)} → {heatText(eff2050)}
+          {dryMoT != null && dryMo50 != null ? ` · dry months ${dryMoT} → ${dryMo50}/yr` : ''}
+        </div>
+
+        <div class="arrival-metrics">
+          <div class="metric-box">
+            <div class="metric-k">{T('ns.land.freeze10')}</div>
+            <div class="metric-v">{freezeText(effToday)}</div>
+            <div class="metric-sub">
+              {effToday.tminColdC != null ? `Coldest month avg min ${fmtNum(effToday.tminColdC)} °C` : T('ns.unknown')}
+            </div>
           </div>
-          <div class="starter-acts">
-            <button type="button" class="btn-primary" disabled={!starter.length} onClick={launchWithStarter}>
-              {T('ns.arrival.startCta')}
-            </button>
-            <button type="button" class="btn-secondary" onClick={launchEmpty}>
-              {T('ns.arrival.scratchCta')}
-            </button>
+          <div class="metric-box">
+            <div class="metric-k">{T('ns.land.heat10')}</div>
+            <div class="metric-v">{heatText(effToday)}</div>
+            <div class="metric-sub">
+              {effToday.tmaxWarmC != null ? `Warmest month avg max ${fmtNum(effToday.tmaxWarmC)} °C` : T('ns.unknown')}
+            </div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-k">{T('ns.land.soilPh')} &amp; {T('ns.land.waterTank')}</div>
+            <div class="metric-v">pH {fmtNum(effToday.soilPh)} · {texture}</div>
+            <div class="metric-sub">
+              {effToday.tankDays != null && effToday.cddDays != null
+                ? `Soil holds ~${effToday.tankDays} ${T('ns.days')} · longest dry spell ~${effToday.cddDays} ${T('ns.days')}`
+                : T('ns.unknown')}
+            </div>
           </div>
         </div>
 
-        <div class="starter-strip">
-          {starter.map((t) => {
-            const img = photoUrlOf(t);
+        <div class="starter-preview">
+          {starter.map((p) => {
+            const v = starterVerdicts.get(p.id);
             return (
-              <div key={t.id} class="starter-chip">
-                {img ? (
-                  <img src={img} alt={taxCommonName(t)} class="starter-thumb" loading="lazy" width="44" height="44" />
-                ) : (
-                  <span class="starter-thumb starter-thumb-ph" aria-hidden="true">{t.canonical_name.slice(0, 2)}</span>
-                )}
-                <div class="starter-chip-txt">
-                  <strong>{taxCommonName(t)}</strong>
-                  <span>{t.canonical_name}</span>
+              <div key={p.id} class="starter-mini">
+                <PlantThumb taxon={p} size={44} />
+                <div class="starter-mini-txt">
+                  <div class="starter-mini-name">{taxCommonName(p)}</div>
+                  <div class="starter-mini-bot">{v ? verdictSymbolLabel(v.level) : p.canonical_name}</div>
                 </div>
               </div>
             );
           })}
         </div>
 
-        {!starter.length && (
-          <p class="ns-muted">{T('ns.loadingPlants')}</p>
-        )}
+        <div class="place-actions">
+          <button
+            type="button"
+            class="btn-primary"
+            disabled={loading || starter.length === 0}
+            onClick={launchWithStarter}
+          >
+            {shortName ? `Open my ${shortName} palette →` : T('ns.arrival.startCta')}
+          </button>
+          <button type="button" class="btn-ghost" onClick={launchEmpty}>
+            {T('ns.arrival.scratchCta')}
+          </button>
+        </div>
       </section>
-
-      {/* Subtle job legend */}
-      <p class="ns-muted" style={{ textAlign: 'center', fontSize: '12px' }}>
-        {jobLabel('feeds_you')} · {jobLabel('feeds_soil')} · {jobLabel('helpers')} · {jobLabel('mulch')} · {jobLabel('ground')} · {jobLabel('shelter')}
-      </p>
     </div>
   );
 }

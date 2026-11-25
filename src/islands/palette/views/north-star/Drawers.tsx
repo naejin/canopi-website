@@ -1,18 +1,22 @@
 /** @jsxImportSource preact */
-// The 3 Slide-Over Drawers (1:1 port of approved Prototype v7.3):
-// 1. Power Botanical Picker (ALL 761 species / 27,196 names, 6 quick chips, 7-category filters, Sort, Clear)
-// 2. Visual Climate & Guild Atlas (Shift Passport, 4-Pillar Scorecard, Walter-Lieth SVG, 10-Scenario Matrix, Water Tank (Today), Like-for-like Swaps)
-// 3. Visual Botanical Field Dossier (Hero + multi-photo gallery, Fit Plate, Scale & Root SVG, 12-Month Phenology Gantt "Ripening / fruit", 7-Phase strip, Field facts + Schema 4.11 quotes with zero PFAF)
+// Verbatim 1:1 port of mockup-v73.html renderSwapDiff (L3553) & renderDrawer (L3589-4425):
+// 1. Power Botanical Picker (ALL 761 species, 6 quick chips, 7-category filter panel, active pills, Sort)
+// 2. Visual Climate & Guild Atlas (Shift Passport, 4-Pillar Ring & Grid, Walter-Lieth SVG, 10-Scenario Matrix, Water Tank + Dual-Depth pH, Like-for-like Swaps + Diff)
+// 3. Visual Botanical Field Dossier (Plant Passport Hero, Unified Site Fit Plate, Scale & Root SVG, 12-Month Phenology Gantt, 7-Phase Strip, Field Facts, Schema 4.11 citations with ZERO PFAF)
+// Preserves Blocker A fix: useLayoutEffect Escape + dialog focus move/restore.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type {
   Details,
   JobId,
   PaletteReport,
   PlantId,
+  Taxon,
 } from '../../../../lib/palette/index.ts';
 import {
   evaluatePlantVerdict,
   findCompatibleSwaps,
+  formatAreaName,
+  formatCountryName,
   jobIds,
   jobsOf,
   months as MONTHS,
@@ -23,24 +27,32 @@ import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
 import { PlantThumb, ScaleRootSvg, WalterLiethSvg } from './GuildVisuals.tsx';
 import {
-  fmtC,
   fmtNum,
   frostSourceLabel,
   jobLabel,
+  lightKeyLabel,
+  lightSpanLabel,
   localizedReason,
-  nativeSummary,
   PHASE_LIST,
+  PHASE_SHORT_NAMES,
   phaseLabel,
-  phaseShortLabel,
-  photoUrlOf,
+  phaseOrd,
+  plantCoversPhase,
+  plantLightKey,
+  plantMatchesSunLevel,
   pollinationNote,
+  pollinationShortWarn,
   sanitizeSourceLabel,
   scenarioLabel,
-  stratumLabel,
+  scenarioShort,
+  shortSiteName,
+  SUN_ORDER,
   taxCommonName,
+  toxBadgeInfo,
   traitFieldLabel,
-  verdictLabel,
-  verdictTone,
+  verdictBadgeClass,
+  verdictSymbolLabel,
+  type LightKey,
 } from './ns-helpers.ts';
 import {
   activePool,
@@ -56,541 +68,1152 @@ import {
   toggleExisting,
 } from './ns-state.ts';
 
+function sizeClassLabel(t: Taxon): string {
+  const h = (t.traits.habit ?? '').toLowerCase();
+  if (h.includes('tree')) return 'Tree';
+  if (h.includes('shrub') || h.includes('bush')) return 'Shrub';
+  if (h.includes('climb') || h.includes('vine')) return 'Vine';
+  if (h.includes('ground')) return 'Groundcover';
+  return t.traits.habit || 'Herb';
+}
+
+function toxDossierText(t: Taxon, details: Details | null = null): string {
+  const tx = toxicityStatusOf(t);
+  if (tx.status === 'not_toxic') return T('ns.tox.none');
+  if (tx.status === 'unknown') return T('ns.tox.unknown');
+  const parts = details?.toxicityParts?.map((tp) => tp.part.replace(/_/g, ' ')) ?? [];
+  const uniq = [...new Set(parts)];
+  return `${tx.level ?? T('ns.tox.caution')}${uniq.length ? ` (${uniq.slice(0, 3).join(', ')})` : ''}`;
+}
+
+/** Verbatim port of mockup-v73.html renderSwapDiff (L3553). */
+function SwapDiffTable({ curPlant, candPlant, rep }: { curPlant: Taxon; candPlant: Taxon; rep: PaletteReport }) {
+  const cmpEff = nsScenario.value === 'today' ? rep.eff2050 : rep.eff;
+  const cmpTag = nsScenario.value === 'today' ? '2050s' : scenarioShort(nsScenario.value);
+  const vcT = evaluatePlantVerdict(curPlant, rep.effToday);
+  const vcC = evaluatePlantVerdict(curPlant, cmpEff);
+  const vnT = evaluatePlantVerdict(candPlant, rep.effToday);
+  const vnC = evaluatePlantVerdict(candPlant, cmpEff);
+
+  const extStr = (p: Taxon) => (p.extremes?.tminExtreme?.low != null && p.extremes?.tmaxExtreme?.high != null)
+    ? `${fmtNum(p.extremes.tminExtreme.low)} to ${fmtNum(p.extremes.tmaxExtreme.high)} °C`
+    : 'Unrecorded';
+  const matStr = (p: Taxon) => p.traits.age_of_maturity_years != null ? `${fmtNum(p.traits.age_of_maturity_years)} yr` : 'Unknown';
+  const sizeStr = (p: Taxon) => `${p.traits.height_m?.max != null ? `${fmtNum(p.traits.height_m.max)} m` : '—'} × ${p.traits.width_max_m != null ? `${fmtNum(p.traits.width_max_m)} m` : '—'}`;
+  const waterStr = (p: Taxon) => `Drought: ${p.traits.drought_tolerance ?? 'unrecorded'} · Moisture: ${p.traits.moisture_use ?? 'unrecorded'}`;
+  const curJobs = jobsOf(curPlant);
+  const candJobs = jobsOf(candPlant);
+  const jobsKept = curJobs.filter((j) => candJobs.includes(j)).map(jobLabel);
+
+  return (
+    <div class="swap-diff">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        <strong>Quick Swap Comparison ({sizeClassLabel(curPlant)} → {sizeClassLabel(candPlant)})</strong>
+        <button
+          type="button"
+          class="btn-primary"
+          style={{ minHeight: '44px', padding: '0 12px' }}
+          onClick={() => swapPlantInPalette(curPlant.id, candPlant.id)}
+        >
+          Swap in palette
+        </button>
+      </div>
+      <table class="swap-diff-table">
+        <thead>
+          <tr>
+            <th>Trait</th>
+            <th>Current: {taxCommonName(curPlant)}</th>
+            <th>Swap: {taxCommonName(candPlant)}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th>{T('ns.today')} / {cmpTag}</th>
+            <td>{verdictSymbolLabel(vcT.level)} / {verdictSymbolLabel(vcC.level)}</td>
+            <td>{verdictSymbolLabel(vnT.level)} / {verdictSymbolLabel(vnC.level)}</td>
+          </tr>
+          <tr><th>Extremes range</th><td>{extStr(curPlant)}</td><td>{extStr(candPlant)}</td></tr>
+          <tr><th>Mature H × W</th><td>{sizeStr(curPlant)}</td><td>{sizeStr(candPlant)}</td></tr>
+          <tr><th>Maturity</th><td>{matStr(curPlant)}</td><td>{matStr(candPlant)}</td></tr>
+          <tr><th>Water traits</th><td>{waterStr(curPlant)}</td><td>{waterStr(candPlant)}</td></tr>
+          <tr><th>Toxicity</th><td>{toxDossierText(curPlant)}</td><td>{toxDossierText(candPlant)}</td></tr>
+          <tr>
+            <th>Jobs kept</th>
+            <td colSpan={2}>{jobsKept.length > 0 ? jobsKept.join(', ') : candJobs.map(jobLabel).join(', ')}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/** Verbatim port of mockup-v73.html Picker Drawer (L3815-4032). */
 function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: JobId | 'all' }) {
   const [query, setQuery] = useState('');
   const [job, setJob] = useState<JobId | 'all'>(initialJob);
-  const [onlyFits, setOnlyFits] = useState(false);
-  const [kidSafe, setKidSafe] = useState(false);
+  const [sun, setSun] = useState<LightKey | 'all'>('all');
   const [habit, setHabit] = useState<string>('all');
-  const [sun, setSun] = useState<string>('all');
-  const [cycle, setCycle] = useState<'all' | 'perennial' | 'annual'>('all');
-  const [sortBy, setSortBy] = useState<'fit' | 'name' | 'height' | 'edible'>('fit');
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [phaseIdx, setPhaseIdx] = useState<number | null>(null);
+  const [onlyThrives, setOnlyThrives] = useState(false);
+  const [only2050, setOnly2050] = useState(false);
+  const [onlyDrought, setOnlyDrought] = useState(false);
+  const [onlyNonToxic, setOnlyNonToxic] = useState(false);
+  const [onlyEdible, setOnlyEdible] = useState(false);
+  const [onlyNfix, setOnlyNfix] = useState(false);
+  const [onlySelfFertile, setOnlySelfFertile] = useState(false);
+  const [onlyFitsRoom, setOnlyFitsRoom] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<'fit' | 'gaps' | 'height' | 'az'>('fit');
 
   useEffect(() => {
     void ensureAllNamesLoaded();
   }, []);
 
   const pool = activePool.value;
-  const inPalette = useMemo(() => new Set(rep.taxa.map((t) => t.id)), [rep.taxa]);
   const allNames = nsAllNames.value;
+  const inPalette = useMemo(() => new Set(store.members.value), [store.members.value]);
+  const neededJobs = useMemo(() => new Set([...rep.missingJobs, ...rep.noBackupJobs]), [rep.missingJobs, rep.noBackupJobs]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const matchedIds = new Set<string>();
-    if (q && allNames) {
-      for (const row of allNames) {
-        if (
-          row.canonical.toLowerCase().includes(q)
-          || Object.values(row.names).some((n) => typeof n === 'string' && n.toLowerCase().includes(q))
-        ) {
-          matchedIds.add(row.id);
+  const poolById = useMemo(() => new Map(pool.map((t) => [t.id, t])), [pool]);
+  const verdictsById = useMemo(
+    () => new Map(pool.map((t) => [t.id, evaluatePlantVerdict(t, rep.eff)])),
+    [pool, rep.eff],
+  );
+  const verdicts2050ById = useMemo(
+    () => new Map(pool.map((t) => [t.id, evaluatePlantVerdict(t, rep.eff2050)])),
+    [pool, rep.eff2050],
+  );
+
+  const q = query.trim().toLowerCase();
+  const baseMatches = useMemo(() => {
+    if (!q) return pool;
+    const matchedIds = new Set<PlantId>();
+    if (allNames) {
+      for (const n of allNames) {
+        const vals = Object.values(n.names).filter((nm): nm is string => typeof nm === 'string');
+        if (n.canonical.toLowerCase().includes(q) || vals.some((nm) => nm.toLowerCase().includes(q))) {
+          matchedIds.add(n.id);
         }
       }
     }
+    return pool.filter((t) =>
+      matchedIds.has(t.id)
+      || t.canonical_name.toLowerCase().includes(q)
+      || taxCommonName(t).toLowerCase().includes(q),
+    );
+  }, [pool, allNames, q]);
 
-    const list = pool.filter((t) => {
-      if (q) {
-        const localMatch = t.canonical_name.toLowerCase().includes(q)
-          || taxCommonName(t).toLowerCase().includes(q)
-          || matchedIds.has(t.id);
-        if (!localMatch) return false;
-      }
+  const filtered = useMemo(() => {
+    const out = baseMatches.filter((t) => {
       if (job !== 'all' && !jobsOf(t).includes(job)) return false;
+      if (sun !== 'all' && !plantMatchesSunLevel(t, sun)) return false;
       if (habit !== 'all' && !(t.traits.habit ?? '').toLowerCase().includes(habit)) return false;
-      if (sun !== 'all' && (t.light.preferred ?? t.stratum?.value) !== sun) return false;
-      if (cycle === 'annual' && !t.traits.is_annual && !t.traits.grown_as_annual) return false;
-      if (cycle === 'perennial' && (t.traits.is_annual || t.traits.grown_as_annual)) return false;
-      if (kidSafe && toxicityStatusOf(t).status === 'toxic') return false;
-      if (onlyFits && evaluatePlantVerdict(t, rep.eff).level !== 'fits') return false;
+      if (phaseIdx !== null && !plantCoversPhase(t, phaseIdx)) return false;
+      if (onlyThrives && verdictsById.get(t.id)?.level !== 'fits') return false;
+      if (only2050 && verdicts2050ById.get(t.id)?.level !== 'fits') return false;
+      if (onlyDrought && !/high|very|mod/i.test(t.traits.drought_tolerance ?? '')) return false;
+      if (onlyNonToxic && toxicityStatusOf(t).status !== 'not_toxic') return false;
+      if (onlyEdible && (t.traits.edibility_rating ?? 0) < 3) return false;
+      if (onlyNfix && t.traits.nitrogen_fixer !== true) return false;
+      if (onlySelfFertile && t.traits.self_fertile !== true) return false;
+      if (onlyFitsRoom && rep.eff.roomLimitM != null && (t.traits.height_m?.max ?? 0) > rep.eff.roomLimitM) return false;
       return true;
     });
 
-    const scored = list.map((t) => ({ t, v: evaluatePlantVerdict(t, rep.eff) }));
-    scored.sort((a, b) => {
-      if (sortBy === 'name') return taxCommonName(a.t).localeCompare(taxCommonName(b.t));
-      if (sortBy === 'height') return (b.t.traits.height_m?.max ?? 0) - (a.t.traits.height_m?.max ?? 0);
-      if (sortBy === 'edible') return (b.t.traits.edibility_rating ?? 0) - (a.t.traits.edibility_rating ?? 0);
-      const rank = { fits: 0, check: 1, unknown: 2, at_risk: 3 };
-      return rank[a.v.level] - rank[b.v.level] || taxCommonName(a.t).localeCompare(taxCommonName(b.t));
+    const rank = { fits: 0, check: 1, unknown: 2, at_risk: 3 };
+    return out.sort((a, b) => {
+      const ia = inPalette.has(a.id) ? 1 : 0, ib = inPalette.has(b.id) ? 1 : 0;
+      if (ia !== ib) return ia - ib;
+      if (sortBy === 'gaps') {
+        const ga = jobsOf(a).filter((j) => neededJobs.has(j)).length;
+        const gb = jobsOf(b).filter((j) => neededJobs.has(j)).length;
+        if (ga !== gb) return gb - ga;
+      } else if (sortBy === 'height') {
+        const ha = a.traits.height_m?.max ?? 999, hb = b.traits.height_m?.max ?? 999;
+        if (ha !== hb) return ha - hb;
+      } else if (sortBy === 'az') {
+        return taxCommonName(a).localeCompare(taxCommonName(b));
+      }
+      const va = verdictsById.get(a.id)?.level ?? 'unknown';
+      const vb = verdictsById.get(b.id)?.level ?? 'unknown';
+      return (rank[va] - rank[vb]) || taxCommonName(a).localeCompare(taxCommonName(b));
     });
-    return scored.slice(0, 80);
-  }, [pool, allNames, query, job, habit, sun, cycle, kidSafe, onlyFits, sortBy, rep.eff]);
+  }, [
+    baseMatches, job, sun, habit, phaseIdx, onlyThrives, only2050, onlyDrought,
+    onlyNonToxic, onlyEdible, onlyNfix, onlySelfFertile, onlyFitsRoom, sortBy,
+    inPalette, neededJobs, verdictsById, verdicts2050ById, rep.eff.roomLimitM,
+  ]);
 
-  const hasFilters = job !== 'all' || onlyFits || kidSafe || habit !== 'all' || sun !== 'all' || cycle !== 'all';
+  const externalMatches = useMemo(() => {
+    if (!q || !allNames) return [];
+    return allNames
+      .filter((n) => {
+        if (poolById.has(n.id)) return false;
+        const vals = Object.values(n.names).filter((nm): nm is string => typeof nm === 'string');
+        return n.canonical.toLowerCase().includes(q) || vals.some((nm) => nm.toLowerCase().includes(q));
+      })
+      .slice(0, 10);
+  }, [q, allNames, poolById]);
+
+  const activeFilterCount = [
+    job !== 'all', sun !== 'all', habit !== 'all', phaseIdx !== null,
+    onlyThrives, only2050, onlyDrought, onlyNonToxic, onlyEdible, onlyNfix, onlySelfFertile, onlyFitsRoom,
+  ].filter(Boolean).length;
+
+  function clearFilters() {
+    setQuery('');
+    setJob('all');
+    setSun('all');
+    setHabit('all');
+    setPhaseIdx(null);
+    setOnlyThrives(false);
+    setOnly2050(false);
+    setOnlyDrought(false);
+    setOnlyNonToxic(false);
+    setOnlyEdible(false);
+    setOnlyNfix(false);
+    setOnlySelfFertile(false);
+    setOnlyFitsRoom(false);
+  }
 
   return (
     <div class="drawer-body">
-      <div class="picker-search-row">
-        <input
-          type="search"
-          class="place-input"
-          value={query}
-          onInput={(e) => setQuery((e.target as HTMLInputElement).value)}
-          placeholder={T('ns.picker.searchPlaceholder', { n: allNames?.length ?? pool.length })}
-          aria-label={T('ns.picker.searchAria')}
-        />
+      <label class="sr-only" for="picker-search">{T('ns.picker.searchPlaceholder')}</label>
+      <input
+        id="picker-search"
+        class="tuner-input"
+        type="search"
+        placeholder={T('ns.picker.searchPlaceholder', { n: pool.length })}
+        value={query}
+        onInput={(e) => setQuery((e.target as HTMLInputElement).value)}
+      />
+
+      <div class="pf-chips" aria-label="Quick filters">
+        <button type="button" class="pf-chip" aria-pressed={onlyThrives ? 'true' : 'false'} onClick={() => setOnlyThrives(!onlyThrives)}>
+          Thrives today
+        </button>
+        <button type="button" class="pf-chip" aria-pressed={only2050 ? 'true' : 'false'} onClick={() => setOnly2050(!only2050)}>
+          Thrives 2050s
+        </button>
+        <button type="button" class="pf-chip" aria-pressed={onlyDrought ? 'true' : 'false'} onClick={() => setOnlyDrought(!onlyDrought)}>
+          Drought-adapted
+        </button>
+        <button type="button" class="pf-chip" aria-pressed={onlyNonToxic ? 'true' : 'false'} onClick={() => setOnlyNonToxic(!onlyNonToxic)}>
+          Non-toxic (recorded)
+        </button>
+        <button type="button" class="pf-chip" aria-pressed={onlyEdible ? 'true' : 'false'} onClick={() => setOnlyEdible(!onlyEdible)}>
+          Edible (≥ 3/5)
+        </button>
+        <button type="button" class="pf-chip" aria-pressed={onlyNfix ? 'true' : 'false'} onClick={() => setOnlyNfix(!onlyNfix)}>
+          N-fixer
+        </button>
       </div>
 
-      {/* 6 Quick Chips */}
-      <div class="pill-group" role="group" aria-label={T('ns.picker.quickChips')}>
-        <button type="button" class="site-pill-sm" aria-pressed={job === 'all' && !onlyFits && !kidSafe ? 'true' : 'false'} onClick={() => { setJob('all'); setOnlyFits(false); setKidSafe(false); }}>
-          {T('ns.picker.all')}
-        </button>
-        <button type="button" class="site-pill-sm" aria-pressed={job === 'feeds_you' ? 'true' : 'false'} onClick={() => setJob(job === 'feeds_you' ? 'all' : 'feeds_you')}>
-          {jobLabel('feeds_you')}
-        </button>
-        <button type="button" class="site-pill-sm" aria-pressed={job === 'feeds_soil' ? 'true' : 'false'} onClick={() => setJob(job === 'feeds_soil' ? 'all' : 'feeds_soil')}>
-          {jobLabel('feeds_soil')}
-        </button>
-        <button type="button" class="site-pill-sm" aria-pressed={job === 'helpers' ? 'true' : 'false'} onClick={() => setJob(job === 'helpers' ? 'all' : 'helpers')}>
-          {jobLabel('helpers')}
-        </button>
-        <button type="button" class="site-pill-sm" aria-pressed={onlyFits ? 'true' : 'false'} onClick={() => setOnlyFits(!onlyFits)}>
-          {T('ns.picker.onlyFits')}
-        </button>
-        <button type="button" class="site-pill-sm" aria-pressed={kidSafe ? 'true' : 'false'} onClick={() => setKidSafe(!kidSafe)}>
-          {T('ns.picker.kidSafe')}
-        </button>
-      </div>
-
-      <div class="picker-tools">
-        <button type="button" class="link-btn" aria-expanded={filtersOpen ? 'true' : 'false'} onClick={() => setFiltersOpen(!filtersOpen)}>
-          {filtersOpen ? T('ns.picker.hideFilters') : T('ns.picker.moreFilters')}
-        </button>
-        <label class="picker-sort">
-          <span>{T('ns.picker.sort')}</span>
-          <select value={sortBy} onChange={(e) => setSortBy((e.target as HTMLSelectElement).value as typeof sortBy)}>
-            <option value="fit">{T('ns.picker.sortFit')}</option>
-            <option value="name">{T('ns.picker.sortName')}</option>
-            <option value="height">{T('ns.picker.sortHeight')}</option>
-            <option value="edible">{T('ns.picker.sortEdible')}</option>
-          </select>
-        </label>
-        {hasFilters && (
+      <div class="picker-toolbar">
+        <span class="small muted"><strong>{filtered.length}</strong> of {pool.length} plants</span>
+        <div class="picker-controls">
           <button
             type="button"
-            class="link-btn"
-            onClick={() => { setJob('all'); setOnlyFits(false); setKidSafe(false); setHabit('all'); setSun('all'); setCycle('all'); }}
+            class="proto-btn"
+            aria-expanded={moreOpen ? 'true' : 'false'}
+            onClick={() => setMoreOpen(!moreOpen)}
           >
-            {T('ns.picker.clear')}
+            {moreOpen ? 'Hide filters' : 'More filters'}{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
           </button>
-        )}
-      </div>
-
-      {filtersOpen && (
-        <div class="picker-filter-grid">
-          <label>
-            <span>{T('ns.picker.fJob')}</span>
-            <select value={job} onChange={(e) => setJob((e.target as HTMLSelectElement).value as JobId | 'all')}>
-              <option value="all">{T('ns.picker.all')}</option>
-              {jobIds.map((j) => <option key={j} value={j}>{jobLabel(j)}</option>)}
-            </select>
-          </label>
-          <label>
-            <span>{T('ns.picker.fHabit')}</span>
-            <select value={habit} onChange={(e) => setHabit((e.target as HTMLSelectElement).value)}>
-              <option value="all">{T('ns.picker.all')}</option>
-              <option value="tree">{T('ns.habit.tree')}</option>
-              <option value="shrub">{T('ns.habit.shrub')}</option>
-              <option value="herb">{T('ns.habit.herb')}</option>
-              <option value="vine">{T('ns.habit.vine')}</option>
-            </select>
-          </label>
-          <label>
-            <span>{T('ns.picker.fSun')}</span>
-            <select value={sun} onChange={(e) => setSun((e.target as HTMLSelectElement).value)}>
-              <option value="all">{T('ns.picker.all')}</option>
-              <option value="emergent">{stratumLabel('emergent')}</option>
-              <option value="high">{stratumLabel('high')}</option>
-              <option value="medium">{stratumLabel('medium')}</option>
-              <option value="low">{stratumLabel('low')}</option>
-            </select>
-          </label>
-          <label>
-            <span>{T('ns.picker.fCycle')}</span>
-            <select value={cycle} onChange={(e) => setCycle((e.target as HTMLSelectElement).value as typeof cycle)}>
-              <option value="all">{T('ns.picker.all')}</option>
-              <option value="perennial">{T('ns.cycle.perennial')}</option>
-              <option value="annual">{T('ns.cycle.annual')}</option>
-            </select>
-          </label>
+          {(activeFilterCount > 0 || q) && (
+            <button type="button" class="link-button small tap-link" onClick={clearFilters}>
+              {T('ns.picker.clear')}
+            </button>
+          )}
+          <label class="sr-only" for="picker-sort">Sort plants</label>
+          <select
+            id="picker-sort"
+            class="picker-sort"
+            value={sortBy}
+            onChange={(e) => setSortBy((e.target as HTMLSelectElement).value as 'fit' | 'gaps' | 'height' | 'az')}
+          >
+            <option value="fit">{T('ns.picker.sortFit')}</option>
+            <option value="gaps">Sort: Fills most gaps</option>
+            <option value="height">{T('ns.picker.sortHeight')}</option>
+            <option value="az">{T('ns.picker.sortName')}</option>
+          </select>
         </div>
-      )}
-
-      <p class="ns-muted">{T('ns.picker.showing', { n: filtered.length, total: pool.length })}</p>
-
-      <ul class="picker-list">
-        {filtered.map(({ t, v }) => {
-          const added = inPalette.has(t.id);
-          const tone = verdictTone(v.level);
-          return (
-            <li key={t.id} class="picker-item">
-              <button
-                type="button"
-                class="picker-item-main"
-                onClick={() => { nsDrawer.value = { kind: 'dossier', id: t.id }; }}
-              >
-                <PlantThumb taxon={t} />
-                <div class="picker-item-info">
-                  <strong>{taxCommonName(t)}</strong>
-                  <span class="ns-muted">{t.canonical_name}</span>
-                </div>
-                <span class="verdict-pill" data-tone={tone}>{verdictLabel(v.level)}</span>
-              </button>
-              <button
-                type="button"
-                class={added ? 'btn-secondary' : 'btn-primary'}
-                onClick={() => (added ? removePlantFromPalette(t.id) : addPlantToPalette(t.id))}
-              >
-                {added ? `✓ ${T('ns.inPalette')}` : `+ ${T('ns.add')}`}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}
-
-function AtlasDrawer({ rep, initialTab, swapFor }: { rep: PaletteReport; initialTab: 'climate' | 'swaps'; swapFor?: PlantId }) {
-  const [tab, setTab] = useState<'climate' | 'swaps'>(initialTab);
-  const [targetId, setTargetId] = useState<PlantId>(swapFor ?? rep.taxa[0]?.id ?? '');
-  const pool = activePool.value;
-  const inPalette = useMemo(() => new Set(rep.taxa.map((t) => t.id)), [rep.taxa]);
-  const targetTaxon = rep.taxa.find((t) => t.id === targetId) ?? rep.taxa[0] ?? null;
-  const swaps = useMemo(
-    () => (targetTaxon ? findCompatibleSwaps(targetTaxon, pool, rep.eff, inPalette, 8) : []),
-    [targetTaxon, pool, rep.eff, inPalette],
-  );
-  const rob = rep.robustness;
-  const isFuture = rep.eff.horizon !== 'today';
-
-  return (
-    <div class="drawer-body">
-      <div class="pill-group" role="tablist">
-        <button type="button" role="tab" aria-selected={tab === 'climate' ? 'true' : 'false'} class="site-pill-sm" onClick={() => setTab('climate')}>
-          {T('ns.atlas.tabClimate')}
-        </button>
-        <button type="button" role="tab" aria-selected={tab === 'swaps' ? 'true' : 'false'} class="site-pill-sm" onClick={() => setTab('swaps')}>
-          {T('ns.atlas.tabSwaps')}
-        </button>
       </div>
 
-      {tab === 'climate' ? (
-        <div class="atlas-stack">
-          {/* 4-Pillar Robustness Scorecard */}
-          <div class="robust-strip">
-            <div class="robust-cell" data-tone={rob.redundancyOk ? 'ok' : 'warn'}>
-              <span class="robust-k">{T('ns.pillar.jobs')}</span>
-              <span class="robust-v">{rep.coveredJobs}/6</span>
-            </div>
-            <div class="robust-cell" data-tone={rob.familyDiversityOk ? 'ok' : 'warn'}>
-              <span class="robust-k">{T('ns.pillar.families')}</span>
-              <span class="robust-v">{rob.familyCount}</span>
-            </div>
-            <div class="robust-cell" data-tone={rob.shockSurvivalOk ? 'ok' : 'warn'}>
-              <span class="robust-k">{T('ns.pillar.shocks')}</span>
-              <span class="robust-v">{rob.survivesAllCore}/{rep.taxa.length}</span>
-            </div>
-            <div class="robust-cell" data-tone={rob.seasonalityOk ? 'ok' : 'warn'}>
-              <span class="robust-k">{T('ns.pillar.months')}</span>
-              <span class="robust-v">{rep.growingYear.activeMonths.length}/12</span>
+      {moreOpen && (
+        <div class="picker-filter-panel" role="region" aria-label="All grower filters">
+          <div class="pf-group">
+            <div class="pf-label">Ecological job</div>
+            <div class="pf-chips">
+              <button type="button" class="pf-chip" aria-pressed={job === 'all' ? 'true' : 'false'} onClick={() => setJob('all')}>
+                {T('ns.jobs.showAll')}
+              </button>
+              {jobIds.map((j) => (
+                <button key={j} type="button" class="pf-chip" aria-pressed={job === j ? 'true' : 'false'} onClick={() => setJob(job === j ? 'all' : j)}>
+                  {jobLabel(j)}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Dual-Horizon Walter-Lieth SVG */}
-          <section class="atlas-card">
-            <h4>{T('ns.atlas.wlTitle')}</h4>
-            <WalterLiethSvg eff={rep.eff} effToday={rep.effToday} />
-          </section>
-
-          {/* Water Tank vs Dry Spell (explicitly Today) */}
-          <section class="atlas-card">
-            <h4>{T('ns.land.waterTank')}{isFuture ? ` (${T('ns.today')})` : ''}</h4>
-            <p>
-              <strong>{rep.eff.tankDays !== null ? `${rep.eff.tankDays} ${T('ns.days')}` : T('ns.unknown')}</strong>{' '}
-              {T('ns.unit.vs')} {rep.eff.cddDays !== null ? `${rep.eff.cddDays} ${T('ns.days')} (${T('ns.land.drySpell')})` : T('ns.unknown')}
-            </p>
-          </section>
-
-          {/* 10-Scenario SSP + What-If Matrix */}
-          <section class="atlas-card">
-            <h4>{T('ns.atlas.scenariosTitle')}</h4>
-            <ul class="scenario-list">
-              {rob.allScenarioBreaks.map((sc) => {
-                const active = nsScenario.value === sc.id;
-                return (
-                  <li key={sc.id}>
-                    <button
-                      type="button"
-                      class={`scenario-row${active ? ' is-active' : ''}`}
-                      onClick={() => { nsScenario.value = sc.id; }}
-                    >
-                      <span>{scenarioLabel(sc.id)}</span>
-                      <strong>{sc.fitsCount}/{rep.taxa.length} {T('ns.verdict.fits')}</strong>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        </div>
-      ) : (
-        <div class="atlas-stack">
-          {/* Fixed v7.3 P2 nit: "Like-for-like" instead of "Same-layer" */}
-          <p class="ns-muted">{T('ns.swaps.intro')}</p>
-          {rep.taxa.length > 0 && (
-            <label class="tune-field">
-              <span>{T('ns.swaps.forPlant')}</span>
-              <select value={targetTaxon?.id ?? ''} onChange={(e) => setTargetId((e.target as HTMLSelectElement).value)}>
-                {rep.taxa.map((t) => (
-                  <option key={t.id} value={t.id}>{taxCommonName(t)} ({t.canonical_name})</option>
-                ))}
-              </select>
-            </label>
-          )}
-          {swaps.length === 0 ? (
-            <p class="ns-muted">{T('ns.swaps.none')}</p>
-          ) : (
-            <ul class="picker-list">
-              {swaps.map((sw) => (
-                <li key={sw.taxon.id} class="picker-item">
-                  <button
-                    type="button"
-                    class="picker-item-main"
-                    onClick={() => { nsDrawer.value = { kind: 'dossier', id: sw.taxon.id }; }}
-                  >
-                    <div class="picker-item-info">
-                      <strong>{taxCommonName(sw.taxon)}</strong>
-                      <span class="ns-muted">
-                        {sw.taxon.canonical_name}
-                        {sw.taxon.traits.height_m?.max != null ? ` · ${fmtNum(sw.taxon.traits.height_m.max, 1)} m` : ''}
-                      </span>
-                    </div>
-                    <span class="verdict-pill" data-tone={verdictTone(sw.verdict.level)}>{verdictLabel(sw.verdict.level)}</span>
-                  </button>
-                  {targetTaxon && (
-                    <button
-                      type="button"
-                      class="btn-primary"
-                      onClick={() => swapPlantInPalette(targetTaxon.id, sw.taxon.id)}
-                    >
-                      {T('ns.swaps.use')}
-                    </button>
-                  )}
-                </li>
+          <div class="pf-group">
+            <div class="pf-label">Sun / light</div>
+            <div class="pf-chips">
+              {SUN_ORDER.map((s) => (
+                <button key={s} type="button" class="pf-chip" aria-pressed={sun === s ? 'true' : 'false'} onClick={() => setSun(sun === s ? 'all' : s)}>
+                  {lightKeyLabel(s)}
+                </button>
               ))}
-            </ul>
-          )}
+            </div>
+          </div>
+
+          <div class="pf-group">
+            <div class="pf-label">Habit / layer / size</div>
+            <div class="pf-chips">
+              {[
+                ['tree', 'Tree / Canopy'],
+                ['shrub', 'Shrub'],
+                ['herb', 'Perennial / Herb'],
+                ['ground', 'Groundcover'],
+                ['vine', 'Vine'],
+              ].map(([k, lbl]) => (
+                <button key={k} type="button" class="pf-chip" aria-pressed={habit === k ? 'true' : 'false'} onClick={() => setHabit(habit === k ? 'all' : k)}>
+                  {lbl}
+                </button>
+              ))}
+              <button type="button" class="pf-chip" aria-pressed={onlyFitsRoom ? 'true' : 'false'} onClick={() => setOnlyFitsRoom(!onlyFitsRoom)}>
+                Fits my room{rep.eff.roomLimitM != null ? ` (≤${fmtNum(rep.eff.roomLimitM, 0)} m)` : ''}
+              </button>
+            </div>
+          </div>
+
+          <div class="pf-group">
+            <div class="pf-label">Succession phase (7 exact stages)</div>
+            <div class="pf-chips">
+              {PHASE_LIST.map((ph, i) => (
+                <button key={ph} type="button" class="pf-chip" aria-pressed={phaseIdx === i ? 'true' : 'false'} onClick={() => setPhaseIdx(phaseIdx === i ? null : i)}>
+                  {phaseLabel(ph)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div class="pf-group">
+            <div class="pf-label">Pollination &amp; safety</div>
+            <div class="pf-chips">
+              <button type="button" class="pf-chip" aria-pressed={onlySelfFertile ? 'true' : 'false'} onClick={() => setOnlySelfFertile(!onlySelfFertile)}>
+                Self-fertile
+              </button>
+              <button type="button" class="pf-chip" aria-pressed={onlyNonToxic ? 'true' : 'false'} onClick={() => setOnlyNonToxic(!onlyNonToxic)}>
+                Non-toxic
+              </button>
+            </div>
+          </div>
         </div>
       )}
+
+      {activeFilterCount > 0 && (
+        <div class="active-pills" role="region" aria-label="Active filters">
+          {job !== 'all' && <button type="button" class="active-pill" onClick={() => setJob('all')}>{jobLabel(job)} <span aria-hidden="true">✕</span></button>}
+          {sun !== 'all' && <button type="button" class="active-pill" onClick={() => setSun('all')}>{lightKeyLabel(sun)} <span aria-hidden="true">✕</span></button>}
+          {habit !== 'all' && <button type="button" class="active-pill" onClick={() => setHabit('all')}>{habit} <span aria-hidden="true">✕</span></button>}
+          {phaseIdx !== null && <button type="button" class="active-pill" onClick={() => setPhaseIdx(null)}>{phaseLabel(PHASE_LIST[phaseIdx])} <span aria-hidden="true">✕</span></button>}
+          {onlyThrives && <button type="button" class="active-pill" onClick={() => setOnlyThrives(false)}>Thrives today <span aria-hidden="true">✕</span></button>}
+          {only2050 && <button type="button" class="active-pill" onClick={() => setOnly2050(false)}>Thrives 2050s <span aria-hidden="true">✕</span></button>}
+          {onlyDrought && <button type="button" class="active-pill" onClick={() => setOnlyDrought(false)}>Drought-adapted <span aria-hidden="true">✕</span></button>}
+          {onlyNonToxic && <button type="button" class="active-pill" onClick={() => setOnlyNonToxic(false)}>Non-toxic <span aria-hidden="true">✕</span></button>}
+          {onlyEdible && <button type="button" class="active-pill" onClick={() => setOnlyEdible(false)}>Edible ≥ 3/5 <span aria-hidden="true">✕</span></button>}
+          {onlyNfix && <button type="button" class="active-pill" onClick={() => setOnlyNfix(false)}>N-fixer <span aria-hidden="true">✕</span></button>}
+          {onlySelfFertile && <button type="button" class="active-pill" onClick={() => setOnlySelfFertile(false)}>Self-fertile <span aria-hidden="true">✕</span></button>}
+          {onlyFitsRoom && <button type="button" class="active-pill" onClick={() => setOnlyFitsRoom(false)}>Fits my room <span aria-hidden="true">✕</span></button>}
+        </div>
+      )}
+
+      <div class="picker-list">
+        {filtered.length === 0 ? (
+          <div class="metric-box">
+            <p class="small"><strong>No plants match all active filters.</strong> Try clearing one filter or loosening your search.</p>
+          </div>
+        ) : (
+          filtered.slice(0, 48).map((p) => {
+            const v = verdictsById.get(p.id);
+            const added = inPalette.has(p.id);
+            const tox = toxBadgeInfo(p);
+            const pollWarn = pollinationShortWarn(p);
+            const hMax = p.traits.height_m?.max ?? null;
+            return (
+              <div key={p.id} class="picker-row-v7">
+                <button
+                  type="button"
+                  class="picker-row-open"
+                  onClick={() => { nsDrawer.value = { kind: 'dossier', id: p.id }; }}
+                >
+                  <PlantThumb taxon={p} size={44} />
+                  <div style={{ minWidth: 0 }}>
+                    <div>
+                      <strong>{taxCommonName(p)}</strong>{' '}
+                      <span class="small muted" style={{ fontStyle: 'italic' }}>{p.canonical_name}</span>
+                    </div>
+                    <div class="plant-badges" style={{ marginTop: '4px' }}>
+                      {v && <span class={`badge ${verdictBadgeClass(v.level)}`}>{verdictSymbolLabel(v.level)}</span>}
+                      <span class="badge">{lightSpanLabel(p)}{hMax != null ? ` · ${fmtNum(hMax)} m` : ''}</span>
+                      {p.traits.edibility_rating != null && p.traits.edibility_rating >= 3 && <span class="badge badge-ok">Edible {p.traits.edibility_rating}/5</span>}
+                      {p.traits.nitrogen_fixer && <span class="badge">N-fixer</span>}
+                      {tox && <span class={`badge ${tox.cls}`}>{tox.text}</span>}
+                      {pollWarn && <span class="badge badge-warn">{pollWarn}</span>}
+                    </div>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  class={added ? 'btn-ghost' : 'btn-primary'}
+                  style={{ minHeight: '44px', padding: '0 12px' }}
+                  onClick={() => (added ? removePlantFromPalette(p.id) : addPlantToPalette(p.id))}
+                >
+                  {added ? 'Added ✓' : `+ ${T('ns.add')}`}
+                </button>
+              </div>
+            );
+          })
+        )}
+
+        {externalMatches.length > 0 && (
+          <>
+            <p class="small muted" style={{ marginTop: '8px' }}>Other catalog species (outside primary climate list)</p>
+            {externalMatches.map((n) => {
+              const added = inPalette.has(n.id);
+              const guestZone = n.lists[0];
+              const dispName = n.names[currentLocale()] ?? n.names.en ?? n.canonical;
+              return (
+                <div key={n.id} class="picker-row">
+                  <span class="plant-thumb plant-thumb-fb" aria-hidden="true">{n.canonical[0]}</span>
+                  <div style={{ minWidth: 0 }}>
+                    <strong>{dispName}</strong>{' '}
+                    <span class="small muted" style={{ fontStyle: 'italic' }}>{n.canonical}</span>
+                  </div>
+                  <button
+                    type="button"
+                    class={added ? 'btn-ghost' : 'btn-primary'}
+                    style={{ minHeight: '44px', padding: '0 12px' }}
+                    onClick={() => (added ? removePlantFromPalette(n.id) : addPlantToPalette(n.id, guestZone))}
+                  >
+                    {added ? 'Added ✓' : `+ ${T('ns.add')}`}
+                  </button>
+                </div>
+              );
+            })}
+          </>
+        )}
+      </div>
     </div>
   );
 }
 
+/** Verbatim port of mockup-v73.html Climate & Guild Atlas Drawer (L3593-3813). */
+function AtlasDrawer({ rep, swapFor }: { rep: PaletteReport; swapFor?: PlantId }) {
+  const stressed = rep.taxa.filter((t) => rep.verdicts.get(t.id)?.level !== 'fits');
+  const [targetId, setTargetId] = useState<PlantId>(swapFor ?? stressed[0]?.id ?? rep.taxa[0]?.id ?? '');
+  const [compareId, setCompareId] = useState<PlantId | null>(null);
+
+  const eff = rep.eff;
+  const effToday = rep.effToday;
+  const eff2050 = rep.eff2050;
+  const rob = rep.robustness;
+  const inPalette = useMemo(() => new Set(store.members.value), [store.members.value]);
+  const pool = activePool.value;
+  const targetTaxon = rep.taxa.find((t) => t.id === targetId) ?? rep.taxa[0] ?? null;
+  const swaps = useMemo(() => {
+    if (!targetTaxon) return [];
+    return findCompatibleSwaps(targetTaxon, pool, eff, inPalette, 5);
+  }, [targetTaxon, pool, eff, inPalette]);
+  const cmpCand = compareId ? pool.find((x) => x.id === compareId) ?? null : null;
+
+  const activeScenShort = scenarioShort(nsScenario.value);
+  const dFreeze = eff2050.freeze10C != null && effToday.freeze10C != null ? eff2050.freeze10C - effToday.freeze10C : null;
+  const dHeat = eff2050.heat10C != null && effToday.heat10C != null ? eff2050.heat10C - effToday.heat10C : null;
+  const dDry = eff2050.dryMonths != null && effToday.dryMonths != null ? eff2050.dryMonths - effToday.dryMonths : null;
+  const fmtDelta = (v: number | null, unit: string) => v == null ? '—' : `${v > 0 ? '+' : ''}${fmtNum(v, 1)} ${unit}`;
+
+  const strongCount = rob.strongPillars;
+  const famColors = ['var(--pal-ok)', 'var(--accent)', 'var(--winter-ink)', 'var(--soil-2)', 'var(--border-strong)'];
+  const tankDays = eff.tankDays ?? 0;
+  const cddDays = eff.cddDays ?? 0;
+  const maxTankScale = Math.max(tankDays, cddDays, 30);
+  const tankPct = Math.min(100, Math.round((tankDays / maxTankScale) * 100));
+  const dryPct = Math.min(100, Math.round((cddDays / maxTankScale) * 100));
+  const waterBuffer = eff.tankDays != null && eff.cddDays != null ? eff.tankDays - eff.cddDays : null;
+  const pctPh = (val: number) => Math.max(0, Math.min(100, ((val - 4.0) / 5.0) * 100));
+  const topFamily = rob.familiesSorted[0] ?? ['—', 0];
+  const activeMonthsSet = new Set(rep.growingYear.activeMonths);
+  const texture = store.location.value?.lookup?.soil?.texture ?? 'loam';
+  const terrain = store.location.value?.lookup?.v07?.terrain ?? null;
+
+  return (
+    <div class="drawer-body">
+      {/* 1. Future Climate Shift Passport */}
+      <section class="shift-passport" aria-label="Future climate shift passport">
+        <div class="shift-banner">
+          <div>
+            <div class="shift-dial-k">Future Climate Shift · {scenarioLabel('y2050')}</div>
+            <div style={{ fontSize: '15px', fontWeight: 600, marginTop: '2px' }}>
+              {T('ns.today')} ({effToday.koppen || '—'}{effToday.usdaZone ? ` / ${effToday.usdaZone}` : ''}) → {eff2050.koppen || effToday.koppen || '—'}{eff2050.usdaZone ? ` / ${eff2050.usdaZone}` : ''}
+            </div>
+          </div>
+        </div>
+        <div class="shift-dials">
+          <div class="shift-dial">
+            <span class="shift-dial-k">Coldest night (1-in-10, est.)</span>
+            <span class="shift-dial-v">{fmtNum(effToday.freeze10C)} → {fmtNum(eff2050.freeze10C)} °C</span>
+            <span class="shift-dial-d">{fmtDelta(dFreeze, '°C')}</span>
+          </div>
+          <div class="shift-dial">
+            <span class="shift-dial-k">Hottest day (1-in-10, est.)</span>
+            <span class="shift-dial-v">{fmtNum(effToday.heat10C)} → {fmtNum(eff2050.heat10C)} °C</span>
+            <span class="shift-dial-d">{fmtDelta(dHeat, '°C')}</span>
+          </div>
+          <div class="shift-dial">
+            <span class="shift-dial-k">Dry months (tile)</span>
+            <span class="shift-dial-v">{effToday.dryMonths ?? '—'} → {eff2050.dryMonths ?? '—'} mo/yr</span>
+            <span class="shift-dial-d">{dDry == null ? '—' : dDry === 0 ? 'Unchanged' : `${dDry > 0 ? '+' : ''}${dDry} mo`}</span>
+          </div>
+        </div>
+      </section>
+
+      {/* 2. Four-Pillar Agroecological Robustness */}
+      <section class="atlas-card" aria-label="Four-pillar agroecological robustness">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+          <div>
+            <p class="pulse-kicker">Four-pillar agroecological robustness</p>
+            <div style={{ fontSize: '15px', fontWeight: 600, marginTop: '2px' }}>{strongCount} of 4 pillars strong</div>
+          </div>
+          <svg width="46" height="46" viewBox="0 0 46 46" role="img" aria-label={`${strongCount} of 4 robustness pillars strong`}>
+            <circle cx="23" cy="23" r="18" fill="none" stroke="var(--border)" stroke-width="5" />
+            <circle
+              cx="23"
+              cy="23"
+              r="18"
+              fill="none"
+              stroke={strongCount === 4 ? 'var(--pal-ok)' : 'var(--accent)'}
+              stroke-width="5"
+              stroke-dasharray={`${((strongCount / 4) * 113.1).toFixed(1)} 113.1`}
+              transform="rotate(-90 23 23)"
+              stroke-linecap="round"
+            />
+            <text x="23" y="27" text-anchor="middle" font-size="12" font-weight="600" fill="var(--text)">{strongCount}/4</text>
+          </svg>
+        </div>
+
+        <div class="pillar-grid">
+          <div class="pillar-box" data-tone={rob.redundancyOk ? 'ok' : 'warn'}>
+            <span class="robust-k">1. {T('ns.pillar.jobs')}</span>
+            <span class="robust-v">{rob.redundancyOk ? '✓ ' : '▲ '}{rep.coveredJobs}/6 jobs · {6 - rep.missingJobs.length - rep.noBackupJobs.length} backed up</span>
+            <div class="pillar-segs" aria-hidden="true">
+              {rep.jobStats.map((j) => (
+                <span key={j.job} class="pillar-seg" data-st={j.status === 'backed_up' ? 'ok' : j.status === 'no_backup' ? 'low' : 'gap'} title={`${jobLabel(j.job)}: ${j.total}`} />
+              ))}
+            </div>
+          </div>
+          <div class="pillar-box" data-tone={rob.familyDiversityOk ? 'ok' : 'warn'}>
+            <span class="robust-k">2. {T('ns.pillar.families')}</span>
+            <span class="robust-v">{rob.familyDiversityOk ? '✓ ' : '⚠ '}{rob.familyCount} families · max {topFamily[1]}/{rep.taxa.length} {topFamily[0]}</span>
+            <div class="fam-bar" aria-hidden="true">
+              {rob.familiesSorted.slice(0, 5).map(([fam, cnt], idx) => (
+                <span key={fam} class="fam-seg" style={{ width: `${Math.max(8, Math.round((cnt / Math.max(1, rep.taxa.length)) * 100))}%`, background: famColors[idx % famColors.length] }} title={`${fam}: ${cnt}`} />
+              ))}
+            </div>
+          </div>
+          <div class="pillar-box" data-tone={rob.shockSurvivalOk ? 'ok' : 'warn'}>
+            <span class="robust-k">3. {T('ns.pillar.shocks')}</span>
+            <span class="robust-v">{rob.shockSurvivalOk ? '✓ ' : '▲ '}{rob.survivesAllCore}/{rep.taxa.length}</span>
+            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }} aria-hidden="true">
+              {rob.coreScenarioBreaks.map((sb) => (
+                <span
+                  key={sb.id}
+                  class="badge"
+                  style={{
+                    fontSize: '10px',
+                    padding: '1px 6px',
+                    background: 'var(--surface)',
+                    borderColor: sb.brokenCount === 0 ? 'var(--pal-ok)' : 'var(--accent)',
+                    color: sb.brokenCount === 0 ? 'var(--pal-ok)' : 'var(--pal-warn)',
+                  }}
+                >
+                  {sb.brokenCount === 0 ? '✓' : '▲'} {scenarioShort(sb.id)}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div class="pillar-box" data-tone={rob.seasonalityOk ? 'ok' : 'warn'}>
+            <span class="robust-k">4. {T('ns.pillar.months')}</span>
+            <span class="robust-v">{rob.seasonalityOk ? '✓ ' : '▲ '}{rep.growingYear.activeMonths.length}/12 active mo</span>
+            <div class="spark-12" aria-hidden="true">
+              {MONTHS.map((m) => (
+                <span key={m} class="spark-m" data-on={activeMonthsSet.has(m) ? 'true' : 'false'}>{m[0]}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. Walter-Lieth Climate Rhythm */}
+      <section class="atlas-card" aria-label={T('ns.atlas.wlTitle')}>
+        <div class="viz-head">
+          <span>{T('ns.atlas.wlTitle')} ({activeScenShort} vs {nsScenario.value === 'today' ? '2050s' : T('ns.today')})</span>
+          <span class="small muted">❄ · ●</span>
+        </div>
+        <WalterLiethSvg eff={eff} rep={rep} />
+      </section>
+
+      {/* 4. Interactive 10-Scenario Stress-Test Matrix */}
+      <section class="atlas-card" aria-label={T('ns.atlas.scenariosTitle')}>
+        <div class="viz-head">
+          <span>{T('ns.atlas.scenariosTitle')}</span>
+          <span class="small muted">Click any row to switch workspace horizon</span>
+        </div>
+        <div class="scen-matrix">
+          {rob.allScenarioBreaks.map((sb) => {
+            const okPct = rep.taxa.length > 0 ? Math.round((sb.fitsCount / rep.taxa.length) * 100) : 100;
+            const active = nsScenario.value === sb.id;
+            return (
+              <button
+                key={sb.id}
+                type="button"
+                class="scen-row"
+                aria-pressed={active ? 'true' : 'false'}
+                onClick={() => { nsScenario.value = sb.id; }}
+              >
+                <span style={{ fontSize: '13px', fontWeight: 600 }}>{active ? '● ' : ''}{scenarioShort(sb.id)}</span>
+                <span class="scen-bar-track" aria-hidden="true">
+                  <span class="scen-bar-ok" style={{ width: `${okPct}%` }} />
+                  {sb.brokenCount > 0 && <span class="scen-bar-bad" style={{ width: `${100 - okPct}%` }} />}
+                </span>
+                <span style={{ fontSize: '12px', fontWeight: 600, textAlign: 'right', color: sb.brokenCount > 0 ? 'var(--pal-warn)' : 'var(--pal-ok)' }}>
+                  {sb.brokenCount === 0 ? '✓' : '▲'} {sb.fitsCount}/{rep.taxa.length}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* 5. Soil Water Tank (Today), Dual-Depth pH & Terrain */}
+      <section class="atlas-card" aria-label="Soil water tank, pH and terrain">
+        <div class="viz-head">
+          <span>{T('ns.land.waterTank')} ({T('ns.today')}), pH</span>
+          {waterBuffer != null && (
+            <span class={`badge ${waterBuffer >= 0 ? 'badge-ok' : 'badge-warn'}`}>
+              {waterBuffer >= 0 ? `✓ +${waterBuffer} d` : `▲ ${Math.abs(waterBuffer)} d`}
+            </span>
+          )}
+        </div>
+        {eff.tankDays != null && eff.cddDays != null && (
+          <div class="tank-gauge">
+            <div class="tank-bar-row">
+              <span class="muted">{T('ns.land.waterTank')} ({T('ns.today')})</span>
+              <div class="tank-track"><div class="tank-fill-ok" style={{ width: `${tankPct}%` }} /></div>
+              <strong style={{ textAlign: 'right' }}>~{eff.tankDays} {T('ns.unit.dayShort')}</strong>
+            </div>
+            <div class="tank-bar-row">
+              <span class="muted">{T('ns.land.drySpell')}</span>
+              <div class="tank-track"><div class="tank-fill-dry" style={{ width: `${dryPct}%` }} /></div>
+              <strong style={{ textAlign: 'right' }}>~{eff.cddDays} {T('ns.unit.dayShort')}</strong>
+            </div>
+          </div>
+        )}
+        {eff.soilPh != null && (
+          <div style={{ display: 'grid', gap: '4px', paddingTop: '4px', borderTop: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+              <strong>Dual-depth Soil pH (4.0–9.0)</strong>
+              <span class="muted">
+                Top 0–30 cm: {fmtNum(eff.soilPh)}{eff.subsoilPh != null ? ` · Sub 30–100 cm: ${fmtNum(eff.subsoilPh)}` : ''}
+              </span>
+            </div>
+            <div class="ph-track bullet-track-pad" style={{ marginBlock: '14px 4px' }}>
+              <div class="ph-pin" style={{ left: `${pctPh(eff.soilPh).toFixed(1)}%` }} title={`Topsoil pH ${fmtNum(eff.soilPh)}`}>
+                <span class="pin-tag">Top</span>
+              </div>
+              {eff.subsoilPh != null && (
+                <div class="ph-pin ph-pin-sub" style={{ left: `${pctPh(eff.subsoilPh).toFixed(1)}%` }} title={`Subsoil pH ${fmtNum(eff.subsoilPh)}`}>
+                  <span class="pin-tag" style={{ top: '17px' }}>Sub</span>
+                </div>
+              )}
+            </div>
+            <div class="bullet-scale" style={{ marginTop: '8px' }}>
+              <span>4.0 (acid)</span>
+              <span>{texture}{eff.stonesPct != null ? ` · ${Math.round(eff.stonesPct)}% rock` : ''}</span>
+              <span>9.0 (alkaline)</span>
+            </div>
+          </div>
+        )}
+        {terrain && (
+          <div class="terrain-grid">
+            <div class="terrain-cell">
+              <span class="shift-dial-k">Terrain (grid cell)</span>
+              <strong class="small">
+                {terrain.elevM != null ? `${terrain.elevM} m elev` : '—'}
+                {terrain.reliefM != null ? ` · ${terrain.reliefM} m relief` : ''}
+              </strong>
+            </div>
+            <div class="terrain-cell">
+              <span class="shift-dial-k">Slope &amp; drainage</span>
+              <strong class="small">
+                {terrain.slopeDeg != null ? `${fmtNum(terrain.slopeDeg)}°` : '—'}
+                {terrain.handM != null ? ` · HAND ${fmtNum(terrain.handM)} m` : ''}
+              </strong>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* 6. Like-for-like Climate-Proof Swaps */}
+      <section class="atlas-card" aria-label="Like-for-like climate-proof swaps">
+        <div class="viz-head">
+          <span>Like-for-like Climate-Proof Swaps ({activeScenShort})</span>
+        </div>
+        <p class="small muted">{T('ns.swaps.intro')}</p>
+        {rep.taxa.length > 0 && (
+          <div class="tuner-group">
+            <label class="tuner-label" for="swap-target">{T('ns.swaps.forPlant')}</label>
+            <select
+              id="swap-target"
+              class="tuner-select"
+              value={targetTaxon?.id ?? ''}
+              onChange={(e) => {
+                setTargetId((e.target as HTMLSelectElement).value);
+                setCompareId(null);
+              }}
+            >
+              {rep.taxa.map((t) => (
+                <option key={t.id} value={t.id}>{taxCommonName(t)} ({t.canonical_name})</option>
+              ))}
+            </select>
+          </div>
+        )}
+        <div class="picker-list">
+          {swaps.length > 0 ? swaps.map((sw) => (
+            <div key={sw.taxon.id} class="picker-row">
+              <PlantThumb taxon={sw.taxon} size={44} />
+              <div style={{ minWidth: 0 }}>
+                <div>
+                  <strong>{taxCommonName(sw.taxon)}</strong>{' '}
+                  <span class="small muted" style={{ fontStyle: 'italic' }}>{sw.taxon.canonical_name}</span>
+                </div>
+                <div class="plant-badges" style={{ marginTop: '4px' }}>
+                  <span class={`badge ${verdictBadgeClass(sw.verdict.level)}`}>{activeScenShort}: {verdictSymbolLabel(sw.verdict.level)}</span>
+                  <span class="badge">{lightSpanLabel(sw.taxon)}{sw.taxon.traits.height_m?.max != null ? ` · ${fmtNum(sw.taxon.traits.height_m.max)} m` : ''}</span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  type="button"
+                  class="btn-ghost"
+                  style={{ minHeight: '44px', padding: '0 10px' }}
+                  onClick={() => setCompareId(compareId === sw.taxon.id ? null : sw.taxon.id)}
+                >
+                  Compare
+                </button>
+                <button
+                  type="button"
+                  class="btn-primary"
+                  style={{ minHeight: '44px', padding: '0 12px' }}
+                  onClick={() => targetTaxon && swapPlantInPalette(targetTaxon.id, sw.taxon.id)}
+                >
+                  {T('ns.swaps.use')}
+                </button>
+              </div>
+            </div>
+          )) : <p class="small muted">{T('ns.swaps.none')}</p>}
+        </div>
+        {cmpCand && targetTaxon && <SwapDiffTable curPlant={targetTaxon} candPlant={cmpCand} rep={rep} />}
+      </section>
+    </div>
+  );
+}
+
+/** Verbatim port of mockup-v73.html Visual Botanical Field Dossier (L4034-4423). ZERO PFAF. */
 function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
   const [details, setDetails] = useState<Details | null>(null);
-  const [photoIdx, setPhotoIdx] = useState(0);
-  const [factsOpen, setFactsOpen] = useState(true);
-
-  const pool = activePool.value;
-  const taxon = rep.taxa.find((t) => t.id === id) ?? pool.find((t) => t.id === id) ?? null;
+  const taxon = useMemo(
+    () => rep.taxa.find((t) => t.id === id) ?? activePool.value.find((t) => t.id === id) ?? null,
+    [rep.taxa, activePool.value, id],
+  );
 
   useEffect(() => {
-    setPhotoIdx(0);
-    setDetails(null);
+    let cancelled = false;
     const src = store.source.value;
     const z = store.climate.value;
-    if (!src || !z || !id) return;
-    let cancelled = false;
+    if (!src || !z) return;
+    setDetails(null);
     void src.details(id, z, currentLocale()).then((d) => {
       if (!cancelled) setDetails(d);
     }).catch(() => {});
     return () => { cancelled = true; };
   }, [id]);
 
-  if (!taxon) return <div class="drawer-body"><p class="ns-muted">{T('ns.unknown')}</p></div>;
+  if (!taxon) return <div class="drawer-body"><p class="small muted">{T('ns.loadingPlants')}</p></div>;
 
-  const inPalette = rep.taxa.some((t) => t.id === taxon.id);
   const v = rep.verdicts.get(taxon.id) ?? evaluatePlantVerdict(taxon, rep.eff);
-  const v2050 = rep.verdicts2050.get(taxon.id) ?? evaluatePlantVerdict(taxon, rep.eff2050);
+  const vToday = evaluatePlantVerdict(taxon, rep.effToday);
+  const v2050 = evaluatePlantVerdict(taxon, rep.eff2050);
   const frost = preferredFrostC(details?.frost ?? taxon.frost);
-  const tox = toxicityStatusOf(taxon);
+  const poll = pollinationNote(taxon);
+  const pollWarn = pollinationShortWarn(taxon);
+  const tox = toxBadgeInfo(taxon);
+  const inPalette = useMemo(() => new Set(store.members.value), [store.members.value]);
+  const swapCand = useMemo(() => findCompatibleSwaps(taxon, activePool.value, rep.eff, inPalette, 1)[0]?.taxon ?? null, [taxon, activePool.value, rep.eff, inPalette]);
+
+  const pct = (val: number, min: number, max: number) => Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100));
+  const coldMin = -35, coldMax = 15, heatMin = 15, heatMax = 50;
+  const ex = taxon.extremes;
+  const ph = taxon.traits.soil_ph;
+  const phLeft = ph?.min != null ? pct(ph.min, 4.0, 9.0) : null;
+  const phRight = ph?.max != null ? pct(ph.max, 4.0, 9.0) : null;
+
   const track = rep.growingYear.tracks.get(taxon.id);
-  const mainPhoto = photoUrlOf(taxon);
-  const gallery = details?.gallery?.length
-    ? details.gallery.map((g) => g.url)
-    : (mainPhoto ? [mainPhoto] : []);
-  const activePhoto = gallery[photoIdx] ?? mainPhoto;
+  const sowSet = new Set<string>(track?.sowing ?? []);
+  const blmSet = new Set<string>(track?.bloom ?? []);
+  const frtSet = new Set<string>(track?.fruiting ?? []);
+  const winMonths = new Set(rep.eff.hemisphere === 'S' ? [5, 6, 7, 8] : [11, 12, 1, 2]);
+  const siteShort = shortSiteName(store.location.value?.label) || store.climate.value || 'Site';
+  const jobsSummary = jobsOf(taxon).map(jobLabel).join(' · ');
+  const phaseRangeLabel = taxon.phases
+    ? (taxon.phases.start === taxon.phases.end ? phaseLabel(taxon.phases.start) : `${phaseLabel(taxon.phases.start)} → ${phaseLabel(taxon.phases.end)}`)
+    : 'Stage unknown';
+
+  const byId = new Map(rep.taxa.map((t) => [t.id, t]));
+  const ints = rep.interactions.filter((it) => it.a === taxon.id || it.b === taxon.id);
+  const areaName = rep.eff.wgsrpdL3 ? formatAreaName(rep.eff.wgsrpdL3, currentLocale()) : null;
+  const countryName = rep.eff.country ? formatCountryName(rep.eff.country, currentLocale()) : null;
+
+  const renderPhenoRow = (label: string, mSet: Set<string>, k: 'sow' | 'bloom' | 'fruit') => (
+    <>
+      <div class="pheno-lbl">{label}</div>
+      {mSet.size === 0 ? (
+        <div style={{ gridColumn: '2 / 14' }} class="small muted">Unrecorded for this region</div>
+      ) : (
+        MONTHS.map((m) => {
+          const on = mSet.has(m);
+          return (
+            <div key={m} class="pheno-bar" data-k={on ? k : 'none'} title={`${m}${on ? `: ${label}` : ''}`}>
+              <span class="sr-only">{m}: {on ? label : 'inactive'}</span>
+            </div>
+          );
+        })
+      )}
+    </>
+  );
 
   return (
     <div class="drawer-body">
       {/* Plant Passport Hero */}
       <div class="dossier-hero">
-        {activePhoto && (
-          <div class="dossier-photo-wrap">
-            <img src={activePhoto} alt={taxCommonName(taxon)} class="dossier-photo" />
-            {gallery.length > 1 && (
-              <div class="gallery-dots">
-                {gallery.map((_, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    class="site-pill-sm"
-                    aria-pressed={photoIdx === i ? 'true' : 'false'}
-                    onClick={() => setPhotoIdx(i)}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+        {taxon.image?.url ? (
+          <img class="dossier-img" src={taxon.image.url} width={112} height={112} alt={taxCommonName(taxon)} />
+        ) : (
+          <span class="dossier-img plant-thumb-fb" aria-hidden="true">{(taxCommonName(taxon)[0] ?? '?').toUpperCase()}</span>
         )}
-        <div>
-          <h3 class="dossier-name">{taxCommonName(taxon)}</h3>
-          <p class="dossier-sci">{taxon.canonical_name}{taxon.family ? ` · ${taxon.family}` : ''}</p>
-          <div class="pill-group">
-            {jobsOf(taxon).map((j) => (
-              <span key={j} class="tag-pill" data-job={j}>{jobLabel(j)}</span>
-            ))}
+        <div style={{ display: 'grid', gap: '8px', flex: 1, minWidth: '200px' }}>
+          <div class="passport-dials">
+            <div class="passport-dial" data-lvl={vToday.level}>
+              <span class="passport-dial-k">{T('ns.today')}</span>
+              <span class="passport-dial-v">{verdictSymbolLabel(vToday.level)}</span>
+            </div>
+            <div class="passport-dial" data-lvl={v2050.level}>
+              <span class="passport-dial-k">2050s</span>
+              <span class="passport-dial-v">{verdictSymbolLabel(v2050.level)}</span>
+            </div>
+            <div class="passport-dial">
+              <span class="passport-dial-k">Edibility</span>
+              <span class="passport-dial-v">
+                {taxon.traits.edibility_rating != null ? (
+                  <>
+                    {taxon.traits.edibility_rating}/5{' '}
+                    <span class="edib-pips" aria-hidden="true">
+                      {[1, 2, 3, 4, 5].map((n) => <span key={n} class="edib-pip" data-on={n <= taxon.traits.edibility_rating! ? 'true' : 'false'} />)}
+                    </span>
+                  </>
+                ) : 'Unrecorded'}
+              </span>
+            </div>
           </div>
-          <div class="dossier-cta-row">
+          <p class="small"><strong>Gives your guild:</strong> {jobsSummary || T('ns.unknown')}</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+            {tox && <span class={`badge ${tox.cls}`}>{tox.text}</span>}
+            {pollWarn && <span class="badge badge-warn">{pollWarn}</span>}
             <button
               type="button"
-              class={inPalette ? 'btn-secondary' : 'btn-primary'}
-              onClick={() => (inPalette ? removePlantFromPalette(taxon.id) : addPlantToPalette(taxon.id))}
+              class="onsite-btn"
+              aria-pressed={v.alreadyOnSite ? 'true' : 'false'}
+              onClick={() => toggleExisting(taxon.id)}
             >
-              {inPalette ? T('ns.remove') : `+ ${T('ns.addToPalette')}`}
+              {v.alreadyOnSite ? `✓ ${T('ns.alreadyOnSite')}` : `Mark ${T('ns.alreadyOnSite').toLowerCase()}`}
             </button>
-            {inPalette && (
-              <button
-                type="button"
-                class="site-pill-sm"
-                aria-pressed={v.alreadyOnSite ? 'true' : 'false'}
-                onClick={() => toggleExisting(taxon.id)}
-              >
-                {T('ns.alreadyOnSite')}
-              </button>
-            )}
           </div>
         </div>
       </div>
 
-      {/* Unified Site Fit Plate */}
-      <section class="atlas-card">
-        <h4>{T('ns.dossier.siteFit')}</h4>
-        <p>
-          <span class="verdict-pill" data-tone={verdictTone(v.level)}>{verdictLabel(v.level)}</span>{' '}
-          <span class="ns-muted">2050s: {verdictLabel(v2050.level)}</span>
-        </p>
-        {v.reasons.length > 0 && (
-          <ul class="reason-list">
-            {v.reasons.map((r, i) => <li key={i}>{localizedReason(r, rep.eff, taxon)}</li>)}
-          </ul>
-        )}
-        {frost && (
-          <p class="ns-muted">{T('ns.dossier.frostHardiness')}: {fmtC(frost.valueC)} ({frostSourceLabel(frost.kind)})</p>
-        )}
-      </section>
+      {v.reasons.length > 0 && (
+        <div class="land-alert">
+          <strong>Site verdict &amp; root-zone notes</strong>
+          {v.reasons.map((r, i) => (
+            <span key={i}>• {localizedReason(r, rep.eff, taxon)}</span>
+          ))}
+        </div>
+      )}
 
-      {/* Habit-only Scale & Root SVG */}
-      <section class="atlas-card">
-        <h4>{T('ns.dossier.scaleTitle')}</h4>
-        <ScaleRootSvg taxon={taxon} />
-      </section>
+      {/* 1. Unified Site Fit Plate */}
+      <div class="unified-plate">
+        <div class="viz-head">
+          <span>Site Fit Plate ({siteShort})</span>
+          <span class="small muted">Band = plant range · T / 50 / Top / Sub = your site · ◆ = frost hardiness</span>
+        </div>
 
-      {/* 12-Month Phenology Gantt ("Ripening / fruit") */}
-      <section class="atlas-card">
-        <h4>{T('ns.dossier.phenoTitle')}</h4>
-        {track?.hasAny ? (
-          <div class="pheno-grid">
-            {([
-              ['sow', T('ns.cal.sow'), track.sowing],
-              ['bloom', T('ns.cal.bloom'), track.bloom],
-              ['fruit', T('ns.dossier.ripeningFruit'), track.fruiting],
-            ] as const).map(([k, lbl, ms]) => (
-              <div key={k} class="pheno-row">
-                <span class="pheno-lbl">{lbl}</span>
-                <div class="pheno-cells">
-                  {MONTHS.map((m) => (
-                    <span key={m} class={ms.includes(m) ? 'pheno-bar' : 'pheno-empty'} data-k={k} title={m}>
-                      {ms.includes(m) ? m.slice(0, 1) : ''}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
+        <div class="plate-section">
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+            <strong>Coldest night (1-in-10)</strong>
+            <span class="muted">
+              {ex?.tminExtreme?.low != null ? `Recorded down to ${fmtNum(ex.tminExtreme.low)} °C` : 'Extremes unrecorded'}
+            </span>
           </div>
-        ) : (
-          <p class="ns-muted">{T('ns.cal.noDataHere')}</p>
-        )}
-      </section>
+          <div class="bullet-track bullet-track-pad" aria-label="Cold extremes bullet bar">
+            {ex?.tminExtreme?.low != null && ex?.tminExtreme?.high != null && (
+              <div class="bullet-range" style={{ left: `${pct(ex.tminExtreme.low, coldMin, coldMax)}%`, width: `${Math.max(2, pct(ex.tminExtreme.high, coldMin, coldMax) - pct(ex.tminExtreme.low, coldMin, coldMax))}%` }} />
+            )}
+            {frost?.valueC != null && (
+              <div class="bullet-frost" style={{ left: `${pct(frost.valueC, coldMin, coldMax)}%` }} title={`${frostSourceLabel(frost.kind)}: ${fmtNum(frost.valueC)} °C`} />
+            )}
+            {rep.effToday.freeze10C != null && (
+              <div class="bullet-pin" style={{ left: `${pct(rep.effToday.freeze10C, coldMin, coldMax)}%` }} title={`Today: ${fmtNum(rep.effToday.freeze10C)} °C`}>
+                <span class="pin-tag" aria-hidden="true">T</span>
+              </div>
+            )}
+            {rep.eff2050.freeze10C != null && (
+              <div class="bullet-pin bullet-pin-50" style={{ left: `${pct(rep.eff2050.freeze10C, coldMin, coldMax)}%` }} title={`2050s: ${fmtNum(rep.eff2050.freeze10C)} °C`}>
+                <span class="pin-tag" aria-hidden="true">50</span>
+              </div>
+            )}
+          </div>
+          <div class="bullet-scale">
+            <span>−35 °C</span>
+            <span>
+              T: {fmtNum(rep.effToday.freeze10C)} °C · 50: {fmtNum(rep.eff2050.freeze10C)} °C
+              {frost?.valueC != null ? ` · ◆ ${frostSourceLabel(frost.kind)} ${fmtNum(frost.valueC)} °C` : ''}
+            </span>
+            <span>+15 °C</span>
+          </div>
+        </div>
 
-      {/* 7-Phase Succession Strip */}
-      <section class="atlas-card">
-        <h4>{T('ns.dossier.successionTitle')}</h4>
-        <div class="phase-strip">
-          {PHASE_LIST.map((ph, idx) => {
-            const sIdx = taxon.phases ? PHASE_LIST.indexOf(taxon.phases.start) : -1;
-            const eIdx = taxon.phases ? PHASE_LIST.indexOf(taxon.phases.end) : -1;
-            const on = sIdx >= 0 && idx >= sIdx && idx <= eIdx;
+        <div class="plate-section">
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+            <strong>Hottest day (1-in-10)</strong>
+            <span class="muted">
+              {ex?.tmaxExtreme?.high != null ? `Recorded up to ${fmtNum(ex.tmaxExtreme.high)} °C` : 'Extremes unrecorded'}
+            </span>
+          </div>
+          <div class="bullet-track bullet-track-pad" aria-label="Heat extremes bullet bar">
+            {ex?.tmaxExtreme?.low != null && ex?.tmaxExtreme?.high != null && (
+              <div class="bullet-range" style={{ left: `${pct(ex.tmaxExtreme.low, heatMin, heatMax)}%`, width: `${Math.max(2, pct(ex.tmaxExtreme.high, heatMin, heatMax) - pct(ex.tmaxExtreme.low, heatMin, heatMax))}%` }} />
+            )}
+            {rep.effToday.heat10C != null && (
+              <div class="bullet-pin" style={{ left: `${pct(rep.effToday.heat10C, heatMin, heatMax)}%` }} title={`Today: ${fmtNum(rep.effToday.heat10C)} °C`}>
+                <span class="pin-tag" aria-hidden="true">T</span>
+              </div>
+            )}
+            {rep.eff2050.heat10C != null && (
+              <div class="bullet-pin bullet-pin-50" style={{ left: `${pct(rep.eff2050.heat10C, heatMin, heatMax)}%` }} title={`2050s: ${fmtNum(rep.eff2050.heat10C)} °C`}>
+                <span class="pin-tag" aria-hidden="true">50</span>
+              </div>
+            )}
+          </div>
+          <div class="bullet-scale">
+            <span>15 °C</span>
+            <span>T: {fmtNum(rep.effToday.heat10C)} °C · 50: {fmtNum(rep.eff2050.heat10C)} °C</span>
+            <span>50 °C</span>
+          </div>
+        </div>
+
+        <div class="plate-section">
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+            <strong>Dual-depth soil pH (4.0–9.0)</strong>
+            <span class="muted">Plant: {ph?.min != null ? `${fmtNum(ph.min)}–${fmtNum(ph.max)}` : 'Unrecorded'}</span>
+          </div>
+          <div class="ph-track bullet-track-pad" style={{ marginBottom: '4px' }}>
+            {phLeft != null && phRight != null && (
+              <div class="ph-band" style={{ left: `${phLeft}%`, width: `${Math.max(3, phRight - phLeft)}%` }} />
+            )}
+            {rep.eff.soilPh != null && (
+              <div class="ph-pin" style={{ left: `${pct(rep.eff.soilPh, 4.0, 9.0)}%` }} title={`Topsoil: ${fmtNum(rep.eff.soilPh)}`}>
+                <span class="pin-tag" aria-hidden="true">Top</span>
+              </div>
+            )}
+            {rep.eff.subsoilPh != null && (
+              <div class="ph-pin ph-pin-sub" style={{ left: `${pct(rep.eff.subsoilPh, 4.0, 9.0)}%` }} title={`Subsoil: ${fmtNum(rep.eff.subsoilPh)}`}>
+                <span class="pin-tag" aria-hidden="true" style={{ top: '20px' }}>Sub</span>
+              </div>
+            )}
+          </div>
+          <div class="bullet-scale" style={{ marginTop: '8px' }}>
+            <span>4.0 (acid)</span>
+            <span>Top: {fmtNum(rep.eff.soilPh)}{rep.eff.subsoilPh != null ? ` · Sub: ${fmtNum(rep.eff.subsoilPh)}` : ''}</span>
+            <span>9.0 (alkaline)</span>
+          </div>
+        </div>
+
+        <div class="plate-section">
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+            <strong>Sun tolerance</strong>
+            <span class="muted">{lightSpanLabel(taxon)}</span>
+          </div>
+          <div class="sun-spec">
+            {SUN_ORDER.map((lvl) => {
+              const on = plantMatchesSunLevel(taxon, lvl);
+              const pref = plantLightKey(taxon) === lvl;
+              return (
+                <div key={lvl} class="sun-step" data-lvl={lvl} data-active={on ? 'true' : 'false'} data-pref={pref ? 'true' : 'false'}>
+                  {lightKeyLabel(lvl)}{pref ? ' ★' : on ? ' ✓' : ''}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Mature Scale & Root Depth */}
+      <div class="viz-card">
+        <div class="viz-head">
+          <span>Mature Scale &amp; Root Depth</span>
+          <span class="small muted">Above ground to scale vs 1.75 m person</span>
+        </div>
+        <ScaleRootSvg taxon={taxon} roomLimitM={rep.eff.roomLimitM} />
+      </div>
+
+      {/* 3. 12-Month Phenology Gantt */}
+      <div class="viz-card">
+        <div class="viz-head">
+          <span>12-Month Phenology ({siteShort})</span>
+          <span class="small muted">{rep.eff.isMildWinter ? '● = mild-winter window' : 'Site calendar'}</span>
+        </div>
+        <div class="pheno-grid">
+          <div />
+          {MONTHS.map((m, i) => {
+            const isMw = rep.eff.isMildWinter && winMonths.has(i + 1);
+            return <div key={m} class="pheno-m" data-mw={isMw ? 'true' : 'false'}>{m[0]}{isMw ? <><br />●</> : null}</div>;
+          })}
+          {renderPhenoRow('Sow', sowSet, 'sow')}
+          {renderPhenoRow('Bloom', blmSet, 'bloom')}
+          {renderPhenoRow(T('ns.cal.fruit'), frtSet, 'fruit')}
+        </div>
+      </div>
+
+      {/* 4. 7-Phase Succession Strip */}
+      <div class="viz-card">
+        <div class="viz-head">
+          <span>Succession &amp; Maturity (7 exact phases)</span>
+          <span>{phaseRangeLabel}</span>
+        </div>
+        <div class="succ-strip-7">
+          {PHASE_SHORT_NAMES.map((sh, i) => {
+            const on = plantCoversPhase(taxon, i);
+            return <div key={sh} class="succ-stage" data-on={on ? 'true' : 'false'} title={phaseLabel(PHASE_LIST[i])}>{sh}{on ? ' ✓' : ''}</div>;
+          })}
+          {taxon.phases && (
+            <div class="succ-span-bar" style={{ gridColumn: `${phaseOrd(taxon.phases.start) + 1} / ${phaseOrd(taxon.phases.end) + 2}` }} aria-hidden="true" />
+          )}
+        </div>
+        <div class="plant-badges">
+          <span class="badge">Maturity: {taxon.traits.age_of_maturity_years != null ? `${fmtNum(taxon.traits.age_of_maturity_years)} yr` : 'unrecorded'}</span>
+          <span class="badge">Growth: {taxon.traits.growth_rate ?? 'unrecorded'}</span>
+          <span class="badge">Lifespan: {taxon.traits.lifespan ?? 'unrecorded'}</span>
+        </div>
+      </div>
+
+      {/* 5. Field Facts Grid */}
+      <details class="tune-details" open>
+        <summary><span>{T('ns.dossier.fieldFacts')}</span><span aria-hidden="true">▾</span></summary>
+        <div class="tune-body">
+          <div class="facts-grid">
+            <div class="fact-card">
+              <div class="fact-card-title">Pollination &amp; Reproduction</div>
+              <span><strong>Self-fertile:</strong> {poll ?? T('ns.notRecorded')}</span>
+              <span><strong>System:</strong> {taxon.traits.sexual_system ?? T('ns.notRecorded')}</span>
+              <span><strong>Pollinators:</strong> {taxon.traits.pollinators?.length ? taxon.traits.pollinators.join(', ') : T('ns.notRecorded')}</span>
+            </div>
+            <div class="fact-card">
+              <div class="fact-card-title">Toxicity &amp; Safety</div>
+              <span>{toxDossierText(taxon, details)}</span>
+              <span><strong>Allelopathy:</strong> {taxon.warnings.allelopathic === true ? 'Yes' : taxon.warnings.allelopathic === false ? 'No' : T('ns.notRecorded')}</span>
+            </div>
+            <div class="fact-card">
+              <div class="fact-card-title">Water &amp; Drought</div>
+              <span><strong>Drought tolerance:</strong> {taxon.traits.drought_tolerance ?? T('ns.notRecorded')}</span>
+              <span><strong>Moisture use:</strong> {taxon.traits.moisture_use ?? T('ns.notRecorded')}</span>
+            </div>
+            <div class="fact-card">
+              <div class="fact-card-title">Soil &amp; Mycorrhizae</div>
+              <span><strong>Well-drained:</strong> {taxon.traits.well_drained === true ? 'Preferred' : T('ns.notRecorded')}</span>
+              <span><strong>Mycorrhizae:</strong> {taxon.traits.mycorrhizal_type ?? T('ns.notRecorded')}</span>
+              <span><strong>Nitrogen fixer:</strong> {taxon.traits.nitrogen_fixer === true ? 'Yes' : taxon.traits.nitrogen_fixer === false ? 'No' : T('ns.notRecorded')}</span>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      {swapCand && <SwapDiffTable curPlant={taxon} candPlant={swapCand} rep={rep} />}
+
+      {ints.length > 0 && (
+        <div>
+          <p class="pulse-kicker" style={{ marginBottom: '6px' }}>Guild interactions in this palette</p>
+          {ints.map((it, idx) => {
+            const other = byId.get(it.a === taxon.id ? it.b : it.a);
             return (
-              <span key={ph} class={`phase-cell${on ? ' is-on' : ''}`} title={phaseLabel(ph)}>
-                {phaseShortLabel(ph)}
-              </span>
+              <div key={idx} class="land-alert" style={{ marginBottom: '6px' }}>
+                <strong>{it.positive ? 'Yield-gain pairing' : 'Shared pest'}{other ? ` with ${taxCommonName(other)}` : ''}</strong>
+                {it.interaction.agent && <span>{it.interaction.agent}</span>}
+              </div>
             );
           })}
         </div>
-      </section>
+      )}
 
-      {/* Collapsible Field Facts & Schema 4.11 Citations (zero PFAF) */}
-      <section class="atlas-card">
-        <button type="button" class="link-btn" aria-expanded={factsOpen ? 'true' : 'false'} onClick={() => setFactsOpen(!factsOpen)}>
-          {T('ns.dossier.fieldFacts')} {factsOpen ? '▾' : '▸'}
+      {/* Provenance & Schema 4.11 Trait Sources (ZERO PFAF!) */}
+      <div class="viz-card">
+        <div class="viz-head">
+          <span>{T('ns.dossier.sources')}</span>
+          <span class="small muted">
+            {taxon.climate?.cells != null ? `${taxon.climate.cells.toLocaleString()} GBIF cells` : 'Canopi botanical records'}
+          </span>
+        </div>
+        {(areaName || countryName) && (
+          <span class="small">
+            {areaName ? <><strong>Region ({areaName})</strong> · </> : null}
+            {countryName ? <><strong>Country:</strong> {countryName}</> : null}
+          </span>
+        )}
+        {details && details.traitSources.length > 0 ? (
+          <ul class="small" style={{ margin: 0, paddingLeft: '18px', display: 'grid', gap: '4px' }}>
+            {details.traitSources.slice(0, 8).map((ts, idx) => (
+              <li key={idx}>
+                <strong>{traitFieldLabel(ts.field)}:</strong>{' '}
+                {sanitizeSourceLabel(ts.source, details.sources[ts.source]?.label)}
+                {ts.quote && <blockquote style={{ margin: '2px 0 0', fontStyle: 'italic' }}>“{ts.quote}”</blockquote>}
+                {ts.sourceUrl && (
+                  <a href={ts.sourceUrl} target="_blank" rel="noopener noreferrer" class="tap-link">
+                    {' '}{T('ns.dossier.sourceLink')}
+                  </a>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p class="small muted">Curated from Canopi botanical tables.</p>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '8px' }}>
+        <button class="btn-primary" type="button" onClick={() => { nsDrawer.value = null; }}>
+          Done
         </button>
-        {factsOpen && (
-          <dl class="land-dl" style={{ marginTop: '8px' }}>
-            <div class="land-row">
-              <dt>{T('ns.dossier.edibility')}</dt>
-              <dd>{taxon.traits.edibility_rating != null ? `${taxon.traits.edibility_rating}/5` : T('ns.notRecorded')}</dd>
-            </div>
-            <div class="land-row">
-              <dt>{T('ns.dossier.pollination')}</dt>
-              <dd>{pollinationNote(taxon) ?? T('ns.notRecorded')}</dd>
-            </div>
-            <div class="land-row">
-              <dt>{T('ns.dossier.toxicity')}</dt>
-              <dd>{tox.status === 'toxic' ? tox.level : tox.status === 'not_toxic' ? T('ns.tox.none') : T('ns.notRecorded')}</dd>
-            </div>
-            <div class="land-row">
-              <dt>{T('ns.dossier.nativeAreas')}</dt>
-              <dd>{nativeSummary(details?.areas?.native ?? taxon.areas?.native)}</dd>
-            </div>
-          </dl>
-        )}
-
-        {details && details.traitSources.length > 0 && (
-          <div class="citations-box">
-            <h5>{T('ns.dossier.sources')}</h5>
-            <ul class="reason-list">
-              {details.traitSources.slice(0, 8).map((ts, idx) => (
-                <li key={idx}>
-                  <strong>{traitFieldLabel(ts.field)}:</strong>{' '}
-                  {sanitizeSourceLabel(ts.source, details.sources[ts.source]?.label)}
-                  {ts.quote && <blockquote>“{ts.quote}”</blockquote>}
-                  {ts.sourceUrl && (
-                    <a href={ts.sourceUrl} target="_blank" rel="noopener noreferrer" class="text-link">
-                      {' '}{T('ns.dossier.sourceLink')}
-                    </a>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </section>
+      </div>
     </div>
   );
 }
@@ -600,6 +1223,7 @@ export function Drawers({ rep }: { rep: PaletteReport }) {
   const closeBtnRef = useRef<HTMLButtonElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
 
+  // Blocker A fix preserved: synchronous layout effect for Escape + focus move/restore
   useLayoutEffect(() => {
     if (!drawer) return;
     const prev = document.activeElement;
@@ -623,38 +1247,58 @@ export function Drawers({ rep }: { rep: PaletteReport }) {
 
   if (!drawer) return null;
 
+  const siteLabel = store.location.value?.label ?? store.climate.value ?? 'Site';
+  const shortName = shortSiteName(siteLabel) || siteLabel;
+  const dossierTaxon = drawer.kind === 'dossier'
+    ? (rep.taxa.find((t) => t.id === drawer.id) ?? activePool.value.find((t) => t.id === drawer.id) ?? null)
+    : null;
+
+  const kicker = drawer.kind === 'picker'
+    ? `${activePool.value.length} plants for ${shortName} · live-scored to your site`
+    : drawer.kind === 'atlas'
+      ? `Climate & Guild Atlas · ${rep.eff.koppen || '—'}${rep.eff.usdaZone ? ` · USDA ${rep.eff.usdaZone}` : ''}`
+      : `${dossierTaxon?.family ?? ''}${dossierTaxon?.traits.habit ? ` · ${dossierTaxon.traits.habit}` : ''}`;
+
   const title = drawer.kind === 'picker'
     ? T('ns.picker.title')
     : drawer.kind === 'atlas'
-      ? T('ns.atlas.title')
-      : T('ns.dossier.title');
+      ? siteLabel
+      : dossierTaxon ? taxCommonName(dossierTaxon) : T('ns.dossier.title');
 
-  // Touch nsLayerValues so Dossier updates when layer values arrive
   void nsLayerValues.value;
 
   return (
-    <div class="drawer-backdrop" role="presentation" onClick={(e) => { if (e.target === e.currentTarget) nsDrawer.value = null; }}>
+    <div
+      class="drawer-backdrop"
+      role="presentation"
+      onClick={(e) => { if (e.target === e.currentTarget) nsDrawer.value = null; }}
+    >
       <div
-        class="drawer"
+        class="drawer drawer-wide"
         role="dialog"
         aria-modal="true"
         aria-label={title}
         onKeyDown={(e) => { if (e.key === 'Escape') nsDrawer.value = null; }}
       >
+        <div class="drawer-handle" />
         <header class="drawer-head">
-          <h2>{title}</h2>
+          <div>
+            {kicker && <p class="pulse-kicker">{kicker}</p>}
+            <h2 style={{ fontSize: '24px', marginTop: '2px' }}>{title}</h2>
+            {dossierTaxon && <p class="muted" style={{ fontStyle: 'italic' }}>{dossierTaxon.canonical_name}</p>}
+          </div>
           <button
             ref={closeBtnRef}
             type="button"
-            class="icon-btn"
+            class="drawer-close"
             aria-label={T('ns.close')}
             onClick={() => { nsDrawer.value = null; }}
           >
-            ×
+            {T('ns.close')}
           </button>
         </header>
         {drawer.kind === 'picker' && <PickerDrawer rep={rep} initialJob={drawer.job} />}
-        {drawer.kind === 'atlas' && <AtlasDrawer rep={rep} initialTab={drawer.tab} swapFor={drawer.swapFor} />}
+        {drawer.kind === 'atlas' && <AtlasDrawer rep={rep} swapFor={drawer.swapFor} />}
         {drawer.kind === 'dossier' && <DossierDrawer rep={rep} id={drawer.id} />}
       </div>
     </div>
