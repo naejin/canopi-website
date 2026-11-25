@@ -1,5 +1,5 @@
 /** @jsxImportSource preact */
-// Stage 2C North Star Studio entry (role `palette`, lazy-loaded by App.tsx).
+// North Star Studio entry (role `palette`, lazy-loaded by App.tsx).
 import type { ComponentChildren } from 'preact';
 import { NorthStarStudio } from '../north-star/NorthStarStudio.tsx';
 

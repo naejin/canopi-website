@@ -36,6 +36,7 @@ export async function clickNth(page, sel, idx = 0) {
   const ok = await page.evaluate(({ s, i }) => {
     const els = document.querySelectorAll(s);
     if (!els[i]) return false;
+    if (typeof els[i].focus === 'function') els[i].focus();
     els[i].click();
     return true;
   }, { s: sel, i: idx });
@@ -48,4 +49,10 @@ export async function pageErrorsOf(page) {
 
 export async function horizontalOverflow(page) {
   return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+}
+
+export async function closeDrawerWithEscape(page) {
+  await page.waitForFunction(() => !!document.activeElement?.closest('.drawer'), { timeout: 5_000 });
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => !document.querySelector('.drawer'), { timeout: 5_000 });
 }

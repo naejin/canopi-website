@@ -5,6 +5,7 @@ import { useEffect } from 'preact/hooks';
 import type { ReportHorizonId } from '../../../../lib/palette/index.ts';
 import { REPORT_SCENARIOS } from '../../../../lib/palette/index.ts';
 import { T } from '../../strings.ts';
+import { markFirstView } from '../kit/start-mark.ts';
 import { scenarioShort } from './ns-helpers.ts';
 import { DesignBoard } from './DesignBoard.tsx';
 import { Drawers } from './Drawers.tsx';
@@ -22,6 +23,7 @@ import {
 export function NorthStarStudio() {
   useEffect(() => {
     startNsWatchers();
+    markFirstView();
   }, []);
 
   const rep = nsReport.value;

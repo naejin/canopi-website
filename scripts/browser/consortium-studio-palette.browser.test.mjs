@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { has, useHarness } from './helpers.mjs';
-import { clickNth, horizontalOverflow, openSuggestedPalette, pageErrorsOf, PFAF_PATTERN, RAW_TECH_PATTERN } from './studio-helpers.mjs';
+import { clickNth, closeDrawerWithEscape, horizontalOverflow, openSuggestedPalette, pageErrorsOf, PFAF_PATTERN, RAW_TECH_PATTERN } from './studio-helpers.mjs';
 
 useHarness();
 
@@ -65,8 +65,7 @@ test('Botanical Picker (761-species search) and Visual Field Dossier (clean prov
 
   // Add first not-yet-in-palette match (or clear search & pick first addable)
   await clickNth(page, '.picker-item .btn-primary:not([disabled]), .picker-item .btn-secondary:not([disabled])', 0);
-  await page.keyboard.press('Escape');
-  await page.waitForFunction(() => !document.querySelector('.drawer'), { timeout: 5_000 });
+  await closeDrawerWithEscape(page);
 
   const afterCount = await page.evaluate(() => document.querySelectorAll('.plant-row').length);
   assert.equal(afterCount, beforeCount + 1, 'adding from Picker increments palette count');
@@ -79,8 +78,9 @@ test('Botanical Picker (761-species search) and Visual Field Dossier (clean prov
   assert.ok(!PFAF_PATTERN.test(dossierText), 'zero PFAF in Field Dossier');
   assert.ok(!RAW_TECH_PATTERN.test(dossierText), 'zero KTMPR / llm-knowledge in Field Dossier');
 
-  // Escape closes Dossier
-  await page.keyboard.press('Escape');
-  await page.waitForFunction(() => !document.querySelector('.drawer'), { timeout: 5_000 });
+  // Escape closes Dossier and restores focus to opener
+  await closeDrawerWithEscape(page);
+  const restoredToRow = await page.evaluate(() => !!document.activeElement?.closest('.plant-row'));
+  assert.ok(restoredToRow, 'closing Dossier restores focus to opener plant row');
   assert.deepEqual(await pageErrorsOf(page), [], 'zero console/page errors across Picker + Dossier');
 });

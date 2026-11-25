@@ -3,7 +3,7 @@
 // 1. Power Botanical Picker (ALL 761 species / 27,196 names, 6 quick chips, 7-category filters, Sort, Clear)
 // 2. Visual Climate & Guild Atlas (Shift Passport, 4-Pillar Scorecard, Walter-Lieth SVG, 10-Scenario Matrix, Water Tank (Today), Like-for-like Swaps)
 // 3. Visual Botanical Field Dossier (Hero + multi-photo gallery, Fit Plate, Scale & Root SVG, 12-Month Phenology Gantt "Ripening / fruit", 7-Phase strip, Field facts + Schema 4.11 quotes with zero PFAF)
-import { useEffect, useMemo, useState } from 'preact/hooks';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type {
   Details,
   JobId,
@@ -597,14 +597,28 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
 
 export function Drawers({ rep }: { rep: PaletteReport }) {
   const drawer = nsDrawer.value;
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!drawer) return;
+    const prev = document.activeElement;
+    if (prev instanceof HTMLElement && !prev.closest('.drawer')) {
+      openerRef.current = prev;
+    }
+    closeBtnRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') nsDrawer.value = null;
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      if (!nsDrawer.value) {
+        const opener = openerRef.current;
+        openerRef.current = null;
+        if (opener && opener.isConnected) opener.focus();
+      }
+    };
   }, [drawer]);
 
   if (!drawer) return null;
@@ -620,10 +634,22 @@ export function Drawers({ rep }: { rep: PaletteReport }) {
 
   return (
     <div class="drawer-backdrop" role="presentation" onClick={(e) => { if (e.target === e.currentTarget) nsDrawer.value = null; }}>
-      <div class="drawer" role="dialog" aria-modal="true" aria-label={title}>
+      <div
+        class="drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        onKeyDown={(e) => { if (e.key === 'Escape') nsDrawer.value = null; }}
+      >
         <header class="drawer-head">
           <h2>{title}</h2>
-          <button type="button" class="icon-btn" aria-label={T('ns.close')} onClick={() => { nsDrawer.value = null; }}>
+          <button
+            ref={closeBtnRef}
+            type="button"
+            class="icon-btn"
+            aria-label={T('ns.close')}
+            onClick={() => { nsDrawer.value = null; }}
+          >
             ×
           </button>
         </header>

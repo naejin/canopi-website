@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { has, useHarness } from './helpers.mjs';
-import { clickNth, horizontalOverflow, openSuggestedPalette, pageErrorsOf, PFAF_PATTERN, RAW_TECH_PATTERN } from './studio-helpers.mjs';
+import { clickNth, closeDrawerWithEscape, horizontalOverflow, openSuggestedPalette, pageErrorsOf, PFAF_PATTERN, RAW_TECH_PATTERN } from './studio-helpers.mjs';
 
 useHarness();
 
@@ -31,8 +31,7 @@ test('Climate & Guild Atlas (Why?): Shift Passport, Walter-Lieth SVG, Water Tank
   assert.notEqual(activeScenario, 'today', 'clicking a scenario row updates the active studio horizon');
 
   // Close Atlas via Escape
-  await page.keyboard.press('Escape');
-  await page.waitForFunction(() => !document.querySelector('.drawer'), { timeout: 5_000 });
+  await closeDrawerWithEscape(page);
   assert.ok((await horizontalOverflow(page)) <= 1, 'zero horizontal overflow after Atlas scenario switch');
   assert.deepEqual(await pageErrorsOf(page), [], 'zero console/page errors in Atlas');
 });
@@ -44,11 +43,14 @@ test('Atlas Like-for-like Swaps tab and site-scoped Bloom & Fruit Calendar @real
   await clickNth(page, '.why-btn', 0);
   assert.ok(await has(page, '.drawer[role="dialog"]', 8_000), 'Atlas drawer opens');
   await clickNth(page, '.drawer [role="tab"]', 1);
-  const swapsText = await page.evaluate(() => document.querySelector('.drawer')?.innerText ?? '');
-  assert.ok(swapsText.length > 20, 'Swaps tab renders like-for-like swap options');
-  assert.ok(!PFAF_PATTERN.test(swapsText), 'zero PFAF in Swaps tab');
-  await page.keyboard.press('Escape');
-  await page.waitForFunction(() => !document.querySelector('.drawer'), { timeout: 5_000 });
+  const swapsInfo = await page.evaluate(() => ({
+    text: document.querySelector('.drawer')?.innerText ?? '',
+    swapRows: document.querySelectorAll('.drawer .picker-item').length,
+  }));
+  assert.match(swapsInfo.text, /Like-for-like/i, 'Swaps tab renders Like-for-like intro');
+  assert.ok(swapsInfo.swapRows >= 1, `Swaps tab renders at least 1 swap candidate (got ${swapsInfo.swapRows})`);
+  assert.ok(!PFAF_PATTERN.test(swapsInfo.text), 'zero PFAF in Swaps tab');
+  await closeDrawerWithEscape(page);
 
   // Verify Bloom & Fruit Calendar renders on Design Board with 12 month headers
   assert.ok(await has(page, '.cal-table', 6_000), 'site-scoped Bloom & Fruit calendar renders');
