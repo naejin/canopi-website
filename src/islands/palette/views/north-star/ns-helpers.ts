@@ -393,15 +393,30 @@ export function quatrefoilPetalScale(score01: number): number {
   return clamped <= 0 ? 0 : Math.sqrt(clamped);
 }
 
+// A6: Non-fruit/seed-harvested (leaf, root, flower, fodder, fibre, clonal) & parthenocarpic genera
+// that must not show "Needs a pollination partner" / "Needs male & female plants".
+const NON_POLLINATION_CROPS = new Set([
+  'Camellia', 'Aloe', 'Hemerocallis', 'Rumex', 'Origanum',
+  'Allium', 'Mentha', 'Thymus', 'Salvia', 'Rosmarinus',
+  'Asparagus', 'Rheum', 'Spinacia', 'Lactuca', 'Brassica',
+  'Cynara', 'Zingiber', 'Curcuma', 'Colocasia', 'Manihot', 'Ipomoea',
+  'Ananas', 'Musa', 'Ficus', 'Diospyros',
+]);
+
 export function pollinationNote(t: Taxon): string | null {
+  if (t.genus === 'Humulus') return T('ns.poll.hopsFemaleOnly');
   const sys = (t.traits.sexual_system ?? '').toLowerCase();
-  if (sys.includes('dioec')) return T('ns.poll.dioecious');
-  if (t.traits.self_fertile === false) return T('ns.poll.needsPartner');
+  if (jobsOf(t).includes('feeds_you') && !NON_POLLINATION_CROPS.has(t.genus)) {
+    if (sys.includes('dioec')) return T('ns.poll.dioecious');
+    if (t.traits.self_fertile === false) return T('ns.poll.needsPartner');
+  }
   if (t.traits.self_fertile === true) return T('ns.poll.selfFertile');
   return null;
 }
 
 export function pollinationShortWarn(t: Taxon): string | null {
+  if (t.genus === 'Humulus') return T('ns.poll.hopsFemaleOnly');
+  if (!jobsOf(t).includes('feeds_you') || NON_POLLINATION_CROPS.has(t.genus)) return null;
   const sys = (t.traits.sexual_system ?? '').toLowerCase();
   if (sys.includes('dioec')) return T('ns.poll.dioecious');
   if (t.traits.self_fertile === false) return T('ns.poll.needsPartner');

@@ -3,15 +3,15 @@ type: Architecture Decision
 title: Consortium tool — user decisions
 description: Dated decisions the project owner made about the consortium design tool; they change only when the owner changes them.
 tags: [consortium, decisions]
-generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:39:50Z }
+generated: { by: antigravity/gemini-2.5-pro, at: 2026-11-25T23:10:07Z }
 sources:
   - id: project-consortium-v2-plan
     resource: /project/consortium-v2-plan.md
   - id: arrival-ts
     resource: ../../src/islands/palette/state/arrival.ts
     title: src/islands/palette/state/arrival.ts
-    digest: sha256:06b523117639a398
-    last_modified: 2026-11-25T11:27:38Z
+    digest: sha256:960dbafd1da6abbc
+    last_modified: 2026-11-25T20:38:13Z
   - id: country-zones-ts
     resource: ../../src/lib/palette/country-zones.ts
     title: src/lib/palette/country-zones.ts
@@ -225,6 +225,11 @@ PP-C is live at master 398558aa. The owner agreed these on 2026-11-19; they bind
 - **Stack stays.** Astro, Preact islands, pure CSS, static Cloudflare. SQLite-WASM stays: the speed step works around it (load timing, worker, caching) and never proposes replacing it or a new export format.
 - **Preact component-test tier.** A fast tier of component tests in a simulated DOM under the existing test runner, added in commit 0; the browser suite keeps layout, late-font shift, contrast and walk-throughs.
 - **PP-D process.** (1) Merge each builder batch once its fast gates are green, with the full gates running on integration; (2) commit 0 removes shared hotspots: no barrel re-exports from `src/lib/palette/index.ts`, each component imports its own CSS, one `store.ts` owner per chunk, a per-stream unused-locale-key check; (3) a script diffs each screen against its board (sizes, spacing, words, order), agent review keeps behaviour only; (4) fewer lasting tests: engine and store units, one board test per screen, round-named browser cases pruned when their screen is done; (5) the 11-language layout and late-font shift test, dark theme and contrast from the first screen; (6) the size change printed per merge with its cause, never a failure; (7) push each chunk once its gates are green. The flaky browser cases are made deterministic in commit 0 (wait on the app's ready signals, never on timing; one retry is not a fix).
+
+## Owner decisions, 2026-11-25 (Wave 6 — Climate-Resilient Recommendation Engine)
+
+- **Water-verdict rule (amends 2026-11-11 "aridity is a mark only"; approved 2026-11-25):** (1) On Today's horizon, rain-fed (`rain`) or establishment (`occasional`) watering when the site is drier than the plant's observed range (`precip < low`, `aridity < low`, or site `dry_months > plant dry_months.high`) elevates the verdict to `check` (*"Drier than where it grows: needs watering"*), never `at_risk`; (2) `regular` watering downgrades dry deficits to a `note` only; (3) wetter than observed range (`precip > high`) is a `note`, elevated to `check` only when `well_drained=true` with wet/clay drainage or when `drought_tolerance` is high (never `at_risk`); (4) on future horizons (2050s/2080s), drying remains a `note` in the verdict (preserving walk-through 2 N3), while recommendation ranking prefers moisture headroom.
+- **Inform, don't block (reaffirmed 2026-11-25):** Never exclude or penalize toxic, invasive, weedy (`weed_potential`), or flat `allelopathic`-flagged species in starter selection, Picker ranking, or swaps; inform the grower honestly in words (with "unknown", never "No", when coverage is missing).
 
 ## Open questions for the owner (not decisions)
 

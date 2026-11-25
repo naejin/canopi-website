@@ -1,6 +1,6 @@
-// Single Source of Truth report engine for Plant Palette Builder (Stage 2A, Commit 0).
-// Pure, DOM-free, deterministic module inside src/lib/palette/ (obeys L1, L7, L10: imports only
-// ./types.ts, ./jobs.ts, ./area-names.ts; never imports ./range.ts, ./future.ts, or ./site.ts).
+// Single Source of Truth report engine for Plant Palette Builder.
+// Pure, DOM-free, deterministic module inside src/lib/palette/.
+// Delegates all 5 temperature bounds to range.ts (slotCheck / RANGE_BOUNDS — one verdict owner).
 import type {
   ClimateZone,
   Drainage,
@@ -21,6 +21,7 @@ import type {
 } from './types.ts';
 import { jobIds, months as MONTHS } from './types.ts';
 import { jobsOf } from './jobs.ts';
+import { slotCheck } from './range.ts';
 
 // ---- 10 Climate Scenarios (Today + 6 shipped canopi-climate v0.7.0 SSPs + 3 what-ifs) ----
 
@@ -413,58 +414,105 @@ export function evaluatePlantVerdict(
   const alreadyOnSite = !!existingIds?.has(taxon.id);
   if (alreadyOnSite) notes.add('already_on_site');
 
-  // 1. Monthly observed climate range checks
+  // 1. Monthly observed climate range checks — delegated to range.ts slotCheck (one verdict owner:
+  //    cold, mild/chill < 18 °C, cool year, annual summer heat >= 18 °C, hot).
   const cl = taxon.climate;
   if (eff.hasClimate && cl) {
     if (cl.cells !== null && cl.cells < 300) notes.add('few_records');
 
-    if (!annual && cl.tminCold?.low != null && eff.tminColdC !== null) {
-      judgedClimate = true;
-      if (eff.tminColdC < cl.tminCold.low - EDGE_MARGIN_C) {
-        level = elevate(level, 'at_risk');
-        reasons.push({ code: 'cold_monthly', severity: 'at_risk', detail: `Winter min ${eff.tminColdC}°C below recorded ${cl.tminCold.low}°C` });
-      } else if (eff.tminColdC < cl.tminCold.low) {
-        level = elevate(level, 'check');
-        reasons.push({ code: 'cold_monthly_edge', severity: 'check', detail: `Winter min ${eff.tminColdC}°C near cold edge ${cl.tminCold.low}°C` });
-      }
-    }
-
-    if (cl.tmaxWarm?.high != null && eff.tmaxWarmC !== null) {
-      judgedClimate = true;
-      if (eff.tmaxWarmC > cl.tmaxWarm.high + EDGE_MARGIN_C) {
-        if (annual) {
+    const hasTempData = eff.tminColdC !== null || eff.tmaxWarmC !== null || eff.tmeanYearC !== null || eff.tmeanWarmC !== null;
+    if (hasTempData && (cl.tminCold || cl.tmaxWarm || cl.tmeanYear || cl.tmeanWarm)) {
+      const tmeanColdForSlot = eff.tmeanColdC ?? eff.tmeanYearC ?? 0;
+      const tmeanWarmForSlot = eff.tmeanWarmC ?? eff.tmeanYearC ?? 0;
+      const syntheticSlot: SitePeriod = {
+        period: eff.meta.period,
+        scenario: eff.meta.scenario,
+        koppen: eff.koppen,
+        koppenTemperatureMarginC: 0,
+        tminColdC: eff.tminColdC ?? 0,
+        tmaxWarmC: eff.tmaxWarmC ?? 0,
+        tmeanColdC: tmeanColdForSlot,
+        tmeanWarmC: tmeanWarmForSlot,
+        precipMm: eff.precipMm ?? 0,
+        dryMonths: eff.dryMonths ?? 0,
+        aridityIndex: eff.aridityIndex,
+      };
+      // Build a slot-scoped taxon clone masking any bound whose site metric is null on this synthetic eff
+      const scopedClimate = {
+        ...cl,
+        tminCold: eff.tminColdC !== null ? cl.tminCold : null,
+        tmaxWarm: eff.tmaxWarmC !== null ? cl.tmaxWarm : null,
+        tmeanYear: (eff.tmeanColdC !== null && eff.tmeanWarmC !== null) || eff.tmeanYearC !== null ? cl.tmeanYear : null,
+        tmeanWarm: eff.tmeanWarmC !== null ? cl.tmeanWarm : null,
+      };
+      const scopedTaxon: Taxon = { ...taxon, climate: scopedClimate };
+      if (scopedClimate.tminCold || scopedClimate.tmaxWarm || scopedClimate.tmeanYear || scopedClimate.tmeanWarm) {
+        judgedClimate = true;
+        const sc = slotCheck(scopedTaxon, syntheticSlot);
+        if (sc.coolSeason) {
           notes.add('cool_season');
-          reasons.push({ code: 'heat_annual_cool_season', severity: 'note', detail: `Summer max ${eff.tmaxWarmC}°C above ${cl.tmaxWarm.high}°C — grow in cool season` });
-        } else {
-          level = elevate(level, 'at_risk');
-          reasons.push({ code: 'heat_monthly', severity: 'at_risk', detail: `Summer max ${eff.tmaxWarmC}°C above recorded ${cl.tmaxWarm.high}°C` });
+          reasons.push({
+            code: 'heat_annual_cool_season',
+            severity: 'note',
+            detail: `Summer max ${eff.tmaxWarmC}°C above ${cl.tmaxWarm?.high ?? '?'}°C — grow in cool season`,
+          });
         }
-      } else if (eff.tmaxWarmC > cl.tmaxWarm.high) {
-        if (annual) {
-          notes.add('cool_season');
-        } else {
-          level = elevate(level, 'check');
-          reasons.push({ code: 'heat_monthly_edge', severity: 'check', detail: `Summer max ${eff.tmaxWarmC}°C near heat edge ${cl.tmaxWarm.high}°C` });
+        for (const side of sc.sides) {
+          const isBeyond = sc.beyond.includes(side);
+          const sev: ReportVerdictLevel = isBeyond ? 'at_risk' : 'check';
+          level = elevate(level, sev);
+          if (side === 'cold') {
+            reasons.push({ code: isBeyond ? 'cold_monthly' : 'cold_monthly_edge', severity: sev, detail: `Winter min ${eff.tminColdC}°C ${isBeyond ? 'below recorded' : 'near cold edge'} ${cl.tminCold?.low ?? '?'}°C` });
+          } else if (side === 'mild') {
+            reasons.push({ code: isBeyond ? 'mild_winter' : 'mild_winter_edge', severity: sev, detail: `Winter min ${eff.tminColdC}°C ${isBeyond ? 'too mild for winter chill' : 'near mild-winter edge'} (recorded up to ${cl.tminCold?.high ?? '?'}°C)` });
+          } else if (side === 'cool') {
+            reasons.push({ code: isBeyond ? 'cool_year' : 'cool_year_edge', severity: sev, detail: `Annual mean ${eff.tmeanYearC ?? ((tmeanColdForSlot + tmeanWarmForSlot) / 2)}°C ${isBeyond ? 'below recorded' : 'near cool edge'} ${cl.tmeanYear?.low ?? '?'}°C` });
+          } else if (side === 'summer') {
+            reasons.push({ code: isBeyond ? 'cool_summer' : 'cool_summer_edge', severity: sev, detail: `Warmest-month mean ${eff.tmeanWarmC}°C ${isBeyond ? 'below recorded' : 'near cool-summer edge'} ${cl.tmeanWarm?.low ?? '?'}°C` });
+          } else if (side === 'hot') {
+            reasons.push({ code: isBeyond ? 'heat_monthly' : 'heat_monthly_edge', severity: sev, detail: `Summer max ${eff.tmaxWarmC}°C ${isBeyond ? 'above recorded' : 'near heat edge'} ${cl.tmaxWarm?.high ?? '?'}°C` });
+          }
         }
       }
     }
 
-    if (cl.tmeanYear?.low != null && eff.tmeanYearC !== null) {
-      judgedClimate = true;
-      if (eff.tmeanYearC < cl.tmeanYear.low - EDGE_MARGIN_C) {
-        level = elevate(level, 'at_risk');
-        reasons.push({ code: 'cool_year', severity: 'at_risk', detail: `Annual mean ${eff.tmeanYearC}°C below recorded ${cl.tmeanYear.low}°C` });
-      } else if (eff.tmeanYearC < cl.tmeanYear.low) {
+    // 1b. Approved Water-Verdict Rule (owner 2026-11-25, amends 2026-11-11 "aridity is a mark only"):
+    //     - Today/what-if rain-fed or occasional & drier (precip < low, aridity < low, or dry_months > high) -> check ("needs watering"), NEVER at_risk
+    //     - Regular watering -> note only
+    //     - Future SSP horizons (2050s/2080s) drying -> note only (walk-through 2 N3)
+    //     - Wetter than range (precip > high) -> note, elevated to check only for drainage-sensitive / high-drought xerophytes (NEVER at_risk)
+    const drierPrecip = eff.precipMm !== null && cl.precip?.low != null && eff.precipMm < cl.precip.low;
+    const drierAridity = eff.aridityIndex !== null && cl.aridity?.low != null && eff.aridityIndex < cl.aridity.low;
+    const drierMonths = eff.dryMonths !== null && cl.dryMonths?.high != null && eff.dryMonths > cl.dryMonths.high;
+    if (drierPrecip || drierAridity || drierMonths) {
+      const dryDetail = drierPrecip
+        ? `Site rainfall ${eff.precipMm} mm below recorded ${cl.precip?.low} mm — needs watering`
+        : drierMonths
+          ? `Site dry season (${eff.dryMonths} mo) longer than recorded (${cl.dryMonths?.high} mo) — needs watering`
+          : `Site aridity (${eff.aridityIndex}) drier than recorded (${cl.aridity?.low}) — needs watering`;
+      if (eff.meta.kind === 'ssp') {
+        notes.add('may_need_summer_water');
+        reasons.push({ code: 'water_future_dry', severity: 'note', detail: dryDetail });
+      } else if (eff.watering === 'all-year') {
+        reasons.push({ code: 'water_irrigated', severity: 'note', detail: `${dryDetail} (covered by regular watering)` });
+      } else {
         level = elevate(level, 'check');
-        reasons.push({ code: 'cool_year_edge', severity: 'check', detail: `Annual mean ${eff.tmeanYearC}°C near cool edge ${cl.tmeanYear.low}°C` });
+        reasons.push({ code: 'water_needs_irrigation', severity: 'check', detail: dryDetail });
       }
     }
 
-    if (annual && cl.tmeanWarm?.low != null && eff.tmeanWarmC !== null) {
-      judgedClimate = true;
-      if (eff.tmeanWarmC < cl.tmeanWarm.low - EDGE_MARGIN_C) {
-        level = elevate(level, 'at_risk');
-        reasons.push({ code: 'cool_summer', severity: 'at_risk', detail: `Warmest-month mean ${eff.tmeanWarmC}°C below recorded ${cl.tmeanWarm.low}°C` });
+    const wetterPrecip = eff.precipMm !== null && cl.precip?.high != null && eff.precipMm > cl.precip.high;
+    if (wetterPrecip) {
+      const droughtTolLow = (taxon.traits.drought_tolerance ?? '').toLowerCase();
+      const drainageSensitive =
+        (taxon.traits.well_drained === true && (eff.drainage === 'wet' || eff.drainage === 'clay' || (eff.clayPct !== null && eff.clayPct >= 35)))
+        || droughtTolLow === 'high';
+      const wetDetail = `Site rainfall ${eff.precipMm} mm above recorded ${cl.precip?.high} mm — needs sharp drainage`;
+      if (drainageSensitive) {
+        level = elevate(level, 'check');
+        reasons.push({ code: 'water_wet_drainage', severity: 'check', detail: wetDetail });
+      } else {
+        reasons.push({ code: 'water_wetter_note', severity: 'note', detail: wetDetail });
       }
     }
   }
@@ -790,84 +838,13 @@ export function sizeClassOf(taxon: Taxon): SizeClass {
   return 'herb';
 }
 
-export interface SwapCandidate {
-  taxon: Taxon;
-  verdict: ReportPlantVerdict;
-  sharedJobs: JobId[];
-  sizeClass: SizeClass;
-  score: number;
-}
-
-export function findCompatibleSwaps(
-  target: Taxon,
-  pool: readonly Taxon[],
-  eff: EffectiveSiteClimate,
-  inPaletteIds: ReadonlySet<PlantId>,
-  limit = 6,
-): SwapCandidate[] {
-  const targetJobs = jobsOf(target);
-  const primaryJob: JobId | null = targetJobs.includes('feeds_you') ? 'feeds_you' : (targetJobs[0] ?? null);
-  const targetHabit = (target.traits.habit ?? '').trim().toLowerCase();
-  const targetSize = sizeClassOf(target);
-  const targetH = target.traits.height_m?.max ?? null;
-
-  const candidates: SwapCandidate[] = [];
-  for (const cand of pool) {
-    if (cand.id === target.id || inPaletteIds.has(cand.id)) continue;
-
-    // Like-for-like habit match (exact habit when known, else same size class)
-    const candHabit = (cand.traits.habit ?? '').trim().toLowerCase();
-    const candSize = sizeClassOf(cand);
-    if (targetHabit) {
-      if (candHabit !== targetHabit) continue;
-    } else if (candSize !== targetSize) {
-      continue;
-    }
-
-    // Height band: 0.35× to 2.2× of target height + respect room height cap
-    const candH = cand.traits.height_m?.max ?? null;
-    if (eff.roomLimitM !== null && candH !== null && candH > eff.roomLimitM) continue;
-    if (targetH !== null && targetH > 0 && candH !== null) {
-      if (candH < targetH * 0.35 || candH > targetH * 2.2) continue;
-    }
-
-    // Must preserve primary job (Feeds you first whenever target has it, else first job)
-    const candJobs = jobsOf(cand);
-    if (primaryJob && !candJobs.includes(primaryJob)) continue;
-    const sharedJobs = targetJobs.filter((j) => candJobs.includes(j));
-
-    const verdict = evaluatePlantVerdict(cand, eff);
-    if (verdict.level !== 'fits' && verdict.level !== 'check') continue;
-
-    const score =
-      (verdict.level === 'fits' ? 100 : 40)
-      + sharedJobs.length * 10
-      + (cand.image ? 2 : 0);
-
-    candidates.push({ taxon: cand, verdict, sharedJobs, sizeClass: candSize, score });
-  }
-
-  return candidates
-    .sort((a, b) => b.score - a.score || a.taxon.canonical_name.localeCompare(b.taxon.canonical_name))
-    .slice(0, limit);
-}
-
-// ---- Truth-First Starter Selector ----
-
-export interface StarterOptions {
-  maxPlants?: number;
-  existingIds?: ReadonlySet<PlantId>;
-  eff2050?: EffectiveSiteClimate | null;
-}
-
 const TRAILING_GROUND_GENERA = new Set(['Ipomoea', 'Cucurbita', 'Citrullus', 'Cucumis']);
 
-/** True for structural climbing vines (excludes low trailing/sprawling ground crops like sweet potato or melons). */
+/** True for structural perennial climbing vines (excludes trailing ground crops and annual beans like Tepary bean). */
 export function isStructuralVine(taxon: Taxon): boolean {
   if (sizeClassOf(taxon) !== 'climber') return false;
   if (TRAILING_GROUND_GENERA.has(taxon.genus)) return false;
-  const maxH = taxon.traits.height_m?.max ?? null;
-  if (maxH !== null && maxH < 1.8 && isAnnualTaxon(taxon)) return false;
+  if (isAnnualTaxon(taxon)) return false;
   return true;
 }
 
@@ -880,307 +857,6 @@ export function vineSupportTree(taxon: Taxon, guild: readonly Taxon[]): Taxon | 
     && (t.family ?? '').toLowerCase() !== 'arecaceae'
     && (t.traits.height_m?.max ?? 0) >= 2,
   ) ?? null;
-}
-
-function isEdibleRootCrop(taxon: Taxon): boolean {
-  const sc = sizeClassOf(taxon);
-  if (sc === 'tree' || sc === 'shrub') return false;
-  if ((taxon.traits.edibility_rating ?? 0) < 3) return false;
-  const rs = (taxon.traits.root_system_type ?? '').toLowerCase();
-  const cg = (taxon.traits.clonal_growth_form ?? '').toLowerCase();
-  const h = (taxon.traits.habit ?? '').toLowerCase();
-  return rs.includes('tuber') || rs.includes('bulb') || rs.includes('taproot') || rs.includes('corm')
-    || cg.includes('tuber') || cg.includes('bulb') || cg.includes('corm')
-    || h.includes('geophyte');
-}
-
-function siteKoppenScore(taxon: Taxon, eff: EffectiveSiteClimate): number {
-  const kList = taxon.koppen;
-  if (!eff.koppen || !kList?.length) return 0;
-  const siteK = eff.koppen.toLowerCase();
-  const exact = kList.find((k) => k.code.toLowerCase() === siteK);
-  if (exact) return Math.min(36, exact.share * 120);
-  const prefix2 = siteK.slice(0, 2);
-  const groupShare = kList.filter((k) => k.code.toLowerCase().startsWith(prefix2)).reduce((s, k) => s + k.share, 0);
-  if (groupShare > 0) return Math.min(10, groupShare * 20);
-  return -10;
-}
-
-function siteMoistureScore(taxon: Taxon, eff: EffectiveSiteClimate): number {
-  const cl = taxon.climate;
-  let score = 0;
-  if (cl && eff.precipMm != null && cl.precip?.low != null && cl.precip?.high != null) {
-    const { low, high, median } = cl.precip;
-    const mid = median ?? (low + high) / 2;
-    if (eff.precipMm < low || eff.precipMm > high) {
-      score -= 45;
-    } else if (eff.precipMm < mid * 0.45 || eff.precipMm > mid * 2.2) {
-      // Outside the plant's typical central moisture band (prevents wet-seep ferns in arid starters).
-      score -= 35;
-    } else {
-      const centralHalf = Math.max(120, (high - low) * 0.35);
-      const dist = Math.min(1, Math.abs(eff.precipMm - mid) / centralHalf);
-      score += 18 * (1 - dist * 0.85);
-    }
-  }
-  if (cl && eff.aridityIndex != null && cl.aridity?.low != null && cl.aridity?.high != null) {
-    const { low, high, median } = cl.aridity;
-    const mid = median ?? (low + high) / 2;
-    if (eff.aridityIndex < low || eff.aridityIndex > high || eff.aridityIndex < mid * 0.45) {
-      score -= 25;
-    } else {
-      const centralHalf = Math.max(0.15, (high - low) * 0.35);
-      const dist = Math.min(1, Math.abs(eff.aridityIndex - mid) / centralHalf);
-      score += 12 * (1 - dist * 0.85);
-    }
-  }
-  if (eff.dryMonths != null && eff.dryMonths >= 4 && (taxon.traits.drought_tolerance ?? '').toLowerCase() === 'low') {
-    score -= 18;
-  }
-  return score;
-}
-
-function sitePhScore(taxon: Taxon, eff: EffectiveSiteClimate): number {
-  const ph = taxon.traits.soil_ph;
-  if (eff.soilPh == null || ph?.min == null || ph?.max == null) return 0;
-  const mid = (ph.min + ph.max) / 2;
-  const half = Math.max(0.5, (ph.max - ph.min) / 2);
-  const dist = Math.min(1.5, Math.abs(eff.soilPh - mid) / half);
-  return 8 * (1 - dist * 0.65);
-}
-
-/**
- * Picks a balanced, per-site layered starter guild strictly from plants that `fits`
- * (0 outside climate/extremes/pH) while keeping total measured crown area <= eff.netPlotM2.
- * Never excludes or penalizes toxic or invasive species (Operator rule: inform, don't block);
- * ranks purely on agroecological fit/utility (regional staples, moisture/Koppen fit, 2050 resilience)
- * while the UI informs the grower clearly in words with warnings.
- */
-export function selectStarterPalette(
-  pool: readonly Taxon[],
-  eff: EffectiveSiteClimate,
-  options: StarterOptions = {},
-): Taxon[] {
-  const maxPlants = options.maxPlants ?? 8;
-  const eff2050 = options.eff2050 ?? null;
-  const nicheStratumOf = (t: Taxon): string => t.stratum?.value ?? t.light.preferred ?? t.light.sunniest ?? '';
-
-  const fitsPool = pool
-    .map((t) => {
-      const verdict = evaluatePlantVerdict(t, eff, options.existingIds);
-      const verdict2050 = eff2050 ? evaluatePlantVerdict(t, eff2050, options.existingIds) : null;
-      const jobs = jobsOf(t);
-      const sizeClass = sizeClassOf(t);
-      const edibility = t.traits.edibility_rating ?? 0;
-      const isOrchardStaple = sizeClass === 'tree' && jobs.includes('feeds_you') && edibility >= 4;
-      const rawArea = crownAreaM2(t);
-      const estW = sizeClass === 'tree' || sizeClass === 'shrub'
-        ? Math.max(1.5, (t.traits.height_m?.max ?? 4) * 0.55)
-        : 1.0;
-      const measuredArea = rawArea ?? (sizeClass === 'climber' ? 2.0 : Math.PI * (estW / 2) ** 2);
-      // Keep measured crown area for plot-budget accounting (`totalCrownM2 <= netPlotM2` invariant),
-      // while scoring pruned orchard staples (`feeds_you` trees, edibility >= 4) at orchard height
-      // (<= 8 m) and orchard crown cap (<= 50 m²) so Olive, Fig, Date palm, Apple, etc. compete cleanly.
-      const area = measuredArea;
-      const scoreArea = isOrchardStaple ? Math.min(measuredArea, 50) : measuredArea;
-      const unknownWidthPenalty = rawArea === null && (sizeClass === 'tree' || sizeClass === 'shrub') ? 10 : 0;
-      const stratum = nicheStratumOf(t);
-      const perennial = !isAnnualTaxon(t);
-      const kScore = siteKoppenScore(t, eff);
-      const mScore = siteMoistureScore(t, eff);
-      const pScore = sitePhScore(t, eff);
-      const v50Score = verdict2050 ? (verdict2050.level === 'fits' ? 16 : verdict2050.level === 'check' ? 4 : -18) : 0;
-      const rawMaxH = t.traits.height_m?.max ?? null;
-      const effMaxH = isOrchardStaple && rawMaxH !== null ? Math.min(rawMaxH, 8) : rawMaxH;
-      const giantPenalty = sizeClass === 'tree' && effMaxH !== null && effMaxH > 22 ? 35 : 0;
-      const baseScore =
-        kScore + mScore + pScore + v50Score
-        + (perennial ? 12 : 0)
-        + edibility * 3.0
-        + (t.image ? 3 : 0)
-        + jobs.length * 1.5
-        - giantPenalty
-        - unknownWidthPenalty
-        - (t.warnings.weed_potential ? 16 : 0)
-        - (t.warnings.allelopathic ? 10 : 0)
-        - (verdict.notes.includes('few_records') ? 6 : 0);
-      return {
-        taxon: t,
-        verdict,
-        jobs,
-        area,
-        scoreArea,
-        sizeClass,
-        stratum,
-        perennial,
-        edibility,
-        kScore,
-        mScore,
-        effMaxH,
-        isOrchardStaple,
-        baseScore,
-        isClimber: isStructuralVine(t),
-        isRoot: isEdibleRootCrop(t),
-      };
-    })
-    .filter((x) => {
-      if (x.jobs.length === 0 || x.verdict.subsoilPhTrap) return false;
-      // Exclude plants whose moisture score is below the "outside range" band (e.g. wet-tropical species in Sahara).
-      if (x.mScore <= -40) return false;
-      if (x.verdict.level === 'fits') return true;
-      // A pruned orchard staple flagged ONLY for wild height (`room_tall`) still fits a managed small garden (roomLimitM >= 3 m).
-      return x.isOrchardStaple
-        && (eff.roomLimitM === null || eff.roomLimitM >= 3)
-        && x.verdict.level === 'check'
-        && x.verdict.reasons.length === 1
-        && x.verdict.reasons[0]?.code === 'room_tall';
-    })
-    .filter((x) => eff.roomLimitM === null || eff.roomLimitM > 2 || x.taxon.traits.height_m?.max == null || x.taxon.traits.height_m.max <= eff.roomLimitM);
-
-  const chosen: Taxon[] = [];
-  const chosenIds = new Set<PlantId>();
-  const usedFamilies = new Set<string>();
-  const usedStrata = new Set<string>();
-  let usedArea = 0;
-
-  const nFixCount = (): number => chosen.filter((t) => jobsOf(t).includes('feeds_soil')).length;
-  const canAdd = (item: (typeof fitsPool)[number]): boolean =>
-    !chosenIds.has(item.taxon.id) && usedArea + item.area <= eff.netPlotM2;
-
-  const addItem = (item: (typeof fitsPool)[number]): boolean => {
-    chosen.push(item.taxon);
-    chosenIds.add(item.taxon.id);
-    usedArea += item.area;
-    if (item.taxon.family) usedFamilies.add(item.taxon.family);
-    if (item.stratum) usedStrata.add(item.stratum);
-    return true;
-  };
-
-  const dynScore = (
-    item: (typeof fitsPool)[number],
-    bonusFn?: (x: (typeof fitsPool)[number]) => number,
-  ): number => {
-    let s = item.baseScore;
-    if (item.taxon.family && !usedFamilies.has(item.taxon.family)) s += 8;
-    if (item.stratum && !usedStrata.has(item.stratum)) s += 5;
-    if (nFixCount() >= 2 && item.jobs.includes('feeds_soil')) s -= 20;
-    if (bonusFn) s += bonusFn(item);
-    return s;
-  };
-
-  const pickBest = (
-    pred: (item: (typeof fitsPool)[number]) => boolean,
-    bonusFn?: (x: (typeof fitsPool)[number]) => number,
-  ): boolean => {
-    const cands = fitsPool
-      .filter((x) => canAdd(x) && pred(x))
-      .sort((a, b) => dynScore(b, bonusFn) - dynScore(a, bonusFn) || a.taxon.canonical_name.localeCompare(b.taxon.canonical_name));
-    return cands[0] ? addItem(cands[0]) : false;
-  };
-
-  // Layer 1: Fruit or nut canopy tree (orchard staples scored at managed orchard height <=8 m, crown <=50 m²)
-  if ((eff.roomLimitM === null || eff.roomLimitM >= 3) && eff.netPlotM2 >= 25 && chosen.length < maxPlants) {
-    const maxTreeArea = eff.netPlotM2 * 0.68;
-    pickBest(
-      (x) => x.sizeClass === 'tree' && x.scoreArea <= maxTreeArea,
-      (x) => {
-        const h = x.effMaxH ?? 8;
-        let b = 0;
-        if (x.jobs.includes('feeds_you')) b += 40 + x.edibility * 11;
-        else b -= 35;
-        if (h >= 5 && h <= 20) b += 14;
-        else if (h >= 3.5 && h < 5) b += 4;
-        else if (h > 22) b -= 20;
-        if (eff.roomLimitM !== null && h <= eff.roomLimitM) b += 4;
-        return b;
-      },
-    );
-  }
-
-  // Layer 2: Fruit or support shrub
-  if ((eff.roomLimitM === null || eff.roomLimitM >= 1.5) && eff.netPlotM2 >= 12 && chosen.length < maxPlants) {
-    const maxShrubArea = eff.netPlotM2 * 0.25;
-    pickBest(
-      (x) => x.sizeClass === 'shrub' && x.area <= maxShrubArea,
-      (x) => (x.jobs.includes('feeds_you') && x.edibility >= 3 ? 14 : 0) + (x.jobs.includes('helpers') ? 6 : 0),
-    );
-  }
-
-  // Layer 3: Structural perennial edible climber (excludes annual beans and low trailing ground crops)
-  if (chosen.length < maxPlants) {
-    pickBest(
-      (x) => x.isClimber && x.perennial && x.area <= eff.netPlotM2 * 0.25,
-      (x) => {
-        const h = x.taxon.traits.height_m?.max ?? 2;
-        let b = 0;
-        if (x.perennial) b += 24;
-        if (h >= 3) b += 20;
-        else if (h < 2.2) b -= 22;
-        if (x.jobs.includes('feeds_you') && x.edibility >= 4) b += 34;
-        else if (x.jobs.includes('feeds_you') && x.edibility >= 3) b += 22;
-        else if (!x.jobs.includes('feeds_you') || x.edibility < 2) b -= 24;
-        if (!x.jobs.includes('feeds_soil')) b += 6;
-        return b;
-      },
-    );
-  }
-
-  // Layer 4: Nitrogen-fixer (skip if already covered)
-  if (chosen.length < maxPlants && !chosen.some((t) => jobsOf(t).includes('feeds_soil'))) {
-    pickBest(
-      (x) => x.jobs.includes('feeds_soil') && x.area <= eff.netPlotM2 * 0.25,
-      (x) => (x.sizeClass === 'shrub' || x.sizeClass === 'herb' ? 8 : 0),
-    );
-  }
-
-  // Layer 5: Herb / pollinator plant
-  if (chosen.length < maxPlants) {
-    pickBest(
-      (x) => x.sizeClass === 'herb' && x.jobs.includes('helpers') && x.area <= eff.netPlotM2 * 0.15,
-      (x) => (x.perennial ? 8 : 0) + (x.jobs.includes('shelter') ? 6 : 0),
-    );
-  }
-
-  // Layer 6: Groundcover / living mulch (skip if already covered)
-  if (chosen.length < maxPlants && !chosen.some((t) => jobsOf(t).includes('ground'))) {
-    pickBest(
-      (x) => (x.sizeClass === 'groundcover' || ((x.taxon.traits.height_m?.max ?? 9) <= 0.8 && (x.jobs.includes('ground') || x.jobs.includes('mulch'))))
-        && x.area <= eff.netPlotM2 * 0.15,
-      (x) => (x.jobs.includes('ground') ? 10 : 0) + (x.jobs.includes('mulch') ? 8 : 0),
-    );
-  }
-
-  // Layer 7: True root or tuber crop (only when database traits confirm root/tuber/bulb + edible)
-  if (chosen.length < maxPlants) {
-    pickBest(
-      (x) => x.isRoot && x.jobs.includes('feeds_you') && x.area <= eff.netPlotM2 * 0.15,
-      (x) => (x.edibility >= 4 ? 10 : 0) + (x.perennial ? 6 : 0),
-    );
-  }
-
-  // Pass 1: ensure all 6 canonical jobs are covered
-  for (const job of jobIds) {
-    if (chosen.length >= maxPlants) break;
-    if (chosen.some((t) => jobsOf(t).includes(job))) continue;
-    pickBest((x) => x.jobs.includes(job) && x.area <= eff.netPlotM2 * 0.3);
-  }
-
-  // Pass 2: reinforce single-species jobs with diverse perennial backups
-  for (const job of jobIds) {
-    if (chosen.length >= maxPlants) break;
-    const count = chosen.filter((t) => jobsOf(t).includes(job)).length;
-    if (count >= 2) continue;
-    pickBest((x) => x.jobs.includes(job) && x.area <= eff.netPlotM2 * 0.25);
-  }
-
-  // Pass 3: fill remaining slots up to maxPlants with diverse high-fit species
-  while (chosen.length < maxPlants) {
-    if (!pickBest((x) => x.area <= eff.netPlotM2 * 0.25)) {
-      if (!pickBest(() => true)) break;
-    }
-  }
-
-  return chosen;
 }
 
 // ---- Interactions Matcher ----

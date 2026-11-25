@@ -68,7 +68,7 @@ export interface PickerFilterState {
   inBloomNow: boolean;
 }
 
-export type PickerSortBy = 'fit' | 'gaps' | 'height' | 'az';
+export type PickerSortBy = 'recommended' | 'fit' | 'gaps' | 'height' | 'az';
 
 function defaultPickerFilters(job: JobId | 'all' = 'all'): PickerFilterState {
   return {
@@ -184,7 +184,7 @@ export const nsPickerFilters = signal<PickerFilterState>(
   initialSession.pickerFilters ? { ...defaultPickerFilters(), ...initialSession.pickerFilters } : defaultPickerFilters(),
 );
 export const nsPickerMoreOpen = signal<boolean>(initialSession.pickerMoreOpen ?? false);
-export const nsPickerSort = signal<PickerSortBy>(initialSession.pickerSort ?? 'fit');
+export const nsPickerSort = signal<PickerSortBy>(initialSession.pickerSort ?? 'recommended');
 export const nsPickerScrollTop = signal<number>(initialSession.pickerScrollTop ?? 0);
 export const nsPickerFocusId = signal<PlantId | null>(initialSession.pickerFocusId ?? null);
 
@@ -192,7 +192,7 @@ export function resetPickerFilters(): void {
   batch(() => {
     nsPickerQuery.value = '';
     nsPickerFilters.value = defaultPickerFilters('all');
-    nsPickerSort.value = 'fit';
+    nsPickerSort.value = 'recommended';
     nsPickerScrollTop.value = 0;
     nsPickerFocusId.value = null;
   });
@@ -335,7 +335,18 @@ export const starterPreview = computed<readonly Taxon[]>(() => {
   const ov = effectiveOverrides.value;
   const eff = resolveEffectiveSite(lookup, 'today', ov);
   const eff2050 = resolveEffectiveSite(lookup, 'y2050', ov);
-  return selectStarterPalette(pool, eff, { maxPlants: 8, eff2050 });
+  const c = store.climate.value;
+  const sets = store.interactionSets.value;
+  const interactions = (c && sets[c]) ? sets[c]! : Object.values(sets).flatMap((xs) => xs ?? []);
+  return selectStarterPalette(pool, eff, {
+    maxPlants: 8,
+    eff2050,
+    lookup,
+    overrides: ov,
+    climateZone: c,
+    interactions,
+    layerValuesByPlant: nsLayerValues.value,
+  });
 });
 
 let watcherStarted = false;

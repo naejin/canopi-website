@@ -105,10 +105,10 @@ module.exports = {
     {
       name: 'L10-one-verdict',
       severity: 'error', // PP-B commit 0; error since PP-C c2 (the mark providers deleted, the baseline empty)
-      comment: 'L10: inside the core only the rule files, verdict*.ts, place.ts, suggest.ts, site-climate.ts, conflicts.ts (misfitsBeside for the flags, as verdict.ts reads it) and index.ts (named re-exports) import range.ts, future.ts or site.ts (plant-palette-architecture, consortium-v2-architecture row 3).',
+      comment: 'L10: inside the core only the rule files, verdict*.ts, report.ts, place.ts, suggest.ts, site-climate.ts, conflicts.ts (misfitsBeside for the flags, as verdict.ts reads it) and index.ts (named re-exports) import range.ts, future.ts or site.ts (plant-palette-architecture, consortium-v2-architecture row 3).',
       from: {
         path: '^src/lib/palette/',
-        pathNot: '^src/lib/palette/(range|future|site|verdict[^/]*|place|suggest|site-climate|conflicts|index)\\.ts$',
+        pathNot: '^src/lib/palette/(range|future|site|verdict[^/]*|report|place|suggest|site-climate|conflicts|index)\\.ts$',
       },
       to: { path: '^src/lib/palette/(range|future|site)\\.ts$' },
     },

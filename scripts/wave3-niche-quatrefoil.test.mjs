@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { GLYPH_PRIMITIVES } from '../src/lib/glyphs.ts';
-import { resolveEffectiveSite, selectStarterPalette } from '../src/lib/palette/report.ts';
+import { resolveEffectiveSite, selectStarterPalette } from '../src/lib/palette/index.ts';
 
 function makeTaxon(id, stratum, lightPref, job, heightM = 2) {
   return {

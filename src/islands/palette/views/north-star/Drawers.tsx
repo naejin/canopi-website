@@ -10,6 +10,7 @@ import type {
   JobId,
   PaletteReport,
   PlantId,
+  RecommendReason,
   Taxon,
 } from '../../../../lib/palette/index.ts';
 import {
@@ -23,6 +24,7 @@ import {
   jobsOf,
   months as MONTHS,
   preferredFrostC,
+  rankCandidatesForGuild,
   toxicityStatusOf,
   vineSupportTree,
 } from '../../../../lib/palette/index.ts';
@@ -336,27 +338,69 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
     return true;
   };
 
+  const allInteractions = useMemo(() => {
+    const sets = store.interactionSets.value;
+    const c = store.climate.value;
+    return (c && sets[c]) ? sets[c]! : Object.values(sets).flatMap((xs) => xs ?? []);
+  }, [store.interactionSets.value, store.climate.value]);
+
+  const recommendations = useMemo(
+    () => rankCandidatesForGuild(searchMatches, rep.taxa, {
+      effToday: rep.effToday,
+      eff2050: rep.eff2050,
+      lookup: store.location.value?.lookup ?? null,
+      climateZone: store.climate.value,
+      interactions: allInteractions,
+      layerValuesByPlant: nsLayerValues.value,
+    }),
+    [searchMatches, rep.taxa, rep.effToday, rep.eff2050, store.location.value?.lookup, store.climate.value, allInteractions, nsLayerValues.value],
+  );
+
+  const formatRationale = (reasons: readonly RecommendReason[]): string | null => {
+    const parts: string[] = [];
+    for (const r of reasons) {
+      if (parts.length >= 2) break;
+      if (r.code === 'fills_gap' && r.job) parts.push(T('ns.rec.fillsGap', { job: jobLabel(r.job) }));
+      else if (r.code === 'backs_up_2050' && r.job) parts.push(T('ns.rec.backsUp2050', { job: jobLabel(r.job) }));
+      else if (r.code === 'yield_gain' && r.partnerName) parts.push(T('ns.rec.yieldGain', { name: r.partnerName }));
+      else if (r.code === 'shared_pest' && r.partnerName) parts.push(T('ns.rec.sharedPest', { name: r.partnerName }));
+      else if (r.code === 'conflict' && r.partnerName) parts.push(T('ns.rec.conflict', { name: r.partnerName }));
+      else if (r.code === 'understory_shade') parts.push(T('ns.rec.understoryShade'));
+      else if (r.code === 'fits_2050') parts.push(T('ns.rec.fits2050'));
+      else if (r.code === 'unknown_2050') parts.push(T('ns.rec.unknown2050'));
+    }
+    return parts.length ? parts.join(' · ') : null;
+  };
+
   const filtered = useMemo(() => {
     const out = searchMatches.filter((t) => matchesFilters(t, f));
     const rank = { fits: 0, check: 1, unknown: 2, at_risk: 3 };
+    const effectiveSort = sortBy === 'recommended' && rep.taxa.length === 0 ? 'gaps' : sortBy;
     return out.sort((a, b) => {
       const ia = inPalette.has(a.id) ? 1 : 0, ib = inPalette.has(b.id) ? 1 : 0;
       if (ia !== ib) return ia - ib;
-      if (sortBy === 'gaps') {
+      if (effectiveSort === 'recommended') {
+        const va = verdictsActive.get(a.id)?.level ?? 'unknown';
+        const vb = verdictsActive.get(b.id)?.level ?? 'unknown';
+        if (rank[va] !== rank[vb]) return rank[va] - rank[vb];
+        const sa = recommendations.get(a.id)?.score ?? 0;
+        const sb = recommendations.get(b.id)?.score ?? 0;
+        if (sa !== sb) return sb - sa;
+      } else if (effectiveSort === 'gaps') {
         const ga = jobsOf(a).filter((j) => neededJobs.has(j)).length;
         const gb = jobsOf(b).filter((j) => neededJobs.has(j)).length;
         if (ga !== gb) return gb - ga;
-      } else if (sortBy === 'height') {
+      } else if (effectiveSort === 'height') {
         const ha = a.traits.height_m?.max ?? 999, hb = b.traits.height_m?.max ?? 999;
         if (ha !== hb) return ha - hb;
-      } else if (sortBy === 'az') {
+      } else if (effectiveSort === 'az') {
         return taxCommonName(a).localeCompare(taxCommonName(b));
       }
       const va = verdictsActive.get(a.id)?.level ?? 'unknown';
       const vb = verdictsActive.get(b.id)?.level ?? 'unknown';
       return (rank[va] - rank[vb]) || taxCommonName(a).localeCompare(taxCommonName(b));
     });
-  }, [searchMatches, f, sortBy, inPalette, neededJobs, verdictsActive, verdictsToday, verdicts2050, rep.eff.roomLimitM, rep.eff.soilPh]);
+  }, [searchMatches, f, sortBy, rep.taxa.length, inPalette, neededJobs, recommendations, verdictsActive, verdictsToday, verdicts2050, rep.eff.roomLimitM, rep.eff.soilPh]);
 
   const toggleBool = (key: keyof PickerFilterState) => {
     setF((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -474,8 +518,9 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
             id="picker-sort"
             class="picker-sort"
             value={sortBy}
-            onChange={(e) => setSortBy((e.target as HTMLSelectElement).value as 'fit' | 'gaps' | 'height' | 'az')}
+            onChange={(e) => setSortBy((e.target as HTMLSelectElement).value as 'recommended' | 'fit' | 'gaps' | 'height' | 'az')}
           >
+            <option value="recommended">{T('ns.picker.sortRecommended')}</option>
             <option value="fit">{T('ns.picker.sortFit')}</option>
             <option value="gaps">{T('ns.picker.sortGaps')}</option>
             <option value="height">{T('ns.picker.sortHeight')}</option>
@@ -598,6 +643,8 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
             const hMax = p.traits.height_m?.max ?? null;
             const guestZ = guestZones.get(p.id);
             const pTrack = pickerTracks.get(p.id) ?? rep.growingYear.tracks.get(p.id);
+            const recEval = recommendations.get(p.id);
+            const recLine = !added && recEval ? formatRationale(recEval.reasons) : null;
             return (
               <div key={p.id} class="picker-row-v7">
                 <button
@@ -616,6 +663,7 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
                       <strong>{taxCommonName(p)}</strong>{' '}
                       <span class="plant-bot">{p.canonical_name}</span>
                     </div>
+                    {recLine && <div class="small muted" style={{ marginTop: '2px' }}>{recLine}</div>}
                     <div class="plant-badges" style={{ marginTop: '4px' }}>
                       {v && <span class={`badge ${verdictBadgeClass(v.level)}`}>{verdictSymbolLabel(v.level)}</span>}
                       <span class="badge">{lightSpanLabel(p)}{hMax != null ? ` · ${fmtNum(hMax)} m` : ''}</span>
@@ -661,8 +709,20 @@ function AtlasDrawer({ rep, swapFor }: { rep: PaletteReport; swapFor?: PlantId }
   const targetTaxon = rep.taxa.find((t) => t.id === targetId) ?? rep.taxa[0] ?? null;
   const swaps = useMemo(() => {
     if (!targetTaxon) return [];
-    return findCompatibleSwaps(targetTaxon, pool, eff, inPalette, 5);
-  }, [targetTaxon, pool, eff, inPalette]);
+    const sets = store.interactionSets.value;
+    const c = store.climate.value;
+    const interactions = (c && sets[c]) ? sets[c]! : Object.values(sets).flatMap((xs) => xs ?? []);
+    const others = rep.taxa.filter((t) => t.id !== targetTaxon.id);
+    return findCompatibleSwaps(
+      targetTaxon,
+      pool,
+      eff,
+      inPalette,
+      5,
+      { eff2050: rep.eff2050, lookup: store.location.value?.lookup ?? null, climateZone: c, interactions },
+      others,
+    );
+  }, [targetTaxon, pool, eff, inPalette, rep.eff2050, rep.taxa, store.interactionSets.value, store.climate.value, store.location.value?.lookup]);
   const cmpCand = compareId ? pool.find((x) => x.id === compareId) ?? null : null;
 
   const activeScenShort = scenarioShort(nsScenario.value);
@@ -1128,7 +1188,21 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
   const pollWarn = pollinationShortWarn(taxon);
   const tox = toxBadgeInfo(taxon);
   const inPalette = useMemo(() => new Set(store.members.value), [store.members.value]);
-  const swapCand = useMemo(() => findCompatibleSwaps(taxon, activePool.value, rep.eff, inPalette, 1)[0]?.taxon ?? null, [taxon, activePool.value, rep.eff, inPalette]);
+  const swapCand = useMemo(() => {
+    const sets = store.interactionSets.value;
+    const c = store.climate.value;
+    const interactions = (c && sets[c]) ? sets[c]! : Object.values(sets).flatMap((xs) => xs ?? []);
+    const others = rep.taxa.filter((t) => t.id !== taxon.id);
+    return findCompatibleSwaps(
+      taxon,
+      activePool.value,
+      rep.eff,
+      inPalette,
+      1,
+      { eff2050: rep.eff2050, lookup: store.location.value?.lookup ?? null, climateZone: c, interactions },
+      others,
+    )[0]?.taxon ?? null;
+  }, [taxon, activePool.value, rep.eff, rep.eff2050, rep.taxa, inPalette, store.interactionSets.value, store.climate.value, store.location.value?.lookup]);
 
   // Photo gallery switcher (local-only URLs: zero third-party requests; Wave 5 N8-N9) + photo credit
   const [lightboxOpen, setLightboxOpen] = useState(false);

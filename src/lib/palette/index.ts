@@ -42,9 +42,10 @@ export * from './weigh.ts';
 // v14 pf commit 0W (chk #3): the change summary of a grower's edit and its words, typed stubs pf-d fills.
 export * from './site-change.ts';
 export * from './site-change-line.ts';
-// Stage 2A North Star single source of truth report engine + WGSRPD L3/ISO area names
+// Stage 2A North Star single source of truth report engine + Wave 6 recommendation engine + WGSRPD L3/ISO area names
 export * from './area-names.ts';
 export * from './report.ts';
+export * from './recommend.ts';
 
 // E6 R4 (design check A11): the suggestion and the Swap list (suggest.ts), their own chunk (role
 // `suggest`, scripts/built-modules.mjs ROLE_ENTRIES), off the first run, so this barrel does not

@@ -70,10 +70,10 @@ test('Botanical Picker (761-species search) and Visual Field Dossier (clean prov
   await clickNth(page, '.bar-btn-add', 0);
   assert.ok(await has(page, '.drawer[role="dialog"]', 8_000), 'Botanical Picker drawer opens');
 
-  // Search botanical catalog for "fig"
+  // Search botanical catalog for "olive" (not in Montpellier's Fig-anchored starter)
   const input = await page.waitForSelector('.drawer #picker-search', { timeout: 6_000 });
-  await input.type('fig');
-  await page.waitForFunction(() => /Ficus|Fig/i.test(document.querySelector('.drawer')?.innerText ?? ''), { timeout: 10_000 });
+  await input.type('olive');
+  await page.waitForFunction(() => /Olea|Olive/i.test(document.querySelector('.drawer')?.innerText ?? ''), { timeout: 10_000 });
 
   // Add first not-yet-in-palette match
   await clickNth(page, '.picker-row-v7 .btn-primary, .picker-row .btn-primary', 0);

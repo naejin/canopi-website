@@ -129,8 +129,9 @@ test('pool: a Taxon carries its observed climate range (cultivation included) an
   const s3 = { blocks: 40, lowSource: 'gbif_occurrences', highSource: 'gbif_occurrences', weak: false };
   assert.deepEqual(by('Castanea sativa').climate, {
     source: 'gbif_occurrences',
-    // M23: the annual rain (mm), read beside the ranges and never checked (READ_ONLY_VARIABLES).
+    // M23 + Wave 6 B3: annual rain (mm) and dry months read beside the ranges.
     precip: { low: 450, median: 800, high: 1600, count: 200, basis: 'thinned_cells', ...s3 },
+    dryMonths: { low: 0, median: 1, high: 4, count: 200, basis: 'thinned_cells', ...s3 },
     tminCold: { low: -15, median: -4, high: 2.5, count: 200, basis: 'thinned_cells', ...s3 },
     tmaxWarm: { low: 18, median: 24, high: 30, count: 200, basis: 'thinned_cells', ...s3 },
     // Schema 3: the year's warmth (not shifted, as aridity).

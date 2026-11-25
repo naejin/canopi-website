@@ -16,6 +16,7 @@ import {
   pollinationShortWarn,
   shortSiteName,
   taxCommonName,
+  toxBadgeInfo,
   verdictSymbolLabel,
 } from './ns-helpers.ts';
 import {
@@ -30,6 +31,7 @@ import {
   siteAnalogueLabel,
   startNsWatchers,
   starterPreview,
+  updateOverrides,
 } from './ns-state.ts';
 
 interface PlaceHit {
@@ -89,9 +91,12 @@ export function NorthStarArrival() {
   const isHydrating = !loc?.lookup || loading || !poolReady;
   const noStarter = !isHydrating && starter.length === 0;
   const countryCode = effToday.country;
+  const countryChecked = !!countryCode && store.source.value?.countries().get(countryCode)?.invasiveChecked === true;
   const countryInvasiveUnchecked = !isHydrating && !!countryCode
     && store.source.value?.countries().get(countryCode)?.invasiveChecked === false;
   const countryName = countryCode ? formatCountryName(countryCode, currentLocale()) : null;
+  const isRegularWatering = effToday.watering === 'all-year';
+  const assumingSmall = !store.room.value || store.room.value === 'unsure';
 
   async function onSearchSubmit(e: Event) {
     e.preventDefault();
@@ -276,12 +281,29 @@ export function NorthStarArrival() {
               <span class="ns-skel ns-skel-sub" aria-hidden="true" />
             ) : noStarter ? (
               T('ns.arrival.noStarter')
-            ) : allFit ? (
-              T('ns.arrival.allFit', { ph: fmtNum(effToday.soilPh) })
             ) : (
-              T('ns.arrival.someFit', { ok: starterThrives, total: starter.length })
+              <>
+                {allFit
+                  ? T('ns.arrival.allFit', { ph: fmtNum(effToday.soilPh) })
+                  : T('ns.arrival.someFit', { ok: starterThrives, total: starter.length })}
+                {assumingSmall ? ` · ${T('ns.arrival.assumingSmall')}` : ''}
+                {' · '}
+                {isRegularWatering ? T('ns.arrival.waterRegularly') : T('ns.arrival.rainFed')}
+              </>
             )}
           </p>
+          {!isHydrating && (
+            <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+              <button
+                type="button"
+                class="sample-chip"
+                aria-pressed={isRegularWatering ? 'true' : 'false'}
+                onClick={() => updateOverrides({ watering: isRegularWatering ? 'rain' : 'all-year' })}
+              >
+                {T('ns.arrival.waterRegularly')}
+              </button>
+            </div>
+          )}
         </div>
 
         <div class="arrival-shift-line">
@@ -372,15 +394,22 @@ export function NorthStarArrival() {
                 ? (support ? T('ns.vine.climbsTree', { tree: taxCommonName(support) }) : T('ns.vine.needsTrellis'))
                 : null;
               const pollWarn = pollinationShortWarn(p);
+              const invasiveHere = countryChecked && !!countryCode && !!countryName
+                && (p.warnings.invasive_in?.some((r) => r.country === countryCode) ?? false);
+              const invNote = invasiveHere && countryName ? T('ns.arrival.invasiveIn', { country: countryName }) : null;
+              const tox = toxBadgeInfo(p);
+              const hasAnyNote = Boolean(invNote || tox || pollWarn || climbNote);
               return (
                 <div key={p.id} class="starter-mini">
                   <PlantThumb taxon={p} size={44} />
                   <div class="starter-mini-txt">
                     <div class="starter-mini-name">{taxCommonName(p)}</div>
                     <div class="starter-mini-bot">
+                      {invNote && <div>⚠ {invNote}</div>}
+                      {tox && <div>{tox.text}</div>}
                       {pollWarn && <div>{pollWarn}</div>}
                       {climbNote && <div>{climbNote}</div>}
-                      {!pollWarn && !climbNote && (v ? verdictSymbolLabel(v.level) : p.canonical_name)}
+                      {!hasAnyNote && (v ? verdictSymbolLabel(v.level) : p.canonical_name)}
                     </div>
                   </div>
                 </div>

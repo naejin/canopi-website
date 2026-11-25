@@ -9,7 +9,7 @@ import {
   resolveEffectiveSite,
   selectStarterPalette,
   vineSupportTree,
-} from '../src/lib/palette/report.ts';
+} from '../src/lib/palette/index.ts';
 
 function makeTaxon(overrides = {}) {
   return {

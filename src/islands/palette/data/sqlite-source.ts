@@ -261,8 +261,8 @@ function climatesOf(rows: unknown[][]): Map<number, TaxonClimate> {
   const out = new Map<number, TaxonClimate>();
   for (const [plant, source, cells, share, variable, low, median, high, count, basis, blocks, lowSource, highSource, weak] of rows) {
     let t = out.get(Number(plant));
-    if (!t) out.set(Number(plant), t = { source: String(source), precip: null, tminCold: null, tmaxWarm: null, tmeanYear: null, tmeanWarm: null, aridity: null, cells: num(cells), nativeShare: num(share) });
-    const field = variable === 'precip' ? 'precip' : RANGE_VARIABLES[variable as RangeVariable];
+    if (!t) out.set(Number(plant), t = { source: String(source), precip: null, dryMonths: null, tminCold: null, tmaxWarm: null, tmeanYear: null, tmeanWarm: null, aridity: null, cells: num(cells), nativeShare: num(share) });
+    const field = variable === 'precip' ? 'precip' : variable === 'dry_months' ? 'dryMonths' : RANGE_VARIABLES[variable as RangeVariable];
     if (field) t[field] = { low: num(low), median: num(median), high: num(high), count: num(count), basis: basis as RangeBasis,
       blocks: num(blocks), lowSource: lowSource == null ? null : String(lowSource), highSource: highSource == null ? null : String(highSource), weak: Number(weak) === 1 } satisfies ClimateRange;
   }

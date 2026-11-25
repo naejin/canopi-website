@@ -93,7 +93,8 @@ function tenths(i: Info, cov: Coverage) {
   const food = i.jobs.includes('feeds_you') ? 40 * i.span.filter((p) => !cov.food.has(p)).length : 0;
   const backup = 40 * i.jobs.filter((j) => BACKED_UP.includes(j) && cov.jobs.get(j) === 1).length;
   const edibility = 10 * i.edibility;
-  const weedy = i.weedy ? -30 : 0;
+  // Operator rule (2026-11-25, "inform, don't block"): never penalize weed_potential in scoring.
+  const weedy = 0;
   const unknowns = i.fit.unknowns.length ? -5 * i.fit.unknowns.length : 0; // never -0
   return { jobs, holes: holeGain, strata: strataGain, food, backup, edibility, weedy, unknowns, total: jobs + holeGain + strataGain + food + backup + edibility + weedy + unknowns };
 }
