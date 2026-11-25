@@ -182,7 +182,7 @@ function PulseCard({ rep }: { rep: PaletteReport }) {
   const { counts, coveredJobs, missingJobs, noBackupJobs, crownBudget, robustness, interactions, eff, subsoilTrapCount } = rep;
   const activeScenShort = scenarioShort(nsScenario.value);
   const activeScenLabel = scenarioLabel(nsScenario.value);
-  const waterWord = eff.watering === 'rain' ? T('ns.water.rain') : eff.watering === 'first-years' ? T('ns.water.firstYears') : T('ns.water.allYear');
+  const waterWord = eff.watering === 'rain' ? T('ns.water.rainShort') : eff.watering === 'first-years' ? T('ns.water.firstYears') : T('ns.water.allYear');
 
   const backupPart = missingJobs.length > 0
     ? T('ns.pulse.jobGaps', { n: missingJobs.length })
@@ -245,7 +245,7 @@ function PulseCard({ rep }: { rep: PaletteReport }) {
             aria-pressed={pairActive ? 'true' : 'false'}
             onClick={() => { nsActivePairKey.value = pairActive ? null : firstPairKey; }}
           >
-            ↔ {interactions.length}
+            ↔ {interactions.length} {T('ns.pulse.interactions')}
           </button>
         )}
         {subsoilTrapCount > 0 && (

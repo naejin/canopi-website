@@ -160,9 +160,16 @@ function SwapDiffTable({ curPlant, candPlant, rep }: { curPlant: Taxon; candPlan
   const extStr = (p: Taxon) => (p.extremes?.tminExtreme?.low != null && p.extremes?.tmaxExtreme?.high != null)
     ? `${fmtNum(p.extremes.tminExtreme.low)} – ${fmtNum(p.extremes.tmaxExtreme.high)} °C`
     : T('ns.notRecorded');
-  const matStr = (p: Taxon) => p.traits.age_of_maturity_years != null ? `${fmtNum(p.traits.age_of_maturity_years)} yr` : T('ns.unknown');
+  const matStr = (p: Taxon) => {
+    const m = p.traits.age_of_maturity_years;
+    if (m == null) return T('ns.unknown');
+    return m <= 0 ? T('ns.plan.ltOneYr') : `${fmtNum(m)} yr`;
+  };
   const sizeStr = (p: Taxon) => `${p.traits.height_m?.max != null ? `${fmtNum(p.traits.height_m.max)} m` : '—'} × ${p.traits.width_max_m != null ? `${fmtNum(p.traits.width_max_m)} m` : '—'}`;
-  const waterStr = (p: Taxon) => `${p.traits.drought_tolerance ?? T('ns.notRecorded')} · ${p.traits.moisture_use ?? T('ns.notRecorded')}`;
+  const waterStr = (p: Taxon) => T('ns.swaps.waterPair', {
+    drought: p.traits.drought_tolerance ?? T('ns.notRecorded'),
+    moisture: p.traits.moisture_use ?? T('ns.notRecorded'),
+  });
   const curJobs = jobsOf(curPlant);
   const candJobs = jobsOf(candPlant);
   const jobsKept = curJobs.filter((j) => candJobs.includes(j)).map(jobLabel);
@@ -183,7 +190,7 @@ function SwapDiffTable({ curPlant, candPlant, rep }: { curPlant: Taxon; candPlan
       <table class="swap-diff-table">
         <thead>
           <tr>
-            <th>{T('ns.field.other')}</th>
+            <th>{T('ns.swaps.colTrait')}</th>
             <th>{taxCommonName(curPlant)}</th>
             <th>{taxCommonName(candPlant)}</th>
           </tr>
@@ -194,13 +201,13 @@ function SwapDiffTable({ curPlant, candPlant, rep }: { curPlant: Taxon; candPlan
             <td>{verdictSymbolLabel(vcT.level)} / {verdictSymbolLabel(vcC.level)}</td>
             <td>{verdictSymbolLabel(vnT.level)} / {verdictSymbolLabel(vnC.level)}</td>
           </tr>
-          <tr><th>{T('ns.land.freeze10')} / {T('ns.land.heat10')}</th><td>{extStr(curPlant)}</td><td>{extStr(candPlant)}</td></tr>
+          <tr><th>{T('ns.swaps.rowExtremes')}</th><td>{extStr(curPlant)}</td><td>{extStr(candPlant)}</td></tr>
           <tr><th>{T('ns.field.height')} × {T('ns.field.width')}</th><td>{sizeStr(curPlant)}</td><td>{sizeStr(candPlant)}</td></tr>
-          <tr><th>{T('ns.plan.y5')}</th><td>{matStr(curPlant)}</td><td>{matStr(candPlant)}</td></tr>
-          <tr><th>{T('ns.field.water')}</th><td>{waterStr(curPlant)}</td><td>{waterStr(candPlant)}</td></tr>
+          <tr><th>{T('ns.swaps.rowMaturity')}</th><td>{matStr(curPlant)}</td><td>{matStr(candPlant)}</td></tr>
+          <tr><th>{T('ns.swaps.rowWater')}</th><td>{waterStr(curPlant)}</td><td>{waterStr(candPlant)}</td></tr>
           <tr><th>{T('ns.field.toxicity')}</th><td>{toxDossierText(curPlant)}</td><td>{toxDossierText(candPlant)}</td></tr>
           <tr>
-            <th>{T('ns.pillar.jobs')}</th>
+            <th>{T('ns.swaps.rowJobsKept')}</th>
             <td colSpan={2}>{jobsKept.length > 0 ? jobsKept.join(', ') : candJobs.map(jobLabel).join(', ')}</td>
           </tr>
         </tbody>
@@ -1138,17 +1145,19 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
       <div class="unified-plate">
         <div class="viz-head">
           <span>{T('ns.dossier.fitPlate', { site: siteShort })}</span>
-          <span class="small muted">T / 50 / Top / Sub · ◆</span>
+          <span class="small muted">{T('ns.dossier.fitLegend')}</span>
         </div>
 
         <div class="plate-section">
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-            <strong>{T('ns.land.freeze10')}</strong>
+            <strong>{T('ns.dossier.coldestNight')}</strong>
             <span class="muted">
-              {ex?.tminExtreme?.low != null ? `${fmtNum(ex.tminExtreme.low)} °C` : T('ns.notRecorded')}
+              {ex?.tminExtreme?.low != null
+                ? T('ns.dossier.recordedDownTo', { t: `${fmtNum(ex.tminExtreme.low)} °C` })
+                : T('ns.notRecorded')}
             </span>
           </div>
-          <div class="bullet-track bullet-track-pad" aria-label={T('ns.land.freeze10')}>
+          <div class="bullet-track bullet-track-pad" aria-label={T('ns.dossier.coldestNight')}>
             {ex?.tminExtreme?.low != null && ex?.tminExtreme?.high != null && (
               <div class="bullet-range" style={{ left: `${pct(ex.tminExtreme.low, coldMin, coldMax)}%`, width: `${Math.max(2, pct(ex.tminExtreme.high, coldMin, coldMax) - pct(ex.tminExtreme.low, coldMin, coldMax))}%` }} />
             )}
@@ -1178,12 +1187,14 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
 
         <div class="plate-section">
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-            <strong>{T('ns.land.heat10')}</strong>
+            <strong>{T('ns.dossier.hottestDay')}</strong>
             <span class="muted">
-              {ex?.tmaxExtreme?.high != null ? `${fmtNum(ex.tmaxExtreme.high)} °C` : T('ns.notRecorded')}
+              {ex?.tmaxExtreme?.high != null
+                ? T('ns.dossier.recordedUpTo', { t: `${fmtNum(ex.tmaxExtreme.high)} °C` })
+                : T('ns.notRecorded')}
             </span>
           </div>
-          <div class="bullet-track bullet-track-pad" aria-label={T('ns.land.heat10')}>
+          <div class="bullet-track bullet-track-pad" aria-label={T('ns.dossier.hottestDay')}>
             {ex?.tmaxExtreme?.low != null && ex?.tmaxExtreme?.high != null && (
               <div class="bullet-range" style={{ left: `${pct(ex.tmaxExtreme.low, heatMin, heatMax)}%`, width: `${Math.max(2, pct(ex.tmaxExtreme.high, heatMin, heatMax) - pct(ex.tmaxExtreme.low, heatMin, heatMax))}%` }} />
             )}
@@ -1234,7 +1245,7 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
 
         <div class="plate-section">
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-            <strong>{T('ns.picker.grpSun')}</strong>
+            <strong>{T('ns.dossier.sunTolerance')}</strong>
             <span class="muted">{lightSpanLabel(taxon)}</span>
           </div>
           <div class="sun-spec">
@@ -1294,31 +1305,41 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
           )}
         </div>
         <div class="plant-badges">
-          <span class="badge">{taxon.traits.age_of_maturity_years != null ? `${fmtNum(taxon.traits.age_of_maturity_years)} yr` : T('ns.notRecorded')}</span>
+          <span class="badge">
+            {taxon.traits.age_of_maturity_years != null
+              ? (taxon.traits.age_of_maturity_years <= 0 ? T('ns.plan.ltOneYr') : `${fmtNum(taxon.traits.age_of_maturity_years)} yr`)
+              : T('ns.notRecorded')}
+          </span>
           <span class="badge">{taxon.traits.growth_rate ?? T('ns.notRecorded')}</span>
           <span class="badge">{taxon.traits.lifespan ?? T('ns.notRecorded')}</span>
         </div>
       </div>
 
-      {/* 5. Field Facts Grid (including Weed potential, Wind, Fertility & Water tank) */}
+      {/* 5. Field Facts Grid (words, never symbols alone — R2-2) */}
       <details class="tune-details" open>
         <summary><span>{T('ns.dossier.fieldFacts')}</span><span aria-hidden="true">▾</span></summary>
         <div class="tune-body">
           <div class="facts-grid">
             <div class="fact-card">
-              <div class="fact-card-title">{T('ns.picker.grpSafety')}</div>
+              <div class="fact-card-title">{T('ns.dossier.grpPollination')}</div>
               <span><strong>{T('ns.picker.fSelfFertile')}:</strong> {poll ?? T('ns.notRecorded')}</span>
               <span><strong>System:</strong> {taxon.traits.sexual_system ?? T('ns.notRecorded')}</span>
               <span><strong>Pollinators:</strong> {taxon.traits.pollinators?.length ? taxon.traits.pollinators.join(', ') : T('ns.notRecorded')}</span>
             </div>
             <div class="fact-card">
-              <div class="fact-card-title">{T('ns.field.toxicity')}</div>
+              <div class="fact-card-title">{T('ns.dossier.grpToxicity')}</div>
               <span>{toxDossierText(taxon, details)}</span>
-              <span><strong>Allelopathy:</strong> {taxon.warnings.allelopathic === true ? '✓' : taxon.warnings.allelopathic === false ? '—' : T('ns.notRecorded')}</span>
-              <span><strong>{T('ns.dossier.weedPotential')}:</strong> {taxon.warnings.weed_potential === true ? '⚠' : taxon.warnings.weed_potential === false ? '✓' : T('ns.notRecorded')}</span>
+              <span>
+                <strong>Allelopathy:</strong>{' '}
+                {taxon.warnings.allelopathic === true ? T('ns.dossier.yesRecorded') : taxon.warnings.allelopathic === false ? T('ns.dossier.noRecorded') : T('ns.notRecorded')}
+              </span>
+              <span>
+                <strong>{T('ns.dossier.weedPotential')}:</strong>{' '}
+                {taxon.warnings.weed_potential === true ? T('ns.dossier.weedFlagged') : taxon.warnings.weed_potential === false ? T('ns.dossier.weedLow') : T('ns.notRecorded')}
+              </span>
             </div>
             <div class="fact-card">
-              <div class="fact-card-title">{T('ns.picker.grpWater')}</div>
+              <div class="fact-card-title">{T('ns.dossier.grpWater')}</div>
               <span><strong>{T('ns.picker.fDrought')}:</strong> {taxon.traits.drought_tolerance ?? T('ns.notRecorded')}</span>
               <span><strong>{T('ns.field.water')}:</strong> {taxon.traits.moisture_use ?? T('ns.notRecorded')}</span>
               <span><strong>{T('ns.dossier.wind')}:</strong> {windText}</span>
@@ -1329,11 +1350,17 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
               )}
             </div>
             <div class="fact-card">
-              <div class="fact-card-title">{T('ns.land.soilDrainHead')}</div>
-              <span><strong>{T('ns.land.drainage')}:</strong> {taxon.traits.well_drained === true ? '✓' : T('ns.notRecorded')}</span>
+              <div class="fact-card-title">{T('ns.dossier.grpSoil')}</div>
+              <span>
+                <strong>{T('ns.land.drainage')}:</strong>{' '}
+                {taxon.traits.well_drained === true ? T('ns.dossier.wellDrained') : T('ns.notRecorded')}
+              </span>
               <span><strong>{T('ns.dossier.fertility')}:</strong> {taxon.traits.fertility_requirement ?? T('ns.notRecorded')}</span>
               <span><strong>Mycorrhizae:</strong> {taxon.traits.mycorrhizal_type ?? T('ns.notRecorded')}</span>
-              <span><strong>{T('ns.picker.fNfix')}:</strong> {taxon.traits.nitrogen_fixer === true ? '✓' : taxon.traits.nitrogen_fixer === false ? '—' : T('ns.notRecorded')}</span>
+              <span>
+                <strong>{T('ns.picker.fNfix')}:</strong>{' '}
+                {taxon.traits.nitrogen_fixer === true ? T('ns.dossier.yesRecorded') : taxon.traits.nitrogen_fixer === false ? T('ns.dossier.no') : T('ns.notRecorded')}
+              </span>
             </div>
           </div>
         </div>
@@ -1341,42 +1368,52 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
 
       {swapCand && <SwapDiffTable curPlant={taxon} candPlant={swapCand} rep={rep} />}
 
-      {ints.length > 0 && (
-        <div>
-          <p class="pulse-kicker" style={{ marginBottom: '6px' }}>{T('ns.pulse.title')}</p>
-          {ints.map((it, idx) => {
-            const other = byId.get(it.a === taxon.id ? it.b : it.a);
-            return (
-              <div key={idx} class="land-alert" style={{ marginBottom: '6px' }}>
-                <strong>{it.positive ? '✓' : '⚠'} {other ? taxCommonName(other) : ''}</strong>
-                {it.interaction.agent && <span>{it.interaction.agent}</span>}
-              </div>
-            );
-          })}
-        </div>
-      )}
+      <div>
+        <p class="pulse-kicker" style={{ marginBottom: '6px' }}>{T('ns.dossier.interactionsHead')}</p>
+        {ints.length > 0 ? ints.map((it, idx) => {
+          const other = byId.get(it.a === taxon.id ? it.b : it.a);
+          return (
+            <div key={idx} class="land-alert" style={{ marginBottom: '6px' }}>
+              <strong>{it.positive ? '✓' : '⚠'} {other ? taxCommonName(other) : ''}</strong>
+              {it.interaction.agent && <span>{it.interaction.agent}</span>}
+            </div>
+          );
+        }) : (
+          <p class="small muted">{T('ns.dossier.noInteractions')}</p>
+        )}
+      </div>
 
-      {/* Provenance & Schema 4.11 Trait Sources (ZERO PFAF!) */}
+      {/* Provenance, Region & Sources (ZERO raw quotes, ZERO PFAF — R2-3) */}
       <div class="viz-card">
         <div class="viz-head">
           <span>{T('ns.dossier.sources')}</span>
           <span class="small muted">
-            {taxon.climate?.cells != null ? `${taxon.climate.cells.toLocaleString()} GBIF` : T('ns.dossier.sourceCurated')}
+            {taxon.climate?.cells != null
+              ? T('ns.dossier.gbifCells', { n: taxon.climate.cells.toLocaleString() })
+              : T('ns.dossier.gbifUnrecorded')}
           </span>
         </div>
-        {(areaName || countryName) && (
-          <span class="small">
-            {areaName ? <><strong>{areaName}</strong>{nativeStatus ? ` (${nativeStatus})` : ''} · </> : null}
-            {countryName ? <strong>{countryName}</strong> : null}
-          </span>
-        )}
+        <span class="small">
+          {areaName && (
+            <>
+              <strong>{T('ns.dossier.regionLine', { area: areaName })}</strong>{' '}
+              {nativeStatus ?? T('ns.notRecorded')}
+              {' · '}
+            </>
+          )}
+          <strong>{T('ns.dossier.invasiveLine')}</strong>{' '}
+          {invasiveHere && countryName
+            ? T('ns.dossier.invasiveListed', { country: countryName })
+            : (taxon.warnings.invasive_in?.length ?? 0) > 0 && countryName
+              ? T('ns.dossier.invasiveOther', { country: countryName, n: taxon.warnings.invasive_in?.length ?? 0 })
+              : T('ns.dossier.invasiveNone')}
+        </span>
         {details && details.traitSources.length > 0 ? (
           <ul class="small" style={{ margin: 0, paddingLeft: '18px', display: 'grid', gap: '4px' }}>
             {details.traitSources.slice(0, 8).map((ts, idx) => (
               <li key={idx}>
                 <strong>{traitFieldLabel(ts.field)}:</strong>{' '}
                 {sanitizeSourceLabel(ts.source, details.sources[ts.source]?.label)}
-                {ts.quote && <blockquote style={{ margin: '2px 0 0', fontStyle: 'italic' }}>“{ts.quote}”</blockquote>}
                 {ts.sourceUrl && (
                   <a href={ts.sourceUrl} target="_blank" rel="noopener noreferrer" class="tap-link">
                     {' '}{T('ns.dossier.sourceLink')}
@@ -1390,7 +1427,8 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
         )}
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '8px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px' }}>
+        <a class="small tap-link" href="/contact/">{T('ns.dossier.suggestCorrection')}</a>
         <button class="btn-primary" type="button" onClick={() => { nsDrawer.value = null; }}>
           {T('ns.close')}
         </button>
@@ -1429,7 +1467,6 @@ export function Drawers({ rep }: { rep: PaletteReport }) {
   if (!drawer) return null;
 
   const siteLabel = store.location.value?.label ?? store.climate.value ?? 'Site';
-  const shortName = shortSiteName(siteLabel) || siteLabel;
   const catalogCount = nsAllTaxa.value?.length ?? activePool.value.length;
   const dossierTaxon = drawer.kind === 'dossier'
     ? (rep.taxa.find((t) => t.id === drawer.id)
@@ -1439,7 +1476,7 @@ export function Drawers({ rep }: { rep: PaletteReport }) {
     : null;
 
   const kicker = drawer.kind === 'picker'
-    ? `${T('ns.board.speciesCount', { n: catalogCount })} · ${shortName}`
+    ? T('ns.picker.kickerLive', { n: catalogCount })
     : drawer.kind === 'atlas'
       ? `${T('ns.atlas.title')} · ${rep.eff.koppen || '—'}${rep.eff.usdaZone ? ` · USDA ${rep.eff.usdaZone}` : ''}`
       : `${dossierTaxon?.family ?? ''}${dossierTaxon?.traits.habit ? ` · ${dossierTaxon.traits.habit}` : ''}`;

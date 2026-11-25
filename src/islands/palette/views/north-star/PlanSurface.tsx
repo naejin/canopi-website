@@ -50,9 +50,10 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
   for (const p of rep.taxa) {
     const mat = p.traits.age_of_maturity_years ?? null;
     if (mat != null) {
-      if (mat <= 1.5) y1.push({ p, label: `${fmtNum(mat)} yr` });
-      else if (mat <= 5) y5.push({ p, label: `${fmtNum(mat)} yr` });
-      else y15.push({ p, label: `${fmtNum(mat)} yr` });
+      const matLabel = mat <= 0 ? T('ns.plan.ltOneYr') : `${fmtNum(mat)} yr`;
+      if (mat <= 1.5) y1.push({ p, label: matLabel });
+      else if (mat <= 5) y5.push({ p, label: matLabel });
+      else y15.push({ p, label: matLabel });
     } else {
       const startOrd = p.phases ? phaseOrd(p.phases.start) : 3;
       if (p.traits.is_annual || startOrd <= 1) y1.push({ p, label: T('ns.est') });

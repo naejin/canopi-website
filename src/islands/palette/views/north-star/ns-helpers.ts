@@ -323,15 +323,12 @@ export function defaultQtyFor(t: Taxon): number {
   return 3;
 }
 
-export function roomOptions(includeUnsure: boolean): readonly { id: 'pots' | 'small' | 'large' | 'field' | 'unsure'; label: () => string }[] {
-  const base: { id: 'pots' | 'small' | 'large' | 'field' | 'unsure'; label: () => string }[] = [
-    { id: 'pots', label: () => T('ns.room.pots') },
+export function roomOptions(): readonly { id: 'small' | 'large' | 'field'; label: () => string }[] {
+  return [
     { id: 'small', label: () => T('ns.room.small') },
     { id: 'large', label: () => T('ns.room.large') },
     { id: 'field', label: () => T('ns.room.field') },
   ];
-  if (includeUnsure) base.push({ id: 'unsure', label: () => T('ns.room.unsure') });
-  return base;
 }
 
 export function downloadCanopiJson(rep: PaletteReport, placeLabel: string): void {

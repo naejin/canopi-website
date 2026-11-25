@@ -208,9 +208,8 @@ export function LandPanel({ rep }: { rep: PaletteReport }) {
                 updateOverrides({ drainage: v ? (v as Drainage) : null });
               }}
             >
-              <option value="">{T('ns.land.drainDefault', { tex: baseTexture })}</option>
               <option value="sandy">{T('ns.land.drainSandy')}</option>
-              <option value="loam">{T('ns.land.drainLoam')}</option>
+              <option value="">{T('ns.land.drainDefault', { tex: baseTexture })}</option>
               <option value="clay">{T('ns.land.drainClay')}</option>
               <option value="wet">{T('ns.land.drainWet')}</option>
             </select>
@@ -446,7 +445,7 @@ export function LandPanel({ rep }: { rep: PaletteReport }) {
               value={eff.room}
               onChange={(e) => setRoomChoice((e.target as HTMLSelectElement).value as Room)}
             >
-              {roomOptions(true).map((r) => (
+              {roomOptions().map((r) => (
                 <option key={r.id} value={r.id}>{r.label()}</option>
               ))}
             </select>
