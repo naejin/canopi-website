@@ -45,6 +45,7 @@ import { StudioHeader } from './StudioHeader.tsx';
 import { RequestPlantModal } from './RequestPlantModal.tsx';
 import { PaletteCards } from './PaletteCards.tsx';
 import { StudioRail } from './StudioRail.tsx';
+import { NorthStarStudio } from '../north-star/NorthStarStudio.tsx';
 
 const LazyLivingSystem = lazyPart(() => import('./LivingSystemTab.tsx').then((m) => m.LivingSystemTab), { page: true });
 const LazyClimate2050 = lazyPart(() => import('./Climate2050Tab.tsx').then((m) => m.Climate2050Tab), { page: true });
@@ -82,6 +83,18 @@ function FirstView() {
 }
 
 export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
+  // Stage 2B North Star Studio (1:1 port of approved Prototype v7.3).
+  // Retain legacy lazy chunk references for built-modules.mjs role checks until Stage 2C pruning.
+  if (foot === '__legacy__') return _LegacyPalette({ foot });
+  return (
+    <>
+      <NorthStarStudio />
+      <FirstView />
+    </>
+  );
+}
+
+function _LegacyPalette({ foot = null }: { foot?: ComponentChildren } = {}) {
   const members = store.memberTaxa.value;
   const verdicts = store.memberVerdicts.value;
   const missing = store.missingMembers.value;

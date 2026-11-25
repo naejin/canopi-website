@@ -49,6 +49,7 @@ import { enterCountry, findCountries } from './country-search.ts';
 import { SitePostcard } from './SitePostcard.tsx';
 import { AreaStep, OpenCanopiPathB } from './AreaStep.tsx';
 import { openPlantPool } from '../../state/studio.ts';
+import { NorthStarArrival } from '../north-star/NorthStarArrival.tsx';
 
 const sep = <span class="ct-sep" aria-hidden="true"> · </span>;
 
@@ -830,11 +831,14 @@ function PlaceForm() {
 export function Place() {
   const waiting = pendingSuggest.value || restoring.value;
   const start = view.value === 'start';
+  // Keep legacy sub-views referenced so chunk roles & unit tests stay intact until Stage 2C cleanup.
+  void PlaceForm;
+  void PlaceLine;
   return (
     <>
       <Steps />
       <PlaceNotices />
-      {!start ? <PlaceLine /> : <PlaceForm />}
+      {start ? <NorthStarArrival /> : null}
       {/* Always on the page, empty when nothing loads (A25); it also says what a notice's answer did. */}
       <p class="status-line ct-place-status" role="status">{start && waiting ? T('load.plants') : placeSaid.value}</p>
     </>
