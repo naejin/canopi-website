@@ -133,23 +133,22 @@ test('the meaning tokens are defined in tokens.css for light and both dark block
   for (const t of ['look', 'outside', 'fits', 'unknown']) assert.match(blocks[0], new RegExp(`--level-${t}:\\s*var\\(--`));
 });
 
-// Field Studio CSS architecture lock-in (Stage 2B): only field-studio.css and print.css live in
-// src/styles/palette/ (all 12 retired legacy sheets stay deleted), and every core Field Studio
-// surface selector is present in field-studio.css.
-test('Field Studio stylesheet inventory and core surface selectors stay locked in', () => {
+// North Star CSS architecture lock-in (Stage 2B): only north-star.css and print.css live in
+// src/styles/palette/ (retired field-studio.css deleted), and every core North Star v7.3
+// surface selector is present in north-star.css.
+test('North Star stylesheet inventory and core surface selectors stay locked in', () => {
   assert.deepEqual(
     sheets.map((s) => s.name).sort(),
-    ['field-studio.css', 'print.css'],
-    'only field-studio.css and print.css live in src/styles/palette/',
+    ['north-star.css', 'print.css'],
+    'only north-star.css and print.css live in src/styles/palette/',
   );
-  const studioCss = sheets.find((s) => s.name === 'field-studio.css')?.css ?? '';
+  const nsCss = sheets.find((s) => s.name === 'north-star.css')?.css ?? '';
   const required = [
-    '.studio-shell', '.studio-doc-bar', '.studio-nav-bar', '.health-ribbon', '.studio-rail',
-    '.botanical-grid', '.dossier-drawer', '.dossier-plate', '.dossier-lightbox',
-    '.tuner-details', '.tune-grid', '.tune-box', '.micro-box',
-    '.ssm-grid', '.role-brief', '.cshift-chart', '.fit-banner.is-risk', '.ct-toast-dismiss',
+    '.arrival-wrap', '.studio-bar', '.studio-shell', '.land-panel', '.pulse-card',
+    '.job-strip', '.plant-row', '.photo-grid', '.pheno-bar', '.plan-grid',
+    '.drawer-backdrop', '.drawer', '.wl-svg', '.matrix-grid',
   ];
   for (const sel of required) {
-    assert.ok(studioCss.includes(sel), `field-studio.css defines ${sel}`);
+    assert.ok(nsCss.includes(sel), `north-star.css defines ${sel}`);
   }
 });

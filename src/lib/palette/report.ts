@@ -159,13 +159,13 @@ export function resolveEffectiveSite(
   const dryMonths = activeSlot ? Math.min(12, activeSlot.dryMonths + (horizon === 'drought' ? 2 : 0)) : null;
 
   // 1-in-10 extremes: use real v0.7.0 per-slot Tier-1 extremes + Today's P10/P90 gap (marked est. for futures).
-  // Never fall back to monthly-mean tminColdC/tmaxWarmC; return null (unknown) if extreme tiles are absent.
+  // Never fall back to monthly-mean tminColdC/tmaxWarmC or invent gap=0; return null (unknown) if extreme tiles or gaps are absent.
   const tminGap = v07?.extremesTail?.tminP10GapC ?? null;
   const tmaxGap = v07?.extremesTail?.tmaxP90GapC ?? null;
   const todayFreeze10 = v07?.extremesTail?.coldTail10yrC
-    ?? (v07?.extremes?.tminExtremeC != null ? v07.extremes.tminExtremeC + (tminGap ?? 0) : null);
+    ?? (v07?.extremes?.tminExtremeC != null && tminGap !== null ? v07.extremes.tminExtremeC + tminGap : null);
   const todayHeat10 = v07?.extremesTail?.heatDome10yrC
-    ?? (v07?.extremes?.tmaxExtremeC != null ? v07.extremes.tmaxExtremeC + (tmaxGap ?? 0) : null);
+    ?? (v07?.extremes?.tmaxExtremeC != null && tmaxGap !== null ? v07.extremes.tmaxExtremeC + tmaxGap : null);
 
   let freeze10C: number | null = null;
   let heat10C: number | null = null;
@@ -175,7 +175,7 @@ export function resolveEffectiveSite(
     if (horizon === 'today' || meta.kind === 'whatif') {
       freeze10C = todayFreeze10 !== null ? round1(todayFreeze10 + nightsShift + freezeDelta) : null;
       heat10C = todayHeat10 !== null ? round1(todayHeat10 + daysShift + heatDelta) : null;
-      extremesEst = meta.kind === 'whatif' || (v07?.extremesTail?.coldTail10yrC == null && todayFreeze10 !== null);
+      extremesEst = meta.kind === 'whatif';
     } else {
       const slotExt = v07?.extremes?.periods?.find((p) => p.period === meta.period && p.scenario === meta.scenario) ?? null;
       const slotTmin = slotExt?.tminExtremeC
@@ -184,8 +184,8 @@ export function resolveEffectiveSite(
       const slotTmax = slotExt?.tmaxExtremeC
         ?? (horizon === 'y2050' ? (v07?.extremes?.futureTmaxExtremeC ?? null)
           : horizon === 'y2080_ssp245' ? (v07?.extremes?.lateTmaxExtremeC ?? null) : null);
-      freeze10C = slotTmin !== null ? round1(slotTmin + (tminGap ?? 0) + nightsShift) : null;
-      heat10C = slotTmax !== null ? round1(slotTmax + (tmaxGap ?? 0) + daysShift) : null;
+      freeze10C = slotTmin !== null && tminGap !== null ? round1(slotTmin + tminGap + nightsShift) : null;
+      heat10C = slotTmax !== null && tmaxGap !== null ? round1(slotTmax + tmaxGap + daysShift) : null;
       extremesEst = freeze10C !== null || heat10C !== null;
     }
   }

@@ -119,8 +119,8 @@ test('PP-C-u11 (c2 disputes): the shipped value plus "Sources disagree: <source>
   assert.match(ivy, /Sources disagree/);
   assert.match(ivy, /NC State/);
   assert.match(ivy, /Moderate/);
-  assert.match(say(line.disputeLine({ ...SHIPPED, value: null, source: 'PFAF' }, null)), /Toxicity not recorded; PFAF names a hazard/);
-  assert.match(say(line.disputeLine({ ...SHIPPED, value: null, source: 'PFAF' }, 'None')), /Sources disagree: PFAF names a hazard, no level given/);
+  assert.match(say(line.disputeLine({ ...SHIPPED, value: null, source: 'pfaf' }, null)), /Toxicity not recorded; Botanical reference names a hazard/);
+  assert.match(say(line.disputeLine({ ...SHIPPED, value: null, source: 'pfaf' }, 'None')), /Sources disagree: Botanical reference names a hazard, no level given/);
   const derived = { field: 'tmin_cold.low', kind: 'range', value: '-12', unit: 'C', derived: true, scope: null, source: 'TreeGOER' };
   assert.notEqual(say(line.disputeLine(derived, '-15')), say(line.disputeLine({ ...derived, derived: false }, '-15')), 'a derived row is labelled');
   // A range dispute: both values in words, and drawn as a dashed limit (never the shipped band's own).
@@ -161,8 +161,8 @@ test('PP-C-u12 (c2 corrected values and frost): a corrected value names "Canopi 
   assert.equal(say(line.frostLine([frost('ktmp', -5), ...rest], true)), say(line.frostLine([frost('ktmp', -5)], true)), 'a KTMPR changes no frost line');
   assert.match(say(line.restLine(rest)), /-20|−20/, 'the KTMPR in its own line');
   assert.equal(line.restLine([frost('ktmp', -5)]), null);
-  // PFAF's frost_tender (a trait_sources row, scope GB): Britain information only, never a verdict.
-  assert.match(say(src1(ts('frost_tender', 'pfaf', 'GB'))), /Britain \(PFAF\)/);
+  // Britain frost_tender (a trait_sources row, scope GB): Britain information only, never a verdict (zero PFAF label).
+  assert.match(say(src1(ts('frost_tender', 'pfaf', 'GB'))), /Britain \(botanical reference\)/);
   const ctx = { inputs: core.NO_INPUTS, period: '1991-2020', scenario: 'ssp245' };
   const plant = { id: '00000000-c2c2-4000-8000-000000000001', canonical_name: 'Plantus', genus: 'Plantus', family: null, names: {}, image: null, role: 'crop', stratum: { value: 'low', sources: [] }, phases: { start: 'placenta_i', end: 'placenta_ii', sources: [] }, functions: null, warnings: { toxicity: null, invasive_in: [], allelopathic: null, weed_potential: null }, climate: null, areasKnown: true };
   assert.deepEqual(verdict({ ...plant, traits: { frost_tender: true } }, ctx), verdict({ ...plant, traits: { frost_tender: false } }, ctx), 'frost_tender never changes a verdict');

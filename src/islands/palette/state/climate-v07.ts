@@ -479,19 +479,31 @@ export async function syncWasmTrajectories(
     const p2080 = loc.lookup.climate.periods.find((p) => p.period === '2071-2099' && p.scenario === 'ssp245') ?? p2050;
     const micro = wasmMicro.peek();
 
-    const freezeToday = micro?.tmin_p10_c ?? v07?.extremesTail?.coldTail10yrC ?? v07?.extremes?.tminExtremeC ?? (pToday ? pToday.tminColdC - 8.5 : -6);
-    const freeze2050 = v07?.extremesTail?.coldTail10yr2050C ?? v07?.extremes?.futureTminExtremeC ?? (freezeToday + 1.5);
-    const freeze2080 = v07?.extremes?.lateTminExtremeC ?? (freeze2050 + 1.0);
-    const heatToday = micro?.tmax_p90_c ?? v07?.extremesTail?.heatDome10yrC ?? v07?.extremes?.tmaxExtremeC ?? (pToday ? pToday.tmaxWarmC + 8 : 34);
-    const heat2050 = v07?.extremesTail?.heatDome10yr2050C ?? v07?.extremes?.futureTmaxExtremeC ?? (heatToday + 2.2);
-    const heat2080 = v07?.extremes?.lateTmaxExtremeC ?? (heat2050 + 1.5);
+    const tminGap = v07?.extremesTail?.tminP10GapC ?? null;
+    const tmaxGap = v07?.extremesTail?.tmaxP90GapC ?? null;
+    const ext2050 = v07?.extremes?.periods?.find((p) => p.period === '2041-2070' && p.scenario === 'ssp245');
+    const ext2080 = v07?.extremes?.periods?.find((p) => p.period === '2071-2099' && p.scenario === 'ssp245');
+
+    // Never invent extreme values from monthly means; leave null (unknown) when extreme tiles/gaps are absent.
+    const freezeToday = micro?.tmin_p10_c ?? v07?.extremesTail?.coldTail10yrC ?? null;
+    const freeze2050 = v07?.extremesTail?.coldTail10yr2050C
+      ?? (ext2050 && tminGap !== null ? ext2050.tminExtremeC + tminGap : null);
+    const freeze2080 = ext2080 && tminGap !== null
+      ? ext2080.tminExtremeC + tminGap
+      : (v07?.extremes?.lateTminExtremeC != null && tminGap !== null ? v07.extremes.lateTminExtremeC + tminGap : null);
+    const heatToday = micro?.tmax_p90_c ?? v07?.extremesTail?.heatDome10yrC ?? null;
+    const heat2050 = v07?.extremesTail?.heatDome10yr2050C
+      ?? (ext2050 && tmaxGap !== null ? ext2050.tmaxExtremeC + tmaxGap : null);
+    const heat2080 = ext2080 && tmaxGap !== null
+      ? ext2080.tmaxExtremeC + tmaxGap
+      : (v07?.extremes?.lateTmaxExtremeC != null && tmaxGap !== null ? v07.extremes.lateTmaxExtremeC + tmaxGap : null);
 
     const cwdBase = micro?.cwd_adjusted_mm ?? v07?.waterBalance?.cwdMm ?? null;
     const siteInput = {
       today: {
         label: '1991-2020',
-        tmin_extreme_c: r1(freezeToday + winterDeltaC),
-        tmax_extreme_c: r1(heatToday + heatDeltaC * 0.5),
+        tmin_extreme_c: freezeToday !== null ? r1(freezeToday + winterDeltaC) : null,
+        tmax_extreme_c: heatToday !== null ? r1(heatToday + heatDeltaC * 0.5) : null,
         cwd_mm: cwdBase,
         precip_mm: pToday?.precipMm ?? null,
         dry_months: pToday?.dryMonths ?? null,
@@ -499,8 +511,8 @@ export async function syncWasmTrajectories(
       },
       mid_century: {
         label: '2041-2070',
-        tmin_extreme_c: r1(freeze2050 + winterDeltaC),
-        tmax_extreme_c: r1(heat2050 + heatDeltaC),
+        tmin_extreme_c: freeze2050 !== null ? r1(freeze2050 + winterDeltaC) : null,
+        tmax_extreme_c: heat2050 !== null ? r1(heat2050 + heatDeltaC) : null,
         cwd_mm: cwdBase != null ? Math.round(cwdBase * 1.15) : null,
         precip_mm: p2050?.precipMm ?? null,
         dry_months: p2050?.dryMonths ?? null,
@@ -508,8 +520,8 @@ export async function syncWasmTrajectories(
       },
       late_century: {
         label: '2071-2099',
-        tmin_extreme_c: r1(freeze2080 + winterDeltaC),
-        tmax_extreme_c: r1(heat2080 + heatDeltaC * 1.2),
+        tmin_extreme_c: freeze2080 !== null ? r1(freeze2080 + winterDeltaC) : null,
+        tmax_extreme_c: heat2080 !== null ? r1(heat2080 + heatDeltaC * 1.2) : null,
         cwd_mm: cwdBase != null ? Math.round(cwdBase * 1.28) : null,
         precip_mm: p2080?.precipMm ?? null,
         dry_months: p2080?.dryMonths ?? null,

@@ -136,6 +136,11 @@ for (const path of files(root)) {
   const text = readFileSync(path, 'utf8');
   assert.ok(!text.includes('contact@projectcanopi.com'), `contact address in ${path}`);
   assert.ok(!/liberapay/i.test(text), `liberapay in ${path}`);
+  if (/\.(html|xml|txt|css)$/.test(path)) {
+    assert.ok(!/pfaf|plants for a future/i.test(text), `forbidden botanical source string in ${path}`);
+  } else {
+    assert.ok(!/plants for a future|\bPFAF\b/.test(text), `forbidden botanical source label in ${path}`);
+  }
 }
 assert.ok(!readFileSync(join(root, 'sitemap-0.xml'), 'utf8').includes('/contact/'), 'contact result pages stay out of the sitemap');
 

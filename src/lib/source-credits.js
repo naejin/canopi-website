@@ -52,7 +52,14 @@ export function parseSourceCredits(source, file = `src/data/${CREDIT_FILE}`) {
   return rows;
 }
 
-// What the page lists: the used sources, then the held ones, each in file order; internal rows never.
+// What the page lists: the used sources, then the held ones, each in file order; internal rows and
+// suppressed botanical reference rows never appear on public /data-sources/.
+const isSuppressedCredit = (r) =>
+  r.source.toLowerCase() === 'pfaf'
+  || /pfaf|plants for a future/i.test(`${r.name} ${r.credit} ${r.url}`);
 /** @param {Credit[]} rows */
-export const shownCredits = (rows) => ({ used: rows.filter((r) => r.status === 'used'), held: rows.filter((r) => r.status === 'held') });
+export const shownCredits = (rows) => ({
+  used: rows.filter((r) => r.status === 'used' && !isSuppressedCredit(r)),
+  held: rows.filter((r) => r.status === 'held' && !isSuppressedCredit(r)),
+});
 

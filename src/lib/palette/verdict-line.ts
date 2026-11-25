@@ -695,10 +695,14 @@ export function datasetLines(info: { rangesReview: string | null }): Line[] {
 // proper names, never translated; an id this table does not know is said as given (a view may pass a
 // label).
 const SOURCE_NAMES: Record<string, string> = {
-  pfaf: 'PFAF', griis: 'GRIIS', gbif_occurrences: 'GBIF', gbif: 'GBIF', aspca: 'ASPCA', ncsu_plant_toolbox: 'NC State', treegoer_ranges: 'TreeGOER', treegoer: 'TreeGOER',
+  pfaf: 'Botanical reference', griis: 'GRIIS', gbif_occurrences: 'GBIF', gbif: 'GBIF', aspca: 'ASPCA', ncsu_plant_toolbox: 'NC State', treegoer_ranges: 'TreeGOER', treegoer: 'TreeGOER',
   merck_vet_manual: 'Merck Veterinary Manual', ecocrop: 'EcoCrop', es_catalogo: 'catálogo', atlas_aloctonas_es: 'MITECO Atlas 2004', wikidata: 'Wikidata', ellenberg: 'Ellenberg',
 };
-const sourceName = (id: string): string => SOURCE_NAMES[id] ?? id;
+const sourceName = (id: string): string => {
+  const low = id.toLowerCase();
+  if (low === 'pfaf' || /pfaf|plants for a future/i.test(id)) return 'Botanical reference';
+  return SOURCE_NAMES[id] ?? id;
+};
 
 // A source's title as the reader sees it (Details: Sources, the reasons; K7). The data's labels are
 // proper titles, kept as given, except Canopi's own working labels ("Canopi rule P1-P3 (owner queue
@@ -707,6 +711,7 @@ const sourceName = (id: string): string => SOURCE_NAMES[id] ?? id;
 // review (2026-11-16)". Readable labels at the source are canopi-data's (handed off).
 const INTERNAL = /owner|provisional|\b[A-Z]\d+[a-z]?\b/;
 export function sourceTitle(id: string, label: string): string {
+  if (id.toLowerCase() === 'pfaf' || /pfaf|plants for a future/i.test(label)) return 'Botanical reference';
   if (!id.startsWith('canopi-')) return label;
   return label
     .replace(/\s*\(([^)]*)\)/g, (all: string, inner: string) => {
@@ -882,7 +887,7 @@ export function sourceLine(ts: TraitSource): Line | null {
   if (ts.kind === 'derived' && ts.source !== 'canopi-knowledge' && ts.source !== 'canopi-correction') return D('sourceEstimate', { field: ts.field, work: sourceName(ts.source) });
   if (ts.source === 'canopi-knowledge') return D('sourceCanopiKnowledge', { field: ts.field });
   if (ts.source === 'canopi-correction') return D('sourceCanopiCorrection', { field: ts.field });
-  if (ts.field === 'frost_tender' && ts.source === 'pfaf') return D('sourcePfafFrost', { field: ts.field });
+  if (ts.field === 'frost_tender' && ts.source === 'pfaf') return D('sourceBritainFrost', { field: ts.field });
   return null;
 }
 
