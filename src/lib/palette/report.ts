@@ -971,21 +971,28 @@ export function selectStarterPalette(
       const verdict2050 = eff2050 ? evaluatePlantVerdict(t, eff2050, options.existingIds) : null;
       const jobs = jobsOf(t);
       const sizeClass = sizeClassOf(t);
+      const edibility = t.traits.edibility_rating ?? 0;
+      const isOrchardStaple = sizeClass === 'tree' && jobs.includes('feeds_you') && edibility >= 4;
       const rawArea = crownAreaM2(t);
       const estW = sizeClass === 'tree' || sizeClass === 'shrub'
         ? Math.max(1.5, (t.traits.height_m?.max ?? 4) * 0.55)
         : 1.0;
-      const area = rawArea ?? (sizeClass === 'climber' ? 2.0 : Math.PI * (estW / 2) ** 2);
+      const measuredArea = rawArea ?? (sizeClass === 'climber' ? 2.0 : Math.PI * (estW / 2) ** 2);
+      // Keep measured crown area for plot-budget accounting (`totalCrownM2 <= netPlotM2` invariant),
+      // while scoring pruned orchard staples (`feeds_you` trees, edibility >= 4) at orchard height
+      // (<= 8 m) and orchard crown cap (<= 50 m²) so Olive, Fig, Date palm, Apple, etc. compete cleanly.
+      const area = measuredArea;
+      const scoreArea = isOrchardStaple ? Math.min(measuredArea, 50) : measuredArea;
       const unknownWidthPenalty = rawArea === null && (sizeClass === 'tree' || sizeClass === 'shrub') ? 10 : 0;
       const stratum = nicheStratumOf(t);
       const perennial = !isAnnualTaxon(t);
-      const edibility = t.traits.edibility_rating ?? 0;
       const kScore = siteKoppenScore(t, eff);
       const mScore = siteMoistureScore(t, eff);
       const pScore = sitePhScore(t, eff);
       const v50Score = verdict2050 ? (verdict2050.level === 'fits' ? 16 : verdict2050.level === 'check' ? 4 : -18) : 0;
-      const maxH = t.traits.height_m?.max ?? null;
-      const giantPenalty = sizeClass === 'tree' && maxH !== null && maxH > 22 ? 35 : 0;
+      const rawMaxH = t.traits.height_m?.max ?? null;
+      const effMaxH = isOrchardStaple && rawMaxH !== null ? Math.min(rawMaxH, 8) : rawMaxH;
+      const giantPenalty = sizeClass === 'tree' && effMaxH !== null && effMaxH > 22 ? 35 : 0;
       const baseScore =
         kScore + mScore + pScore + v50Score
         + (perennial ? 12 : 0)
@@ -1002,17 +1009,32 @@ export function selectStarterPalette(
         verdict,
         jobs,
         area,
+        scoreArea,
         sizeClass,
         stratum,
         perennial,
         edibility,
         kScore,
+        mScore,
+        effMaxH,
+        isOrchardStaple,
         baseScore,
         isClimber: isStructuralVine(t),
         isRoot: isEdibleRootCrop(t),
       };
     })
-    .filter((x) => x.verdict.level === 'fits' && x.jobs.length > 0 && !x.verdict.subsoilPhTrap)
+    .filter((x) => {
+      if (x.jobs.length === 0 || x.verdict.subsoilPhTrap) return false;
+      // Exclude plants whose moisture score is below the "outside range" band (e.g. wet-tropical species in Sahara).
+      if (x.mScore <= -40) return false;
+      if (x.verdict.level === 'fits') return true;
+      // A pruned orchard staple flagged ONLY for wild height (`room_tall`) still fits a managed small garden (roomLimitM >= 3 m).
+      return x.isOrchardStaple
+        && (eff.roomLimitM === null || eff.roomLimitM >= 3)
+        && x.verdict.level === 'check'
+        && x.verdict.reasons.length === 1
+        && x.verdict.reasons[0]?.code === 'room_tall';
+    })
     .filter((x) => eff.roomLimitM === null || eff.roomLimitM > 2 || x.taxon.traits.height_m?.max == null || x.taxon.traits.height_m.max <= eff.roomLimitM);
 
   const chosen: Taxon[] = [];
@@ -1056,13 +1078,13 @@ export function selectStarterPalette(
     return cands[0] ? addItem(cands[0]) : false;
   };
 
-  // Layer 1: Fruit or nut canopy tree (pruned orchard staples 5–20 m are welcome even in small rooms)
+  // Layer 1: Fruit or nut canopy tree (orchard staples scored at managed orchard height <=8 m, crown <=50 m²)
   if ((eff.roomLimitM === null || eff.roomLimitM >= 3) && eff.netPlotM2 >= 25 && chosen.length < maxPlants) {
     const maxTreeArea = eff.netPlotM2 * 0.68;
     pickBest(
-      (x) => x.sizeClass === 'tree' && x.area <= maxTreeArea,
+      (x) => x.sizeClass === 'tree' && x.scoreArea <= maxTreeArea,
       (x) => {
-        const h = x.taxon.traits.height_m?.max ?? 10;
+        const h = x.effMaxH ?? 8;
         let b = 0;
         if (x.jobs.includes('feeds_you')) b += 40 + x.edibility * 11;
         else b -= 35;

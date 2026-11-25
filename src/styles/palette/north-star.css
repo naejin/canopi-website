@@ -11,7 +11,7 @@
 .tool-release { max-width: calc(var(--max) + 2 * var(--gutter)); margin: 16px auto 0; padding: 0 var(--gutter) 24px; font-size: 12px; color: var(--text-muted); }
 .ct-offline:empty, .status-line:empty { display: none; }
 .ct-offline, .status-line { max-width: calc(var(--max) + 2 * var(--gutter)); margin: 8px auto 0; padding-inline: var(--gutter); font-size: 13px; color: var(--text-secondary); }
-.ct-loading-shell { max-width: 920px; margin: 36px auto; padding-inline: var(--gutter); display: grid; gap: 18px; }
+.ct-loading-shell { max-width: 920px; margin: 0 auto; padding-block: 36px 56px; padding-inline: var(--gutter); display: grid; gap: 18px; }
 .ct-loading-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; text-align: center; display: grid; gap: 8px; justify-items: center; }
 .ct-loading-title { margin: 0; font-family: var(--font-display); font-size: 22px; }
 .ct-loading-sub { margin: 0; font-size: 14px; color: var(--text-secondary); }

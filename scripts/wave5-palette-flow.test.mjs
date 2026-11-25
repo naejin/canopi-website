@@ -119,3 +119,25 @@ test('selectStarterPalette estimates NULL tree width instead of treating it as 0
   const chosen = selectStarterPalette([nullWidthTree, apple], eff, { maxPlants: 1 });
   assert.equal(chosen[0]?.id, 'apple');
 });
+
+test('selectStarterPalette scores feeds_you orchard staples (edibility >= 4) at managed orchard size', () => {
+  const base = resolveEffectiveSite(null, 'today', { soilPh: 7.8, room: 'unsure', plotM2: 150 });
+  const eff = { ...base, hasClimate: true, tminColdC: 4, tmaxWarmC: 37, tmeanYearC: 20, tmeanWarmC: 29 };
+  const argan = makeTaxon({ id: 'argan', canonical_name: 'Argania spinosa', habit: 'Tree', maxH: 7, widthM: 12, edibility: 4 });
+  const mesquite = makeTaxon({ id: 'mesquite', canonical_name: 'Neltuma glandulosa', habit: 'Tree', maxH: 12, widthM: 7, edibility: 3 });
+  const chosen = selectStarterPalette([mesquite, argan], eff, { maxPlants: 1 });
+  assert.equal(chosen[0]?.id, 'argan');
+});
+
+test('selectStarterPalette excludes plants whose moisture score is outside range (Sahara safety net)', () => {
+  const base = resolveEffectiveSite(null, 'today', { soilPh: 8.2, room: 'unsure', plotM2: 150 });
+  const eff = { ...base, hasClimate: true, tminColdC: 8, tmaxWarmC: 41, tmeanYearC: 25, tmeanWarmC: 34, precipMm: 11, aridityIndex: 0.01 };
+  const arrowroot = makeTaxon({ id: 'arrowroot', canonical_name: 'Maranta arundinacea', habit: 'Herb', maxH: 1.5, widthM: 0.8, edibility: 4 });
+  arrowroot.climate = {
+    source: 'gbif',
+    precip: { low: 884, median: 1800, high: 3600, count: 500, basis: 'gbif', blocks: 50, lowSource: null, highSource: null, weak: false },
+    tminCold: null, tmaxWarm: null, tmeanYear: null, tmeanWarm: null, aridity: null, cells: 500, nativeShare: 0.5,
+  };
+  const chosen = selectStarterPalette([arrowroot], eff, { maxPlants: 8 });
+  assert.equal(chosen.length, 0);
+});
