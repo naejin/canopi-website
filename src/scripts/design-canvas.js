@@ -89,8 +89,21 @@ export function createDesignCanvas({ stage, canvas, tooltip, hint, lang }) {
   }
 
   function fitView() {
-    const [x0, y0, x1, y1] = design.boundsM;
-    const ppm = Math.min(width / ((x1 - x0) * 1.12), height / ((y1 - y0) * 1.12));
+    // Crop tightly to the plan's actual planted/zoned bounds (removing empty margin frame).
+    let [x0, y0, x1, y1] = design.boundsM;
+    if (design.plants?.length) {
+      let px0 = Infinity, py0 = Infinity, px1 = -Infinity, py1 = -Infinity;
+      for (const p of design.plants) {
+        if (p[0] < px0) px0 = p[0];
+        if (p[0] > px1) px1 = p[0];
+        if (p[1] < py0) py0 = p[1];
+        if (p[1] > py1) py1 = p[1];
+      }
+      if (Number.isFinite(px0) && px1 > px0 && py1 > py0) {
+        x0 = px0; y0 = py0; x1 = px1; y1 = py1;
+      }
+    }
+    const ppm = Math.min(width / ((x1 - x0) * 1.04), height / ((y1 - y0) * 1.04));
     return { x: (x0 + x1) / 2, y: (y0 + y1) / 2, ppm: Math.max(MIN_PPM, ppm) };
   }
 

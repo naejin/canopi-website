@@ -10,6 +10,13 @@ import PageData from '../PageData.astro';
 import ClimateBadge from '../ClimateBadge.astro';
 import ClimatePicker from '../ClimatePicker.astro';
 import { guideDomains, publishedGuides, slugOf } from '../../lib/guides';
+import {
+  cardSkillOf,
+  DOMAIN_TO_VIGNETTE,
+  GUIDE_VIGNETTES,
+  VIGNETTE_STROKE_WIDTH,
+  VIGNETTE_VIEWBOX,
+} from '../../lib/guide-vignettes';
 import { gt, guideLocales, guidePath, guidesPath, type GuideLang } from '../../i18n/guides';
 import { consortiumPath, localizedUrl, t } from '../../i18n/utils';
 interface Props { lang: GuideLang; }
@@ -39,23 +46,70 @@ const structuredData = {
         <p class="guide-index-books"><a href={consortiumPath(lang)}>{t('learn.consortium.link', lang)}</a></p>
         {climateGuides && <ClimatePicker lang={lang} />}
       </header>
-      {groups.map(({ domain, guides: list }) => (
-        <section class="guide-domain" id={domain} aria-labelledby={`guide-domain-${domain}`}>
-          <h2 id={`guide-domain-${domain}`}>{gt(`domain.${domain}`, lang)}</h2>
-          <ul class="guide-index-list" role="list">
-            {list.map((e) => (
-              <li class="guide-index-item">
-                <h3><a href={guidePath(slugOf(e), lang)}>{e.data.title}</a></h3>
-                <p>{e.data.description}</p>
-                {e.data.climates && <p class="guide-index-climates">{e.data.climates.map((zone) => <ClimateBadge zone={zone} lang={lang} />)}</p>}
-                <dl class="guide-index-glance">
-                  {e.data.glance.map((pair) => <div><dt>{pair.label}</dt><dd>{pair.value}</dd></div>)}
-                </dl>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
+      {groups.map(({ domain, guides: list }) => {
+        const vigKind = DOMAIN_TO_VIGNETTE[domain];
+        const vigPrims = GUIDE_VIGNETTES[vigKind];
+        return (
+          <section class="guide-domain" id={domain} aria-labelledby={`guide-domain-${domain}`}>
+            <div class="guide-domain-head">
+              <svg
+                class="guide-domain-vignette"
+                viewBox={VIGNETTE_VIEWBOX}
+                width="48"
+                height="48"
+                fill="none"
+                stroke="currentColor"
+                stroke-width={VIGNETTE_STROKE_WIDTH}
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                {vigPrims.map((p) => {
+                  const Tag = p.tag as 'path' | 'circle' | 'ellipse';
+                  return <Tag {...p.attrs} />;
+                })}
+              </svg>
+              <h2 id={`guide-domain-${domain}`}>{gt(`domain.${domain}`, lang)}</h2>
+            </div>
+            <ul class="guide-index-list" role="list">
+              {list.map((e) => {
+                const slug = slugOf(e);
+                const skill = cardSkillOf(slug, e.data.glance, lang);
+                return (
+                  <li class="guide-index-item">
+                    <svg
+                      class="guide-card-vignette"
+                      viewBox={VIGNETTE_VIEWBOX}
+                      width="48"
+                      height="48"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width={VIGNETTE_STROKE_WIDTH}
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      {vigPrims.map((p) => {
+                        const Tag = p.tag as 'path' | 'circle' | 'ellipse';
+                        return <Tag {...p.attrs} />;
+                      })}
+                    </svg>
+                    <div class="guide-index-body">
+                      <div class="guide-index-meta">
+                        <span class="guide-index-topic">{gt(`domain.${domain}`, lang)}</span>
+                        <span class="guide-index-skill">{skill}</span>
+                      </div>
+                      <h3><a href={guidePath(slug, lang)}>{e.data.title}</a></h3>
+                      <p class="guide-index-desc">{e.data.description}</p>
+                      {e.data.climates && <p class="guide-index-climates">{e.data.climates.map((zone) => <ClimateBadge zone={zone} lang={lang} />)}</p>}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        );
+      })}
     </div>
   </main>
   <Footer lang={lang} />

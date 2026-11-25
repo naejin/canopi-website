@@ -898,13 +898,49 @@ input[type="range"] { accent-color: var(--accent); width: 100%; min-height: 44px
 .yr-th-winter { background: var(--pal-ok-bg); color: var(--pal-ok); }
 .yr-td-winter { background: color-mix(in srgb, var(--pal-ok-bg) 55%, transparent); }
 
-/* Harvest Timeline & Swap Diff */
-.timeline-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.timeline-col {
-  padding: 12px; border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--bg); display: grid; gap: 6px; align-content: start;
+/* B5: 1 px inner keyline on plant photos so they never glow in dark mode. */
+.plant-thumb,
+.photo-card img,
+.dossier-img {
+  outline: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  outline-offset: -1px;
 }
-@media (max-width: 639px) { .timeline-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* A8: Horizontal Silhouette Timeline (one continuous hairline axis + shared ground line, scrollable at 390px) */
+.tl-axis-scroll { overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+.tl-axis {
+  display: grid; grid-template-columns: repeat(3, minmax(210px, 1fr));
+  min-width: 640px; border-top: 1.5px solid var(--border-strong); padding-top: 10px;
+}
+.tl-stage {
+  display: grid; gap: 6px; align-content: start; padding: 0 12px 4px;
+  border-right: 1px dashed var(--border);
+}
+.tl-stage:first-child { padding-left: 2px; }
+.tl-stage:last-child { border-right: 0; padding-right: 2px; }
+.tl-stage-tick {
+  display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; position: relative;
+}
+.tl-tick-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+  display: inline-block; flex: none; align-self: center;
+}
+.tl-stage-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.tl-stage-cnt { font-size: 12.5px; color: var(--text-muted); margin-left: auto; }
+.tl-stage-svg { display: block; width: 100%; height: 118px; overflow: visible; }
+.tl-names { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 3px; }
+.tl-name-btn {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 6px;
+  width: 100%; padding: 2px 4px; border: 0; border-radius: 4px;
+  background: transparent; color: var(--text); font: inherit; font-size: 13px; text-align: left; cursor: pointer;
+}
+.tl-name-btn:hover { background: var(--surface-alt); }
+.tl-sp-name { font-weight: 600; }
+.tl-sp-age { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+.tl-empty { font-size: 13px; color: var(--text-secondary); margin: 4px 0 0; line-height: 1.4; }
+
+/* A8 Print Field Sheet is hidden on screen; print.css reveals it in @media print. */
+.ns-print-sheet { display: none; }
 .swap-diff {
   border: 1px solid var(--border-strong); border-radius: var(--radius);
   background: var(--bg); padding: 12px; display: grid; gap: 10px;

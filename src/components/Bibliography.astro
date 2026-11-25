@@ -2,6 +2,7 @@
 // The bibliography: the whole list on /bibliography/ (full), or the books marked featured on the home page.
 import { t, localizedUrl, consortiumPath, type Locale } from '../i18n/utils';
 import { themes } from '../data/bibliography';
+import { boardToneForTheme, localizedLanguageName, spineTitleOf } from '../data/bibliography-boards';
 import { guidesCiting, slugOf, type GuideEntry } from '../lib/guides';
 import { guidePath, guidesPath, guideLangOf } from '../i18n/guides';
 import ClimateBadge from './ClimateBadge.astro';
@@ -57,45 +58,57 @@ const climateBooks = full && shelves.some((shelf) => shelf.books.some((book) => 
         </ul>
       </nav>
     )}
-    <div class="bibliography-grid">
-      {shelves.map((shelf) => (
-        <section class="bibliography-group" id={full ? shelf.key : undefined}>
-          <ShelfTitle class="shelf-title">{shelf.label}</ShelfTitle>
-          <ul role="list">
-            {shelf.books.map((book) => (
-              <li class="book" id={full ? book.id : undefined}>
-                <a class="book-link" href={book.shown.url} lang={book.shown.lang}>
-                  <span class="book-title">{book.title}&nbsp;<span aria-hidden="true">↗</span></span>
-                  {book.subtitle && <span class="book-subtitle">{book.subtitle}</span>}
-                </a>
-                <p class="book-meta">
-                  {book.by} · <span class="nowrap">{book.year}{book.shown.lang !== lang && ` · ${languageName.of(book.shown.lang)}`}</span>
-                </p>
-                {book.climates.length > 0 && (
-                  <p class="book-climate">
-                    <span>{t('climate.zone', lang)}</span>
-                    {book.climates.map((climate) => <ClimateBadge zone={climate} lang={lang} />)}
-                  </p>
-                )}
-                {full && book.guides.length > 0 && (
-                  <p class="book-guides">
-                    <span>{t('bibliography.fieldGuide', lang)}</span>
-                    {book.guides.map((guide) => <a href={guide.href} hreflang={guideLang} lang={guideLang}>{guide.title}</a>)}
-                  </p>
-                )}
-                {full && book.others.length > 0 && (
-                  <p class="book-editions">
-                    <span>{t('bibliography.alsoIn', lang)}</span>
-                    {book.others.map((edition) => (
-                      <a href={edition.url} hreflang={edition.lang} title={`${languageName.of(edition.lang)} · ${edition.title}`} aria-label={`${languageName.of(edition.lang)}: ${edition.title}`}>{edition.lang.toUpperCase()}</a>
-                    ))}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
+    <div class={full ? 'bibliography-grid bibliography-grid-full' : 'bibliography-grid'}>
+      {shelves.map((shelf) => {
+        const tone = boardToneForTheme(shelf.key);
+        return (
+          <section class="bibliography-group" id={full ? shelf.key : undefined}>
+            <ShelfTitle class="shelf-title">{shelf.label}</ShelfTitle>
+            <ul role="list">
+              {shelf.books.map((book) => (
+                <li class="book" id={full ? book.id : undefined}>
+                  <div class="book-board" data-tone={tone} aria-hidden="true">
+                    <span class="book-board-title">{spineTitleOf(book.id, book.title)}</span>
+                    <span class="book-board-year tnum">{book.year}</span>
+                  </div>
+                  <div class="book-body">
+                    <a class="book-link" href={book.shown.url} lang={book.shown.lang}>
+                      <span class="book-title">{book.title}&nbsp;<span aria-hidden="true">↗</span></span>
+                      {book.subtitle && <span class="book-subtitle">{book.subtitle}</span>}
+                    </a>
+                    <p class="book-meta">
+                      {book.by} · <span class="nowrap tnum">{book.year}{book.shown.lang !== lang && ` · ${localizedLanguageName(languageName, book.shown.lang)}`}</span>
+                    </p>
+                    {book.climates.length > 0 && (
+                      <p class="book-climate">
+                        <span>{t('climate.zone', lang)}</span>
+                        {book.climates.map((climate) => <ClimateBadge zone={climate} lang={lang} />)}
+                      </p>
+                    )}
+                    {full && book.guides.length > 0 && (
+                      <p class="book-guides">
+                        <span>{t('bibliography.fieldGuide', lang)}</span>
+                        {book.guides.map((guide) => <a href={guide.href} hreflang={guideLang} lang={guideLang}>{guide.title}</a>)}
+                      </p>
+                    )}
+                    {full && book.others.length > 0 && (
+                      <p class="book-editions">
+                        <span>{t('bibliography.alsoIn', lang)}</span>
+                        {book.others.map((edition) => {
+                          const langLabel = localizedLanguageName(languageName, edition.lang);
+                          return (
+                            <a href={edition.url} hreflang={edition.lang} aria-label={`${langLabel}: ${edition.title}`}>{langLabel}</a>
+                          );
+                        })}
+                      </p>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        );
+      })}
     </div>
     {!full && (
       <p class="bibliography-more"><a class="button button-secondary" href={localizedUrl('/bibliography/', lang)}>{t('bibliography.seeAll', lang)}</a></p>

@@ -78,8 +78,8 @@ test('the tool credits: the grid, its v0.7.0 inputs, GBIF, OpenFreeMap and Nomin
   assert.match(rows[0].licence, /AGPL-3\.0-or-later/);
   assert.equal(rows.find((r) => r.id === 'chelsa').licence, 'CC0 1.0', 'licences as the grid publishes them');
   for (const r of rows) assert.ok(r.line, `${r.id}: a citation or attribution`);
-  // P5 reads no soil or botanical area: those tiles are credited as served with the grid, not as a feature.
-  assert.deepEqual(rows.filter((r) => r.use === 'served').map((r) => r.id), ['soilgrids', 'wgsrpd']);
+  // SoilGrids 2.0 and WGSRPD are now actively used by the Plant Palette tool (Wave 4 B4 fix).
+  assert.deepEqual(rows.filter((r) => r.use === 'served').map((r) => r.id), []);
 });
 
 test('a grid source missing from the climate index stops the build; a new one is credited under its own id', () => {

@@ -49,9 +49,25 @@ export function initHeroReveal() {
 
   function paintMask() {
     ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = isTouch() ? 1 - restingOpacity : 1;
+    // Equal subtle feathered radial resting reveal behind the wordmark in both Light & Dark themes
+    ctx.globalAlpha = 1;
     ctx.fillStyle = maskColour;
     ctx.fillRect(0, 0, width, height);
+    const cx = width * 0.5;
+    const cy = height * 0.46;
+    const rx = Math.max(220, width * 0.42);
+    const ry = Math.max(180, height * 0.44);
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.translate(cx, cy);
+    ctx.scale(1, ry / rx);
+    const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
+    grad.addColorStop(0, `rgba(0,0,0,${restingOpacity})`);
+    grad.addColorStop(0.55, `rgba(0,0,0,${(restingOpacity * 0.65).toFixed(3)})`);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(-rx, -rx, rx * 2, rx * 2);
+    ctx.restore();
     ctx.globalAlpha = 1;
   }
 

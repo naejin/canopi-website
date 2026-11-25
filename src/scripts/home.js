@@ -7,6 +7,7 @@ import { createDesignCanvas } from './design-canvas.js';
 import { createDesignList } from './design-list.js';
 import { initContact } from './contact.js';
 import { lang, text } from './page-data.js';
+import { GLYPH_PRIMITIVES, GLYPH_STROKE_WIDTH, GLYPH_VIEWBOX } from '../lib/glyphs.ts';
 
 const params = new URLSearchParams(location.search);
 
@@ -47,15 +48,38 @@ const designList = createDesignList({
   onSelect: (id, { from }) => select(id, { from }),
 });
 
+const ROLE_GLYPH = {
+  apple: 'fruit',
+  berry: 'fruit',
+  nut: 'job-food',
+  pod: 'job-soil',
+  carrot: 'job-food',
+  chili: 'bloom',
+  medicinal: 'bloom',
+  bee: 'job-helpers',
+  timber: 'job-shelter',
+  biomass: 'job-mulch',
+};
+
 function roleIcon(symbol, colour) {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '-1 -1 2 2');
-  svg.setAttribute('class', 'legend-symbol');
+  svg.setAttribute('viewBox', GLYPH_VIEWBOX);
+  svg.setAttribute('width', '16');
+  svg.setAttribute('height', '16');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', String(GLYPH_STROKE_WIDTH));
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  svg.setAttribute('class', 'glyph legend-symbol');
   svg.setAttribute('aria-hidden', 'true');
-  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  path.setAttribute('d', symbolArt[symbol].compact.body);
-  path.setAttribute('fill', colour);
-  svg.append(path);
+  svg.style.color = colour;
+  const prims = GLYPH_PRIMITIVES[ROLE_GLYPH[symbol] ?? 'fruit'];
+  for (const p of prims) {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', p.tag);
+    for (const [k, v] of Object.entries(p.attrs)) el.setAttribute(k, String(v));
+    svg.append(el);
+  }
   return svg;
 }
 

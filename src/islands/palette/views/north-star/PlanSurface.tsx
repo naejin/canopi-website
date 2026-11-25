@@ -1,8 +1,9 @@
 /** @jsxImportSource preact */
 // Verbatim 1:1 port of mockup-v73.html renderPlan (L3308).
 import type { PaletteReport, Taxon } from '../../../../lib/palette/index.ts';
+import { buildSilhouetteGeometry, classifyHabitSilhouette } from '../../../../lib/botanical-silhouettes.ts';
 import * as store from '../../store.ts';
-import { T } from '../../strings.ts';
+import { P, T } from '../../strings.ts';
 import { PlantThumb } from './GuildVisuals.tsx';
 import {
   defaultQtyFor,
@@ -129,26 +130,133 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
         </p>
       </section>
 
-      <section class="plan-card">
+      <section class="plan-card" aria-label={T('ns.plan.timelineHead')}>
         <div>
           <p class="pulse-kicker">{T('ns.plan.y1')} → {T('ns.plan.y5')} → {T('ns.plan.y15')}</p>
           <h2 style={{ fontSize: '22px', marginTop: '4px' }}>{T('ns.plan.timelineHead')}</h2>
         </div>
-        <div class="timeline-grid">
-          {([
-            { key: 'y1', title: T('ns.plan.y1'), sub: 'Quick pioneers & annuals', list: y1 },
-            { key: 'y5', title: T('ns.plan.y5'), sub: 'Shrubs & early-bearing trees', list: y5 },
-            { key: 'y15', title: T('ns.plan.y15'), sub: 'Long-lived canopy', list: y15 },
-          ] as const).map((b) => (
-            <div key={b.key} class="timeline-col">
-              <strong>{b.title} ({b.list.length})</strong>
-              <span class="small muted">{b.sub}</span>
-              {b.list.length > 0 ? b.list.slice(0, 8).map((x) => (
-                <span key={x.p.id} class="small">• {taxCommonName(x.p)} <span class="muted">({x.label})</span></span>
-              )) : <span class="small muted">—</span>}
+        <p class="cal-scroll-hint">{T('ns.plan.timelineScrollHint')}</p>
+        {(() => {
+          // One shared height scale across all 3 stages so silhouettes visibly grow left → right
+          const allItems = [...y1, ...y5, ...y15];
+          const maxH = Math.max(4, ...allItems.map((x) => x.p.traits.height_m?.max ?? 1.5));
+          const soilY = 104;
+          const maxPx = 88;
+          const pxHeight = (hM: number | null | undefined, stageIdx: number) => {
+            const raw = hM ?? (stageIdx === 0 ? 0.8 : stageIdx === 1 ? 2.5 : 8);
+            // Gentle power curve keeps 0.5 m herbs legible beside 15 m canopy trees while preserving growth progression
+            return Math.max(18, Math.min(maxPx, Math.round(Math.pow(raw / maxH, 0.52) * maxPx)));
+          };
+          const stages = [
+            { key: 'y1', title: T('ns.plan.y1'), emptyText: T('ns.plan.emptyY1'), list: y1, idx: 0 },
+            { key: 'y5', title: T('ns.plan.y5'), emptyText: T('ns.plan.emptyY5'), list: y5, idx: 1 },
+            { key: 'y15', title: T('ns.plan.y15'), emptyText: T('ns.plan.emptyY15'), list: y15, idx: 2 },
+          ] as const;
+          return (
+            <div class="tl-axis-scroll" tabIndex={0} role="region" aria-label={T('ns.plan.timelineHead')}>
+              <div class="tl-axis">
+                {stages.map((st) => {
+                  const shown = st.list.slice(0, 5);
+                  const slotW = 74;
+                  const svgW = Math.max(196, shown.length * slotW + 24);
+                  const ghost = buildSilhouetteGeometry('round_tree', svgW / 2, soilY, 68, 52, true);
+                  return (
+                    <div key={st.key} class="tl-stage">
+                      <div class="tl-stage-tick">
+                        <span class="tl-tick-dot" aria-hidden="true" />
+                        <strong class="tl-stage-title">{st.title}</strong>
+                        <span class="tl-stage-cnt tnum">{P('ns.board.speciesCount', st.list.length)}</span>
+                      </div>
+
+                      <svg
+                        class="tl-stage-svg"
+                        viewBox={`0 0 ${svgW} 118`}
+                        width={svgW}
+                        height={118}
+                        aria-hidden="true"
+                      >
+                        <line x1="0" y1={soilY} x2={svgW} y2={soilY} stroke="var(--border-strong)" stroke-width="1.5" />
+                        {shown.length > 0 ? (
+                          shown.map((x, i) => {
+                            const hM = x.p.traits.height_m?.max ?? null;
+                            const wM = x.p.traits.width_max_m ?? null;
+                            const kind = classifyHabitSilhouette(x.p.traits.habit, hM, wM);
+                            const pH = pxHeight(hM, st.idx);
+                            const pW = Math.max(22, Math.min(56, Math.round(pH * 0.72)));
+                            const cx = (svgW / shown.length) * (i + 0.5);
+                            const geo = buildSilhouetteGeometry(kind, cx, soilY, pH, pW, true);
+                            return (
+                              <g key={x.p.id} class="tl-sil">
+                                {geo.rootHintD && (
+                                  <path d={geo.rootHintD} fill="none" stroke="var(--text-muted)" stroke-width="1" stroke-opacity="0.55" />
+                                )}
+                                {geo.stemD && (
+                                  <path d={geo.stemD} fill="none" stroke="var(--text-secondary)" stroke-width={geo.stemWidth} stroke-linecap="round" />
+                                )}
+                                {geo.crownD && (
+                                  <path
+                                    d={geo.crownD}
+                                    fill={geo.crownFill ? 'var(--plant-green)' : 'none'}
+                                    fill-opacity={geo.crownFill ? '0.2' : undefined}
+                                    stroke="var(--plant-green)"
+                                    stroke-width={geo.crownStrokeWidth}
+                                    stroke-linejoin="round"
+                                  />
+                                )}
+                                {geo.leaves?.map((lf, li) => (
+                                  <ellipse
+                                    key={li}
+                                    cx={lf.cx}
+                                    cy={lf.cy}
+                                    rx={lf.rx}
+                                    ry={lf.ry}
+                                    transform={lf.rot ? `rotate(${lf.rot} ${lf.cx} ${lf.cy})` : undefined}
+                                    fill="var(--plant-green)"
+                                    fill-opacity="0.22"
+                                    stroke="var(--plant-green)"
+                                    stroke-width="1.2"
+                                  />
+                                ))}
+                              </g>
+                            );
+                          })
+                        ) : (
+                          <g class="tl-ghost">
+                            {ghost.stemD && (
+                              <path d={ghost.stemD} fill="none" stroke="var(--text-muted)" stroke-width="1.4" stroke-dasharray="3 2" />
+                            )}
+                            {ghost.crownD && (
+                              <path d={ghost.crownD} fill="none" stroke="var(--text-muted)" stroke-width="1.4" stroke-dasharray="3 2" />
+                            )}
+                          </g>
+                        )}
+                      </svg>
+
+                      {st.list.length > 0 ? (
+                        <ul class="tl-names" role="list">
+                          {st.list.slice(0, 8).map((x) => (
+                            <li key={x.p.id}>
+                              <button
+                                type="button"
+                                class="tl-name-btn"
+                                onClick={() => { nsDrawer.value = { kind: 'dossier', id: x.p.id }; }}
+                              >
+                                <span class="tl-sp-name">{taxCommonName(x.p)}</span>
+                                <span class="tl-sp-age tnum">{x.label}</span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p class="tl-empty">{st.emptyText}</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          ))}
-        </div>
+          );
+        })()}
       </section>
 
       <section class="plan-card">

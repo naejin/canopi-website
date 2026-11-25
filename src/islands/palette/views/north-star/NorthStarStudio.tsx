@@ -11,6 +11,7 @@ import { DesignBoard } from './DesignBoard.tsx';
 import { Drawers } from './Drawers.tsx';
 import { LandPanel } from './LandPanel.tsx';
 import { PlanSurface } from './PlanSurface.tsx';
+import { PrintFieldSheet } from './PrintFieldSheet.tsx';
 import { downloadCanopiJson, fmtNum, scenarioShort, shortSiteName } from './ns-helpers.ts';
 import {
   nsDrawer,
@@ -211,6 +212,7 @@ export function NorthStarStudio() {
       </div>
 
       <Drawers rep={rep} />
+      <PrintFieldSheet rep={rep} />
 
       {toast && (
         <div class="ns-toast" role="status" aria-live="polite" style={{ position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', background: 'var(--tip-bg)', color: 'var(--tip-text)', padding: '10px 16px', borderRadius: '999px', fontSize: '13px', fontWeight: 600, zIndex: 90, boxShadow: 'var(--shadow)' }}>

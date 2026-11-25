@@ -725,7 +725,7 @@ export function DesignBoard({ rep }: { rep: PaletteReport }) {
                   <div key={l} class="m-row">
                     <div class="m-stratum">
                       <span class="m-stratum-lbl" style={{ color: inkCol }}>{lightKeyLabel(l)}</span>
-                      <span class="m-stratum-sub">{T('ns.board.speciesCount', { n: list.length })}</span>
+                      <span class="m-stratum-sub tnum">{P('ns.board.speciesCount', list.length)}</span>
                     </div>
                     <div class="m-lanes">
                       {known.length === 0 && unk.length === 0 && (

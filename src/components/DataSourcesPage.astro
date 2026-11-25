@@ -15,6 +15,7 @@ import { safeHref } from '../lib/safe-href.js';
 import { TRY_CITATION, TRY_DOI, referenceParts } from '../lib/try-references';
 import { t, localizedUrl, type Locale } from '../i18n/utils';
 import { toolCredits, type ClimateCredit } from '../data/palette-credits';
+import { PLANT_SOURCE_GIVES, TOOL_SOURCE_GIVES } from '../data/source-ledger-descriptions';
 import climateRelease from '../data/climate-release.json';
 interface Props { lang: Locale; }
 const { lang } = Astro.props;
@@ -58,18 +59,29 @@ const toolPrivacyParts = t('dataSources.tool.privacy', lang).split('{link}');
             {creditGroups.map((group) => (
               <>
                 <h3 id={group.id}>{group.title}</h3>
-                <ul class="credit-list" role="list" aria-labelledby={group.id}>
-                  {group.rows.map((row) => {
-                    const href = safeHref(row.url);
-                    return (
-                      <li class="credit-row">
-                        <span class="credit-name" lang="und" translate="no">{href ? <a href={href} rel="noopener">{row.name}</a> : row.name}</span>
-                        {row.credit && <span class="credit-line" lang="und" translate="no">{row.credit}</span>}
-                        <span class="credit-licence">{t(licenceWords[row.licenceStatus], lang, { licence: row.licence })}</span>
-                      </li>
-                    );
-                  })}
-                </ul>
+                <div class="source-ledger">
+                  <div class="ledger-head" aria-hidden="true">
+                    <span>{t('dataSources.ledger.colSource', lang)}</span>
+                    <span>{t('dataSources.ledger.colGives', lang)}</span>
+                    <span>{t('dataSources.ledger.colLicence', lang)}</span>
+                  </div>
+                  <ul class="credit-list" role="list" aria-labelledby={group.id}>
+                    {group.rows.map((row) => {
+                      const href = safeHref(row.url);
+                      const gives = PLANT_SOURCE_GIVES[row.source];
+                      return (
+                        <li class="credit-row">
+                          <span class="credit-name" lang="und" translate="no">{href ? <a href={href} rel="noopener">{row.name}</a> : row.name}</span>
+                          <span class="credit-gives-col">
+                            {gives && <span class="credit-gives" lang="en">{gives}</span>}
+                            {row.credit && <span class="credit-line" lang="und" translate="no">{row.credit}</span>}
+                          </span>
+                          <span class="credit-licence">{t(licenceWords[row.licenceStatus], lang, { licence: row.licence })}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
               </>
             ))}
           </section>
@@ -77,19 +89,29 @@ const toolPrivacyParts = t('dataSources.tool.privacy', lang).split('{link}');
         <section class="tool-credits" aria-labelledby="tool-credits-title">
           <h2 id="tool-credits-title">{t('dataSources.tool.title', lang)}</h2>
           <p class="credits-note">{t('dataSources.tool.lede', lang)}</p>
-          <ul class="credit-list" role="list" aria-labelledby="tool-credits-title">
-            {tool.map((row) => {
-              const href = row.href ? safeHref(row.href) : null;
-              return (
-                <li class="tool-credit" data-credit={row.id}>
-                  <span class="credit-name" lang="en" translate="no">{href ? <a href={href} rel="noopener">{row.name}</a> : row.name}</span>
-                  {row.use && <span class="credit-use">{t(USE_KEYS[row.use], lang)}</span>}
-                  <span class="credit-line" lang="en" translate="no">{referenceParts(row.line).map((part) => part.href ? <a href={part.href} rel="noopener">{part.text}</a> : part.text)}</span>
-                  {row.licence && <span class="credit-licence">{t('dataSources.credits.licence.confirmed', lang, { licence: row.licence })}</span>}
-                </li>
-              );
-            })}
-          </ul>
+          <div class="source-ledger">
+            <div class="ledger-head" aria-hidden="true">
+              <span>{t('dataSources.ledger.colSource', lang)}</span>
+              <span>{t('dataSources.ledger.colGives', lang)}</span>
+              <span>{t('dataSources.ledger.colLicence', lang)}</span>
+            </div>
+            <ul class="credit-list" role="list" aria-labelledby="tool-credits-title">
+              {tool.map((row) => {
+                const href = row.href ? safeHref(row.href) : null;
+                const gives = TOOL_SOURCE_GIVES[row.id];
+                return (
+                  <li class="tool-credit" data-credit={row.id}>
+                    <span class="credit-name" lang="en" translate="no">{href ? <a href={href} rel="noopener">{row.name}</a> : row.name}</span>
+                    <span class="credit-gives-col">
+                      {gives ? <span class="credit-gives" lang="en">{gives}</span> : row.use && <span class="credit-use">{t(USE_KEYS[row.use], lang)}</span>}
+                      <span class="credit-line" lang="en" translate="no">{referenceParts(row.line).map((part) => part.href ? <a href={part.href} rel="noopener">{part.text}</a> : part.text)}</span>
+                    </span>
+                    <span class="credit-licence">{row.licence ? t('dataSources.credits.licence.confirmed', lang, { licence: row.licence }) : ''}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
           <p class="credits-note">{toolPrivacyParts[0]}<a href={localizedUrl('/privacy/', lang)}>{t('privacy.title', lang)}</a>{toolPrivacyParts[1]}</p>
         </section>
         <section class="try" aria-labelledby="try-title">

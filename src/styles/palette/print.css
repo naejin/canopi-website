@@ -4,8 +4,62 @@
    dark whatever the theme: the light palette on a white page (:root:root:has(.ct) outranks the
    dark-theme rules of tokens.css and base.css). At 20 plants or fewer the sheet holds the side view drawing and
    the table; above 20, the table only. */
+@page { margin: 14mm; }
+
 @media print {
-  body:has(.ct-print) > :not(main), .grain::after { display: none !important; }
+  body:has(.ct-print) > :not(main),
+  body:has(.ns-print-sheet) > :not(main),
+  .grain::after { display: none !important; }
+  /* North Star A8 Print Field Sheet: ink-only A4/Letter sheet, zero site chrome or buttons. */
+  .ns-studio:has(.ns-print-sheet) > :not(.ns-print-sheet) { display: none !important; }
+  .ns-print-sheet {
+    display: block !important;
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    font-family: var(--font-sans);
+    font-size: 10pt;
+    line-height: 1.4;
+  }
+  .ns-print-head {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 14pt;
+    border-bottom: 1.5pt solid #000000; padding-bottom: 10pt; margin-bottom: 10pt;
+  }
+  .ns-print-head-main { flex: 1 1 auto; min-width: 0; }
+  .ns-print-kicker {
+    margin: 0; font-size: 8.5pt; font-weight: 600; color: #333333;
+    font-variant-caps: all-small-caps; letter-spacing: 0.04em;
+  }
+  :is(:lang(zh), :lang(ja), :lang(ko)) .ns-print-kicker { font-variant-caps: normal; letter-spacing: 0; }
+  .ns-print-place {
+    margin: 2pt 0 6pt; font-family: var(--font-display); font-size: 18pt; font-weight: 600; color: #000000;
+  }
+  .ns-print-meta {
+    margin: 0; display: flex; flex-wrap: wrap; gap: 4pt 14pt; font-size: 9pt;
+  }
+  .ns-print-meta div { display: flex; gap: 4pt; align-items: baseline; }
+  .ns-print-meta dt { font-weight: 600; color: #333333; }
+  .ns-print-meta dt::after { content: ':'; }
+  .ns-print-meta dd { margin: 0; color: #000000; }
+  .ns-print-qr {
+    flex: none; display: grid; justify-items: center; gap: 3pt; text-align: center; max-width: 112pt;
+  }
+  .ns-print-qr-bg { fill: #FFFFFF; }
+  .ns-print-qr-fg { fill: #000000; }
+  .ns-print-qr-cap { font-size: 8pt; color: #222222; line-height: 1.25; }
+  :is(:lang(zh), :lang(ja), :lang(ko)) .ns-print-qr-cap { word-break: keep-all; overflow-wrap: break-word; }
+  .ns-print-url { font-size: 7pt; color: #444444; word-break: break-all; line-height: 1.2; }
+  .ns-print-table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+  .ns-print-table thead { display: table-header-group; }
+  .ns-print-table tr { break-inside: avoid; page-break-inside: avoid; }
+  .ns-print-table th, .ns-print-table td {
+    text-align: left; vertical-align: top; padding: 4pt 5pt; border-bottom: 0.5pt solid #444444;
+  }
+  .ns-print-table th { font-weight: 600; border-bottom: 1.25pt solid #000000; }
+  .ns-print-bot { font-style: italic; color: #333333; font-size: 8.5pt; }
+  :is(:lang(zh), :lang(ja), :lang(ko)) .ns-print-bot { font-style: normal; }
+  .ns-print-status { white-space: nowrap; }
+  .ns-print-status .glyph, .ns-print-tox .glyph { color: #000000 !important; margin-right: 3pt; }
+  .ns-print-tox { font-weight: 600; }
   /* Only once the print sheet is in the page (it loads after the matrix): a Ctrl+P before that, or
      after its chunk failed, prints the tool as it is rather than an empty page (F4). */
   .ct:has(.ct-print) .ct-wrap > :not(#ct-root), .ct #ct-root:has(.ct-print) > :not(:has(.ct-print)):not(.ct-print), .ct .ct-page-actions:has(.ct-print) > :not(.ct-print) { display: none !important; }

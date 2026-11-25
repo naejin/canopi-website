@@ -15,7 +15,7 @@ test('Plan Surface: Crown-Area Budget, Plot Area input, Harvest Timeline, Nurser
 
   const planInfo = await page.evaluate(() => ({
     hasAriaLabel: !!document.querySelector('.budget-bar[role="progressbar"]')?.getAttribute('aria-label'),
-    timelineCols: document.querySelectorAll('.timeline-col').length,
+    timelineCols: document.querySelectorAll('.tl-stage').length,
     nurseryItems: document.querySelectorAll('.nursery-item').length,
     hasPlotInput: !!document.querySelector('#plot-m2'),
     text: document.querySelector('main')?.innerText ?? '',

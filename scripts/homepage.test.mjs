@@ -60,15 +60,18 @@ test('the data sources page has its own words in every locale, with no licence c
     'dataSources.credits.held', 'dataSources.credits.lede',
     'dataSources.credits.licence.confirmed', 'dataSources.credits.licence.per_item', 'dataSources.credits.licence.permission', 'dataSources.credits.licence.terms', 'dataSources.credits.licence.unconfirmed',
     'dataSources.credits.title', 'dataSources.credits.used',
-    'dataSources.guidelines', 'dataSources.lede', 'dataSources.list.count', 'dataSources.list.lost', 'dataSources.list.partial', 'dataSources.list.title', 'dataSources.notices', 'dataSources.title',
+    'dataSources.guidelines', 'dataSources.lede', 'dataSources.ledger.colGives', 'dataSources.ledger.colLicence', 'dataSources.ledger.colSource', 'dataSources.list.count', 'dataSources.list.lost', 'dataSources.list.partial', 'dataSources.list.title', 'dataSources.notices', 'dataSources.title',
     'dataSources.tool.gbifUse', 'dataSources.tool.gridUse', 'dataSources.tool.lede', 'dataSources.tool.mapUse', 'dataSources.tool.privacy', 'dataSources.tool.searchUse', 'dataSources.tool.servedUse', 'dataSources.tool.title',
   ]);
   assert.equal(en['dataSources.guidelines'], 'Used under the TRY Intellectual Property Guidelines');
   for (const file of readdirSync(root).filter((name) => name.endsWith('.json'))) {
     const translated = JSON.parse(readFileSync(new URL(file, root), 'utf8'));
+    const frCognates = new Set(['dataSources.ledger.colSource', 'dataSources.ledger.colLicence']);
     for (const key of keys) {
       assert.ok(translated[key]?.trim(), `${file}: ${key}`);
-      if (file !== 'en.json') assert.notEqual(translated[key], en[key], `${file}: ${key} is translated`);
+      if (file !== 'en.json' && !(file === 'fr.json' && frCognates.has(key))) {
+        assert.notEqual(translated[key], en[key], `${file}: ${key} is translated`);
+      }
       assert.ok(!translated[key].includes('CC BY'), `${file}: ${key}`);
     }
     assert.ok(translated['dataSources.list.lost'].includes('\ufffd'), `${file}: the lost character is shown as it appears in the list`);

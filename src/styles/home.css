@@ -15,12 +15,12 @@
 .hero-painting {
   position: absolute; inset: 0; z-index: -2;
   background-size: cover;
-  background-position: center 62%;
+  background-position: center 54%;
   background-repeat: no-repeat;
   background-image: var(--hero-day);
-  /* The painting dissolves before the hero ends, so no reveal is ever cut by a straight edge. */
-  -webkit-mask-image: linear-gradient(to bottom, #000 64%, rgba(0,0,0,0.62) 78%, rgba(0,0,0,0.2) 90%, transparent);
-  mask-image: linear-gradient(to bottom, #000 64%, rgba(0,0,0,0.62) 78%, rgba(0,0,0,0.2) 90%, transparent);
+  /* B1: Feathered radial mask centred behind the wordmark, equal strength in Light & Dark. */
+  -webkit-mask-image: radial-gradient(ellipse 68% 64% at 50% 46%, rgba(0, 0, 0, 0.94) 0%, rgba(0, 0, 0, 0.68) 46%, rgba(0, 0, 0, 0.24) 74%, transparent 100%);
+  mask-image: radial-gradient(ellipse 68% 64% at 50% 46%, rgba(0, 0, 0, 0.94) 0%, rgba(0, 0, 0, 0.68) 46%, rgba(0, 0, 0, 0.24) 74%, transparent 100%);
 }
 /* The page sets the four URLs for its locale; only the one that applies is downloaded. */
 :root[data-theme="dark"] .hero-painting { background-image: var(--hero-night); }
@@ -176,8 +176,9 @@
 .network-group { break-inside: avoid; padding-bottom: 32px; }
 .network-group h3 {
   padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid var(--border);
-  font-family: var(--font-sans); font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-ink);
+  font-family: var(--font-sans); font-size: 14px; font-weight: 600; font-variant-caps: all-small-caps; letter-spacing: 0.04em; color: var(--accent-ink);
 }
+:is(:lang(zh), :lang(ja), :lang(ko)) .network-group h3 { font-size: 13px; font-variant-caps: normal; letter-spacing: 0; }
 .network-group ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; }
 .network-group a { display: inline-block; padding: 4px 0; text-decoration: none; }
 .network-group a:hover { text-decoration: underline; }
@@ -190,16 +191,44 @@
 /* On /bibliography/, the themes with their book counts, linking down to each shelf. */
 .bibliography-themes { margin-bottom: clamp(36px, 5vw, 56px); }
 .bibliography-themes ul { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.bibliography-themes .chip span { margin-left: 8px; font-weight: 400; color: var(--text-muted); }
-.bibliography-grid { columns: 3 240px; column-gap: 48px; }
-.bibliography-group { break-inside: avoid; padding-bottom: 32px; scroll-margin-top: 24px; }
+.bibliography-themes .chip span { margin-left: 8px; font-weight: 400; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.bibliography-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 36px 40px; align-items: start; }
+.bibliography-grid-full { grid-template-columns: repeat(auto-fill, minmax(min(100%, 460px), 1fr)); }
+.bibliography-group { break-inside: avoid; padding-bottom: 16px; scroll-margin-top: 24px; }
 .shelf-title {
   padding-bottom: 10px; margin-bottom: 14px; border-bottom: 1px solid var(--border);
-  font-family: var(--font-sans); font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-ink);
+  font-family: var(--font-sans); font-size: 14px; font-weight: 600; font-variant-caps: all-small-caps; letter-spacing: 0.04em; color: var(--accent-ink);
 }
+:is(:lang(zh), :lang(ja), :lang(ko)) .shelf-title { font-size: 13px; font-variant-caps: normal; letter-spacing: 0; }
 .bibliography-group > ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 18px; }
+.book {
+  display: grid; grid-template-columns: 108px minmax(0, 1fr); gap: 14px; align-items: start;
+  scroll-margin-top: 24px;
+}
+.book-board {
+  width: 108px; min-height: 124px; border-radius: 3px 6px 6px 3px;
+  padding: 9px 7px 8px 13px; position: relative;
+  display: flex; flex-direction: column; justify-content: space-between; gap: 6px;
+  font-family: var(--font-display); border: 1px solid transparent;
+}
+.book-board::before {
+  content: ''; position: absolute; left: 5px; top: 0; bottom: 0; width: 1.5px;
+  background: currentColor; opacity: 0.25;
+}
+/* Non-green Canopi notebook tones only (ochre, umber, clay, slate; AA >= 4.5:1 in both themes). */
+.book-board[data-tone="ochre"] { background: #8C4E12; color: #FFFBF4; border-color: #6F3D0D; }
+.book-board[data-tone="umber"] { background: #5C3E24; color: #FFFBF4; border-color: #422B17; }
+.book-board[data-tone="clay"] { background: #7A3E2A; color: #FFFBF4; border-color: #5E2E1F; }
+.book-board[data-tone="slate"] { background: #2D4353; color: #F7FAFC; border-color: #1F303C; }
+:root[data-theme="dark"] .book-board[data-tone="ochre"] { background: #733F0E; color: #FDF7EC; border-color: rgba(255, 248, 235, 0.16); }
+:root[data-theme="dark"] .book-board[data-tone="umber"] { background: #4B331D; color: #FDF7EC; border-color: rgba(255, 248, 235, 0.16); }
+:root[data-theme="dark"] .book-board[data-tone="clay"] { background: #633120; color: #FDF7EC; border-color: rgba(255, 248, 235, 0.16); }
+:root[data-theme="dark"] .book-board[data-tone="slate"] { background: #223544; color: #F2F7FA; border-color: rgba(255, 248, 235, 0.16); }
+.book-board-title { font-size: 12px; font-weight: 600; line-height: 1.24; overflow-wrap: break-word; hyphens: auto; }
+.book-board-year { font-size: 12px; opacity: 0.88; font-family: var(--font-sans); }
+.book-body { min-width: 0; }
 .book-link { display: block; text-decoration: none; }
-.book-title { font-family: var(--font-display); font-size: 19px; line-height: 1.25; text-wrap: pretty; }
+.book-title { font-family: var(--font-display); font-size: 19px; line-height: 1.25; text-wrap: balance; }
 .book-title span { font-family: var(--font-sans); font-size: 0.75em; color: var(--text-muted); }
 .book-subtitle { display: block; margin-top: 2px; font-size: 15px; line-height: 1.35; color: var(--text-secondary); text-wrap: pretty; }
 .book-link:hover .book-title { text-decoration: underline; }
@@ -210,21 +239,23 @@
 .book-climate > span:first-child { margin-right: 3px; }
 .book-guides { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 9px; margin-top: 3px; font-size: 13px; color: var(--text-muted); }
 .book-guides a { font-weight: 600; color: var(--accent-ink); text-underline-offset: 0.18em; }
-.book { scroll-margin-top: 24px; }
 .book:target .book-title { color: var(--accent-ink); }
-/* The other editions as language codes, like a catalogue's shelf marks; each names its language on hover. */
-.book-editions { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 9px; margin-top: 3px; font-size: 13px; color: var(--text-muted); }
-.book-editions a { padding: 2px 0; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-decoration: none; color: var(--text-secondary); }
-/* WCAG 2.2 target size: each edition badge and guide link is at least 24 × 24 px. */
-.book-editions a { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; min-height: 24px; }
+/* B3: Visible full localized language tags (zero tooltip-only ISO abbreviations). */
+.book-editions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; font-size: 13px; color: var(--text-muted); }
+.book-editions a {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 26px; padding: 2px 9px; border-radius: 4px;
+  border: 1px solid var(--border-strong); background: var(--surface);
+  font-size: 13px; font-weight: 400; text-decoration: none; color: var(--text);
+}
 .book-guides a { display: inline-block; min-height: 24px; line-height: 24px; }
-.book-editions a:hover { color: var(--accent-ink); text-decoration: underline; }
-.bibliography-more { margin-top: 8px; }
+.book-editions a:hover { border-color: var(--accent); color: var(--accent-ink); }
+.bibliography-more { margin-top: 24px; }
 /* On /bibliography/, the way to the guides drawn from these books. */
 .section-head .bibliography-guides { margin-top: 10px; font-size: 16px; }
 .bibliography-guides a { font-weight: 600; color: var(--accent-ink); }
 
-/* ---------- Data sources ---------- */
+/* ---------- Data sources (B4 3-Column Ruled Source Ledger) ---------- */
 
 /* Rows as delivered hold long unbroken names and urls: they break anywhere rather than scroll the page. */
 .data-sources h2 { max-width: 640px; margin-top: clamp(32px, 4vw, 44px); font-size: clamp(24px, 3vw, 30px); }
@@ -237,15 +268,37 @@
 .try-dataset { font-weight: 600; line-height: 1.35; }
 .try-custodian { font-size: 14px; color: var(--text-muted); }
 .try-reference { margin-top: 2px; font-size: 15px; line-height: 1.45; color: var(--text-secondary); }
-/* The source credits above the TRY list (DataSourcesPage.astro). */
+/* The 3-column ruled source ledger above the TRY list (DataSourcesPage.astro). */
 .data-sources h3 { max-width: 640px; margin-top: 24px; font-size: 19px; }
 .credits-note { max-width: 640px; margin-top: 12px; color: var(--text-secondary); }
-.credit-list { display: grid; gap: 14px; max-width: 760px; margin: 14px 0 0; padding: 0; list-style: none; overflow-wrap: anywhere; }
-.credit-row > span { display: block; }
-.credit-name { font-weight: 600; line-height: 1.35; }
+.source-ledger {
+  margin-top: 14px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.ledger-head {
+  display: grid; grid-template-columns: minmax(0, 26%) minmax(0, 52%) minmax(0, 22%); gap: 16px;
+  padding: 10px 16px; background: var(--surface-alt); border-bottom: 1.5px solid var(--border-strong);
+  font-size: 13px; font-weight: 600; font-variant-caps: all-small-caps; letter-spacing: 0.04em; color: var(--text-muted);
+}
+:is(:lang(zh), :lang(ja), :lang(ko)) .ledger-head { font-size: 12px; font-variant-caps: normal; letter-spacing: 0; }
+.credit-list { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; overflow-wrap: anywhere; }
+.credit-row, .tool-credit {
+  display: grid; grid-template-columns: minmax(0, 26%) minmax(0, 52%) minmax(0, 22%); gap: 16px;
+  padding: 12px 16px; border-bottom: 1px solid var(--border); align-items: start;
+}
+.credit-row:last-child, .tool-credit:last-child { border-bottom: 0; }
+.credit-name { font-weight: 600; line-height: 1.35; font-size: 15px; }
 .credit-name a { color: var(--accent-ink); }
-.credit-line { font-size: 15px; line-height: 1.45; color: var(--text-secondary); }
-.credit-licence { font-size: 14px; color: var(--text-muted); }
+.credit-gives-col { display: grid; gap: 4px; min-width: 0; }
+.credit-gives { font-size: 14.5px; line-height: 1.45; color: var(--text); }
+.credit-line { font-size: 13px; line-height: 1.4; color: var(--text-muted); }
+.credit-licence { font-size: 13.5px; line-height: 1.4; color: var(--text-secondary); }
+@media (max-width: 639px) {
+  .ledger-head { display: none; }
+  .credit-row, .tool-credit { grid-template-columns: minmax(0, 1fr); gap: 5px; padding: 12px 14px; }
+  .book { grid-template-columns: 96px minmax(0, 1fr); gap: 12px; }
+  .book-board { width: 96px; min-height: 114px; padding: 8px 6px 8px 11px; }
+}
 
 /* ---------- Contact ---------- */
 

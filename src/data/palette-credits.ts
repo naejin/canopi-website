@@ -30,7 +30,9 @@ export interface ToolCredit {
 export interface ClimateCredit { id: string; title: string; citation: string | null; landing: string | null; licence: string }
 
 /** canopi-climate's source ids → this page's data-credit ids, in the order the page lists them. */
-export const SERVED_ONLY = new Set(['soilgrids', 'wgsrpd']);
+// SoilGrids 2.0 (topsoil/subsoil pH, texture, rockiness) and WGSRPD (native/introduced region labels)
+// are both actively read by the Plant Palette tool — zero served-only entries remain.
+export const SERVED_ONLY = new Set<string>();
 export const GRID_SOURCES: ReadonlyArray<readonly [string, string]> = [
   ['chelsa-v2.1', 'chelsa'],
   ['beck2023', 'koppen-beck'],
