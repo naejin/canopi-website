@@ -57,9 +57,9 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
       else y15.push({ p, label: matLabel });
     } else {
       const startOrd = p.phases ? phaseOrd(p.phases.start) : 3;
-      if (p.traits.is_annual || startOrd <= 1) y1.push({ p, label: T('ns.est') });
-      else if (startOrd >= 5 || (p.traits.height_m?.max ?? 0) >= 8) y15.push({ p, label: T('ns.est') });
-      else y5.push({ p, label: T('ns.est') });
+      if (p.traits.is_annual || startOrd <= 1) y1.push({ p, label: T('ns.plan.ageEstimated') });
+      else if (startOrd >= 5 || (p.traits.height_m?.max ?? 0) >= 8) y15.push({ p, label: T('ns.plan.ageEstimated') });
+      else y5.push({ p, label: T('ns.plan.ageEstimated') });
     }
   }
 
@@ -168,14 +168,14 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
                         <span class="tl-stage-cnt tnum">{P('ns.board.speciesCount', st.list.length)}</span>
                       </div>
 
-                      <svg
-                        class="tl-stage-svg"
-                        viewBox={`0 0 ${svgW} 118`}
-                        width={svgW}
-                        height={118}
-                        aria-hidden="true"
-                      >
-                        <line x1="0" y1={soilY} x2={svgW} y2={soilY} stroke="var(--border-strong)" stroke-width="1.5" />
+                      <div class="tl-stage-svg-wrap">
+                        <svg
+                          class="tl-stage-svg"
+                          viewBox={`0 0 ${svgW} 118`}
+                          width={svgW}
+                          height={118}
+                          aria-hidden="true"
+                        >
                         {shown.length > 0 ? (
                           shown.map((x, i) => {
                             const hM = x.p.traits.height_m?.max ?? null;
@@ -230,7 +230,8 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
                             )}
                           </g>
                         )}
-                      </svg>
+                        </svg>
+                      </div>
 
                       {st.list.length > 0 ? (
                         <ul class="tl-names" role="list">
@@ -257,6 +258,7 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
             </div>
           );
         })()}
+        <p class="tl-scale-note">{T('ns.plan.heightsNotToScale')}</p>
       </section>
 
       <section class="plan-card">

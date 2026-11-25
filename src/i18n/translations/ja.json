@@ -3604,5 +3604,7 @@
   "dataSources.ledger.colSource": "データ出典",
   "dataSources.ledger.colGives": "Canopiでの用途",
   "dataSources.ledger.colLicence": "ライセンス",
+  "consortium.ns.plan.ageEstimated": "推定年数",
+  "consortium.ns.plan.heightsNotToScale": "高さは実寸比ではありません",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

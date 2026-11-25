@@ -1,4 +1,4 @@
-// Lightweight pure-TypeScript ISO/IEC 18004 QR Code encoder (Byte mode, ECC Level L, Versions 1–10).
+// Lightweight pure-TypeScript ISO/IEC 18004 QR Code encoder (Byte mode, ECC Level L, Versions 1–40).
 // Zero external dependencies and zero network calls; used by A8 Print Field Sheet to render a real
 // scannable SVG QR code linking back to the interactive Plant Palette URL.
 
@@ -11,19 +11,41 @@ interface VersionSpec {
   align: readonly number[];
 }
 
-// Level L specifications for Versions 1..10 (up to 271 UTF-8 bytes)
-const VERSIONS: readonly VersionSpec[] = [
-  { version: 1, size: 21, dataCodewords: 19, ecPerBlock: 7, blocks: 1, align: [] },
-  { version: 2, size: 25, dataCodewords: 34, ecPerBlock: 10, blocks: 1, align: [6, 18] },
-  { version: 3, size: 29, dataCodewords: 55, ecPerBlock: 15, blocks: 1, align: [6, 22] },
-  { version: 4, size: 33, dataCodewords: 80, ecPerBlock: 20, blocks: 1, align: [6, 26] },
-  { version: 5, size: 37, dataCodewords: 108, ecPerBlock: 26, blocks: 1, align: [6, 30] },
-  { version: 6, size: 41, dataCodewords: 136, ecPerBlock: 18, blocks: 2, align: [6, 34] },
-  { version: 7, size: 45, dataCodewords: 156, ecPerBlock: 20, blocks: 2, align: [6, 22, 38] },
-  { version: 8, size: 49, dataCodewords: 194, ecPerBlock: 24, blocks: 2, align: [6, 24, 42] },
-  { version: 9, size: 53, dataCodewords: 232, ecPerBlock: 30, blocks: 2, align: [6, 26, 46] },
-  { version: 10, size: 57, dataCodewords: 274, ecPerBlock: 18, blocks: 4, align: [6, 28, 50] },
+// ISO/IEC 18004 ECC Level L [dataCodewords, ecPerBlock, blocks] for Versions 1..40 (up to 2,953 UTF-8 bytes)
+const LEVEL_L_SPECS: readonly (readonly [number, number, number])[] = [
+  [19, 7, 1], [34, 10, 1], [55, 15, 1], [80, 20, 1], [108, 26, 1],
+  [136, 18, 2], [156, 20, 2], [194, 24, 2], [232, 30, 2], [274, 18, 4],
+  [324, 20, 4], [370, 24, 4], [428, 26, 4], [461, 30, 4], [523, 22, 6],
+  [589, 24, 6], [647, 28, 6], [721, 30, 6], [795, 28, 7], [861, 28, 8],
+  [932, 28, 8], [1006, 28, 9], [1094, 30, 9], [1174, 30, 10], [1276, 26, 12],
+  [1370, 28, 12], [1468, 30, 12], [1531, 30, 13], [1631, 30, 14], [1735, 30, 15],
+  [1843, 30, 16], [1955, 30, 17], [2071, 30, 18], [2191, 30, 19], [2306, 30, 19],
+  [2434, 30, 20], [2566, 30, 21], [2702, 30, 22], [2812, 30, 24], [2956, 30, 25],
 ];
+
+// ISO/IEC 18004 Annex E alignment pattern center coordinates (v >= 2)
+function alignmentCoords(version: number): number[] {
+  if (version === 1) return [];
+  const numAlign = Math.floor(version / 7) + 2;
+  const last = version * 4 + 10;
+  if (numAlign === 2) return [6, last];
+  const step = version === 32 ? 26 : Math.ceil((last - 6) / (numAlign - 1) / 2) * 2;
+  const coords = [6];
+  for (let pos = last; coords.length < numAlign; pos -= step) coords.splice(1, 0, pos);
+  return coords;
+}
+
+const VERSIONS: readonly VersionSpec[] = LEVEL_L_SPECS.map(([dataCodewords, ecPerBlock, blocks], idx) => {
+  const version = idx + 1;
+  return {
+    version,
+    size: version * 4 + 17,
+    dataCodewords,
+    ecPerBlock,
+    blocks,
+    align: alignmentCoords(version),
+  };
+});
 
 // GF(256) with primitive polynomial 0x11d
 const GF_EXP = new Uint8Array(512);
@@ -104,22 +126,25 @@ export interface QrMatrix {
   pathD: string;
 }
 
-/** Encode a UTF-8 string (e.g. palette URL) into a scannable SVG QR code path. */
-export function encodeQrSvg(text: string, quiet = 2): QrMatrix {
-  const rawBytes = encodeBytes(text);
-  // Pick smallest version that fits (truncating ultra-long URLs safely to Version 10 capacity)
-  let spec = VERSIONS[VERSIONS.length - 1];
+/**
+ * Encode a UTF-8 string (e.g. palette URL) into a scannable ISO/IEC 18004 SVG QR code path.
+ * Supports Versions 1..40 (up to 2,953 UTF-8 bytes at ECC Level L). Never truncates: returns
+ * null if the input exceeds Version 40 capacity so callers can fall back to printing the URL only.
+ */
+export function encodeQrSvg(text: string, quiet = 2): QrMatrix | null {
+  const bytes = encodeBytes(text);
+  let spec: VersionSpec | null = null;
   for (const v of VERSIONS) {
     const countBits = v.version < 10 ? 8 : 16;
     const capBytes = Math.floor((v.dataCodewords * 8 - 4 - countBits) / 8);
-    if (rawBytes.length <= capBytes) {
+    if (bytes.length <= capBytes) {
       spec = v;
       break;
     }
   }
+  if (!spec) return null;
+
   const countBits = spec.version < 10 ? 8 : 16;
-  const maxBytes = Math.floor((spec.dataCodewords * 8 - 4 - countBits) / 8);
-  const bytes = rawBytes.length > maxBytes ? rawBytes.slice(0, maxBytes) : rawBytes;
 
   // Build bit stream: Mode 0100 (Byte), length, bytes, terminator, pad bytes
   const bits: number[] = [];
@@ -198,10 +223,13 @@ export function encodeQrSvg(text: string, quiet = 2): QrMatrix {
     setFunc(i, 6, i % 2 === 0);
   }
 
-  // Alignment patterns
-  for (const r of spec.align) {
-    for (const c of spec.align) {
-      if (isFunc[r][c]) continue;
+  // Alignment patterns: skip ONLY the 3 finder-corner overlaps (never skip timing-row/col alignments!)
+  const al = spec.align;
+  for (let i = 0; i < al.length; i++) {
+    for (let j = 0; j < al.length; j++) {
+      if ((i === 0 && j === 0) || (i === 0 && j === al.length - 1) || (i === al.length - 1 && j === 0)) continue;
+      const r = al[i];
+      const c = al[j];
       for (let dr = -2; dr <= 2; dr++) {
         for (let dc = -2; dc <= 2; dc++) {
           const dark = Math.max(Math.abs(dr), Math.abs(dc)) !== 1;
@@ -257,7 +285,7 @@ export function encodeQrSvg(text: string, quiet = 2): QrMatrix {
     }
   }
 
-  // Apply mask 0 (simple, reliable, fast) and write format info
+  // Apply mask 0 and write format info
   const mask = 0;
   for (let r = 0; r < n; r++) {
     for (let c = 0; c < n; c++) {

@@ -89,21 +89,27 @@ export function createDesignCanvas({ stage, canvas, tooltip, hint, lang }) {
   }
 
   function fitView() {
-    // Crop tightly to the plan's actual planted/zoned bounds (removing empty margin frame).
+    // Crop to the plan's actual planted + zoned bounds, padded by the largest marker radius so
+    // neither zone outlines nor edge plant markers ever clip against the frame.
     let [x0, y0, x1, y1] = design.boundsM;
-    if (design.plants?.length) {
-      let px0 = Infinity, py0 = Infinity, px1 = -Infinity, py1 = -Infinity;
-      for (const p of design.plants) {
-        if (p[0] < px0) px0 = p[0];
-        if (p[0] > px1) px1 = p[0];
-        if (p[1] < py0) py0 = p[1];
-        if (p[1] > py1) py1 = p[1];
-      }
-      if (Number.isFinite(px0) && px1 > px0 && py1 > py0) {
-        x0 = px0; y0 = py0; x1 = px1; y1 = py1;
-      }
+    let px0 = Infinity, py0 = Infinity, px1 = -Infinity, py1 = -Infinity;
+    const include = (x, y) => {
+      if (x < px0) px0 = x;
+      if (x > px1) px1 = x;
+      if (y < py0) py0 = y;
+      if (y > py1) py1 = y;
+    };
+    for (const p of design.plants ?? []) include(p[0], p[1]);
+    for (const zone of design.zones ?? []) {
+      for (const pt of zone.points ?? []) include(pt[0], pt[1]);
     }
-    const ppm = Math.min(width / ((x1 - x0) * 1.04), height / ((y1 - y0) * 1.04));
+    if (Number.isFinite(px0) && px1 > px0 && py1 > py0) {
+      x0 = px0; y0 = py0; x1 = px1; y1 = py1;
+    }
+    const padPx = MAX_RADIUS_PX + 8;
+    const availW = Math.max(40, width - padPx * 2);
+    const availH = Math.max(40, height - padPx * 2);
+    const ppm = Math.min(availW / ((x1 - x0) * 1.04), availH / ((y1 - y0) * 1.04));
     return { x: (x0 + x1) / 2, y: (y0 + y1) / 2, ppm: Math.max(MIN_PPM, ppm) };
   }
 

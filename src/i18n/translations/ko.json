@@ -3604,5 +3604,7 @@
   "dataSources.ledger.colSource": "출처",
   "dataSources.ledger.colGives": "Canopi 제공 내용",
   "dataSources.ledger.colLicence": "라이선스",
+  "consortium.ns.plan.ageEstimated": "추정 연수",
+  "consortium.ns.plan.heightsNotToScale": "높이는 실제 비율이 아닙니다",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

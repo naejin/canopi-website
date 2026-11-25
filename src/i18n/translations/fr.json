@@ -3604,5 +3604,7 @@
   "dataSources.ledger.colSource": "Source",
   "dataSources.ledger.colGives": "Ce qu’elle apporte à Canopi",
   "dataSources.ledger.colLicence": "Licence",
+  "consortium.ns.plan.ageEstimated": "âge estimé",
+  "consortium.ns.plan.heightsNotToScale": "Hauteurs non à l’échelle",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

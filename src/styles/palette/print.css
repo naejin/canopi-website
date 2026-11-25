@@ -41,10 +41,11 @@
   .ns-print-meta dt::after { content: ':'; }
   .ns-print-meta dd { margin: 0; color: #000000; }
   .ns-print-qr {
-    flex: none; display: grid; justify-items: center; gap: 3pt; text-align: center; max-width: 112pt;
+    flex: none; display: grid; justify-items: center; gap: 3pt; text-align: center; max-width: 180pt;
   }
   .ns-print-qr-bg { fill: #FFFFFF; }
   .ns-print-qr-fg { fill: #000000; }
+  .tool-release { max-width: none !important; margin: 10pt 0 0 !important; padding-inline: 0 !important; font-size: 8.5pt; color: #444444; }
   .ns-print-qr-cap { font-size: 8pt; color: #222222; line-height: 1.25; }
   :is(:lang(zh), :lang(ja), :lang(ko)) .ns-print-qr-cap { word-break: keep-all; overflow-wrap: break-word; }
   .ns-print-url { font-size: 7pt; color: #444444; word-break: break-all; line-height: 1.2; }

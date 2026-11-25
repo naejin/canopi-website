@@ -5,6 +5,7 @@
 // scannable pure-TS SVG QR code + fallback URL text, and multi-page-safe plant table with <Glyph> icons.
 import type { PaletteReport } from '../../../../lib/palette/index.ts';
 import { encodeQrSvg } from '../../../../lib/qr-svg.ts';
+import { shareUrl, shownFragment } from '../../state/persist.ts';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
 import { Glyph } from '../kit/Glyph.tsx';
@@ -26,8 +27,13 @@ export function PrintFieldSheet({ rep }: { rep: PaletteReport }) {
   const qtyMap = nsQtyById.value;
   const siteLabel = store.location.value?.label ?? store.climate.value ?? T('ns.land.title');
   const texture = eff.drainage ?? store.location.value?.lookup?.soil?.texture ?? '';
-  const shareUrl = typeof window !== 'undefined' ? window.location.href : 'https://projectcanopi.com/palette/';
-  const qr = encodeQrSvg(shareUrl, 2);
+  const fragment = shownFragment.value;
+  const link = typeof window !== 'undefined'
+    ? (fragment ? shareUrl(window.location.href, fragment) : window.location.href)
+    : 'https://projectcanopi.com/palette/';
+  const qr = encodeQrSvg(link, 2);
+  // Keep each QR module >= ~0.5 mm (~1.9 px at 96 dpi) as version grows for long palette URLs.
+  const qrPx = qr ? Math.min(220, Math.max(84, Math.ceil(qr.viewBoxSize * 1.9))) : 0;
 
   return (
     <article class="ns-print-sheet" aria-label={T('ns.print.sheetTitle')}>
@@ -62,19 +68,23 @@ export function PrintFieldSheet({ rep }: { rep: PaletteReport }) {
         </div>
 
         <div class="ns-print-qr">
-          <svg
-            width="84"
-            height="84"
-            viewBox={`0 0 ${qr.viewBoxSize} ${qr.viewBoxSize}`}
-            shape-rendering="crispEdges"
-            role="img"
-            aria-label={T('ns.print.scanQr')}
-          >
-            <rect width={qr.viewBoxSize} height={qr.viewBoxSize} class="ns-print-qr-bg" />
-            <path d={qr.pathD} class="ns-print-qr-fg" />
-          </svg>
-          <span class="ns-print-qr-cap">{T('ns.print.scanQr')}</span>
-          <span class="ns-print-url">{shareUrl}</span>
+          {qr && (
+            <>
+              <svg
+                width={qrPx}
+                height={qrPx}
+                viewBox={`0 0 ${qr.viewBoxSize} ${qr.viewBoxSize}`}
+                shape-rendering="crispEdges"
+                role="img"
+                aria-label={T('ns.print.scanQr')}
+              >
+                <rect width={qr.viewBoxSize} height={qr.viewBoxSize} class="ns-print-qr-bg" />
+                <path d={qr.pathD} class="ns-print-qr-fg" />
+              </svg>
+              <span class="ns-print-qr-cap">{T('ns.print.scanQr')}</span>
+            </>
+          )}
+          <span class="ns-print-url">{link}</span>
         </div>
       </header>
 

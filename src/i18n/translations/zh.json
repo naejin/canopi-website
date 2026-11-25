@@ -3604,5 +3604,7 @@
   "dataSources.ledger.colSource": "数据来源",
   "dataSources.ledger.colGives": "为 Canopi 提供的内容",
   "dataSources.ledger.colLicence": "许可协议",
+  "consortium.ns.plan.ageEstimated": "估算年数",
+  "consortium.ns.plan.heightsNotToScale": "高度未按实际比例绘制",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }
