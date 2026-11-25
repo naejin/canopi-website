@@ -307,19 +307,39 @@ export function WalterLiethSvg({ eff, rep }: { eff: EffectiveSiteClimate; rep: P
   const W = 520, H = 214, padL = 38, padR = 42, padT = 28, padB = 34;
   const plotW = W - padL - padR, plotH = H - padT - padB;
   const xOf = (i: number) => padL + (i + 0.5) * (plotW / 12);
-  const clampY = (y: number) => Math.max(padT, Math.min(padT + plotH, y));
-  // Standard Walter-Lieth scale: 2:1 (1°C = 2 mm) up to 100 mm (50°C), then 1:10 compression above 100 mm, clamped to padT.
-  const y100 = padT + 28;
-  const mainH = padT + plotH - y100;
-  const yTemp = (t: number) => clampY(padT + plotH - ((t + 10) / 60) * mainH);
+  // Standard Walter-Lieth scale: 2:1 (1°C = 2 mm) up to 100 mm (50°C), then true 1:10 compression above 100 mm (1°C = 20 mm).
+  // Size the vertical degree span from the site's actual peak rainfall/temp (+2° headroom) so no rain bar ever clamps flat at padT.
+  const maxP = Math.max(0, ...mP);
+  const maxT = Math.max(40, ...mT);
+  const hasOver100 = maxP > 100;
+  const precipTopDeg = hasOver100 ? 50 + Math.ceil((maxP - 100) / 100) * 5 + 2 : 50;
+  const topDeg = Math.max(50, maxT, precipTopDeg);
+  const degSpan = topDeg + 10; // -10°C bottom to topDeg top
+  const yOfDeg = (deg: number) => Math.max(padT + 1, Math.min(padT + plotH, padT + plotH - ((deg + 10) / degSpan) * plotH));
+  const yTemp = (t: number) => yOfDeg(t);
   const yPrecip = (p: number) => {
     const safeP = Math.max(0, p);
-    if (safeP <= 100) return clampY(padT + plotH - ((safeP / 2 + 10) / 60) * mainH);
-    const extraDeg = (safeP - 100) / 10;
-    return clampY(y100 - (extraDeg / 60) * mainH);
+    const deg = safeP <= 100 ? safeP / 2 : 50 + (safeP - 100) / 20;
+    return yOfDeg(deg);
   };
+  const y100 = yOfDeg(50);
   const yZero = yTemp(0);
-  const hasOver100 = mP.some((p) => p > 100);
+  const over100Ticks: number[] = [];
+  if (hasOver100) {
+    const maxTick = Math.ceil(maxP / 100) * 100;
+    let prevY = y100;
+    for (let mm = 200; mm <= maxTick; mm += 100) {
+      const y = yPrecip(mm);
+      if (prevY - y >= 11 || mm === maxTick) {
+        if (over100Ticks.length && yPrecip(over100Ticks[over100Ticks.length - 1]) - y < 11) {
+          over100Ticks[over100Ticks.length - 1] = mm;
+        } else {
+          over100Ticks.push(mm);
+        }
+        prevY = y;
+      }
+    }
+  }
 
   const activeLabel = scenarioShort(eff.horizon) + (eff.monthlyEst ? ` (${T('ns.est')})` : '');
   const cmpEff = eff.horizon === 'today' ? rep.eff2050 : rep.effToday;
@@ -350,7 +370,9 @@ export function WalterLiethSvg({ eff, rep }: { eff: EffectiveSiteClimate; rep: P
       {hasOver100 && (
         <>
           <line x1={padL} y1={y100.toFixed(1)} x2={W - padR} y2={y100.toFixed(1)} stroke="var(--climate-rain)" stroke-dasharray="2 3" stroke-width="0.9" opacity="0.55" />
-          <text x={W - padR + 5} y={(yPrecip(200) + 3).toFixed(1)} font-size="9" fill="var(--climate-rain)">200</text>
+          {over100Ticks.map((mm) => (
+            <text key={mm} x={W - padR + 5} y={(yPrecip(mm) + 3).toFixed(1)} font-size="9" fill="var(--climate-rain)">{mm}</text>
+          ))}
         </>
       )}
       <line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} stroke="var(--border-strong)" />
@@ -366,8 +388,8 @@ export function WalterLiethSvg({ eff, rep }: { eff: EffectiveSiteClimate; rep: P
         return (
           <g key={i}>
             {isDry && <rect x={x.toFixed(1)} y={yT.toFixed(1)} width={w.toFixed(1)} height={Math.max(2, yP - yT).toFixed(1)} rx="2" fill="var(--accent)" opacity="0.22" />}
-            <rect x={x.toFixed(1)} y={yBaseTop.toFixed(1)} width={w.toFixed(1)} height={hBase.toFixed(1)} rx={isOver100 ? '0' : '2'} fill="var(--climate-rain)" opacity="0.38" />
-            {isOver100 && <rect x={x.toFixed(1)} y={yP.toFixed(1)} width={w.toFixed(1)} height={Math.max(2, y100 - yP).toFixed(1)} rx="2" fill="var(--climate-rain)" opacity="0.92" />}
+            <rect x={x.toFixed(1)} y={yBaseTop.toFixed(1)} width={w.toFixed(1)} height={hBase.toFixed(1)} rx={isOver100 ? '0' : '2'} fill="var(--climate-rain)" fill-opacity="0.38" stroke="var(--climate-rain)" stroke-width="1" />
+            {isOver100 && <rect x={x.toFixed(1)} y={yP.toFixed(1)} width={w.toFixed(1)} height={Math.max(2, y100 - yP).toFixed(1)} rx="2" fill="var(--climate-rain)" fill-opacity="0.92" stroke="var(--climate-rain)" stroke-width="1" />}
           </g>
         );
       })}

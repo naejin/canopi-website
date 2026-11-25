@@ -15,13 +15,15 @@ test('Climate & Guild Atlas (Why?): Shift Passport, Walter-Lieth SVG, Water Tank
 
   const atlasInfo = await page.evaluate(() => {
     const wl = document.querySelector('.drawer .wl-svg');
-    const rects = wl ? [...wl.querySelectorAll('rect')] : [];
-    const minRectY = rects.length ? Math.min(...rects.map((r) => Number(r.getAttribute('y') ?? 999))) : -1;
+    const rainRects = wl ? [...wl.querySelectorAll('rect[fill="var(--climate-rain)"]')] : [];
+    const minRectY = rainRects.length ? Math.min(...rainRects.map((r) => Number(r.getAttribute('y') ?? 999))) : -1;
+    const allHaveStroke = rainRects.length > 0 && rainRects.every((r) => r.getAttribute('stroke') === 'var(--climate-rain)');
     const usesGreen = wl ? [...wl.querySelectorAll('[fill]')].some((el) => (el.getAttribute('fill') ?? '').includes('--pal-ok')) : false;
     return {
       hasShiftPassport: !!document.querySelector('.drawer .shift-passport'),
       hasWlSvg: !!wl,
       minRectY,
+      allHaveStroke,
       usesGreen,
       scenarioRows: document.querySelectorAll('.drawer .scen-row').length,
       text: document.querySelector('.drawer')?.innerText ?? '',
@@ -29,7 +31,8 @@ test('Climate & Guild Atlas (Why?): Shift Passport, Walter-Lieth SVG, Water Tank
   });
   assert.ok(atlasInfo.hasShiftPassport, 'Shift Passport renders inside Atlas');
   assert.ok(atlasInfo.hasWlSvg, 'Walter-Lieth SVG renders inside Atlas');
-  assert.ok(atlasInfo.minRectY >= 28, `Walter-Lieth rain bars stay inside top frame (min y=${atlasInfo.minRectY})`);
+  assert.ok(atlasInfo.minRectY > 28, `Walter-Lieth rain bars stay strictly inside top frame (min y=${atlasInfo.minRectY})`);
+  assert.ok(atlasInfo.allHaveStroke, 'Walter-Lieth rain bars have 1px --climate-rain stroke for WCAG 1.4.11 contrast');
   assert.equal(atlasInfo.usesGreen, false, 'Walter-Lieth rain never uses plant-green --pal-ok');
   assert.equal(atlasInfo.scenarioRows, 10, '10-scenario SSP + what-if matrix renders all 10 scenarios');
   assert.ok(!PFAF_PATTERN.test(atlasInfo.text), 'zero PFAF in Atlas');
@@ -170,4 +173,31 @@ test('Live regressions: Header dropdown z-index, anchored overflow menu, and liv
 
   assert.ok((await horizontalOverflow(page)) <= 1, 'zero horizontal overflow after live tuning & menu checks');
   assert.deepEqual(await pageErrorsOf(page), [], 'zero console/page errors during live regression checks');
+});
+
+test('Walter-Lieth wet sites (Belém & Kyoto): true 1:10 scale never clamps rain bars flat @real-data', async () => {
+  for (const presetIndex of [2, 5]) { // 2 = Kyoto, 5 = Belém
+    const page = await openSuggestedPalette({ width: 1280, theme: 'light', presetIndex });
+    await clickNth(page, '.studio-right .bar-btn:not(.bar-btn-add)', 0);
+    assert.ok(await has(page, '.drawer .wl-svg', 8_000), `Atlas Walter-Lieth renders for preset ${presetIndex}`);
+    const wl = await page.evaluate(() => {
+      const svg = document.querySelector('.drawer .wl-svg');
+      const rainRects = [...svg.querySelectorAll('rect[fill="var(--climate-rain)"]')];
+      const ys = rainRects.map((r) => Number(r.getAttribute('y')));
+      const over100Ys = rainRects.filter((r) => Number(r.getAttribute('fill-opacity')) > 0.8).map((r) => Number(r.getAttribute('y')));
+      return {
+        minY: Math.min(...ys),
+        distinctOver100: new Set(over100Ys).size,
+        over100Count: over100Ys.length,
+        allStroked: rainRects.every((r) => r.getAttribute('stroke') === 'var(--climate-rain)'),
+      };
+    });
+    assert.ok(wl.minY > 28, `preset ${presetIndex}: no rain bar clamped at padT (minY=${wl.minY})`);
+    assert.ok(wl.over100Count > 0, `preset ${presetIndex}: renders solid >100 mm compressed cap(s)`);
+    if (wl.over100Count >= 2) {
+      assert.ok(wl.distinctOver100 >= 2, `preset ${presetIndex}: >100 mm rain bars have distinct heights (got ${wl.distinctOver100})`);
+    }
+    assert.ok(wl.allStroked, `preset ${presetIndex}: all rain bars stroked with --climate-rain`);
+    assert.deepEqual(await pageErrorsOf(page), [], `preset ${presetIndex}: zero page errors`);
+  }
 });
