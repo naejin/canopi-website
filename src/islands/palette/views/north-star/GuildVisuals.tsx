@@ -542,12 +542,7 @@ export function ScaleRootSvg({ taxon, roomLimitM }: { taxon: Taxon; roomLimitM: 
         <rect x="0" y={soilY} width="340" height={162 - soilY} fill="var(--surface-alt)" />
         <line x1="10" y1={soilY} x2="330" y2={soilY} stroke="var(--soil-2)" stroke-width="1.5" />
         {roomLineY != null && roomLimitM != null && (
-          <>
-            <line x1="10" y1={roomLineY.toFixed(1)} x2="330" y2={roomLineY.toFixed(1)} stroke="var(--accent)" stroke-dasharray="4 3" stroke-width="1.2" />
-            <text x="14" y={Math.max(12, roomLineY - 4).toFixed(1)} text-anchor="start" font-size="10.5" font-weight="600" fill="var(--accent-ink)">
-              {T('ns.elev.yourRoom', { m: `${fmtNum(roomLimitM, 0)} m` })}
-            </text>
-          </>
+          <line x1="10" y1={roomLineY.toFixed(1)} x2="330" y2={roomLineY.toFixed(1)} stroke="var(--accent)" stroke-dasharray="4 3" stroke-width="1.2" />
         )}
         <PersonSilhouette cx={62} soilY={soilY} h={humanH} />
         <BotanicalSilhouette
