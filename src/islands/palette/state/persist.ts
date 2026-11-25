@@ -301,6 +301,11 @@ export function forgetSavedPlace(own: boolean): void {
 // page's own (a Back landing on an entry main.ts just rewrote), never a link to open.
 let written = '';
 export const lastWritten = (): string => written;
+export function ownAddressState(fragment: string | null = currentFragment()): Record<string, unknown> | null {
+  if (!fragment) return null;
+  const fg = forgets();
+  return { ct: fragment, src: countryFrom(), pl: addressPlace(), ...(linkPlace.peek() ? { ask: 1 } : {}), ...(held.peek() ? { hold: 1 } : {}), ...(fg ? { fg } : {}) };
+}
 export function writeAddress(force = false): void {
   if (typeof location === 'undefined') return;
   const fragment = shows() || force ? currentFragment() : null;
@@ -311,8 +316,7 @@ export function writeAddress(force = false): void {
   // from its own source, so a page that owns its save while the place question is open reloads owned.
   // fg: the Forgets this tab had seen when the entry was written; an entry from before the last one
   // brings no answers back (arrival.ts ownOf; second-round review 2).
-  const fg = forgets();
-  const ownState = fragment ? { ct: fragment, src: countryFrom(), pl: addressPlace(), ...(linkPlace.peek() ? { ask: 1 } : {}), ...(held.peek() ? { hold: 1 } : {}), ...(fg ? { fg } : {}) } : null;
+  const ownState = ownAddressState(fragment);
   // `pp`: the page's history entries up to this one (store.ts), kept through every rewrite and reload;
   // `st`: the entry's start (store.ts startId), so a move off a link opened in the tab is known.
   const pp = attempt(() => (history.state as { pp?: unknown } | null)?.pp), st = store.startId();

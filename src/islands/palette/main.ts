@@ -12,9 +12,9 @@ import wasmUrl from '@sqlite.org/sqlite-wasm/sqlite3.wasm?url';
 import { App, PalettePage } from './App.tsx';
 import { effect } from '@preact/signals';
 import { adoptEntry, arrivalOpensPalette, forgetEntries, historyMoved, load, loadProgress, pushWaiting, opening, setPageClimates, setPageCountries, setSource, slow, start, view, wantVerdict, watchPools, watchSteps } from './store.ts';
-import { openingArrival, startMemory } from './state/arrival.ts';
+import { LANG_SWITCH_KEY, openingArrival, startMemory } from './state/arrival.ts';
 import { backToPlace } from './state/draft.ts';
-import { currentFragment, lastWritten, writeAddress } from './state/persist.ts';
+import { currentFragment, lastWritten, ownAddressState, writeAddress } from './state/persist.ts';
 import { provideLocationStep } from './state/restore.ts';
 import { loadLocationStep } from './views/location/load.ts';
 import { zoneOf } from '../../lib/palette/index.ts';
@@ -144,6 +144,10 @@ if (root && data) {
     const frag = currentFragment();
     if (!frag) return;
     try {
+      const own = ownAddressState(frag);
+      if (own) {
+        try { sessionStorage.setItem(LANG_SWITCH_KEY, JSON.stringify(own)); } catch { /* ignore private storage */ }
+      }
       const u = new URL(target.href, location.href);
       u.hash = `#${frag}`;
       target.href = u.href;

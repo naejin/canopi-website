@@ -228,11 +228,25 @@ export function openWith({ how, plan, saved, seed, keptLocation }: Opening): voi
   else if (how.climate) store.climate.value = how.climate;
 }
 
+export const LANG_SWITCH_KEY = 'canopi-lang-switch';
+
+function consumeLangSwitchState(): unknown {
+  return attempt(() => {
+    const raw = sessionStorage.getItem(LANG_SWITCH_KEY);
+    if (!raw) return null;
+    sessionStorage.removeItem(LANG_SWITCH_KEY);
+    return JSON.parse(raw) as unknown;
+  });
+}
+
 // What this page opened with, read once: main.ts reads it before the first render (the palette page's
 // placeholder, the prefetch), startMemory acts on it.
 let opened: Arrival | null = null;
 export function openingArrival(): Arrival {
-  return opened ??= arrival({ hash: location.hash, search: location.search }, readRecord(memory.read(STORE)), memory.read(SITE_CLIMATE), attempt(() => history.state), memory.works());
+  if (opened) return opened;
+  const hist = attempt(() => history.state);
+  const state = ownOf(hist) ? hist : (consumeLangSwitchState() ?? hist);
+  return opened = arrival({ hash: location.hash, search: location.search }, readRecord(memory.read(STORE)), memory.read(SITE_CLIMATE), state, memory.works());
 }
 
 let started = false;
