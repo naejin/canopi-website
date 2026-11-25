@@ -381,6 +381,9 @@
 .about-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
 
 .bibliography { padding-top: 0; }
+/* Standalone subpages (first section under the header): match /guides/ top rhythm (1.5rem = 24px). */
+main > .section:is(.data-sources, .privacy, .bibliography):first-child,
+main.section.contact-result { padding-top: 1.5rem; }
 .network-fold { border-block: 1px solid var(--border); }
 .network-fold summary { padding: 16px 0; cursor: pointer; }
 .network-fold summary h2 { display: inline; font-size: clamp(20px, 2.2vw, 24px); }

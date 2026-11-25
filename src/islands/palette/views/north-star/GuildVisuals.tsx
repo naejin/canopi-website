@@ -307,9 +307,19 @@ export function WalterLiethSvg({ eff, rep }: { eff: EffectiveSiteClimate; rep: P
   const W = 520, H = 214, padL = 38, padR = 42, padT = 28, padB = 34;
   const plotW = W - padL - padR, plotH = H - padT - padB;
   const xOf = (i: number) => padL + (i + 0.5) * (plotW / 12);
-  const yTemp = (t: number) => padT + plotH - ((t + 10) / 50) * plotH;
-  const yPrecip = (p: number) => padT + plotH - ((Math.min(p, 100) / 2 + 10) / 50) * plotH;
+  const clampY = (y: number) => Math.max(padT, Math.min(padT + plotH, y));
+  // Standard Walter-Lieth scale: 2:1 (1°C = 2 mm) up to 100 mm (50°C), then 1:10 compression above 100 mm, clamped to padT.
+  const y100 = padT + 28;
+  const mainH = padT + plotH - y100;
+  const yTemp = (t: number) => clampY(padT + plotH - ((t + 10) / 60) * mainH);
+  const yPrecip = (p: number) => {
+    const safeP = Math.max(0, p);
+    if (safeP <= 100) return clampY(padT + plotH - ((safeP / 2 + 10) / 60) * mainH);
+    const extraDeg = (safeP - 100) / 10;
+    return clampY(y100 - (extraDeg / 60) * mainH);
+  };
   const yZero = yTemp(0);
+  const hasOver100 = mP.some((p) => p > 100);
 
   const activeLabel = scenarioShort(eff.horizon) + (eff.monthlyEst ? ` (${T('ns.est')})` : '');
   const cmpEff = eff.horizon === 'today' ? rep.eff2050 : rep.effToday;
@@ -334,20 +344,30 @@ export function WalterLiethSvg({ eff, rep }: { eff: EffectiveSiteClimate; rep: P
       <text x={padL - 5} y={(yZero + 3).toFixed(1)} text-anchor="end" font-size="9" fill="var(--text-muted)">0°</text>
       <text x={padL - 5} y={(yTemp(20) + 3).toFixed(1)} text-anchor="end" font-size="9" fill="var(--text-muted)">20°</text>
       <text x={padL - 5} y={(yTemp(40) + 3).toFixed(1)} text-anchor="end" font-size="9" fill="var(--text-muted)">40°</text>
-      <text x={W - padR + 5} y={(yPrecip(40) + 3).toFixed(1)} font-size="9" fill="var(--text-muted)">40</text>
-      <text x={W - padR + 5} y={(yPrecip(80) + 3).toFixed(1)} font-size="9" fill="var(--text-muted)">80</text>
+      <text x={W - padR + 5} y={(yPrecip(40) + 3).toFixed(1)} font-size="9" fill="var(--climate-rain)">40</text>
+      <text x={W - padR + 5} y={(yPrecip(80) + 3).toFixed(1)} font-size="9" fill="var(--climate-rain)">80</text>
+      <text x={W - padR + 5} y={(y100 + 3).toFixed(1)} font-size="9" fill="var(--climate-rain)">100</text>
+      {hasOver100 && (
+        <>
+          <line x1={padL} y1={y100.toFixed(1)} x2={W - padR} y2={y100.toFixed(1)} stroke="var(--climate-rain)" stroke-dasharray="2 3" stroke-width="0.9" opacity="0.55" />
+          <text x={W - padR + 5} y={(yPrecip(200) + 3).toFixed(1)} font-size="9" fill="var(--climate-rain)">200</text>
+        </>
+      )}
       <line x1={padL} y1={padT + plotH} x2={W - padR} y2={padT + plotH} stroke="var(--border-strong)" />
       {mP.map((p, i) => {
         const x = padL + i * (plotW / 12) + 4;
         const w = plotW / 12 - 8;
         const yP = yPrecip(p);
         const yT = yTemp(mT[i]);
-        const h = Math.max(2, padT + plotH - yP);
+        const yBaseTop = Math.max(y100, yP);
+        const hBase = Math.max(2, padT + plotH - yBaseTop);
         const isDry = mT[i] > 0 && p < mT[i] * 2;
+        const isOver100 = p > 100 && yP < y100;
         return (
           <g key={i}>
             {isDry && <rect x={x.toFixed(1)} y={yT.toFixed(1)} width={w.toFixed(1)} height={Math.max(2, yP - yT).toFixed(1)} rx="2" fill="var(--accent)" opacity="0.22" />}
-            <rect x={x.toFixed(1)} y={yP.toFixed(1)} width={w.toFixed(1)} height={h.toFixed(1)} rx="2" fill="var(--pal-ok)" opacity="0.38" />
+            <rect x={x.toFixed(1)} y={yBaseTop.toFixed(1)} width={w.toFixed(1)} height={hBase.toFixed(1)} rx={isOver100 ? '0' : '2'} fill="var(--climate-rain)" opacity="0.38" />
+            {isOver100 && <rect x={x.toFixed(1)} y={yP.toFixed(1)} width={w.toFixed(1)} height={Math.max(2, y100 - yP).toFixed(1)} rx="2" fill="var(--climate-rain)" opacity="0.92" />}
           </g>
         );
       })}
@@ -370,8 +390,8 @@ export function WalterLiethSvg({ eff, rep }: { eff: EffectiveSiteClimate; rep: P
       <text x={padL} y="13" font-size="10" font-weight="600" fill="var(--accent-ink)">
         — {activeLabel} (°C){cmpPts ? ` · - - ${cmpLabel}` : ''}
       </text>
-      <text x={W - padR} y="13" text-anchor="end" font-size="10" font-weight="600" fill="var(--pal-ok)">
-        ▮ Rain (mm, 2:1){hasDryMonths ? ' · ░ Dry deficit (2T > P)' : ''}
+      <text x={W - padR} y="13" text-anchor="end" font-size="10" font-weight="600" fill="var(--climate-rain)">
+        ▮ Rain (mm, 2:1{hasOver100 ? ', 1:10 >100' : ''}){hasDryMonths ? ' · ░ Dry deficit (2T > P)' : ''}
       </text>
     </svg>
   );

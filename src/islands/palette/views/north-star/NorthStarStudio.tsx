@@ -30,6 +30,7 @@ export function NorthStarStudio() {
   useEffect(() => {
     startNsWatchers();
     markFirstView();
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
 
   const rep = nsReport.value;

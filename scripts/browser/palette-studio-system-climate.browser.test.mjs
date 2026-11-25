@@ -13,14 +13,24 @@ test('Climate & Guild Atlas (Why?): Shift Passport, Walter-Lieth SVG, Water Tank
   await clickNth(page, '.studio-right .bar-btn:not(.bar-btn-add)', 0);
   assert.ok(await has(page, '.drawer[role="dialog"]', 8_000), 'Climate & Guild Atlas drawer opens');
 
-  const atlasInfo = await page.evaluate(() => ({
-    hasShiftPassport: !!document.querySelector('.drawer .shift-passport'),
-    hasWlSvg: !!document.querySelector('.drawer .wl-svg'),
-    scenarioRows: document.querySelectorAll('.drawer .scen-row').length,
-    text: document.querySelector('.drawer')?.innerText ?? '',
-  }));
+  const atlasInfo = await page.evaluate(() => {
+    const wl = document.querySelector('.drawer .wl-svg');
+    const rects = wl ? [...wl.querySelectorAll('rect')] : [];
+    const minRectY = rects.length ? Math.min(...rects.map((r) => Number(r.getAttribute('y') ?? 999))) : -1;
+    const usesGreen = wl ? [...wl.querySelectorAll('[fill]')].some((el) => (el.getAttribute('fill') ?? '').includes('--pal-ok')) : false;
+    return {
+      hasShiftPassport: !!document.querySelector('.drawer .shift-passport'),
+      hasWlSvg: !!wl,
+      minRectY,
+      usesGreen,
+      scenarioRows: document.querySelectorAll('.drawer .scen-row').length,
+      text: document.querySelector('.drawer')?.innerText ?? '',
+    };
+  });
   assert.ok(atlasInfo.hasShiftPassport, 'Shift Passport renders inside Atlas');
   assert.ok(atlasInfo.hasWlSvg, 'Walter-Lieth SVG renders inside Atlas');
+  assert.ok(atlasInfo.minRectY >= 28, `Walter-Lieth rain bars stay inside top frame (min y=${atlasInfo.minRectY})`);
+  assert.equal(atlasInfo.usesGreen, false, 'Walter-Lieth rain never uses plant-green --pal-ok');
   assert.equal(atlasInfo.scenarioRows, 10, '10-scenario SSP + what-if matrix renders all 10 scenarios');
   assert.ok(!PFAF_PATTERN.test(atlasInfo.text), 'zero PFAF in Atlas');
   assert.ok(!RAW_TECH_PATTERN.test(atlasInfo.text), 'zero raw jargon in Atlas');
@@ -66,7 +76,9 @@ test('Live regressions: Header dropdown z-index, anchored overflow menu, and liv
   const page = await openSuggestedPalette({ width: 1440, theme: 'light' });
 
   // 1. Header language dropdown sits above sticky .studio-bar (elementFromPoint hits .lang-menu, not .studio-bar)
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   await page.click('.lang-menu summary');
+  await page.waitForSelector('.lang-menu[open]', { timeout: 4_000 });
   const langAboveBar = await page.evaluate(() => {
     const list = document.querySelector('.lang-menu ul, .lang-list');
     const bar = document.querySelector('.studio-bar');

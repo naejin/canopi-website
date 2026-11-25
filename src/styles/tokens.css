@@ -97,6 +97,7 @@
   --winter-ink: #1B4968;
   --winter-bg: rgba(43, 106, 148, 0.09);
   --winter-line: rgba(43, 106, 148, 0.30);
+  --climate-rain: #3E5A73;
   --cal-winter: #2B6A94;
   --cal-sow: #9C5A16;
   --cal-bloom: #C78A1A;
@@ -195,6 +196,7 @@
   --winter-ink: #96C9EC;
   --winter-bg: rgba(108, 169, 212, 0.15);
   --winter-line: rgba(108, 169, 212, 0.36);
+  --climate-rain: #9DB4C8;
   --cal-winter: #7FB8E0;
   --cal-sow: #E3A04C;
   --cal-bloom: #E5B94C;
@@ -284,6 +286,7 @@
     --winter-ink: #96C9EC;
     --winter-bg: rgba(108, 169, 212, 0.15);
     --winter-line: rgba(108, 169, 212, 0.36);
+    --climate-rain: #9DB4C8;
     --cal-winter: #7FB8E0;
     --cal-sow: #E3A04C;
     --cal-bloom: #E5B94C;
