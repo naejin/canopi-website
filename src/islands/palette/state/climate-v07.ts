@@ -191,12 +191,12 @@ export async function buildTier2AV07(
 
   if (tier2A.phenology) {
     const ph = tier2A.phenology;
-    const d2050 = p2050 && pToday ? Math.max(0, p2050.tmeanColdC - pToday.tmeanColdC) : 1.5;
-    const d2080 = p2080 && pToday ? Math.max(0, p2080.tmeanColdC - pToday.tmeanColdC) : 2.6;
+    const d2050 = p2050 && pToday ? Math.max(0, p2050.tmeanColdC - pToday.tmeanColdC) : null;
+    const d2080 = p2080 && pToday ? Math.max(0, p2080.tmeanColdC - pToday.tmeanColdC) : null;
     out.phenology = {
       chillPortionsToday: Math.round(interpolateChillPortions(ph, 0)),
-      chillPortions2050: Math.round(interpolateChillPortions(ph, d2050)),
-      chillPortions2080: Math.round(interpolateChillPortions(ph, d2080)),
+      chillPortions2050: d2050 !== null ? Math.round(interpolateChillPortions(ph, d2050)) : null,
+      chillPortions2080: d2080 !== null ? Math.round(interpolateChillPortions(ph, d2080)) : null,
       chillCurve: [
         ph.chill_portions_0c,
         ph.chill_portions_1c,
@@ -220,24 +220,26 @@ export async function buildTier2AV07(
 
   if (tier2A.soilPlus) {
     const sp = tier2A.soilPlus;
-    const sand = loc.lookup?.soil?.sandPct ?? 40;
-    const clay = loc.lookup?.soil?.clayPct ?? 25;
-    const vpd = tier2A.waterBalance?.vpd_summer_kpa ?? 1.4;
-    const etMmDay = Math.max(3.0, Math.min(7.5, 3.2 + vpd * 1.4));
+    const sand = loc.lookup?.soil?.sandPct ?? null;
+    const clay = loc.lookup?.soil?.clayPct ?? null;
+    const vpd = tier2A.waterBalance?.vpd_summer_kpa ?? null;
     const weightedStone = ((sp.cfvo_0_30_pct ?? 0) * 0.3) + ((sp.cfvo_30_100_pct ?? sp.cfvo_0_30_pct ?? 0) * 0.7);
     let awcMmPerM: number | null = null;
     let dryDaysReserve: number | null = null;
-    try {
-      const { wasmSoilAwc } = await import('../../../lib/climate/wasm-bridge.ts');
-      const rawAwc = await wasmSoilAwc(sand, clay, sp.om_0_30_pct);
-      if (rawAwc) {
-        const tank = soilAwcWithRock(rawAwc, weightedStone, 1.0, etMmDay);
-        awcMmPerM = tank.awcMmPerM;
-        dryDaysReserve = tank.dryDaysReserve;
+    if (sand !== null && clay !== null) {
+      try {
+        const { wasmSoilAwc } = await import('../../../lib/climate/wasm-bridge.ts');
+        const rawAwc = await wasmSoilAwc(sand, clay, sp.om_0_30_pct);
+        if (rawAwc) {
+          const etMmDay = vpd !== null ? Math.max(3.0, Math.min(7.5, 3.2 + vpd * 1.4)) : null;
+          const tank = soilAwcWithRock(rawAwc, weightedStone, 1.0, etMmDay ?? 4.5);
+          awcMmPerM = tank.awcMmPerM;
+          dryDaysReserve = etMmDay !== null ? tank.dryDaysReserve : null;
+        }
+      } catch {
+        awcMmPerM = null;
+        dryDaysReserve = null;
       }
-    } catch {
-      awcMmPerM = null;
-      dryDaysReserve = null;
     }
     out.soilPlus = {
       ph30_100: sp.ph_30_100 != null ? r1(sp.ph_30_100) : null,

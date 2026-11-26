@@ -36,10 +36,8 @@ import { TODAY_PERIOD, factAt } from './source.ts';
 // Every answer "Not sure": the site the page starts from (A7).
 export const UNSURE_SITE: Site = { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' };
 
-// The one room table (F1a A8): Suggest's sizes, the height notes and Add derive from it in stream 1.
-// pots (no control or link reaches it yet, types.ts roomValues) holds the small garden's limit until
-// pal1 gives it its own.
-export const ROOM_LIMIT_M: Record<Site['room'], number> = { pots: 6, small: 6, large: 12, field: Infinity, unsure: Infinity };
+// The one room table (F1a A8): shared by site.ts and report.ts (pots 2 m, small 6 m, large 12 m).
+export const ROOM_LIMIT_M: Record<Site['room'], number> = { pots: 2, small: 6, large: 12, field: Infinity, unsure: Infinity };
 // Suggestions stay small (owner, 2026-10-28): 6, 9 or 12 plants by room; 9 with Room "Not sure"
 // (design check A7). The room limits plant size, never the number of plants the reader adds. Pots or a
 // balcony takes the small garden's count. Here, in the first-run core, so the Empty card says the size

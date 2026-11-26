@@ -17,6 +17,7 @@ import {
   CANOPI_FILE_VERSION,
   canopiFile,
   canopiFileName,
+  extractPlacedSpecies,
   parseCanopiFile,
 } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
@@ -239,7 +240,15 @@ export function buildCurrentCanopiText(): string {
     || (nsFileName.peek()?.replace(/\.canopi$/i, ''))
     || loc?.label
     || z
-    || 'My Plant Palette';
+    || T('palette.title');
+
+  const activeCanon = new Set<string>();
+  for (const m of members) activeCanon.add(m.canonical_name.trim().toLowerCase());
+  for (const u of nsUnrecognizedPlants.peek()) {
+    if (u.canonical_name?.trim()) activeCanon.add(u.canonical_name.trim().toLowerCase());
+  }
+  const removedPlaced = extractPlacedSpecies(baseCanopiDoc?.plants)
+    .filter((canon) => !activeCanon.has(canon.toLowerCase()));
 
   const paletteStudio: CanopiPaletteStudioMeta = {
     site: {
@@ -255,6 +264,7 @@ export function buildCurrentCanopiText(): string {
       existingIds: [...ctx.existingIds],
       pathPct: ctx.pathPct,
     } : {}),
+    ...(removedPlaced.length ? { removedPlaced } : {}),
   };
 
   return canopiFile(members, {
@@ -467,8 +477,12 @@ export async function openCanopiText(
   for (const entry of parsed.consortiums) {
     considerSpecies(entry.target.canonical_name, entry.stratum, entry.start_phase, entry.end_phase);
   }
+  const removedPlacedSet = new Set(
+    (parsed.paletteStudio?.removedPlaced ?? []).map((s) => s.trim().toLowerCase()),
+  );
   const beforePlaced = matchedIds.length + unrecognized.length;
   for (const placedCanon of parsed.placedSpecies) {
+    if (removedPlacedSet.has(placedCanon.trim().toLowerCase())) continue;
     considerSpecies(placedCanon);
   }
   const placedAdded = (matchedIds.length + unrecognized.length) - beforePlaced;
@@ -482,9 +496,10 @@ export async function openCanopiText(
   void saveFileHandleToIdb(activeFileHandle);
   baseCanopiDoc = parsed.baseDoc;
   preservedEntries = parsed.rawConsortiums;
+  const displayName = parsed.name ?? T('palette.title');
 
   batch(() => {
-    nsFileName.value = opts.fileName || canopiFileName(parsed.name);
+    nsFileName.value = opts.fileName || canopiFileName(parsed.name ?? '');
     nsFileLinked.value = canLinkInPlace;
     // Open starts read-only: first explicit Save asks write permission, then edits auto-save.
     nsFileWriteGranted.value = false;
@@ -505,11 +520,11 @@ export async function openCanopiText(
     nsDirty.value = false;
   });
 
-  applyStudioContext?.(parsed.paletteStudio, parsed.name);
+  applyStudioContext?.(parsed.paletteStudio, displayName);
 
   return {
     ok: true,
-    name: parsed.name,
+    name: displayName,
     matched: matchedIds.length,
     unrecognized: unrecognized.length,
     nonSpecies: parsed.nonSpeciesEntries.length,

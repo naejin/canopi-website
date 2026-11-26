@@ -58,6 +58,8 @@ export interface CanopiPaletteStudioMeta {
   qtyById?: Record<string, number>;
   existingIds?: string[];
   pathPct?: number;
+  /** Canonical names of species present in `doc.plants` that the grower removed from the palette. */
+  removedPlaced?: string[];
 }
 
 export interface CanopiFileOptions {
@@ -94,7 +96,7 @@ export interface CanopiNonSpeciesEntry {
 
 export interface ParsedCanopiFile {
   version: number;
-  name: string;
+  name: string | null;
   description: string | null;
   consortiums: CanopiConsortiumEntry[];
   nonSpeciesEntries: CanopiNonSpeciesEntry[];
@@ -112,7 +114,30 @@ function consortiumEntry(t: Taxon): CanopiConsortiumEntry {
   const target = { kind: 'species' as const, canonical_name: t.canonical_name };
   if (!t.stratum || !t.phases) return { target, stratum: CANOPI_UNASSIGNED, start_phase: DEFAULT_START, end_phase: DEFAULT_END };
   const a = phases.indexOf(t.phases.start), b = phases.indexOf(t.phases.end);
+  if (a < 0 || b < 0) return { target, stratum: t.stratum.value, start_phase: DEFAULT_START, end_phase: DEFAULT_END };
   return { target, stratum: t.stratum.value, start_phase: Math.min(a, b), end_phase: Math.max(a, b) };
+}
+
+/** Extract unique canonical species names from a `.canopi` `plants` array (case-insensitive dedup). */
+export function extractPlacedSpecies(plants: unknown): string[] {
+  if (!Array.isArray(plants)) return [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const pl of plants) {
+    if (!pl || typeof pl !== 'object' || Array.isArray(pl)) continue;
+    const p = pl as Record<string, unknown>;
+    const canon = (typeof p.species_canonical_name === 'string' && p.species_canonical_name.trim())
+      || (typeof p.canonical_name === 'string' && p.canonical_name.trim())
+      || (p.species && typeof p.species === 'object' && typeof (p.species as Record<string, unknown>).canonical_name === 'string'
+        ? ((p.species as Record<string, unknown>).canonical_name as string).trim()
+        : '');
+    const key = canon.toLowerCase();
+    if (canon && !seen.has(key)) {
+      seen.add(key);
+      out.push(canon);
+    }
+  }
+  return out;
 }
 
 function isSpeciesConsortiumEntry(raw: unknown): raw is CanopiConsortiumEntry {
@@ -289,6 +314,12 @@ function parsePaletteStudioMeta(raw: unknown): CanopiPaletteStudioMeta | null {
   if (typeof r.pathPct === 'number' && Number.isFinite(r.pathPct)) {
     out.pathPct = Math.max(0, Math.min(50, Math.round(r.pathPct)));
   }
+  if (Array.isArray(r.removedPlaced)) {
+    const clean = r.removedPlaced
+      .filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+      .map((x) => x.trim());
+    if (clean.length) out.removedPlaced = [...new Set(clean)];
+  }
   return out;
 }
 
@@ -302,9 +333,9 @@ export function parseCanopiFile(jsonText: string): ParsedCanopiFile {
   try { raw = JSON.parse(jsonText); } catch (err) { throw new Error(`Invalid .canopi JSON: ${(err as Error).message}`); }
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('Invalid .canopi document: expected a JSON object.');
   const doc = raw as Record<string, unknown>;
-  const version = typeof doc.version === 'number' ? doc.version : 0;
+  const version = typeof doc.version === 'number' && Number.isInteger(doc.version) ? doc.version : 0;
   if (version < 1 || version > CANOPI_FILE_VERSION) throw new Error(`Unsupported .canopi version: ${String(doc.version)}`);
-  const name = typeof doc.name === 'string' && doc.name.trim() ? doc.name.trim() : 'Untitled palette';
+  const name = typeof doc.name === 'string' && doc.name.trim() ? doc.name.trim() : null;
   const description = typeof doc.description === 'string' ? doc.description : null;
 
   const rawConsortiums: Record<string, unknown>[] = [];
@@ -328,22 +359,7 @@ export function parseCanopiFile(jsonText: string): ParsedCanopiFile {
     }
   }
 
-  const placedSpecies: string[] = [];
-  if (Array.isArray(doc.plants)) {
-    for (const pl of doc.plants) {
-      if (!pl || typeof pl !== 'object' || Array.isArray(pl)) continue;
-      const p = pl as Record<string, unknown>;
-      const canon = (typeof p.species_canonical_name === 'string' && p.species_canonical_name.trim())
-        || (typeof p.canonical_name === 'string' && p.canonical_name.trim())
-        || (p.species && typeof p.species === 'object' && typeof (p.species as Record<string, unknown>).canonical_name === 'string'
-          ? ((p.species as Record<string, unknown>).canonical_name as string).trim()
-          : '');
-      if (canon && !seenCanon.has(canon.toLowerCase())) {
-        seenCanon.add(canon.toLowerCase());
-        placedSpecies.push(canon);
-      }
-    }
-  }
+  const placedSpecies = extractPlacedSpecies(doc.plants).filter((canon) => !seenCanon.has(canon.toLowerCase()));
 
   const plantingPlan = parsePlantingPlan(doc.plantingPlan);
   const designEnvelope: DesignEnvelope | null = doc.designEnvelope === 'typical' || doc.designEnvelope === 'extreme10' ? doc.designEnvelope : null;
@@ -371,10 +387,23 @@ export function parseCanopiFile(jsonText: string): ParsedCanopiFile {
   };
 }
 
-// A file name every system accepts: the reserved characters become "-", blank becomes "consortium",
-// at most MAX_NAME characters before ".canopi".
+const WINDOWS_RESERVED_NAME = /^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i;
+const DEFAULT_FILE_STEM = 'plant-palette';
+
+// A file name every system accepts: reserved characters become "-", leading/trailing dots are
+// stripped, Windows device names and blank names fall back to "plant-palette", at most MAX_NAME
+// characters before ".canopi".
 export function canopiFileName(name: string): string {
   // eslint-disable-next-line no-control-regex
-  const safe = name.replace(/[\u0000-\u001f/\\:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim().slice(0, MAX_NAME).trim();
-  return (safe || 'consortium') + '.canopi';
+  const safe = name
+    .replace(/[\u0000-\u001f/\\:*?"<>|]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^\.+|\.+$/g, '')
+    .trim()
+    .slice(0, MAX_NAME)
+    .replace(/\.+$/g, '')
+    .trim();
+  const stem = !safe || WINDOWS_RESERVED_NAME.test(safe) ? DEFAULT_FILE_STEM : safe;
+  return `${stem}.canopi`;
 }

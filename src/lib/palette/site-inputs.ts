@@ -33,7 +33,8 @@ export const NO_EDITS: SiteEdits = Object.freeze({});
 const none = <T>(): SiteInput<T> => ({ value: null, source: 'none' });
 const answer = <T>(v: T | undefined | null): SiteInput<T> => (v === undefined || v === null ? none<T>() : { value: v, source: 'grower' });
 const shiftOf = (n: number | undefined): number => (typeof n === 'number' && Number.isFinite(n) ? n : 0);
-const round1 = (n: number): number => Math.round(n * 10) / 10;
+const round1 = (n: number): number => (Math.round(n * 10) / 10) || 0;
+export const EDIT_LIMITS = Object.freeze({ shiftC: 15, rainMm: 10_000, dryMonths: 12, phMin: 3, phMax: 10 });
 
 
 // One slot with the grower's shifts applied (the same object when there are none, so caches keyed on
@@ -72,8 +73,11 @@ export function siteInputsOf({ lookup, room = 'unsure', edits = NO_EDITS }: Site
   const soil = lookup?.soil ?? null, ph = soil?.phH2o ?? null;
   const cells = soil ? soil.fillDistanceCells + soil.distanceCells : 0;
   const near = soil && (soil.filled || soil.distanceCells > 0) ? { nearKm: Math.max(1, Math.round(cells * SOIL_CELL_KM)) } : {};
-  const soilPh: SoilPhInput = typeof edits.soilPh === 'number' && Number.isFinite(edits.soilPh)
-    ? { value: edits.soilPh, source: 'grower', map: ph }
+  const growerPh = typeof edits.soilPh === 'number' && Number.isFinite(edits.soilPh)
+    ? within(edits.soilPh, EDIT_LIMITS.phMin, EDIT_LIMITS.phMax, 0.1)
+    : null;
+  const soilPh: SoilPhInput = growerPh !== null
+    ? { value: growerPh, source: 'grower', map: ph }
     : ph !== null ? { value: ph, source: 'map', map: ph, ...near } : { value: null, source: 'none', map: null };
   return {
     nights: climateInput(mapToday?.tminColdC, today?.tminColdC, e.nights),
@@ -104,7 +108,6 @@ export const hasClimate = (inputs: SiteInputs | null): boolean => !!inputs && in
 // The ranges every source is held to (the panel, the save, a link): temperature shifts in °C, one
 // decimal, -15..+15; rain in whole mm a year (rain itself never below 0: shifted()); dry months in
 // whole months, -12..+12 (the result clamped to 0..12); pH 3.0..10.0, one decimal.
-export const EDIT_LIMITS = Object.freeze({ shiftC: 15, rainMm: 10_000, dryMonths: 12, phMin: 3, phMax: 10 });
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 function within(v: unknown, lo: number, hi: number, step: number): number | null {
   const n = num(v);

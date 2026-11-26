@@ -104,7 +104,7 @@ test('site: light, soil and water are three-valued as in v1', () => {
 });
 
 test('site: room uses the wild maximum height only, advisory (owner request 2026-11-12: a taller plant fits, kind wild_height); an unknown height or a climber is said, never a silent fit', () => {
-  assert.deepEqual(ROOM_LIMIT_M, { pots: 6, small: 6, large: 12, field: Infinity, unsure: Infinity });
+  assert.deepEqual(ROOM_LIMIT_M, { pots: 2, small: 6, large: 12, field: Infinity, unsure: Infinity });
   const oak = make({ traits: { height_m: { min: 25, max: 40 }, width_max_m: 25 } });
   const small = fits(oak, site({ room: 'small' }));
   assert.deepEqual(small.misfits, []);

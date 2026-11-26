@@ -22,6 +22,7 @@ import {
   formatCountryName,
   isLongLink,
   isStructuralVine,
+  isWinterCrop,
   jobIds,
   jobsOf,
   months as MONTHS,
@@ -74,6 +75,7 @@ import {
   activePool,
   addPlantToPalette,
   currentLocale,
+  effectiveOverrides,
   ensureAllCatalogLoaded,
   ensureAllNamesLoaded,
   nsAllNames,
@@ -202,13 +204,6 @@ function toxDossierText(t: Taxon, details: Details | null = null): string {
   const parts = details?.toxicityParts?.map((tp) => localizedPlantPart(tp.part)) ?? [];
   const uniq = [...new Set(parts)];
   return `${localizedToxLevel(tx.level)}${uniq.length ? ` (${uniq.slice(0, 3).join(', ')})` : ''}`;
-}
-
-function isWinterCrop(t: Taxon): boolean {
-  const agp = (t.traits.active_growth_period ?? '').toLowerCase();
-  if (agp.includes('winter') || agp.includes('autumn') || agp.includes('fall')) return true;
-  if ((t.traits.is_annual || t.traits.grown_as_annual) && (t.climate?.tminCold?.low ?? 10) <= 5) return true;
-  return false;
 }
 
 function isWindbreak(t: Taxon): boolean {
@@ -347,21 +342,17 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
   const inPalette = useMemo(() => new Set(store.members.value), [store.members.value]);
   const neededJobs = useMemo(() => new Set([...rep.missingJobs, ...rep.noBackupJobs]), [rep.missingJobs, rep.noBackupJobs]);
 
-  const effSig = `${rep.horizon}|${rep.eff.lat}|${rep.eff.lon}|${rep.eff.soilPh}|${rep.eff.watering}|${rep.eff.drainage}|${rep.eff.wind}|${rep.eff.siteLight}|${rep.eff.roomLimitM}|${rep.eff.plotM2}`;
   const verdictsToday = useMemo(
     () => new Map(catalog.map((t) => [t.id, evaluatePlantVerdict(t, rep.effToday)])),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [catalog, effSig],
+    [catalog, rep.effToday],
   );
   const verdictsActive = useMemo(
     () => new Map(catalog.map((t) => [t.id, evaluatePlantVerdict(t, rep.eff)])),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [catalog, effSig],
+    [catalog, rep.eff],
   );
   const verdicts2050 = useMemo(
     () => new Map(catalog.map((t) => [t.id, evaluatePlantVerdict(t, rep.eff2050)])),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [catalog, effSig],
+    [catalog, rep.eff2050],
   );
   const pickerTracks = useMemo(() => {
     const gy = computeGrowingYear(
@@ -411,7 +402,10 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
       if (!v || v.reasons.some((r) => r.code.startsWith('extreme_'))) return false;
     }
     if (st.droughtAdapted && !/high|very|mod/i.test(t.traits.drought_tolerance ?? '')) return false;
-    if (st.winterCrop && !isWinterCrop(t)) return false;
+    if (st.winterCrop) {
+      const tr = pickerTracks.get(t.id) ?? rep.growingYear.tracks.get(t.id);
+      if (!isWinterCrop(t, tr?.sowing ?? [], rep.eff.hemisphere)) return false;
+    }
     if (st.windTolerant && t.windTolerant !== true) return false;
     if (st.windbreak && !isWindbreak(t)) return false;
     if (st.nonToxic && toxicityStatusOf(t).status !== 'not_toxic') return false;
@@ -438,16 +432,18 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
     return (c && sets[c]) ? sets[c]! : Object.values(sets).flatMap((xs) => xs ?? []);
   }, [store.interactionSets.value, store.climate.value]);
 
+  const ov = effectiveOverrides.value;
   const recommendations = useMemo(
     () => rankCandidatesForGuild(searchMatches, rep.taxa, {
       effToday: rep.effToday,
       eff2050: rep.eff2050,
       lookup: store.location.value?.lookup ?? null,
+      overrides: ov,
       climateZone: store.climate.value,
       interactions: allInteractions,
       layerValuesByPlant: nsLayerValues.value,
     }),
-    [searchMatches, rep.taxa, rep.effToday, rep.eff2050, store.location.value?.lookup, store.climate.value, allInteractions, nsLayerValues.value],
+    [searchMatches, rep.taxa, rep.effToday, rep.eff2050, store.location.value?.lookup, ov, store.climate.value, allInteractions, nsLayerValues.value],
   );
 
   const guildById = useMemo(() => new Map(rep.taxa.map((t) => [t.id, t])), [rep.taxa]);
@@ -810,6 +806,7 @@ function AtlasDrawer({ rep, swapFor }: { rep: PaletteReport; swapFor?: PlantId }
   const inPalette = useMemo(() => new Set(store.members.value), [store.members.value]);
   const pool = activePool.value;
   const targetTaxon = rep.taxa.find((t) => t.id === targetId) ?? rep.taxa[0] ?? null;
+  const ov = effectiveOverrides.value;
   const swaps = useMemo(() => {
     if (!targetTaxon) return [];
     const sets = store.interactionSets.value;
@@ -822,10 +819,10 @@ function AtlasDrawer({ rep, swapFor }: { rep: PaletteReport; swapFor?: PlantId }
       eff,
       inPalette,
       5,
-      { eff2050: rep.eff2050, lookup: store.location.value?.lookup ?? null, climateZone: c, interactions },
+      { eff2050: rep.eff2050, lookup: store.location.value?.lookup ?? null, overrides: ov, climateZone: c, interactions },
       others,
     );
-  }, [targetTaxon, pool, eff, inPalette, rep.eff2050, rep.taxa, store.interactionSets.value, store.climate.value, store.location.value?.lookup]);
+  }, [targetTaxon, pool, eff, inPalette, rep.eff2050, rep.taxa, store.interactionSets.value, store.climate.value, store.location.value?.lookup, ov]);
   const cmpCand = compareId ? pool.find((x) => x.id === compareId) ?? null : null;
 
   const activeScenShort = scenarioShort(nsScenario.value);
@@ -1303,6 +1300,7 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
   const pollWarn = pollinationShortWarn(taxon);
   const tox = toxBadgeInfo(taxon);
   const inPalette = useMemo(() => new Set(store.members.value), [store.members.value]);
+  const ov = effectiveOverrides.value;
   const swapCand = useMemo(() => {
     const sets = store.interactionSets.value;
     const c = store.climate.value;
@@ -1314,10 +1312,10 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
       rep.eff,
       inPalette,
       1,
-      { eff2050: rep.eff2050, lookup: store.location.value?.lookup ?? null, climateZone: c, interactions },
+      { eff2050: rep.eff2050, lookup: store.location.value?.lookup ?? null, overrides: ov, climateZone: c, interactions },
       others,
     )[0]?.taxon ?? null;
-  }, [taxon, activePool.value, rep.eff, rep.eff2050, rep.taxa, inPalette, store.interactionSets.value, store.climate.value, store.location.value?.lookup]);
+  }, [taxon, activePool.value, rep.eff, rep.eff2050, rep.taxa, inPalette, store.interactionSets.value, store.climate.value, store.location.value?.lookup, ov]);
 
   // Photo gallery switcher (local-only URLs: zero third-party requests; Wave 5 N8-N9) + photo credit
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -1855,9 +1853,11 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
           <strong>{T('ns.dossier.invasiveLine')}</strong>{' '}
           {invasiveHere && countryName
             ? T('ns.dossier.invasiveListed', { country: countryName })
-            : (taxon.warnings.invasive_in?.length ?? 0) > 0 && countryName
-              ? T('ns.dossier.invasiveOther', { country: countryName, n: taxon.warnings.invasive_in?.length ?? 0 })
-              : T('ns.dossier.invasiveNone')}
+            : countryName && store.source.value?.countries().get(rep.eff.country ?? '')?.invasiveChecked !== true
+              ? T('ns.arrival.invasiveUnknown', { country: countryName })
+              : (taxon.warnings.invasive_in?.length ?? 0) > 0 && countryName
+                ? T('ns.dossier.invasiveOther', { country: countryName, n: taxon.warnings.invasive_in?.length ?? 0 })
+                : T('ns.dossier.invasiveNone')}
         </span>
         {details && details.traitSources.length > 0 ? (
           <ul class="small" style={{ margin: 0, paddingLeft: '18px', display: 'grid', gap: '4px' }}>

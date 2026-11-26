@@ -22,6 +22,7 @@ import type {
 import { jobIds, months as MONTHS } from './types.ts';
 import { jobsOf } from './jobs.ts';
 import { slotCheck } from './range.ts';
+import { ROOM_LIMIT_M } from './site.ts';
 
 // ---- 10 Climate Scenarios (Today + 6 shipped canopi-climate v0.7.0 SSPs + 3 what-ifs) ----
 
@@ -137,12 +138,9 @@ export interface EffectiveSiteClimate {
   netPlotM2: number;
 }
 
-const ROOM_HEIGHT_LIMIT_M: Record<Room, number | null> = {
-  pots: 2,
-  small: 6,
-  large: 15,
-  field: null,
-  unsure: null,
+const roomLimitOf = (room: Room): number | null => {
+  const lim = ROOM_LIMIT_M[room];
+  return Number.isFinite(lim) ? lim : null;
 };
 
 function findPeriod(periods: readonly SitePeriod[] | undefined, period: string, scenario: string): SitePeriod | null {
@@ -150,7 +148,11 @@ function findPeriod(periods: readonly SitePeriod[] | undefined, period: string, 
   return periods.find((p) => p.period === period && p.scenario === scenario) ?? null;
 }
 
-const round1 = (n: number): number => Math.round(n * 10) / 10;
+const finiteNum = (v: number | null | undefined): number | null =>
+  typeof v === 'number' && Number.isFinite(v) ? v : null;
+const round1 = (n: number): number => (Math.round(n * 10) / 10) || 0;
+const round3 = (n: number): number => (Math.round(n * 1000) / 1000) || 0;
+const cents = (n: number): number => Math.round(n * 100);
 
 export function resolveEffectiveSite(
   lookup: SiteLookup | null,
@@ -164,8 +166,20 @@ export function resolveEffectiveSite(
   const activeSlot = meta.kind === 'whatif' ? todaySlot : findPeriod(periods, meta.period, meta.scenario);
   const v07 = lookup?.v07 ?? null;
 
+  const ovElevM = finiteNum(overrides.elevM);
+  const ovNightsShiftC = finiteNum(overrides.nightsShiftC) ?? 0;
+  const ovDaysShiftC = finiteNum(overrides.daysShiftC) ?? 0;
+  const ovFreeze10 = finiteNum(overrides.freeze10);
+  const ovHeat10 = finiteNum(overrides.heat10);
+  const ovPlotM2 = finiteNum(overrides.plotM2);
+  const ovCddDays = finiteNum(overrides.cddDays);
+  const ovSlopeDeg = finiteNum(overrides.slopeDeg);
+  const ovSoilPh = finiteNum(overrides.soilPh);
+  const ovClayPct = finiteNum(overrides.clayPct);
+  const ovStonesPct = finiteNum(overrides.stonesPct);
+
   const elevBase = v07?.terrain?.elevM ?? null;
-  const elevEff = overrides.elevM != null ? overrides.elevM : elevBase;
+  const elevEff = ovElevM !== null ? ovElevM : elevBase;
   const elevDeltaC = elevBase != null && elevEff != null ? round1(((elevBase - elevEff) / 100) * 0.65) : 0;
   const aspect: SiteAspect = overrides.aspect ?? 'neutral';
   const aspectDeltaC = aspect === 'south' ? 1.0 : aspect === 'north' ? -1.0 : 0;
@@ -174,8 +188,8 @@ export function resolveEffectiveSite(
   const coldTerrainShift = round1(elevDeltaC + hollowDeltaC + aspectDeltaC);
   const warmTerrainShift = round1(elevDeltaC + aspectDeltaC);
 
-  const nightsShift = (overrides.nightsShiftC ?? 0) + coldTerrainShift;
-  const daysShift = (overrides.daysShiftC ?? 0) + warmTerrainShift;
+  const nightsShift = ovNightsShiftC + coldTerrainShift;
+  const daysShift = ovDaysShiftC + warmTerrainShift;
   const freezeDelta = horizon === 'freeze' ? -4 : 0;
   const heatDelta = horizon === 'heat' ? 4 : 0;
   const droughtExtraDays = horizon === 'drought' ? 20 : 0;
@@ -190,17 +204,17 @@ export function resolveEffectiveSite(
   const todayHeat10 = v07?.extremesTail?.heatDome10yrC
     ?? (v07?.extremes?.tmaxExtremeC != null && tmaxGap !== null ? v07.extremes.tmaxExtremeC + tmaxGap : null);
 
-  const freezeOverrideShift = overrides.freeze10 != null && todayFreeze10 !== null ? round1(overrides.freeze10 - todayFreeze10) : 0;
-  const heatOverrideShift = overrides.heat10 != null && todayHeat10 !== null ? round1(overrides.heat10 - todayHeat10) : 0;
-  const effectiveColdShift = overrides.freeze10 != null ? freezeOverrideShift : nightsShift;
-  const effectiveWarmShift = overrides.heat10 != null ? heatOverrideShift : daysShift;
+  const freezeOverrideShift = ovFreeze10 !== null && todayFreeze10 !== null ? round1(ovFreeze10 - todayFreeze10) : 0;
+  const heatOverrideShift = ovHeat10 !== null && todayHeat10 !== null ? round1(ovHeat10 - todayHeat10) : 0;
+  const effectiveColdShift = ovFreeze10 !== null ? freezeOverrideShift : nightsShift;
+  const effectiveWarmShift = ovHeat10 !== null ? heatOverrideShift : daysShift;
 
   const tminColdC = activeSlot ? round1(activeSlot.tminColdC + effectiveColdShift + freezeDelta) : null;
   const tmaxWarmC = activeSlot ? round1(activeSlot.tmaxWarmC + effectiveWarmShift + heatDelta) : null;
   const tmeanColdC = activeSlot ? round1(activeSlot.tmeanColdC + effectiveColdShift + freezeDelta) : null;
   const tmeanWarmC = activeSlot ? round1(activeSlot.tmeanWarmC + effectiveWarmShift + heatDelta) : null;
   const precipMm = activeSlot ? Math.round(activeSlot.precipMm * precipFactor) : null;
-  const aridityIndex = activeSlot?.aridityIndex != null ? round1(activeSlot.aridityIndex * precipFactor) : null;
+  const aridityIndex = activeSlot?.aridityIndex != null ? round3(activeSlot.aridityIndex * precipFactor) : null;
   const dryMonths = activeSlot ? Math.min(12, activeSlot.dryMonths + (horizon === 'drought' ? 2 : 0)) : null;
 
   let freeze10C: number | null = null;
@@ -209,11 +223,11 @@ export function resolveEffectiveSite(
 
   if (activeSlot !== null) {
     if (horizon === 'today' || meta.kind === 'whatif') {
-      freeze10C = overrides.freeze10 != null
-        ? round1(overrides.freeze10 + freezeDelta)
+      freeze10C = ovFreeze10 !== null
+        ? round1(ovFreeze10 + freezeDelta)
         : (todayFreeze10 !== null ? round1(todayFreeze10 + nightsShift + freezeDelta) : null);
-      heat10C = overrides.heat10 != null
-        ? round1(overrides.heat10 + heatDelta)
+      heat10C = ovHeat10 !== null
+        ? round1(ovHeat10 + heatDelta)
         : (todayHeat10 !== null ? round1(todayHeat10 + daysShift + heatDelta) : null);
       extremesEst = meta.kind === 'whatif';
     } else {
@@ -224,11 +238,15 @@ export function resolveEffectiveSite(
       const slotTmax = slotExt?.tmaxExtremeC
         ?? (horizon === 'y2050' ? (v07?.extremes?.futureTmaxExtremeC ?? null)
           : horizon === 'y2080_ssp245' ? (v07?.extremes?.lateTmaxExtremeC ?? null) : null);
-      freeze10C = overrides.freeze10 != null
-        ? round1(overrides.freeze10)
+      freeze10C = ovFreeze10 !== null
+        ? (slotTmin !== null && tminGap !== null && todayFreeze10 !== null
+          ? round1(slotTmin + tminGap + freezeOverrideShift)
+          : round1(ovFreeze10))
         : (slotTmin !== null && tminGap !== null ? round1(slotTmin + tminGap + nightsShift) : null);
-      heat10C = overrides.heat10 != null
-        ? round1(overrides.heat10)
+      heat10C = ovHeat10 !== null
+        ? (slotTmax !== null && tmaxGap !== null && todayHeat10 !== null
+          ? round1(slotTmax + tmaxGap + heatOverrideShift)
+          : round1(ovHeat10))
         : (slotTmax !== null && tmaxGap !== null ? round1(slotTmax + tmaxGap + daysShift) : null);
       extremesEst = freeze10C !== null || heat10C !== null;
     }
@@ -270,15 +288,15 @@ export function resolveEffectiveSite(
     : (tmeanColdC !== null && tmeanWarmC !== null ? round1((tmeanColdC + tmeanWarmC) / 2) : null);
 
   const room: Room = overrides.room ?? 'unsure';
-  const plotM2 = Math.max(1, Math.round(overrides.plotM2 ?? 150));
+  const plotM2 = Math.max(1, Math.round(ovPlotM2 ?? 150));
   const netPlotM2 = Math.max(1, Math.round(plotM2 * 0.8));
-  const baseCdd = overrides.cddDays != null ? overrides.cddDays : (v07?.waterBalance?.cddDays ?? null);
+  const baseCdd = ovCddDays !== null ? ovCddDays : (v07?.waterBalance?.cddDays ?? null);
   const cddDays = baseCdd !== null ? Math.round(baseCdd + droughtExtraDays) : null;
   const rawTankDays = v07?.soilPlus?.dryDaysReserve ?? null;
   const tankDays = rawTankDays != null
     ? Math.max(1, Math.round(rawTankDays * (overrides.drainage === 'sandy' ? 0.65 : overrides.drainage === 'clay' ? 1.15 : 1)))
     : null;
-  const slopeDeg = overrides.slopeDeg != null ? overrides.slopeDeg : (v07?.terrain?.slopeDeg ?? null);
+  const slopeDeg = ovSlopeDeg !== null ? ovSlopeDeg : (v07?.terrain?.slopeDeg ?? null);
   const siteLight: SiteLightChoice = overrides.siteLight ?? 'full_sun';
 
   return {
@@ -307,10 +325,10 @@ export function resolveEffectiveSite(
     monthlyP,
     monthlyEst,
     isMildWinter: tminColdC !== null && tminColdC >= 2,
-    soilPh: overrides.soilPh ?? lookup?.soil?.phH2o ?? null,
+    soilPh: ovSoilPh ?? lookup?.soil?.phH2o ?? null,
     subsoilPh: v07?.soilPlus?.ph30_100 ?? null,
-    clayPct: overrides.clayPct ?? lookup?.soil?.clayPct ?? null,
-    stonesPct: overrides.stonesPct ?? v07?.soilPlus?.cfvo0_30 ?? null,
+    clayPct: ovClayPct ?? lookup?.soil?.clayPct ?? null,
+    stonesPct: ovStonesPct ?? v07?.soilPlus?.cfvo0_30 ?? null,
     tankDays,
     cddDays,
     drainage: overrides.drainage ?? null,
@@ -326,7 +344,7 @@ export function resolveEffectiveSite(
     coldAir,
     hollowDeltaC,
     room,
-    roomLimitM: ROOM_HEIGHT_LIMIT_M[room],
+    roomLimitM: roomLimitOf(room),
     plotM2,
     netPlotM2,
   };
@@ -399,6 +417,22 @@ function elevate(current: ReportVerdictLevel, next: ReportVerdictLevel): ReportV
   return SEVERITY_RANK[next] > SEVERITY_RANK[current] ? next : current;
 }
 
+/** Site hints (pH, waterlogged, wind, light) refine a judged climate verdict but never lift 'unknown' to 'check'. */
+function elevateSite(current: ReportVerdictLevel, next: ReportVerdictLevel): ReportVerdictLevel {
+  return current === 'unknown' ? 'unknown' : elevate(current, next);
+}
+
+const CLIMATE_BREAK_CODES = new Set([
+  'cold_monthly', 'cold_monthly_edge',
+  'mild_winter', 'mild_winter_edge',
+  'cool_year', 'cool_year_edge',
+  'cool_summer', 'cool_summer_edge',
+  'heat_monthly', 'heat_monthly_edge',
+  'extreme_freeze', 'extreme_freeze_edge',
+  'extreme_heat', 'extreme_heat_edge',
+  'water_needs_irrigation', 'water_wet_drainage', 'dry_spell_water',
+]);
+
 const verdictMemo = new WeakMap<Taxon, Map<string, ReportPlantVerdict>>();
 
 function effVerdictKey(eff: EffectiveSiteClimate, alreadyOnSite: boolean): string {
@@ -457,8 +491,10 @@ function evaluatePlantVerdictUncached(
 
     const hasTempData = eff.tminColdC !== null || eff.tmaxWarmC !== null || eff.tmeanYearC !== null || eff.tmeanWarmC !== null;
     if (hasTempData && (cl.tminCold || cl.tmaxWarm || cl.tmeanYear || cl.tmeanWarm)) {
-      const tmeanColdForSlot = eff.tmeanColdC ?? eff.tmeanYearC ?? 0;
       const tmeanWarmForSlot = eff.tmeanWarmC ?? eff.tmeanYearC ?? 0;
+      const tmeanColdForSlot = eff.tmeanYearC !== null
+        ? 2 * eff.tmeanYearC - tmeanWarmForSlot
+        : (eff.tmeanColdC ?? 0);
       const syntheticSlot: SitePeriod = {
         period: eff.meta.period,
         scenario: eff.meta.scenario,
@@ -562,10 +598,11 @@ function evaluatePlantVerdictUncached(
     const coldLim = tminStat?.low ?? ext.coldTailC;
     if (!annual && coldLim != null && eff.freeze10C !== null) {
       judgedClimate = true;
-      if (eff.freeze10C < coldLim - EDGE_MARGIN_C) {
+      const coldDiff = cents(coldLim - eff.freeze10C);
+      if (coldDiff > EDGE_MARGIN_C * 100) {
         level = elevate(level, 'at_risk');
         reasons.push({ code: 'extreme_freeze', severity: 'at_risk', detail: `1-in-10 freeze ${eff.freeze10C}°C below observed extreme ${coldLim}°C` });
-      } else if (eff.freeze10C < coldLim) {
+      } else if (coldDiff > 0) {
         level = elevate(level, 'check');
         reasons.push({ code: 'extreme_freeze_edge', severity: 'check', detail: `1-in-10 freeze ${eff.freeze10C}°C near observed extreme ${coldLim}°C` });
       }
@@ -574,14 +611,15 @@ function evaluatePlantVerdictUncached(
     const heatLim = tmaxStat?.high ?? ext.heatDomeC;
     if (heatLim != null && eff.heat10C !== null) {
       judgedClimate = true;
-      if (eff.heat10C > heatLim + EDGE_MARGIN_C) {
+      const heatDiff = cents(eff.heat10C - heatLim);
+      if (heatDiff > EDGE_MARGIN_C * 100) {
         if (annual) {
           notes.add('cool_season');
         } else {
           level = elevate(level, 'at_risk');
           reasons.push({ code: 'extreme_heat', severity: 'at_risk', detail: `1-in-10 heat ${eff.heat10C}°C above observed extreme ${heatLim}°C` });
         }
-      } else if (eff.heat10C > heatLim) {
+      } else if (heatDiff > 0) {
         if (annual) {
           notes.add('cool_season');
         } else {
@@ -596,22 +634,21 @@ function evaluatePlantVerdictUncached(
 
   // 3. Topsoil pH + Subsoil pH Trap (subsoil ONLY when root_depth_min_cm >= 45 or taproot_persistent)
   const ph = taxon.traits.soil_ph;
+  const phOutside = (val: number): boolean => Boolean(
+    ph && ((ph.min !== null && cents(ph.min - val) > 30) || (ph.max !== null && cents(val - ph.max) > 30)),
+  );
   let subsoilPhTrap = false;
-  if (ph && eff.soilPh !== null) {
-    if ((ph.min !== null && eff.soilPh < ph.min - 0.3) || (ph.max !== null && eff.soilPh > ph.max + 0.3)) {
-      level = elevate(level, 'check');
-      reasons.push({ code: 'topsoil_ph', severity: 'check', detail: `Topsoil pH ${eff.soilPh} outside recorded ${ph.min ?? '?'}–${ph.max ?? '?'}` });
-    }
+  if (ph && eff.soilPh !== null && phOutside(eff.soilPh)) {
+    level = elevateSite(level, 'check');
+    reasons.push({ code: 'topsoil_ph', severity: 'check', detail: `Topsoil pH ${eff.soilPh} outside recorded ${ph.min ?? '?'}–${ph.max ?? '?'}` });
   }
   const isDeepRooted = (taxon.traits.root_depth_min_cm !== null && taxon.traits.root_depth_min_cm >= 45)
     || taxon.traits.taproot_persistent === true;
-  if (ph && isDeepRooted && eff.subsoilPh !== null) {
-    if ((ph.min !== null && eff.subsoilPh < ph.min - 0.3) || (ph.max !== null && eff.subsoilPh > ph.max + 0.3)) {
-      subsoilPhTrap = true;
-      notes.add('subsoil_ph_trap');
-      level = elevate(level, 'check');
-      reasons.push({ code: 'subsoil_ph_trap', severity: 'check', detail: `Deep roots reach subsoil pH ${eff.subsoilPh} (outside ${ph.min ?? '?'}–${ph.max ?? '?'})` });
-    }
+  if (ph && isDeepRooted && eff.subsoilPh !== null && phOutside(eff.subsoilPh)) {
+    subsoilPhTrap = true;
+    notes.add('subsoil_ph_trap');
+    level = elevateSite(level, 'check');
+    reasons.push({ code: 'subsoil_ph_trap', severity: 'check', detail: `Deep roots reach subsoil pH ${eff.subsoilPh} (outside ${ph.min ?? '?'}–${ph.max ?? '?'})` });
   }
 
   // 4. Water, drought & drainage (heavy clay = site-prep note only; waterlogged = check)
@@ -619,19 +656,22 @@ function evaluatePlantVerdictUncached(
   const moistureUse = (taxon.traits.moisture_use ?? '').toLowerCase();
   const droughtAdapted = droughtTol === 'high' || moistureUse === 'low';
   const dryDeficit = eff.tankDays !== null && eff.cddDays !== null && eff.cddDays > eff.tankDays;
-  if (eff.watering === 'rain' && dryDeficit) {
+  if (eff.watering !== 'all-year' && dryDeficit) {
     if (!droughtAdapted) {
-      if (taxon.traits.drought_tolerance === null && taxon.traits.moisture_use === null) {
+      if (eff.meta.kind === 'ssp') {
+        notes.add('may_need_summer_water');
+        reasons.push({ code: 'summer_water_est', severity: 'note', detail: `Dry spell (~${eff.cddDays} d) exceeds soil tank (~${eff.tankDays} d)` });
+      } else if (taxon.traits.drought_tolerance === null && taxon.traits.moisture_use === null) {
         notes.add('may_need_summer_water');
         reasons.push({ code: 'summer_water_est', severity: 'note', detail: 'May need summer water (water traits unrecorded)' });
       } else {
-        level = elevate(level, 'check');
+        level = elevateSite(level, 'check');
         reasons.push({ code: 'dry_spell_water', severity: 'check', detail: `Dry spell (~${eff.cddDays} d) exceeds soil tank (~${eff.tankDays} d)` });
       }
     }
   }
   if (eff.drainage === 'wet' && taxon.traits.well_drained === true) {
-    level = elevate(level, 'check');
+    level = elevateSite(level, 'check');
     reasons.push({ code: 'waterlogged', severity: 'check', detail: 'Requires well-drained soil; site stays waterlogged' });
   }
   if ((eff.drainage === 'clay' || (eff.clayPct !== null && eff.clayPct >= 35)) && taxon.traits.well_drained === true) {
@@ -649,7 +689,7 @@ function evaluatePlantVerdictUncached(
   if (eff.wind === 'windy' || eff.wind === 'sea') {
     const isWindbreak = (taxon.functions ?? []).some((f) => f.function === 'windbreak');
     if (taxon.windTolerant === false && !isWindbreak) {
-      level = elevate(level, 'check');
+      level = elevateSite(level, 'check');
       reasons.push({ code: 'wind_sensitive', severity: 'check', detail: 'Recorded as wind-sensitive (UK records)' });
     }
   }
@@ -658,10 +698,10 @@ function evaluatePlantVerdictUncached(
   const prefLight = taxon.light.preferred ?? taxon.light.sunniest ?? taxon.stratum?.value ?? null;
   const sunOnly = prefLight === 'emergent' && (taxon.light.shadiest == null || taxon.light.shadiest === 'emergent');
   if (eff.siteLight === 'shade' && (prefLight === 'emergent' || prefLight === 'high' || (taxon.traits.sun && !taxon.traits.full_shade && !taxon.traits.semi_shade))) {
-    level = elevate(level, 'check');
+    level = elevateSite(level, 'check');
     reasons.push({ code: 'site_light', severity: 'check', detail: 'Prefers sunnier exposure (site light: shady)' });
   } else if (eff.siteLight === 'part_shade' && (sunOnly || (taxon.traits.sun && !taxon.traits.semi_shade && !taxon.traits.full_shade))) {
-    level = elevate(level, 'check');
+    level = elevateSite(level, 'check');
     reasons.push({ code: 'site_light', severity: 'check', detail: 'Prefers full sun (site light: part shade)' });
   }
 
@@ -833,7 +873,7 @@ export function crownAreaM2(taxon: Taxon): number | null {
 }
 
 export function computeCrownBudget(taxa: readonly Taxon[], plotM2: number): CrownBudget {
-  const safePlot = Math.max(1, Math.round(plotM2));
+  const safePlot = Math.max(1, Math.round(Number.isFinite(plotM2) ? plotM2 : 150));
   const netPlotM2 = Math.max(1, Math.round(safePlot * 0.8));
   let total = 0;
   let measuredCount = 0;
@@ -846,7 +886,7 @@ export function computeCrownBudget(taxa: readonly Taxon[], plotM2: number): Crow
       measuredCount++;
     }
   }
-  const totalCrownM2 = Math.round(total * 10) / 10;
+  const totalCrownM2 = round1(total);
   const budgetPct = Math.round((total / netPlotM2) * 100);
   return {
     plotM2: safePlot,
@@ -1075,12 +1115,18 @@ export function computeReport(input: PaletteReportInput): PaletteReport {
     const isCore = CORE_SHOCK_HORIZONS.includes(sc.id);
     for (const t of input.taxa) {
       const sv = sc.id === horizon ? verdicts.get(t.id)! : evaluatePlantVerdict(t, scEff, existingIds);
-      if (sv.level === 'fits') fitsCount++;
-      else if (sv.level === 'check' || sv.level === 'at_risk') {
-        brokenCount++;
-        if (isCore) perPlantCoreBroken.set(t.id, true);
-      } else if (isCore) {
-        perPlantCoreUnknown.set(t.id, true);
+      if (sv.level === 'unknown') {
+        if (isCore) perPlantCoreUnknown.set(t.id, true);
+      } else {
+        const climateBroken = sv.reasons.some(
+          (r) => (r.severity === 'check' || r.severity === 'at_risk') && CLIMATE_BREAK_CODES.has(r.code),
+        );
+        if (climateBroken) {
+          brokenCount++;
+          if (isCore) perPlantCoreBroken.set(t.id, true);
+        } else {
+          fitsCount++;
+        }
       }
     }
     return { id: sc.id, short: sc.short, label: sc.label, fitsCount, brokenCount };

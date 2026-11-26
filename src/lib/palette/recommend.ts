@@ -195,17 +195,16 @@ function computeHeadroom(
   }
 
   let limitingBound: LimitingBound = null;
-  let minNorm = 0.5;
+  let headroom = 0;
   if (margins.length) {
     margins.sort((a, b) => a.norm - b.norm);
     limitingBound = margins[0].bound;
-    minNorm = margins[0].norm;
+    const minNorm = margins[0].norm;
+    // Normalised headroom score: -12 (beyond bound) to +24 (comfortably inside center)
+    headroom = minNorm < 0
+      ? Math.max(-12, minNorm * 24)
+      : clamp01(minNorm / 0.45) * 24;
   }
-
-  // Normalised headroom score: -12 (beyond bound) to +24 (comfortably inside center)
-  const headroom = minNorm < 0
-    ? Math.max(-12, minNorm * 24)
-    : clamp01(minNorm / 0.45) * 24;
 
   // A10: Ripening & summer-warmth headroom for fruiting perennials AND warm-season annuals (ranking only, never a verdict change)
   let ripening = 0;
@@ -470,14 +469,25 @@ interface SiteBaseEval {
 
 const siteBaseMemo = new WeakMap<Taxon, Map<string, SiteBaseEval>>();
 
-function horizonPackKey(hp: HorizonPack, alreadyOnSite: boolean): string {
-  const e = hp.effToday;
-  const e50 = hp.eff2050;
+function effKey(e: EffectiveSiteClimate): string {
   return [
-    e.lat, e.lon, e.koppen, e.tminColdC, e.tmaxWarmC, e.tmeanWarmC, e.precipMm, e.dryMonths,
-    e.freeze10C, e.heat10C, e.soilPh, e.watering, e.drainage, e.wind, e.siteLight, e.roomLimitM, e.plotM2,
-    e50 ? `${e50.tminColdC},${e50.tmaxWarmC},${e50.precipMm}` : '-',
-    hp.sspEffs.length, hp.shockEffs.length,
+    e.horizon, e.hasClimate ? 1 : 0, e.koppen,
+    e.tminColdC, e.tmaxWarmC, e.tmeanColdC, e.tmeanWarmC, e.tmeanYearC,
+    e.precipMm, e.aridityIndex, e.dryMonths,
+    e.freeze10C, e.heat10C,
+    e.soilPh, e.subsoilPh, e.clayPct, e.stonesPct,
+    e.tankDays, e.cddDays,
+    e.watering, e.drainage, e.wind, e.siteLight, e.roomLimitM, e.plotM2,
+  ].join(',');
+}
+
+function horizonPackKey(hp: HorizonPack, alreadyOnSite: boolean): string {
+  return [
+    effKey(hp.effToday),
+    hp.eff2050 ? effKey(hp.eff2050) : '-',
+    hp.eff2080 ? effKey(hp.eff2080) : '-',
+    hp.sspEffs.map(effKey).join(';'),
+    hp.shockEffs.map(effKey).join(';'),
     alreadyOnSite ? 1 : 0,
   ].join('|');
 }
@@ -833,16 +843,6 @@ export function selectStarterPalette(
     return true;
   };
 
-  const dynScore = (item: PoolEntry, bonusFn?: (x: PoolEntry) => number): number => {
-    const guild = chosenTaxa();
-    const ev = guild.length === 0 ? item.eval0 : scoreCandidateForGuild(item.taxon, guild, ctx, pack);
-    let s = ev.score;
-    if (item.stratum && !usedStrata.has(item.stratum)) s += 5;
-    if (nFixCount() >= 2 && item.jobs.includes('feeds_soil')) s -= 18;
-    if (bonusFn) s += bonusFn(item);
-    return s;
-  };
-
   const pickBest = (pred: (x: PoolEntry) => boolean, bonusFn?: (x: PoolEntry) => number): boolean => {
     const cands = fitsPool.filter((x) => canAdd(x) && pred(x));
     if (!cands.length) return false;
@@ -852,8 +852,18 @@ export function selectStarterPalette(
       ? cands.filter((x) => !interactionScoreAgainstGuild(x.taxon, guild, ctx.interactions!, ctx.climateZone ?? null).severeConflict)
       : cands;
     const active = safe.length ? safe : cands;
-    active.sort((a, b) => dynScore(b, bonusFn) - dynScore(a, bonusFn) || a.taxon.canonical_name.localeCompare(b.taxon.canonical_name));
-    return addItem(active[0]);
+    const gc = guild.length > 0 ? buildGuildCache(guild, pack, ctx) : undefined;
+    const nFix = nFixCount();
+    const scored = active.map((item) => {
+      const ev = guild.length === 0 ? item.eval0 : scoreCandidateForGuild(item.taxon, guild, ctx, pack, gc);
+      let s = ev.score;
+      if (item.stratum && !usedStrata.has(item.stratum)) s += 5;
+      if (nFix >= 2 && item.jobs.includes('feeds_soil')) s -= 18;
+      if (bonusFn) s += bonusFn(item);
+      return { item, score: s };
+    });
+    scored.sort((a, b) => b.score - a.score || a.item.taxon.canonical_name.localeCompare(b.item.taxon.canonical_name));
+    return addItem(scored[0].item);
   };
 
   // Layer 1: Climate-resilient fruit/nut canopy anchor (A2: prefer >= 3/4 SSP agreement; A3: managed orchard genera)
@@ -970,7 +980,8 @@ export function selectStarterPalette(
       const restArea = rest.reduce((s, r) => s + r.area, 0);
       const restJobs = new Set(rest.flatMap((r) => r.jobs));
       const mustCover = [...coveredJobs].filter((j) => !restJobs.has(j));
-      const curScore = scoreCandidateForGuild(current.taxon, restTaxa, ctx, pack).score;
+      const restGc = buildGuildCache(restTaxa, pack, ctx);
+      const curScore = scoreCandidateForGuild(current.taxon, restTaxa, ctx, pack, restGc).score;
 
       let bestCand: PoolEntry | null = null;
       let bestScore = curScore + 4; // require meaningful improvement to avoid churn
@@ -979,8 +990,8 @@ export function selectStarterPalette(
         if (restArea + cand.area > eff.netPlotM2) continue;
         if (mustCover.some((j) => !cand.jobs.includes(j))) continue;
         if (ctx.interactions?.length && interactionScoreAgainstGuild(cand.taxon, restTaxa, ctx.interactions, ctx.climateZone ?? null).severeConflict) continue;
-        const sc = scoreCandidateForGuild(cand.taxon, restTaxa, ctx, pack).score;
-        if (sc > bestScore) {
+        const sc = scoreCandidateForGuild(cand.taxon, restTaxa, ctx, pack, restGc).score;
+        if (sc > bestScore || (bestCand !== null && sc === bestScore && cand.taxon.canonical_name.localeCompare(bestCand.taxon.canonical_name) < 0)) {
           bestScore = sc;
           bestCand = cand;
         }

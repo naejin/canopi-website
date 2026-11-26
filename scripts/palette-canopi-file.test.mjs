@@ -89,6 +89,6 @@ test('the writer is pure: the same input gives the same bytes', () => {
 test('the file name is the name made safe for every file system, ending in .canopi', () => {
   assert.equal(canopiFileName('Consortium · Temperate'), 'Consortium · Temperate.canopi');
   assert.equal(canopiFileName('a/b\\c:d*e?f"g<h>i|j'), 'a-b-c-d-e-f-g-h-i-j.canopi');
-  assert.equal(canopiFileName('   '), 'consortium.canopi');
+  assert.equal(canopiFileName('   '), 'plant-palette.canopi');
   assert.ok(canopiFileName('x'.repeat(300)).length <= 120 + '.canopi'.length);
 });

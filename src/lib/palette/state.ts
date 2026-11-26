@@ -72,6 +72,8 @@ const COUNTRY = /^[A-Z]{2}$/;
 const MAX_NAME_LENGTH = 200;
 
 const hexOf = (id: string) => id.toLowerCase().replace(/-/g, '');
+const HEX_ID = /^[0-9a-f]{9,}$/;
+const isValidHexId = (id: string): boolean => HEX_ID.test(hexOf(id));
 
 function hexToB64(hex: string): string {
   let bits = '';
@@ -101,10 +103,12 @@ const codeZone = new Map(climateZones.map((z) => [GUEST_CODES[z], z] as const));
 // The token function for a set of known ids: an id's token is short unless another known id shares
 // its first 36 bits. Clashes are looked up in one table: 36-bit prefix → how many known ids share it.
 function tokens(known: Iterable<PlantId>): (id: PlantId) => string {
-  const hexes = new Set([...known].map(hexOf)), prefixes = new Map<string, number>();
+  const hexes = new Set([...known].map(hexOf).filter((h) => HEX_ID.test(h))), prefixes = new Map<string, number>();
   for (const h of hexes) { const p = h.slice(0, SHORT_HEX); prefixes.set(p, (prefixes.get(p) ?? 0) + 1); }
   return (id) => {
-    const hex = hexOf(id), others = (prefixes.get(hex.slice(0, SHORT_HEX)) ?? 0) - (hexes.has(hex) ? 1 : 0);
+    const hex = hexOf(id);
+    if (!HEX_ID.test(hex)) return '';
+    const others = (prefixes.get(hex.slice(0, SHORT_HEX)) ?? 0) - (hexes.has(hex) ? 1 : 0);
     return others > 0 ? LONG_MARK + hexToB64(hex.slice(0, LONG_HEX)) : hexToB64(hex.slice(0, SHORT_HEX));
   };
 }
@@ -227,21 +231,21 @@ export function encodePlace(state: Pick<ShareState, 'country' | 'siteEdits'>, or
 // name: the site's place name ("Kiambu, Kenya"), written as `n` beside `o` only (D6).
 export function encodeLink(state: ShareState, known: KnownIds, { origin = null, place = origin !== null, name = null }: { origin?: LinkOrigin | null; place?: boolean; name?: string | null } = {}): string {
   const tok = tokens(Object.values(known).flatMap((ids) => [...(ids ?? [])]));
-  const list = (ids: Iterable<PlantId>) => [...new Set([...ids].map(tok))].sort().join('');
+  const list = (ids: Iterable<PlantId>) => [...new Set([...ids].filter(isValidHexId).map(tok))].sort().join('');
   const pairs: [string, string][] = [['v', String(LINK_VERSION)]];
   if (state.climate) pairs.push(['c', siteIdOf(state.climate)]);
   pairs.push(['m', state.room]);
-  const members = [...new Set(state.members)];
+  const members = [...new Set(state.members.filter(isValidHexId))];
   // An empty member list is written too: every member removed is a state, not "suggest".
   pairs.push(['a', members.map(tok).join('')]);
   const inMembers = new Set(members);
   // A removed plant no list of the link knows (a guest taken out: its climate is no longer read) is
   // dropped: it would read back as "no longer in the list" (pre-push review 1).
   const listed = new Set(Object.values(known).flatMap((ids) => [...(ids ?? [])]));
-  const removed = state.removed.filter((id) => !inMembers.has(id) && listed.has(id));
+  const removed = state.removed.filter((id) => isValidHexId(id) && !inMembers.has(id) && listed.has(id));
   if (removed.length) pairs.push(['x', list(removed)]);
   for (const zone of climateZones) {
-    const ids = state.guests.filter((g) => g.from === zone).map((g) => g.id);
+    const ids = state.guests.filter((g) => g.from === zone && isValidHexId(g.id)).map((g) => g.id);
     if (ids.length) pairs.push(['g', GUEST_CODES[zone] + list(ids)]);
   }
   const plot = plotOf(state.plot);
