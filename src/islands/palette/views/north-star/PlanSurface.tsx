@@ -9,7 +9,6 @@ import { PlantThumb } from './GuildVisuals.tsx';
 import { PhotoLightbox } from './PhotoLightbox.tsx';
 import {
   defaultQtyFor,
-  downloadCanopiJson,
   fmtNum,
   freezeText,
   phaseOrd,
@@ -18,12 +17,18 @@ import {
   toxBadgeInfo,
 } from './ns-helpers.ts';
 import {
+  nsNonSpeciesEntries,
+  nsUnrecognizedPlants,
+} from './ns-file.ts';
+import {
   handlePlotM2Input,
   nsCheckedIds,
   nsDrawer,
   nsPathPct,
   nsQtyById,
-  showNsToast,
+  openCanopiAndToast,
+  saveCanopiAndToast,
+  setPathPct,
   stepQty,
   toggleChecked,
   toggleExisting,
@@ -36,7 +41,6 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
   const qtyMap = nsQtyById.value;
   const pathPct = nsPathPct.value;
   const eff = rep.eff;
-  const siteLabel = store.location.value?.label ?? store.climate.value ?? 'Site';
   const texture = eff.drainage ?? store.location.value?.lookup?.soil?.texture ?? 'loam';
 
   const netM2 = Math.max(1, Math.round(eff.plotM2 * (1 - pathPct / 100)));
@@ -75,14 +79,11 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
     .filter((p) => rep.verdicts.get(p.id)?.subsoilPhTrap)
     .map((p) => ({ name: taxCommonName(p), text: `Subsoil pH ${fmtNum(eff.subsoilPh)} outside preferred range` }));
 
-  async function copyShareLink() {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      showNsToast(T('ns.plan.linkCopied'));
-    } catch {
-      showNsToast('Could not copy link');
-    }
-  }
+  const unrecognizedCount = nsUnrecognizedPlants.value.length;
+  const nonSpeciesCount = nsNonSpeciesEntries.value.length;
+
+  const onPlanSave = () => { void saveCanopiAndToast(false); };
+  const onPlanOpen = () => { void openCanopiAndToast(); };
 
   return (
     <div class="plan-grid">
@@ -116,7 +117,7 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
               id="path-pct"
               class="tuner-select"
               value={pathPct}
-              onChange={(e) => { nsPathPct.value = Number((e.target as HTMLSelectElement).value); }}
+              onChange={(e) => { setPathPct(Number((e.target as HTMLSelectElement).value)); }}
             >
               <option value="15">15%</option>
               <option value="20">20%</option>
@@ -313,18 +314,15 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
         </div>
 
         <div class="place-actions">
-          <button class="btn-ghost" type="button" onClick={() => window.print()}>{T('ns.plan.print')}</button>
-          <button
-            class="btn-ghost"
-            type="button"
-            onClick={() => {
-              downloadCanopiJson(rep, siteLabel);
-              showNsToast('Downloaded .canopi file');
-            }}
-          >
-            {T('ns.plan.exportCanopi')}
+          <button class="btn-ghost" type="button" onClick={() => void onPlanSave()}>
+            {T('ns.file.saveCanopi')}
           </button>
-          <button class="btn-ghost" type="button" onClick={() => void copyShareLink()}>{T('ns.plan.share')}</button>
+          <button class="btn-ghost" type="button" onClick={() => void onPlanOpen()}>
+            {T('ns.file.openCanopi')}
+          </button>
+          <button class="btn-ghost" type="button" onClick={() => { nsDrawer.value = { kind: 'share' }; }}>
+            {T('ns.plan.share')}
+          </button>
         </div>
 
         {toBuy.length === 0 ? (
@@ -418,6 +416,17 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
               );
             })}
           </div>
+        )}
+
+        {unrecognizedCount > 0 && (
+          <p class="small muted">
+            {T('ns.unrec.planNote', { n: unrecognizedCount })}
+          </p>
+        )}
+        {nonSpeciesCount > 0 && (
+          <p class="small muted">
+            {T('ns.unrec.nonSpeciesNote', { n: nonSpeciesCount })}
+          </p>
         )}
 
         {alreadyOnSite.length > 0 && (

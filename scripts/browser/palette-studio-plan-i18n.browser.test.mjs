@@ -53,8 +53,10 @@ test('Mobile 390x844: zero overflow and all interactive controls >= 44px across 
   });
   assert.deepEqual(smallDesign, [], `all Mobile Design targets >= 44px: ${JSON.stringify(smallDesign)}`);
 
-  // Mobile Atlas via LandPanel Why? button
-  await clickNth(page, '.land-panel > .btn-ghost', 0);
+  // Mobile Atlas via Your land drawer -> Climate & guild atlas button
+  await clickNth(page, '.place-pill', 0);
+  assert.ok(await has(page, '.land-panel[role="dialog"]', 4_000), 'Mobile Your land drawer opens');
+  await clickNth(page, '.land-drawer-foot .btn-ghost', 0);
   assert.ok(await has(page, '.drawer .scen-row', 8_000), 'Mobile Atlas renders scenario rows');
   const smallAtlas = await page.evaluate(() =>
     [...document.querySelectorAll('.drawer .scen-row')]

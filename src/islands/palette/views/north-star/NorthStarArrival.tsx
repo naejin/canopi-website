@@ -4,10 +4,11 @@ import { useEffect, useState } from 'preact/hooks';
 import type { ClimateZone } from '../../../../lib/palette/index.ts';
 import { evaluatePlantVerdict, formatCountryName, isStructuralVine, resolveEffectiveSite, vineSupportTree } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
-import { findPlaces, placeName } from '../../state/location.ts';
 import { T } from '../../strings.ts';
 import { markStart } from '../kit/start-mark.ts';
 import { PlantThumb } from './GuildVisuals.tsx';
+import { PlaceSearchBox } from './PlaceSearchBox.tsx';
+import { openCanopiFilePicker } from './ns-file.ts';
 import {
   doyToDateLabel,
   fmtNum,
@@ -34,12 +35,6 @@ import {
   updateOverrides,
 } from './ns-state.ts';
 
-interface PlaceHit {
-  label: string;
-  lat: number;
-  lon: number;
-}
-
 const DIRECT_CLIMATES: readonly { id: ClimateZone; presetId: string; label: string }[] = [
   { id: 'Mediterranean', presetId: 'montpellier', label: 'Mediterranean (Csa)' },
   { id: 'Temperate', presetId: 'lyon', label: 'Temperate (Cfb)' },
@@ -50,10 +45,7 @@ const DIRECT_CLIMATES: readonly { id: ClimateZone; presetId: string; label: stri
 
 export function NorthStarArrival() {
   markStart();
-  const [query, setQuery] = useState('');
-  const [hits, setHits] = useState<PlaceHit[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [searchErr, setSearchErr] = useState<string | null>(null);
+  const [openErr, setOpenErr] = useState<string | null>(null);
   const [mapPickOpen, setMapPickOpen] = useState(false);
   const [climatePickOpen, setClimatePickOpen] = useState(false);
 
@@ -98,37 +90,11 @@ export function NorthStarArrival() {
   const isRegularWatering = effToday.watering === 'all-year';
   const assumingSmall = !store.room.value || store.room.value === 'unsure';
 
-  async function onSearchSubmit(e: Event) {
-    e.preventDefault();
-    const q = query.trim();
-    if (!q) return;
-    setSearching(true);
-    setSearchErr(null);
-    try {
-      const { results } = await findPlaces(q);
-      setHits(results.slice(0, 6).map((h) => ({ label: placeName(h), lat: h.lat, lon: h.lon })));
-      if (!results.length) setSearchErr(T('ns.unknown'));
-    } catch {
-      setSearchErr(T('ns.arrival.geoDenied'));
-    } finally {
-      setSearching(false);
-    }
-  }
-
-  function onUseMyLocation() {
-    if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      setSearchErr(T('ns.arrival.geoUnavailable'));
-      return;
-    }
-    setSearchErr(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        void pickCoordinates(latitude, longitude, `${latitude.toFixed(2)}°, ${longitude.toFixed(2)}°`);
-      },
-      () => setSearchErr(T('ns.arrival.geoDenied')),
-      { timeout: 10_000 },
-    );
+  async function onOpenCanopiFile() {
+    setOpenErr(null);
+    const res = await openCanopiFilePicker();
+    if (!res) return;
+    if (!res.ok) setOpenErr(res.error);
   }
 
   const renderPresetChip = (p: (typeof NS_PRESETS)[number], fullLabel: boolean, onPicked?: () => void) => (
@@ -153,72 +119,34 @@ export function NorthStarArrival() {
       <p class="arrival-lede">{T('ns.arrival.lede')}</p>
 
       <div class="place-bar">
-        <form class="place-bar-row" onSubmit={onSearchSubmit}>
-          <div class="place-input-wrap">
-            <label class="sr-only" for="place-search">{T('ns.arrival.placeCardAria')}</label>
-            <input
-              id="place-search"
-              class="place-input"
-              type="search"
-              value={query}
-              placeholder={T('ns.arrival.searchPlaceholder')}
-              autocomplete="off"
-              onInput={(e) => {
-                setQuery((e.target as HTMLInputElement).value);
-                if (hits.length) setHits([]);
-              }}
-            />
-            {hits.length > 0 && (
-              <ul class="place-suggest" role="listbox">
-                {hits.map((h) => (
-                  <li key={`${h.lat},${h.lon}`}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setHits([]);
-                        setQuery(h.label);
-                        void pickCoordinates(h.lat, h.lon, h.label);
-                      }}
-                    >
-                      <strong>{h.label}</strong>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-          <div class="place-actions">
-            <button type="submit" class="btn-ghost" disabled={searching || !query.trim()}>
-              {searching ? '…' : T('ns.search')}
-            </button>
-            <button type="button" class="btn-ghost" onClick={onUseMyLocation}>
-              {T('ns.arrival.useGps')}
-            </button>
-            <button
-              type="button"
-              class="btn-ghost"
-              aria-expanded={mapPickOpen ? 'true' : 'false'}
-              onClick={() => {
-                setMapPickOpen(!mapPickOpen);
-                if (!mapPickOpen) setClimatePickOpen(false);
-              }}
-            >
-              {T('ns.arrival.pickMap')}
-            </button>
-            <button
-              type="button"
-              class="link-button small tap-link"
-              onClick={() => {
-                setClimatePickOpen(!climatePickOpen);
-                if (!climatePickOpen) setMapPickOpen(false);
-              }}
-            >
-              {T('ns.arrival.noLocClimate')}
-            </button>
-          </div>
-        </form>
-
-        {searchErr && <p class="ns-err" role="alert">{searchErr}</p>}
+        <PlaceSearchBox
+          inputId="place-search"
+          extraActions={
+            <>
+              <button
+                type="button"
+                class="btn-ghost"
+                aria-expanded={mapPickOpen ? 'true' : 'false'}
+                onClick={() => {
+                  setMapPickOpen(!mapPickOpen);
+                  if (!mapPickOpen) setClimatePickOpen(false);
+                }}
+              >
+                {T('ns.arrival.pickMap')}
+              </button>
+              <button
+                type="button"
+                class="link-button small tap-link"
+                onClick={() => {
+                  setClimatePickOpen(!climatePickOpen);
+                  if (!climatePickOpen) setMapPickOpen(false);
+                }}
+              >
+                {T('ns.arrival.noLocClimate')}
+              </button>
+            </>
+          }
+        />
 
         {mapPickOpen && (
           <div class="land-alert" style={{ background: 'var(--bg)', borderColor: 'var(--border-strong)' }}>
@@ -443,7 +371,11 @@ export function NorthStarArrival() {
           <button type="button" class={noStarter ? 'btn-primary' : 'btn-ghost'} onClick={launchEmpty}>
             {T('ns.arrival.scratchCta')}
           </button>
+          <button type="button" class="btn-ghost" onClick={() => void onOpenCanopiFile()}>
+            {T('ns.file.openCanopi')}
+          </button>
         </div>
+        {openErr && <p class="ns-err" role="alert">{openErr}</p>}
       </section>
     </div>
   );

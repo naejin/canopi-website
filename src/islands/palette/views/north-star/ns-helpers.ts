@@ -4,7 +4,6 @@ import type {
   EffectiveSiteClimate,
   FrostFact,
   JobId,
-  PaletteReport,
   Phase,
   ReportHorizonId,
   ReportVerdictLevel,
@@ -444,37 +443,4 @@ export function roomOptions(): readonly { id: 'small' | 'large' | 'field'; label
     { id: 'large', label: () => T('ns.room.large') },
     { id: 'field', label: () => T('ns.room.field') },
   ];
-}
-
-export function downloadCanopiJson(rep: PaletteReport, placeLabel: string): void {
-  const payload = {
-    format: 'canopi-palette',
-    version: 2,
-    exportedAt: new Date().toISOString(),
-    place: {
-      label: placeLabel,
-      lat: rep.eff.lat,
-      lon: rep.eff.lon,
-      koppen: rep.eff.koppen,
-      plotM2: rep.eff.plotM2,
-      room: rep.eff.room,
-    },
-    plants: rep.taxa.map((t) => ({
-      id: t.id,
-      canonical_name: t.canonical_name,
-      common_name: taxCommonName(t),
-      already_on_site: rep.verdicts.get(t.id)?.alreadyOnSite ?? false,
-      verdict_today: rep.verdicts.get(t.id)?.level ?? 'unknown',
-      verdict_2050: rep.verdicts2050.get(t.id)?.level ?? 'unknown',
-    })),
-  };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `canopi-palette-${(placeLabel || 'site').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 32)}.canopi`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

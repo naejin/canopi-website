@@ -3,10 +3,9 @@
 // - Dark-pill Area unit (m² | ha | ft² | ac), Density (Spacious 0.7× | Balanced 1.0× | Dense syntropic 1.4×),
 //   Pathways % (0% | 10% | 20% | 30%), live Net planted area readout synced to plantingConfig
 // - Compact Path B dashed dropzone ("Drop a .canopi file or browse" + "Browse…")
-import { useRef, useState } from 'preact/hooks';
 import { convertArea, toSquareMeters, type AreaUnit, type DensityMode } from '../../../../lib/palette/index.ts';
 import { T } from '../../strings.ts';
-import { openStudioCanopiText, plantingConfig, setPlantingConfig } from '../../state/studio.ts';
+import { plantingConfig, setPlantingConfig } from '../../state/studio.ts';
 
 const UNITS: readonly { id: AreaUnit; label: string }[] = [
   { id: 'm2', label: 'm²' },
@@ -108,43 +107,5 @@ export function AreaStep() {
         <span style="font-size:12.5px; color:var(--ink-muted);">{T('studio.area.autoSizes')}</span>
       </div>
     </section>
-  );
-}
-
-export function OpenCanopiPathB() {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const onFile = async (file: File | undefined) => {
-    if (!file) return;
-    setError(null);
-    const text = await file.text();
-    const res = openStudioCanopiText(text);
-    if (!res.ok) setError(res.error);
-  };
-
-  return (
-    <div class="ob-dropzone-compact" data-open-canopi-path-b onClick={() => inputRef.current?.click()}>
-      <div style="min-width:0;">
-        <strong style="font-size:13.5px; color:var(--ink); display:block;">{T('studio.area.dropTitle')}</strong>
-        <span style="font-size:12px; color:var(--ink-muted);">{T('studio.area.dropSub')}</span>
-      </div>
-      <input
-        ref={inputRef}
-        type="file"
-        accept=".canopi,application/json"
-        hidden
-        onChange={(e) => {
-          const input = e.currentTarget as HTMLInputElement;
-          const file = input.files?.[0];
-          input.value = '';
-          void onFile(file);
-        }}
-      />
-      <button type="button" class="btn btn-xs" onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}>
-        {T('studio.area.browse')}
-      </button>
-      {error && <p class="ct-muted" role="alert">{error}</p>}
-    </div>
   );
 }

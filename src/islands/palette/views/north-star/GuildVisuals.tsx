@@ -176,7 +176,7 @@ function PersonSilhouette({ cx, soilY, h }: { cx: number; soilY: number; h: numb
 function estimateTextWidth(text: string, fontSize: number): number {
   let w = 0;
   for (const ch of text) {
-    w += /[\u3000-\u9fff\uac00-\ud7af\uff00-\uffef]/.test(ch) ? fontSize * 1.04 : fontSize * 0.57;
+    w += /[\u3000-\u9fff\uac00-\ud7af\uff00-\uffef]/.test(ch) ? fontSize * 1.08 : fontSize * 0.66;
   }
   return w;
 }
@@ -256,7 +256,7 @@ export function GuildProfileSvg({ rep }: { rep: PaletteReport }) {
       tallerNote ? estimateTextWidth(tallerNote, 11) : 0,
     );
     const halfW = maxLabelW / 2;
-    const labelX = Math.max(plotLeft + 4 + halfW, Math.min(W - 8 - halfW, cx));
+    const labelX = Math.max(plotLeft + 6 + halfW, Math.min(W - 14 - halfW, cx));
     const tier = staggerRows === 3 ? (idx % 3) : staggerRows === 2 ? (idx % 2) : 0;
     const rowShift = tier * 36;
     const baseY = soilY + 22 + rowShift;

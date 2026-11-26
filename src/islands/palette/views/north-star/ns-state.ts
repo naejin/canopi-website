@@ -23,11 +23,28 @@ import {
   locales,
   resolveEffectiveSite,
   selectStarterPalette,
+  type CanopiCustomPlant,
+  type CanopiNonSpeciesEntry,
+  type CanopiPaletteStudioMeta,
 } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
 import { buildMonthlyV07, buildTier1V07, buildTier2AV07, loadSiteAnalogues, siteAnalogue } from '../../state/climate-v07.ts';
-import { pageLang } from '../../strings.ts';
+import { pageLang, T } from '../../strings.ts';
 import type { LightKey } from './ns-helpers.ts';
+import {
+  ensureBeforeUnloadGuard,
+  hydrateFileSession,
+  markNsDirty,
+  nsDirty,
+  nsFileName,
+  nsFileStatus,
+  nsNonSpeciesEntries,
+  nsUnrecognizedPlants,
+  openCanopiFilePicker,
+  registerStudioFileHooks,
+  resetCanopiFileState,
+  saveCanopiFile,
+} from './ns-file.ts';
 
 export function currentLocale(): Locale {
   const raw = pageLang();
@@ -43,6 +60,7 @@ export type NsDrawer =
   | { kind: 'picker'; job: JobId | 'all' }
   | { kind: 'atlas'; tab?: 'climate' | 'swaps'; swapFor?: PlantId }
   | { kind: 'dossier'; id: PlantId; returnTo?: NsReturnTarget }
+  | { kind: 'share' }
   | null;
 
 export interface PickerFilterState {
@@ -134,6 +152,10 @@ interface NsSessionSnapshot {
   pickerScrollTop?: number;
   pickerFocusId?: PlantId | null;
   site?: { lat: number; lon: number; label: string; zone?: ClimateZone; country?: string };
+  dirty?: boolean;
+  fileName?: string | null;
+  unrecognizedPlants?: readonly CanopiCustomPlant[];
+  nonSpeciesEntries?: readonly CanopiNonSpeciesEntry[];
 }
 
 function readNsSession(): NsSessionSnapshot {
@@ -170,10 +192,10 @@ export const nsSurface = signal<NsSurface>(initialSession.surface ?? 'design');
 export const nsViewMode = signal<NsViewMode>(initialSession.viewMode ?? 'job');
 export const nsScenario = signal<ReportHorizonId>(initialSession.scenario ?? 'today');
 export const nsKidsPets = signal<boolean>(initialSession.kidsPets ?? false);
-export const nsLandOpen = signal<boolean>(true);
-export const nsTuneOpen = signal<boolean>(false);
+export const nsLandOpen = signal<boolean>(false);
 export const nsMoreOpen = signal<boolean>(false);
 export const nsDrawer = signal<NsDrawer>(initialSession.drawer ?? null);
+export const nsPickerNotice = signal<string | null>(null);
 export const nsActivePairKey = signal<string | null>(null);
 export const nsSearch = signal<string>('');
 export const nsPathPct = signal<number>(initialSession.pathPct ?? 20);
@@ -191,12 +213,15 @@ export const nsPickerFocusId = signal<PlantId | null>(initialSession.pickerFocus
 export function resetPickerFilters(): void {
   batch(() => {
     nsPickerQuery.value = '';
+    nsPickerNotice.value = null;
     nsPickerFilters.value = defaultPickerFilters('all');
     nsPickerSort.value = 'recommended';
     nsPickerScrollTop.value = 0;
     nsPickerFocusId.value = null;
   });
 }
+
+hydrateFileSession(initialSession);
 
 function writeNsSessionSnapshot(): void {
   try {
@@ -217,6 +242,10 @@ function writeNsSessionSnapshot(): void {
       pickerSort: nsPickerSort.peek(),
       pickerScrollTop: nsPickerScrollTop.peek(),
       pickerFocusId: nsPickerFocusId.peek(),
+      dirty: nsDirty.peek(),
+      fileName: nsFileName.peek(),
+      unrecognizedPlants: nsUnrecognizedPlants.peek(),
+      nonSpeciesEntries: nsNonSpeciesEntries.peek(),
       ...(loc && loc.label
         ? {
             site: {
@@ -254,6 +283,7 @@ export function toggleExisting(id: PlantId): void {
   else next.add(id);
   nsExistingIds.value = next;
   writeIdSet(EXISTING_KEY, next);
+  markNsDirty();
 }
 
 export function toggleChecked(id: PlantId): void {
@@ -269,12 +299,56 @@ export function stepQty(id: PlantId, delta: number, defaultQty: number): void {
   const prev = cur[id] ?? defaultQty;
   const next = Math.max(1, Math.min(50, prev + delta));
   nsQtyById.value = { ...cur, [id]: next };
+  markNsDirty();
+}
+
+export function setPathPct(pct: number): void {
+  if (!Number.isFinite(pct)) return;
+  nsPathPct.value = Math.max(0, Math.min(50, Math.round(pct)));
+  markNsDirty();
+}
+
+export async function saveCanopiAndToast(saveAs = false): Promise<boolean> {
+  const ok = await saveCanopiFile({ saveAs });
+  if (ok) {
+    const savedName = nsFileName.peek();
+    showNsToast(savedName ? T('ns.file.savedTo', { name: savedName }) : T('ns.file.saved'));
+  } else {
+    const st = nsFileStatus.peek();
+    if (st.kind === 'error') showNsToast(T('ns.file.notSaved', { reason: st.reason }));
+  }
+  return ok;
+}
+
+export async function openCanopiAndToast(): Promise<boolean> {
+  const res = await openCanopiFilePicker();
+  if (!res) return false;
+  showNsToast(res.ok ? T('ns.file.opened', { name: res.name }) : res.error);
+  return res.ok;
 }
 
 export function updateOverrides(patch: Partial<ReportSiteOverrides>): void {
-  nsOverrides.value = { ...nsOverrides.peek(), ...patch };
-  if (patch.room !== undefined && patch.room !== null) store.room.value = patch.room;
-  if (patch.plotM2 !== undefined && patch.plotM2 !== null) store.plot.value = patch.plotM2;
+  batch(() => {
+    nsOverrides.value = { ...nsOverrides.peek(), ...patch };
+    if (patch.room !== undefined && patch.room !== null) store.room.value = patch.room;
+    if (patch.plotM2 !== undefined && patch.plotM2 !== null) store.plot.value = patch.plotM2;
+    if (patch.watering !== undefined) {
+      store.siteEdits.value = { ...store.siteEdits.peek(), watering: patch.watering ?? undefined };
+    }
+  });
+  markNsDirty();
+}
+
+export function resetAllSiteOverrides(): void {
+  const cur = nsOverrides.peek();
+  batch(() => {
+    nsOverrides.value = {
+      ...(cur.room !== undefined ? { room: cur.room } : {}),
+      ...(cur.plotM2 !== undefined ? { plotM2: cur.plotM2 } : {}),
+      ...(cur.watering !== undefined ? { watering: cur.watering } : {}),
+    };
+  });
+  markNsDirty();
 }
 
 export function handlePlotM2Input(e: Event): void {
@@ -283,15 +357,23 @@ export function handlePlotM2Input(e: Event): void {
 }
 
 export function setRoomChoice(r: Room): void {
-  store.room.value = r;
-  nsOverrides.value = { ...nsOverrides.peek(), room: r };
+  batch(() => {
+    store.room.value = r;
+    nsOverrides.value = { ...nsOverrides.peek(), room: r };
+  });
+  markNsDirty();
 }
 
-export const effectiveOverrides = computed<ReportSiteOverrides>(() => ({
-  ...nsOverrides.value,
-  room: nsOverrides.value.room ?? (store.room.value && store.room.value !== 'unsure' ? store.room.value : 'small'),
-  plotM2: nsOverrides.value.plotM2 ?? store.plot.value ?? 150,
-}));
+export const effectiveOverrides = computed<ReportSiteOverrides>(() => {
+  const ov = nsOverrides.value;
+  const sharedWatering = ov.watering ?? store.siteEdits.value.watering ?? undefined;
+  return {
+    ...ov,
+    ...(sharedWatering ? { watering: sharedWatering } : {}),
+    room: ov.room ?? (store.room.value && store.room.value !== 'unsure' ? store.room.value : 'small'),
+    plotM2: ov.plotM2 ?? store.plot.value ?? 150,
+  };
+});
 
 export const siteAnalogueLabel = computed<string | null>(() => {
   const m = siteAnalogue.value?.result.matches[0];
@@ -353,6 +435,49 @@ let watcherStarted = false;
 export function startNsWatchers(): void {
   if (watcherStarted) return;
   watcherStarted = true;
+  ensureBeforeUnloadGuard();
+  registerStudioFileHooks({
+    getContext: () => ({
+      overrides: effectiveOverrides.peek(),
+      qtyById: nsQtyById.peek(),
+      existingIds: nsExistingIds.peek(),
+      pathPct: nsPathPct.peek(),
+    }),
+    applyContext: (meta: CanopiPaletteStudioMeta | null, fallbackName: string) => {
+      if (!meta) return;
+      batch(() => {
+        if (meta.overrides) {
+          const ov = meta.overrides as Partial<ReportSiteOverrides>;
+          nsOverrides.value = { ...ov };
+          if (ov.room) store.room.value = ov.room;
+          if (ov.plotM2) store.plot.value = ov.plotM2;
+          if (ov.watering !== undefined) {
+            store.siteEdits.value = { ...store.siteEdits.peek(), watering: ov.watering ?? undefined };
+          }
+        }
+        if (meta.qtyById) nsQtyById.value = { ...meta.qtyById };
+        if (Array.isArray(meta.existingIds)) {
+          const next = new Set<PlantId>(meta.existingIds);
+          nsExistingIds.value = next;
+          writeIdSet(EXISTING_KEY, next);
+        }
+        if (typeof meta.pathPct === 'number') nsPathPct.value = meta.pathPct;
+      });
+      if (meta.site && typeof meta.site.lat === 'number' && typeof meta.site.lon === 'number') {
+        void pickCoordinates(
+          meta.site.lat,
+          meta.site.lon,
+          meta.site.label || fallbackName,
+          (meta.site.climate as ClimateZone | undefined) ?? undefined,
+          meta.site.country ?? undefined,
+          true,
+        );
+      }
+    },
+    ensureCatalog: ensureAllCatalogLoaded,
+    allCatalogTaxa: () => nsAllTaxa.peek() ?? activePool.peek(),
+    guestZoneById: () => nsGuestZoneById.peek(),
+  });
   // Restore session site (e.g. after language switch or reload) preserving Tune-site overrides.
   if (initialSession.site && !store.location.peek()?.lookup && !nsSiteLoading.peek()) {
     const s = initialSession.site;
@@ -373,6 +498,10 @@ export function startNsWatchers(): void {
     void nsPickerSort.value;
     void nsPickerScrollTop.value;
     void nsPickerFocusId.value;
+    void nsDirty.value;
+    void nsFileName.value;
+    void nsUnrecognizedPlants.value;
+    void nsNonSpeciesEntries.value;
     void store.location.value;
     writeNsSessionSnapshot();
   });
@@ -516,6 +645,7 @@ export async function pickCoordinates(
 
 export function launchWithStarter(): void {
   const starter = starterPreview.peek();
+  resetCanopiFileState();
   batch(() => {
     store.members.value = starter.map((t) => t.id);
     store.view.value = 'matrix';
@@ -526,6 +656,7 @@ export function launchWithStarter(): void {
 }
 
 export function launchEmpty(): void {
+  resetCanopiFileState();
   batch(() => {
     store.members.value = [];
     store.view.value = 'matrix';
@@ -543,14 +674,39 @@ export function addPlantToPalette(id: PlantId, guestZone?: ClimateZone): void {
       store.guests.value = { ...store.guests.peek(), [id]: guestZone };
     }
   });
+  markNsDirty();
 }
 
 export function removePlantFromPalette(id: PlantId): void {
   store.members.value = store.members.peek().filter((x) => x !== id);
+  markNsDirty();
 }
 
 export function swapPlantInPalette(oldId: PlantId, newId: PlantId): void {
   const cur = store.members.peek();
   store.members.value = cur.map((x) => (x === oldId ? newId : x));
   nsDrawer.value = null;
+  markNsDirty();
+}
+
+export async function openPickerForGenus(canonicalName: string): Promise<void> {
+  const genus = canonicalName.trim().split(/\s+/)[0] ?? '';
+  await ensureAllCatalogLoaded();
+  const taxa = nsAllTaxa.peek() ?? activePool.peek();
+  const low = genus.toLowerCase();
+  const hasGenus = Boolean(low) && taxa.some(
+    (t) => (t.genus ?? '').toLowerCase() === low || t.canonical_name.toLowerCase().startsWith(`${low} `),
+  );
+  batch(() => {
+    nsPickerFilters.value = defaultPickerFilters('all');
+    nsPickerScrollTop.value = 0;
+    if (hasGenus) {
+      nsPickerQuery.value = genus;
+      nsPickerNotice.value = null;
+    } else {
+      nsPickerQuery.value = '';
+      nsPickerNotice.value = T('ns.unrec.noGenusMatch', { genus: genus || canonicalName });
+    }
+    nsDrawer.value = { kind: 'picker', job: 'all' };
+  });
 }

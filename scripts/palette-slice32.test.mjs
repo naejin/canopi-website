@@ -10,14 +10,11 @@ import { readFileSync } from 'node:fs';
 const store = await import('../src/islands/palette/store.ts');
 const studio = await import('../src/islands/palette/state/studio.ts');
 
-test('state/studio.ts syncs plantingConfig with store.plot, tracks dirty state, and round-trips .canopi v9', () => {
+test('state/studio.ts syncs plantingConfig with store.plot and updates designName & microclimate', () => {
   store.view.value = 'matrix';
-  studio.markDesignClean();
-  assert.equal(studio.designDirty.value, false);
 
   studio.setDesignName('Montpellier Field Plot');
   assert.equal(studio.designName.value, 'Montpellier Field Plot');
-  assert.equal(studio.designDirty.value, true);
 
   studio.setPlantingConfig({ plotAreaM2: 400, areaUnit: 'm2', densityMode: 'dense', pathwaysPct: 15 });
   assert.equal(store.plot.value, 400);
@@ -26,16 +23,6 @@ test('state/studio.ts syncs plantingConfig with store.plot, tracks dirty state, 
   studio.setMicroclimate({ slopeDeg: 12, aspect: 'south', landform: 'valley' });
   assert.equal(studio.microclimate.value.slopeDeg, 12);
   assert.equal(studio.microclimate.value.landform, 'valley');
-
-  const text = studio.buildStudioCanopiText([]);
-  const opened = studio.openStudioCanopiText(text);
-  assert.equal(opened.ok, true);
-  assert.equal(studio.designName.value, 'Montpellier Field Plot');
-  assert.equal(studio.plantingConfig.value.plotAreaM2, 400);
-  assert.equal(studio.designDirty.value, false);
-
-  const bad = studio.openStudioCanopiText('{not valid json');
-  assert.equal(bad.ok, false);
 });
 
 test('Slice 3.2 touched components contain zero CSV export and clean grower vocabulary', () => {

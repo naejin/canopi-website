@@ -14,11 +14,13 @@ import type {
   Taxon,
 } from '../../../../lib/palette/index.ts';
 import {
+  cellCentre,
   computeGrowingYear,
   evaluatePlantVerdict,
   findCompatibleSwaps,
   formatAreaName,
   formatCountryName,
+  isLongLink,
   isStructuralVine,
   jobIds,
   jobsOf,
@@ -29,6 +31,7 @@ import {
   vineSupportTree,
 } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
+import { currentFragment, linkName, shareUrl, shownFragment } from '../../state/persist.ts';
 import { T } from '../../strings.ts';
 import { Glyph } from '../kit/Glyph.tsx';
 import { PlantThumb, ScaleRootSvg, WalterLiethSvg } from './GuildVisuals.tsx';
@@ -78,6 +81,7 @@ import {
   nsPickerFilters,
   nsPickerFocusId,
   nsPickerMoreOpen,
+  nsPickerNotice,
   nsPickerQuery,
   nsPickerScrollTop,
   nsPickerSort,
@@ -91,6 +95,7 @@ import {
   type PickerFilterState,
   type PickerSortBy,
 } from './ns-state.ts';
+import { nsFileName, nsNonSpeciesEntries, nsUnrecognizedPlants, saveCanopiFile } from './ns-file.ts';
 
 function localizedHabit(habit: string | null | undefined): string {
   const h = (habit ?? '').toLowerCase();
@@ -482,6 +487,14 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
       class="drawer-body"
       onScroll={(e) => { nsPickerScrollTop.value = (e.currentTarget as HTMLDivElement).scrollTop; }}
     >
+      {nsPickerNotice.value && (
+        <div class="land-alert picker-notice" role="status">
+          <span>{nsPickerNotice.value}</span>
+          <button type="button" class="edit-reset" onClick={() => { nsPickerNotice.value = null; }}>
+            {T('ns.close')}
+          </button>
+        </div>
+      )}
       <label class="sr-only" for="picker-search">{T('ns.picker.searchPlaceholder', { n: catalog.length })}</label>
       <input
         id="picker-search"
@@ -489,7 +502,10 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
         type="search"
         placeholder={T('ns.picker.searchPlaceholder', { n: catalog.length })}
         value={query}
-        onInput={(e) => setQuery((e.target as HTMLInputElement).value)}
+        onInput={(e) => {
+          if (nsPickerNotice.value) nsPickerNotice.value = null;
+          setQuery((e.target as HTMLInputElement).value);
+        }}
       />
 
       <div class="pf-chips" aria-label={T('ns.picker.moreFilters')}>
@@ -1773,6 +1789,125 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
   );
 }
 
+function ShareDrawer() {
+  const [withPlace, setWithPlace] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+  const [copyFailed, setCopyFailed] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const shown = shownFragment.value;
+  const loc = store.location.value;
+  const origin = cellCentre(loc?.lookup ?? null);
+  const c = store.country.value;
+  const hasPlace = origin !== null || (c.code !== null && c.source !== 'guess');
+  const fragment = withPlace && hasPlace
+    ? (currentFragment({ origin, place: true, name: linkName(loc) }) ?? shown)
+    : shown;
+  const href = typeof window !== 'undefined' ? window.location.href : 'https://projectcanopi.com/palette/';
+  const url = fragment ? shareUrl(href, fragment) : href;
+  const isCopied = copiedUrl === url;
+  const longLink = isLongLink(url);
+  const unrecCount = nsUnrecognizedPlants.value.length;
+  const nonSpeciesCount = nsNonSpeciesEntries.value.length;
+  const canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+
+  async function onCopy() {
+    setCopyFailed(false);
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedUrl(url);
+      showNsToast(T('ns.plan.linkCopied'));
+    } catch {
+      inputRef.current?.select();
+      setCopyFailed(true);
+    }
+  }
+
+  async function onNativeShare() {
+    try {
+      await navigator.share({ title: T('ns.share.title'), url });
+    } catch { /* user cancelled */ }
+  }
+
+  async function onSaveFromShare() {
+    const ok = await saveCanopiFile();
+    if (ok) {
+      const savedName = nsFileName.peek();
+      showNsToast(savedName ? T('ns.file.savedTo', { name: savedName }) : T('ns.file.saved'));
+    }
+  }
+
+  return (
+    <div class="drawer-body share-drawer-body">
+      <p class="muted">{T('ns.share.lede')}</p>
+
+      <div class="share-url-row">
+        <label class="sr-only" for="ns-share-url">{T('ns.share.urlLabel')}</label>
+        <input
+          id="ns-share-url"
+          ref={inputRef}
+          class="place-input share-url-input"
+          type="text"
+          readOnly
+          value={url}
+          onFocus={(e) => (e.currentTarget as HTMLInputElement).select()}
+        />
+        <button type="button" class="btn-primary" onClick={() => void onCopy()}>
+          {isCopied ? `✓ ${T('ns.plan.linkCopied')}` : T('ns.share.copyBtn')}
+        </button>
+      </div>
+
+      {copyFailed && (
+        <p class="small muted" role="status">{T('ns.share.copyManual')}</p>
+      )}
+
+      {canNativeShare && (
+        <div>
+          <button type="button" class="btn-ghost" onClick={() => void onNativeShare()}>
+            {T('ns.share.nativeBtn')}
+          </button>
+        </div>
+      )}
+
+      {hasPlace && (
+        <label class="share-place-toggle">
+          <input
+            type="checkbox"
+            checked={withPlace}
+            onChange={(e) => setWithPlace((e.currentTarget as HTMLInputElement).checked)}
+          />
+          <span>
+            <strong>{T('ns.share.includePlace')}</strong>
+            <span class="small muted share-toggle-sub">
+              {withPlace ? T('ns.share.includePlaceOn') : T('ns.share.includePlaceOff')}
+            </span>
+          </span>
+        </label>
+      )}
+
+      {longLink && (
+        <div class="land-alert">
+          <span>{T('ns.share.longWarn')}</span>
+          <button type="button" class="btn-ghost btn-sm" onClick={() => void onSaveFromShare()}>
+            {T('ns.file.saveCanopi')}
+          </button>
+        </div>
+      )}
+
+      {(unrecCount > 0 || nonSpeciesCount > 0) && (
+        <div class="land-alert">
+          <span>{T('ns.share.unrecWarn', { n: unrecCount + nonSpeciesCount })}</span>
+          <button type="button" class="btn-ghost btn-sm" onClick={() => void onSaveFromShare()}>
+            {T('ns.file.saveCanopi')}
+          </button>
+        </div>
+      )}
+
+      <p class="small muted">{T('ns.share.privacyFoot')}</p>
+    </div>
+  );
+}
+
 export function Drawers({ rep }: { rep: PaletteReport }) {
   const drawer = nsDrawer.value;
   const closeBtnRef = useRef<HTMLButtonElement>(null);
@@ -1830,15 +1965,19 @@ export function Drawers({ rep }: { rep: PaletteReport }) {
     ? T('ns.picker.kickerLive', { n: catalogCount })
     : drawer.kind === 'atlas'
       ? `${T('ns.atlas.title')} · ${rep.eff.koppen || '—'}${rep.eff.usdaZone ? ` · USDA ${rep.eff.usdaZone}` : ''}`
-      : dossierTaxon?.family && dossierTaxon?.traits.habit
-        ? T('ns.dossier.specimenLabel', { family: dossierTaxon.family, habit: localizedHabit(dossierTaxon.traits.habit) })
-        : (dossierTaxon?.family ?? (dossierTaxon?.traits.habit ? localizedHabit(dossierTaxon.traits.habit) : ''));
+      : drawer.kind === 'share'
+        ? T('ns.share.kicker')
+        : dossierTaxon?.family && dossierTaxon?.traits.habit
+          ? T('ns.dossier.specimenLabel', { family: dossierTaxon.family, habit: localizedHabit(dossierTaxon.traits.habit) })
+          : (dossierTaxon?.family ?? (dossierTaxon?.traits.habit ? localizedHabit(dossierTaxon.traits.habit) : ''));
 
   const title = drawer.kind === 'picker'
     ? T('ns.picker.title')
     : drawer.kind === 'atlas'
       ? siteLabel
-      : dossierTaxon ? taxCommonName(dossierTaxon) : T('ns.dossier.title');
+      : drawer.kind === 'share'
+        ? T('ns.share.title')
+        : dossierTaxon ? taxCommonName(dossierTaxon) : T('ns.dossier.title');
 
   const dossierInPalette = dossierTaxon ? store.members.value.includes(dossierTaxon.id) : false;
   const dossierGuestZone = dossierTaxon ? nsGuestZoneById.value.get(dossierTaxon.id) : undefined;
@@ -1918,6 +2057,7 @@ export function Drawers({ rep }: { rep: PaletteReport }) {
         {drawer.kind === 'picker' && <PickerDrawer rep={rep} initialJob={drawer.job} />}
         {drawer.kind === 'atlas' && <AtlasDrawer rep={rep} swapFor={drawer.swapFor} />}
         {drawer.kind === 'dossier' && <DossierDrawer rep={rep} id={drawer.id} />}
+        {drawer.kind === 'share' && <ShareDrawer />}
       </div>
     </div>
   );

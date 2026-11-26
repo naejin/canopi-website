@@ -15,6 +15,7 @@ import { adoptEntry, arrivalOpensPalette, forgetEntries, historyMoved, load, loa
 import { LANG_SWITCH_KEY, openingArrival, startMemory } from './state/arrival.ts';
 import { backToPlace } from './state/draft.ts';
 import { currentFragment, lastWritten, ownAddressState, writeAddress } from './state/persist.ts';
+import { suppressLeaveWarning } from './state/save.ts';
 import { provideLocationStep } from './state/restore.ts';
 import { loadLocationStep } from './views/location/load.ts';
 import { zoneOf } from '../../lib/palette/index.ts';
@@ -136,10 +137,11 @@ if (root && data) {
     else if (f && f !== currentFragment()) forgetEntries();
   });
   // Preserve active palette (owned or held shared link) across header language switches without
-  // touching Header.astro or writing canopi-consortium localStorage (Wave 5 N11).
+  // touching Header.astro or writing canopi-consortium localStorage (Wave 5 N11; Wave 7 leave-warning coord).
   document.addEventListener('click', (e) => {
     const target = e.target instanceof Element ? e.target.closest<HTMLAnchorElement>('[data-lang-menu] a[href], .nav-panel-langs a[href]') : null;
     if (!target) return;
+    suppressLeaveWarning();
     if (view.peek() !== 'matrix') return;
     const frag = currentFragment();
     if (!frag) return;

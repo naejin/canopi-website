@@ -47,7 +47,7 @@ import { Steps } from './steps.tsx';
 import { PlantsCount } from '../plants/head-link.tsx';
 import { enterCountry, findCountries } from './country-search.ts';
 import { SitePostcard } from './SitePostcard.tsx';
-import { AreaStep, OpenCanopiPathB } from './AreaStep.tsx';
+import { AreaStep } from './AreaStep.tsx';
 import { openPlantPool } from '../../state/studio.ts';
 import { NorthStarArrival } from '../north-star/NorthStarArrival.tsx';
 
@@ -803,11 +803,6 @@ function Questions() {
             )}
           </div>
 
-          <div class="ob-card" style="margin-bottom:0;">
-            <div class="ob-step">{T('studio.onboard.pathB')}</div>
-            <h2 style="font-size:17px; margin-bottom:8px;">{T('studio.onboard.openFileTitle')}</h2>
-            <OpenCanopiPathB />
-          </div>
         </aside>
       </div>
     </div>

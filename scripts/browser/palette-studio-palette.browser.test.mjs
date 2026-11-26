@@ -20,7 +20,7 @@ test('Design Board: Your land + Tune site, By job / 7-phase Sun x Succession / P
     hasMiniYear: !!document.querySelector('.mini-year'),
     text: document.querySelector('main')?.innerText ?? '',
   }));
-  assert.ok(designInfo.hasLandPanel, 'persistent Land Panel renders');
+  assert.equal(designInfo.hasLandPanel, false, 'Your land drawer is closed by default so Design Board gets full width');
   assert.ok(designInfo.hasElevSvg, 'Guild Elevation Profile SVG renders');
   assert.equal(designInfo.jobCells, 6, '6-cell Job Coverage Strip renders');
   assert.equal(designInfo.plantRows, 8, `multi-layer 8-plant starter guild renders (got ${designInfo.plantRows})`);
@@ -55,9 +55,13 @@ test('Design Board: Your land + Tune site, By job / 7-phase Sun x Succession / P
   await clickNth(page, '.board-bar .seg button', 0);
   assert.ok(await has(page, '.plant-row', 8_000), 'By job view restores');
 
-  // Expand Tune site inside Land Panel
-  await clickNth(page, '.tune-details summary', 0);
-  assert.ok(await has(page, '.tune-body .tuner-group', 4_000), 'Tune site fields expand cleanly');
+  // Open Your land left slide-over drawer via place-pill and expand Soil fine-tune
+  await clickNth(page, '.place-pill', 0);
+  assert.ok(await has(page, '.land-panel[role="dialog"]', 4_000), 'Your land slide-over drawer opens');
+  await clickNth(page, '.land-panel .tune-details summary', 0);
+  assert.ok(await has(page, '.land-panel .tune-body .tuner-group', 4_000), 'Tune site fields expand cleanly');
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => !document.querySelector('.land-panel'), { timeout: 4_000 });
   assert.ok((await horizontalOverflow(page)) <= 1, 'zero horizontal overflow on Design Board');
   assert.deepEqual(await pageErrorsOf(page), [], 'zero console/page errors on Design Board');
 });

@@ -88,3 +88,32 @@ export function noteForget(): void {
   forgetsHere = forgets() + 1;
   tab.write(FORGET_KEY, String(forgetsHere));
 }
+
+// ---- leave-warning suppression for same-page language switches (Wave 7) ----
+// Cleared automatically on pagehide, pageshow, and a 2 s safety timer if navigation cancels.
+let leaveSuppressed = false;
+let leaveSuppressTimer: ReturnType<typeof setTimeout> | null = null;
+let leaveClearBound = false;
+
+function clearLeaveSuppression(): void {
+  leaveSuppressed = false;
+  if (leaveSuppressTimer !== null) {
+    clearTimeout(leaveSuppressTimer);
+    leaveSuppressTimer = null;
+  }
+}
+
+export function suppressLeaveWarning(): void {
+  leaveSuppressed = true;
+  if (leaveSuppressTimer !== null) clearTimeout(leaveSuppressTimer);
+  leaveSuppressTimer = setTimeout(clearLeaveSuppression, 2000);
+  if (!leaveClearBound && typeof window !== 'undefined') {
+    leaveClearBound = true;
+    window.addEventListener('pagehide', clearLeaveSuppression);
+    window.addEventListener('pageshow', clearLeaveSuppression);
+  }
+}
+
+export function isLeaveWarningSuppressed(): boolean {
+  return leaveSuppressed;
+}

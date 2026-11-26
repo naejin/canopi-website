@@ -43,13 +43,21 @@ import {
   type LightKey,
 } from './ns-helpers.ts';
 import {
+  nsNonSpeciesEntries,
+  nsUnrecognizedPlants,
+  removeUnrecognizedPlant,
+  restoreUnrecognizedPlant,
+} from './ns-file.ts';
+import {
   nsActivePairKey,
   nsDrawer,
   nsKidsPets,
   nsScenario,
   nsSearch,
   nsViewMode,
+  openPickerForGenus,
   removePlantFromPalette,
+  showNsToast,
 } from './ns-state.ts';
 
 const JOB_TARGETS: Record<JobId, string> = {
@@ -539,6 +547,8 @@ export function DesignBoard({ rep }: { rep: PaletteReport }) {
   const viewMode = nsViewMode.value;
   const kidsPets = nsKidsPets.value;
   const q = nsSearch.value.trim().toLowerCase();
+  const unrecognized = nsUnrecognizedPlants.value;
+  const nonSpecies = nsNonSpeciesEntries.value;
 
   const filterFn = (p: Taxon) => !q || taxCommonName(p).toLowerCase().includes(q) || p.canonical_name.toLowerCase().includes(q);
   const toxSort = (arr: readonly Taxon[]) => {
@@ -633,6 +643,62 @@ export function DesignBoard({ rep }: { rep: PaletteReport }) {
           </button>
         </div>
       </div>
+
+      {(unrecognized.length > 0 || nonSpecies.length > 0) && (
+        <section class="unrec-card" aria-label={T('ns.unrec.cardAria')}>
+          <div class="unrec-head">
+            <h2 class="unrec-title">
+              {unrecognized.length > 0
+                ? T('ns.unrec.heading', { n: unrecognized.length })
+                : T('ns.unrec.nonSpeciesOnlyHeading', { n: nonSpecies.length })}
+            </h2>
+            <p class="small muted">{T('ns.unrec.sub')}</p>
+          </div>
+          {unrecognized.length > 0 && (
+            <ul class="unrec-list">
+              {unrecognized.map((u) => (
+                <li key={u.canonical_name} class="unrec-row">
+                  <div class="unrec-main">
+                    <span class="unrec-bot">{u.canonical_name}</span>
+                    {u.common_name && <span class="small muted">({u.common_name})</span>}
+                    <span class="stamp stamp-unk">{T('ns.unrec.badge')}</span>
+                  </div>
+                  <div class="unrec-acts">
+                    <button
+                      type="button"
+                      class="btn-ghost btn-sm"
+                      onClick={() => void openPickerForGenus(u.canonical_name)}
+                    >
+                      {T('ns.unrec.findSimilar')}
+                    </button>
+                    <button
+                      type="button"
+                      class="rm-btn"
+                      aria-label={`${T('ns.remove')} ${u.canonical_name}`}
+                      onClick={() => {
+                        const removed = removeUnrecognizedPlant(u.canonical_name);
+                        if (removed) {
+                          showNsToast(
+                            T('ns.dossier.removedToast', { plant: removed.canonical_name }),
+                            () => restoreUnrecognizedPlant(removed),
+                          );
+                        }
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+          {nonSpecies.length > 0 && (
+            <p class="small muted unrec-nonspecies">
+              {T('ns.unrec.nonSpeciesNote', { n: nonSpecies.length })}
+            </p>
+          )}
+        </section>
+      )}
 
       {rep.taxa.length === 0 ? (
         <div class="arrival-card" style={{ textAlign: 'center', justifyItems: 'center' }}>

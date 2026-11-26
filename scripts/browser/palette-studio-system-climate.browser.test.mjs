@@ -128,10 +128,10 @@ test('Live regressions: Header dropdown z-index, anchored overflow menu, and liv
   assert.ok(await page.evaluate(() => !document.querySelector('.more-menu')), 'Escape closes overflow menu');
 
   // 3. Tune site controls update Guild Pulse headline live (freeze, pH, dry spell)
-  await page.evaluate(() => {
-    const details = document.querySelector('.tune-details');
-    if (details) details.open = true;
-  });
+  await clickNth(page, '.place-pill', 0);
+  await page.waitForSelector('.land-panel[role="dialog"]', { timeout: 4_000 });
+  await clickNth(page, '.land-panel .tune-details summary', 0);
+  await clickNth(page, '.land-panel .tune-details summary', 1);
   await page.waitForSelector('#ph-input', { timeout: 4_000 });
   const parseFits = async () => page.evaluate(() => {
     const txt = document.querySelector('.pulse-h1')?.textContent?.trim() ?? '';
