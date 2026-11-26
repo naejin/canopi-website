@@ -3666,8 +3666,8 @@
   "consortium.ns.share.copyBtn": "링크 복사",
   "consortium.ns.share.copyManual": "위 링크를 선택해 복사하세요.",
   "consortium.ns.share.nativeBtn": "기기로 공유…",
-  "consortium.ns.share.includePlace": "내 위치와 부지 조정값 포함",
-  "consortium.ns.share.includePlaceOn": "대략적인 기후 격자, 지역명, 토양/부지 조정값을 포함합니다(정확한 주소는 제외).",
+  "consortium.ns.share.includePlace": "내 위치, 물주기 및 구획 면적 포함",
+  "consortium.ns.share.includePlaceOn": "위치, 물주기, 공간 및 구획 면적을 공유합니다(토양 및 미기후 조정은 .canopi 파일로 저장하세요).",
   "consortium.ns.share.includePlaceOff": "식물과 기후대만 공유합니다 — 위치는 비공개로 유지됩니다.",
   "consortium.ns.share.longWarn": "링크가 2,000자를 넘어 일부 메신저에서 잘릴 수 있습니다. 대신 .canopi 파일을 저장하세요.",
   "consortium.ns.share.unrecWarn": "공유 링크에는 DB 식물만 포함됩니다. 미수록/속 항목 {n}개까지 함께 공유하려면 .canopi 파일을 저장하세요.",
@@ -3686,5 +3686,7 @@
   "consortium.ns.file.relinkNeeded": "연결 해제됨 — 저장하여 {name} 다시 연결",
   "consortium.ns.file.errPermission": "쓰기 권한이 거부되었습니다",
   "consortium.ns.file.errWrite": "파일을 쓸 수 없습니다",
+  "consortium.ns.file.openedWithPlaced": "{name} 열림(설계에 배치된 {n}종이 팔레트에 추가됨)",
+  "consortium.ns.file.olderVersion": "이전 버전 파일 (v{v}) — 저장 시 새 파일이 생성되며 원본은 변경되지 않습니다.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

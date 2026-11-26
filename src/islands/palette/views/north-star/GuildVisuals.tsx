@@ -208,7 +208,8 @@ export function GuildProfileSvg({ rep }: { rep: PaletteReport }) {
   const roomLineY = maxRoomM != null && maxRoomM <= scaleTopM ? (soilY - maxRoomM * pxPerM) : null;
   const slotW = (W - leftPad - rightPad) / Math.max(1, shown.length);
   const staggerRows = shown.length >= 7 ? 3 : shown.length > 4 ? 2 : 1;
-  const H = (staggerRows === 3 ? 286 : staggerRows === 2 ? 248 : 210) + (anyTallerThanRoom ? 14 : 0);
+  const tierStep = anyTallerThanRoom ? 58 : 48;
+  const H = soilY + 22 + (staggerRows - 1) * tierStep + 56 + (anyTallerThanRoom ? 16 : 0);
 
   const pairKey = nsActivePairKey.value;
   const activePair = pairKey ? rep.interactions.find((it) => `${it.a}|${it.b}` === pairKey) ?? null : null;
@@ -246,19 +247,20 @@ export function GuildProfileSvg({ rep }: { rep: PaletteReport }) {
     const hTag = hVal != null ? `${fmtNum(hVal)} m` : T('ns.elev.heightUnknown');
     const lightNeed = lightSpanLabel(p);
     const metaText = `${hTag} · ${lightNeed}`;
+    const metaLines = wrapElevationLabel(metaText, 22);
     const isVine = isStructuralVine(p);
     const vineSup = isVine ? vineSupportTree(p, rep.taxa) : null;
     const effHForRoom = isVine ? (vineSup ? (vineSup.traits.height_m?.max ?? null) : null) : hVal;
     const tallerNote = maxRoomM != null && effHForRoom != null && effHForRoom > maxRoomM ? T('ns.elev.tallerThanRoom') : null;
     const maxLabelW = Math.max(
       ...lines.map((ln) => estimateTextWidth(ln, 11.5)),
-      estimateTextWidth(metaText, 11),
+      ...metaLines.map((ml) => estimateTextWidth(ml, 11)),
       tallerNote ? estimateTextWidth(tallerNote, 11) : 0,
     );
     const halfW = maxLabelW / 2;
     const labelX = Math.max(plotLeft + 6 + halfW, Math.min(W - 14 - halfW, cx));
     const tier = staggerRows === 3 ? (idx % 3) : staggerRows === 2 ? (idx % 2) : 0;
-    const rowShift = tier * 36;
+    const rowShift = tier * tierStep;
     const baseY = soilY + 22 + rowShift;
     const afterNameY = baseY + (lines.length === 2 ? 25 : 13);
     const open = () => { nsDrawer.value = { kind: 'dossier', id: p.id }; };
@@ -310,10 +312,12 @@ export function GuildProfileSvg({ rep }: { rep: PaletteReport }) {
           ))}
         </text>
         <text aria-hidden="true" x={labelX.toFixed(1)} y={afterNameY} text-anchor="middle" font-size="11" fill="var(--text-muted)" class="elev-h">
-          {metaText}
+          {metaLines.map((ml, mi) => (
+            <tspan key={mi} x={labelX.toFixed(1)} dy={mi === 0 ? 0 : 12}>{ml}</tspan>
+          ))}
         </text>
         {tallerNote && (
-          <text aria-hidden="true" x={labelX.toFixed(1)} y={afterNameY + 13} text-anchor="middle" font-size="11" font-weight="600" fill="var(--accent-ink)">
+          <text aria-hidden="true" x={labelX.toFixed(1)} y={afterNameY + metaLines.length * 12 + 1} text-anchor="middle" font-size="11" font-weight="600" fill="var(--accent-ink)">
             {tallerNote}
           </text>
         )}

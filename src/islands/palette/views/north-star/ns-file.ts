@@ -42,7 +42,7 @@ export type NsFileStatus =
   | { kind: 'error'; reason: string };
 
 export type OpenCanopiOutcome =
-  | { ok: true; name: string; matched: number; unrecognized: number; nonSpecies: number; version: number }
+  | { ok: true; name: string; matched: number; unrecognized: number; nonSpecies: number; placedAdded: number; version: number }
   | { ok: false; error: string };
 
 export const nsDirty = signal<boolean>(false);
@@ -50,6 +50,7 @@ export const nsFileName = signal<string | null>(null);
 export const nsFileLinked = signal<boolean>(false);
 export const nsFileWriteGranted = signal<boolean>(false);
 export const nsFileRelinkNeeded = signal<boolean>(false);
+export const nsOpenedVersion = signal<number | null>(null);
 export const nsFileStatus = signal<NsFileStatus>({ kind: 'idle' });
 export const nsUnrecognizedPlants = signal<readonly CanopiCustomPlant[]>([]);
 export const nsNonSpeciesEntries = signal<readonly CanopiNonSpeciesEntry[]>([]);
@@ -134,6 +135,7 @@ export function resetCanopiFileState(): void {
     nsFileLinked.value = false;
     nsFileWriteGranted.value = false;
     nsFileRelinkNeeded.value = false;
+    nsOpenedVersion.value = null;
     nsFileStatus.value = { kind: 'idle' };
     nsUnrecognizedPlants.value = [];
     nsNonSpeciesEntries.value = [];
@@ -144,11 +146,13 @@ export function getFileSessionState(): {
   baseDoc: Record<string, unknown> | null;
   preservedEntries: readonly Record<string, unknown>[];
   wasLinked: boolean;
+  openedVersion: number | null;
 } {
   return {
     baseDoc: baseCanopiDoc,
     preservedEntries,
     wasLinked: nsFileLinked.peek(),
+    openedVersion: nsOpenedVersion.peek(),
   };
 }
 
@@ -160,6 +164,7 @@ export interface NsFileSessionSnapshot {
   baseDoc?: Record<string, unknown> | null;
   preservedEntries?: readonly Record<string, unknown>[];
   wasLinked?: boolean;
+  openedVersion?: number | null;
 }
 
 export function hydrateFileSession(snap: NsFileSessionSnapshot): void {
@@ -172,6 +177,7 @@ export function hydrateFileSession(snap: NsFileSessionSnapshot): void {
   batch(() => {
     if (typeof snap.dirty === 'boolean') nsDirty.value = snap.dirty;
     if (typeof snap.fileName === 'string' && snap.fileName) nsFileName.value = snap.fileName;
+    if (typeof snap.openedVersion === 'number') nsOpenedVersion.value = snap.openedVersion;
     if (Array.isArray(snap.unrecognizedPlants)) nsUnrecognizedPlants.value = snap.unrecognizedPlants;
     if (Array.isArray(snap.nonSpeciesEntries)) nsNonSpeciesEntries.value = snap.nonSpeciesEntries;
   });
@@ -328,6 +334,7 @@ export async function saveCanopiFile(opts: { saveAs?: boolean; silent?: boolean 
           nsFileLinked.value = true;
           nsFileWriteGranted.value = true;
           nsFileRelinkNeeded.value = false;
+          nsOpenedVersion.value = CANOPI_FILE_VERSION;
           if (target?.name) nsFileName.value = target.name;
           else if (!nsFileName.peek()) nsFileName.value = defaultName;
           nsDirty.value = false;
@@ -362,6 +369,7 @@ export async function saveCanopiFile(opts: { saveAs?: boolean; silent?: boolean 
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
   batch(() => {
     nsFileName.value = a.download;
+    nsOpenedVersion.value = CANOPI_FILE_VERSION;
     nsDirty.value = false;
     nsFileStatus.value = { kind: 'saved' };
   });
@@ -442,9 +450,11 @@ export async function openCanopiText(
   for (const entry of parsed.consortiums) {
     considerSpecies(entry.target.canonical_name, entry.stratum, entry.start_phase, entry.end_phase);
   }
+  const beforePlaced = matchedIds.length + unrecognized.length;
   for (const placedCanon of parsed.placedSpecies) {
     considerSpecies(placedCanon);
   }
+  const placedAdded = (matchedIds.length + unrecognized.length) - beforePlaced;
   for (const cp of parsed.customPlants) {
     considerSpecies(cp.canonical_name, cp.stratum, cp.start_phase, cp.end_phase);
   }
@@ -462,6 +472,7 @@ export async function openCanopiText(
     // Open starts read-only: first explicit Save asks write permission, then edits auto-save.
     nsFileWriteGranted.value = false;
     nsFileRelinkNeeded.value = false;
+    nsOpenedVersion.value = parsed.version;
     nsFileStatus.value = { kind: 'idle' };
     nsUnrecognizedPlants.value = unrecognized;
     nsNonSpeciesEntries.value = parsed.nonSpeciesEntries;
@@ -485,6 +496,7 @@ export async function openCanopiText(
     matched: matchedIds.length,
     unrecognized: unrecognized.length,
     nonSpecies: parsed.nonSpeciesEntries.length,
+    placedAdded,
     version: parsed.version,
   };
 }

@@ -41,6 +41,7 @@ import {
   nsFileName,
   nsFileStatus,
   nsNonSpeciesEntries,
+  nsOpenedVersion,
   nsUnrecognizedPlants,
   openCanopiFilePicker,
   registerStudioFileHooks,
@@ -249,6 +250,7 @@ function writeNsSessionSnapshot(): void {
       baseDoc: fileSnap.baseDoc,
       preservedEntries: fileSnap.preservedEntries,
       wasLinked: fileSnap.wasLinked,
+      openedVersion: fileSnap.openedVersion,
       ...(loc && loc.label
         ? {
             site: {
@@ -326,8 +328,16 @@ export async function saveCanopiAndToast(saveAs = false): Promise<boolean> {
 export async function openCanopiAndToast(): Promise<boolean> {
   const res = await openCanopiFilePicker();
   if (!res) return false;
-  showNsToast(res.ok ? T('ns.file.opened', { name: res.name }) : res.error);
-  return res.ok;
+  if (!res.ok) {
+    showNsToast(res.error);
+    return false;
+  }
+  showNsToast(
+    res.placedAdded > 0
+      ? T('ns.file.openedWithPlaced', { name: res.name, n: res.placedAdded })
+      : T('ns.file.opened', { name: res.name }),
+  );
+  return true;
 }
 
 export function updateOverrides(patch: Partial<ReportSiteOverrides>): void {
@@ -504,6 +514,7 @@ export function startNsWatchers(): void {
     void nsDirty.value;
     void nsFileName.value;
     void nsFileLinked.value;
+    void nsOpenedVersion.value;
     void nsUnrecognizedPlants.value;
     void nsNonSpeciesEntries.value;
     void store.location.value;

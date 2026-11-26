@@ -6,7 +6,7 @@
 // - Print removed cleanly (minimal @media print kept in print.css)
 import { useEffect, useRef } from 'preact/hooks';
 import type { ReportHorizonId } from '../../../../lib/palette/index.ts';
-import { REPORT_SCENARIOS } from '../../../../lib/palette/index.ts';
+import { CANOPI_FILE_VERSION, REPORT_SCENARIOS } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
 import { markFirstView } from '../kit/start-mark.ts';
@@ -14,7 +14,7 @@ import { DesignBoard } from './DesignBoard.tsx';
 import { Drawers } from './Drawers.tsx';
 import { LandPanel } from './LandPanel.tsx';
 import { PlanSurface } from './PlanSurface.tsx';
-import { fmtNum, scenarioShort, shortSiteName } from './ns-helpers.ts';
+import { scenarioShort, shortSiteName } from './ns-helpers.ts';
 import {
   nsDirty,
   nsFileLinked,
@@ -22,6 +22,7 @@ import {
   nsFileRelinkNeeded,
   nsFileStatus,
   nsFileWriteGranted,
+  nsOpenedVersion,
 } from './ns-file.ts';
 import {
   nsDrawer,
@@ -58,6 +59,7 @@ export function NorthStarStudio() {
   const linked = nsFileLinked.value;
   const writeGranted = nsFileWriteGranted.value;
   const relinkNeeded = nsFileRelinkNeeded.value;
+  const openedVersion = nsOpenedVersion.value;
   const fileStatus = nsFileStatus.value;
 
   const rawOv = nsOverrides.value;
@@ -130,15 +132,17 @@ export function NorthStarStudio() {
     ? T('ns.file.saving')
     : fileStatus.kind === 'error'
       ? T('ns.file.notSaved', { reason: fileStatus.reason })
-      : relinkNeeded && fileName
-        ? T('ns.file.relinkNeeded', { name: fileName })
-        : linked && !writeGranted && fileName
-          ? T('ns.file.readOnlyOpened', { name: fileName })
-          : dirty
-            ? T('ns.file.unsaved')
-            : linked && fileStatus.kind === 'saved' && !dirty && fileName
-              ? T('ns.file.savedTo', { name: fileName })
-              : null;
+      : openedVersion !== null && openedVersion < CANOPI_FILE_VERSION
+        ? T('ns.file.olderVersion', { v: openedVersion })
+        : relinkNeeded && fileName
+          ? T('ns.file.relinkNeeded', { name: fileName })
+          : linked && !writeGranted && fileName
+            ? T('ns.file.readOnlyOpened', { name: fileName })
+            : dirty
+              ? T('ns.file.unsaved')
+              : linked && fileStatus.kind === 'saved' && !dirty && fileName
+                ? T('ns.file.savedTo', { name: fileName })
+                : null;
 
   return (
     <div class="ns-studio">
@@ -154,9 +158,7 @@ export function NorthStarStudio() {
               onClick={() => { nsLandOpen.value = !landOpen; }}
             >
               <span class="sr-only">{T('ns.land.title')}: </span>
-              <span class="place-pill-txt">
-                {shortName}{rep.eff.soilPh != null ? ` · pH ${fmtNum(rep.eff.soilPh)}` : ''}
-              </span>
+              <span class="place-pill-txt">{shortName}</span>
               {editCount > 0 && <span class="place-edit-count tnum">{editCount}</span>}
               <span aria-hidden="true">{landOpen ? '▾' : '▸'}</span>
             </button>

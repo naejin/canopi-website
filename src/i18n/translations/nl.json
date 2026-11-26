@@ -3666,8 +3666,8 @@
   "consortium.ns.share.copyBtn": "Link kopiëren",
   "consortium.ns.share.copyManual": "Selecteer en kopieer de link hierboven.",
   "consortium.ns.share.nativeBtn": "Delen via apparaat…",
-  "consortium.ns.share.includePlace": "Mijn locatie en terreinaanpassingen meesturen",
-  "consortium.ns.share.includePlaceOn": "Voegt uw globale klimaatcel, plaatsnaam en bodem-/terreinaanpassingen toe — nooit uw exacte adres.",
+  "consortium.ns.share.includePlace": "Mijn plek, watergift en perceelgrootte meenemen",
+  "consortium.ns.share.includePlaceOn": "Deelt je plek, watergift, ruimte en perceelgrootte (sla een .canopi-bestand op om bodem- en microklimaataanpassingen mee te nemen).",
   "consortium.ns.share.includePlaceOff": "Deelt alleen uw planten en klimaatzone — uw locatie blijft privé.",
   "consortium.ns.share.longWarn": "Deze link is langer dan 2.000 tekens — sommige apps knippen hem af. Sla liever een .canopi-bestand op.",
   "consortium.ns.share.unrecWarn": "Links bevatten alleen databaseplanten. Sla een .canopi-bestand op om alle {n} onbekende of geslachtsvermeldingen te delen.",
@@ -3686,5 +3686,7 @@
   "consortium.ns.file.relinkNeeded": "Niet gekoppeld — Sla op om {name} opnieuw te koppelen",
   "consortium.ns.file.errPermission": "Schrijfrechten geweigerd",
   "consortium.ns.file.errWrite": "Kan bestand niet schrijven",
+  "consortium.ns.file.openedWithPlaced": "{name} geopend ({n} geplaatst in je ontwerp toegevoegd aan het palet)",
+  "consortium.ns.file.olderVersion": "Ouder bestand (v{v}) — Opslaan schrijft een nieuw bestand; het origineel blijft ongewijzigd.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

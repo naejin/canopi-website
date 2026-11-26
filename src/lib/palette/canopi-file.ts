@@ -220,8 +220,16 @@ export function canopiFile(members: readonly Taxon[], opts: CanopiFileOptions): 
   if (opts.plantingPlan) doc.plantingPlan = { ...opts.plantingPlan, quantityOverrides: { ...opts.plantingPlan.quantityOverrides } };
   if (opts.designEnvelope) doc.designEnvelope = opts.designEnvelope;
   if (opts.climateStress) doc.climateStress = opts.climateStress;
+  const coreEntryKeys = new Set(['canonical_name', 'stratum', 'start_phase', 'end_phase']);
+  const hasExtraCustomMeta = (c: CanopiCustomPlant) =>
+    Object.entries(c).some(([k, v]) => !coreEntryKeys.has(k) && v != null && v !== '');
   if (opts.customPlants && opts.customPlants.length > 0) {
-    doc.customPlants = opts.customPlants.map((c) => ({ ...c }));
+    const keepTopLevel = opts.customPlants.filter(hasExtraCustomMeta);
+    if (keepTopLevel.length > 0 || (opts.baseDoc && Array.isArray(opts.baseDoc.customPlants))) {
+      doc.customPlants = opts.customPlants.map((c) => ({ ...c }));
+    } else {
+      delete doc.customPlants;
+    }
   } else if (opts.customPlants !== undefined) {
     delete doc.customPlants;
   }

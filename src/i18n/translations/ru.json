@@ -3666,8 +3666,8 @@
   "consortium.ns.share.copyBtn": "Копировать ссылку",
   "consortium.ns.share.copyManual": "Выделите и скопируйте ссылку выше.",
   "consortium.ns.share.nativeBtn": "Поделиться через устройство…",
-  "consortium.ns.share.includePlace": "Включить моё место и настройки участка",
-  "consortium.ns.share.includePlaceOn": "Добавляет примерную ячейку климата, город и настройки почвы/участка — никогда точный адрес.",
+  "consortium.ns.share.includePlace": "Включить моё место, полив и площадь участка",
+  "consortium.ns.share.includePlaceOn": "Передаёт ваше место, полив, запас высоты и площадь (сохраните файл .canopi, чтобы включить настройки почвы и микроклимата).",
   "consortium.ns.share.includePlaceOff": "Передаёт только растения и климатическую зону — ваше место остаётся приватным.",
   "consortium.ns.share.longWarn": "Ссылка длиннее 2 000 символов — некоторые мессенджеры могут её обрезать. Лучше сохраните файл .canopi.",
   "consortium.ns.share.unrecWarn": "В ссылку попадают только растения из базы. Сохраните файл .canopi, чтобы передать все {n} нераспознанных или родовых записей.",
@@ -3686,5 +3686,7 @@
   "consortium.ns.file.relinkNeeded": "Связь потеряна — сохраните, чтобы снова связать {name}",
   "consortium.ns.file.errPermission": "Нет разрешения на запись",
   "consortium.ns.file.errWrite": "Не удалось записать файл",
+  "consortium.ns.file.openedWithPlaced": "Открыт файл {name} (добавлено в палитру из размещённых в проекте: {n})",
+  "consortium.ns.file.olderVersion": "Старый формат файла (v{v}) — Сохранение создаст новый файл; оригинал останется нетронутым.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

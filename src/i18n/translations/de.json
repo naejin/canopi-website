@@ -3666,8 +3666,8 @@
   "consortium.ns.share.copyBtn": "Link kopieren",
   "consortium.ns.share.copyManual": "Markieren und kopieren Sie den Link oben.",
   "consortium.ns.share.nativeBtn": "Über Gerät teilen…",
-  "consortium.ns.share.includePlace": "Meinen Standort und Boden-Anpassungen einschließen",
-  "consortium.ns.share.includePlaceOn": "Fügt Ihre ungefähre Klimazelle, den Ortsnamen und Standort-Anpassungen hinzu — niemals Ihre genaue Adresse.",
+  "consortium.ns.share.includePlace": "Meinen Ort, Bewässerung und Fläche einschließen",
+  "consortium.ns.share.includePlaceOn": "Teilt deinen Ort, Bewässerung, Platz und Fläche (speichere eine .canopi-Datei, um Boden- und Mikroklima-Anpassungen mitzunehmen).",
   "consortium.ns.share.includePlaceOff": "Teilt nur Ihre Pflanzen und Klimazone — Ihr Standort bleibt privat.",
   "consortium.ns.share.longWarn": "Dieser Link ist über 2.000 Zeichen lang — manche Apps kürzen ihn. Speichern Sie stattdessen eine .canopi-Datei.",
   "consortium.ns.share.unrecWarn": "Links enthalten nur Datenbank-Pflanzen. Speichern Sie eine .canopi-Datei, um alle {n} unbekannten oder Gattungseinträge zu teilen.",
@@ -3686,5 +3686,7 @@
   "consortium.ns.file.relinkNeeded": "Nicht verknüpft — Speichern, um {name} erneut zu verknüpfen",
   "consortium.ns.file.errPermission": "Schreibberechtigung verweigert",
   "consortium.ns.file.errWrite": "Datei konnte nicht geschrieben werden",
+  "consortium.ns.file.openedWithPlaced": "{name} geöffnet ({n} im Entwurf platzierte Art(en) zur Palette hinzugefügt)",
+  "consortium.ns.file.olderVersion": "Ältere Datei (v{v}) — Speichern erstellt eine neue Datei; das Original bleibt unverändert.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

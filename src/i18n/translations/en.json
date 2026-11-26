@@ -3666,8 +3666,8 @@
   "consortium.ns.share.copyBtn": "Copy link",
   "consortium.ns.share.copyManual": "Select and copy the link above.",
   "consortium.ns.share.nativeBtn": "Share via device…",
-  "consortium.ns.share.includePlace": "Include my place and site adjustments",
-  "consortium.ns.share.includePlaceOn": "Adds your approximate climate grid cell, town name, and soil/site edits — never your exact address.",
+  "consortium.ns.share.includePlace": "Include my place, watering, and plot size",
+  "consortium.ns.share.includePlaceOn": "Shares your place, watering, room, and plot size (save a .canopi file to include soil and microclimate edits).",
   "consortium.ns.share.includePlaceOff": "Shares your plants and climate zone only — your location stays private.",
   "consortium.ns.share.longWarn": "This link is over 2,000 characters — some messaging apps may cut it. Save a .canopi file instead.",
   "consortium.ns.share.unrecWarn": "Share links carry database plants only. Save a .canopi file to include all {n} unrecognized or genus-level entries.",
@@ -3686,5 +3686,7 @@
   "consortium.ns.file.relinkNeeded": "Not linked — Save to link {name} again",
   "consortium.ns.file.errPermission": "Write permission denied",
   "consortium.ns.file.errWrite": "Could not write file",
+  "consortium.ns.file.openedWithPlaced": "Opened {name} ({n} placed in your design added to the palette)",
+  "consortium.ns.file.olderVersion": "Older file (v{v}) — Save writes a new file; the original stays untouched.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

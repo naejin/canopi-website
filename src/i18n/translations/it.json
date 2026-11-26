@@ -3666,8 +3666,8 @@
   "consortium.ns.share.copyBtn": "Copia link",
   "consortium.ns.share.copyManual": "Seleziona e copia il link qui sopra.",
   "consortium.ns.share.nativeBtn": "Condividi dal dispositivo…",
-  "consortium.ns.share.includePlace": "Includi il mio luogo e le regolazioni del terreno",
-  "consortium.ns.share.includePlaceOn": "Aggiunge la cella climatica approssimativa, il comune e le modifiche di suolo/sito — mai l’indirizzo esatto.",
+  "consortium.ns.share.includePlace": "Includi il mio luogo, irrigazione e superficie",
+  "consortium.ns.share.includePlaceOn": "Condivide il luogo, l’irrigazione, lo spazio e la superficie (salva un file .canopi per includere le regolazioni di suolo e microclima).",
   "consortium.ns.share.includePlaceOff": "Condivide solo le piante e la zona climatica — la tua posizione resta privata.",
   "consortium.ns.share.longWarn": "Questo link supera 2.000 caratteri — alcune app potrebbero tagliarlo. Salva invece un file .canopi.",
   "consortium.ns.share.unrecWarn": "I link contengono solo piante del database. Salva un file .canopi per includere tutte le {n} voci non riconosciute o di genere.",
@@ -3686,5 +3686,7 @@
   "consortium.ns.file.relinkNeeded": "Non collegato — Salva per ricollegare {name}",
   "consortium.ns.file.errPermission": "Permesso di scrittura negato",
   "consortium.ns.file.errWrite": "Impossibile scrivere il file",
+  "consortium.ns.file.openedWithPlaced": "{name} aperto ({n} posizionata/e nel progetto aggiunta/e alla palette)",
+  "consortium.ns.file.olderVersion": "File precedente (v{v}) — Salva crea un nuovo file; l’originale resta intatto.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

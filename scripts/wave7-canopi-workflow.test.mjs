@@ -205,6 +205,7 @@ test('R4 & R5: language-switch suppression works cleanly and v8 files are never 
   const res = await nsFile.openCanopiText(JSON.stringify(v8Doc), { fileName: 'old-v8.canopi', handle: v8Handle });
   assert.equal(res.ok, true);
   assert.equal(nsFile.nsFileLinked.value, false, 'v8 file must NOT be linked for in-place overwrite');
+  assert.equal(nsFile.nsOpenedVersion.value, 8, 'v8 version tracked for honest older-file status');
   nsFile.markNsDirty();
   await new Promise((r) => setTimeout(r, 50));
   assert.equal(writeCalls, 0, 'v8 handle is never written to');
@@ -263,6 +264,7 @@ test('Review round 1 fixes: malformed target preserved, language-switch baseDoc/
   assert.deepEqual(rebuilt.zones, [{ id: 'z1' }], 'baseDoc zones survive language switch');
   assert.deepEqual(rebuilt.layers, [{ id: 'l1' }], 'baseDoc layers survive language switch');
   assert.ok(rebuilt.consortiums.some((c) => c.target?.strange === 42), 'preservedEntries survive language switch');
+  assert.equal(rebuilt.customPlants, undefined, 'does not emit duplicate top-level customPlants for plain preserved entries');
 
   // 3. pickCoordinates marks dirty in Studio when user changes place
   store.view.value = 'matrix';

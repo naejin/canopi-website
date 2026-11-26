@@ -3666,8 +3666,8 @@
   "consortium.ns.share.copyBtn": "复制链接",
   "consortium.ns.share.copyManual": "请选择并复制上方链接。",
   "consortium.ns.share.nativeBtn": "通过设备分享…",
-  "consortium.ns.share.includePlace": "包含我的地点与场地微调",
-  "consortium.ns.share.includePlaceOn": "附带大致气候网格、城镇名称及土壤/场地调整 — 绝不含精确地址。",
+  "consortium.ns.share.includePlace": "包含我的地点、浇水方式与地块面积",
+  "consortium.ns.share.includePlaceOn": "分享你的地点、浇水方式、空间与地块面积（保存 .canopi 文件可包含土壤与微气候调整）。",
   "consortium.ns.share.includePlaceOff": "仅分享植物与气候带 — 您的位置保持私密。",
   "consortium.ns.share.longWarn": "此链接超过 2,000 个字符，部分应用可能会截断。建议改用保存 .canopi 文件。",
   "consortium.ns.share.unrecWarn": "链接仅包含数据库内植物。保存 .canopi 文件即可包含全部 {n} 条未收录或属级条目。",
@@ -3686,5 +3686,7 @@
   "consortium.ns.file.relinkNeeded": "未关联文件 — 保存以重新关联 {name}",
   "consortium.ns.file.errPermission": "写入权限被拒绝",
   "consortium.ns.file.errWrite": "无法写入文件",
+  "consortium.ns.file.openedWithPlaced": "已打开 {name}（已将设计中放置的 {n} 种植物加入植物组合）",
+  "consortium.ns.file.olderVersion": "旧版文件 (v{v}) — 保存将写入新文件；原文件保持不变。",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -3666,8 +3666,8 @@
   "consortium.ns.share.copyBtn": "リンクをコピー",
   "consortium.ns.share.copyManual": "上のリンクを選択してコピーしてください。",
   "consortium.ns.share.nativeBtn": "端末から共有…",
-  "consortium.ns.share.includePlace": "場所と敷地調整を含める",
-  "consortium.ns.share.includePlaceOn": "おおよその気候グリッド、地名、土壌・敷地調整を含めます（正確な住所は含めません）。",
+  "consortium.ns.share.includePlace": "場所・水やり・区画面積を含める",
+  "consortium.ns.share.includePlaceOn": "場所・水やり・高さの余裕・区画面積を共有します（土壌や微気候の調整を含めるには .canopi ファイルを保存してください）。",
   "consortium.ns.share.includePlaceOff": "植物と気候区分のみを共有します（場所は非公開）。",
   "consortium.ns.share.longWarn": "リンクが2,000文字を超えています。一部アプリで切れる場合があるため .canopi ファイル保存をおすすめします。",
   "consortium.ns.share.unrecWarn": "共有リンクにはデータベース収録種のみ含まれます。未収録・属レベルの {n} 件も含めるには .canopi を保存してください。",
@@ -3686,5 +3686,7 @@
   "consortium.ns.file.relinkNeeded": "未リンク — 保存して {name} を再リンクしてください",
   "consortium.ns.file.errPermission": "書き込み権限が拒否されました",
   "consortium.ns.file.errWrite": "ファイルを書き込めませんでした",
+  "consortium.ns.file.openedWithPlaced": "{name} を開きました（デザイン内に配置された {n} 種をパレットに追加）",
+  "consortium.ns.file.olderVersion": "旧形式のファイル (v{v}) — 保存すると新しいファイルが作成され、元のファイルは変更されません。",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

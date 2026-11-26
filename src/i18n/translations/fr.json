@@ -3666,8 +3666,8 @@
   "consortium.ns.share.copyBtn": "Copier le lien",
   "consortium.ns.share.copyManual": "Sélectionnez et copiez le lien ci-dessus.",
   "consortium.ns.share.nativeBtn": "Partager via l’appareil…",
-  "consortium.ns.share.includePlace": "Inclure mon lieu et mes réglages de terrain",
-  "consortium.ns.share.includePlaceOn": "Ajoute votre maille climatique approximative, le nom de la commune et vos réglages sol/site — jamais votre adresse exacte.",
+  "consortium.ns.share.includePlace": "Inclure mon lieu, l’arrosage et la surface",
+  "consortium.ns.share.includePlaceOn": "Partage votre lieu, l’arrosage, l’espace et la surface (enregistrez un fichier .canopi pour inclure les réglages de sol et microclimat).",
   "consortium.ns.share.includePlaceOff": "Partage uniquement vos plantes et la zone climatique — votre lieu reste privé.",
   "consortium.ns.share.longWarn": "Ce lien dépasse 2 000 caractères — certaines messageries risquent de le couper. Enregistrez plutôt un fichier .canopi.",
   "consortium.ns.share.unrecWarn": "Les liens ne transportent que les plantes de la base. Enregistrez un fichier .canopi pour inclure les {n} entrées hors base ou au niveau du genre.",
@@ -3686,5 +3686,7 @@
   "consortium.ns.file.relinkNeeded": "Non lié — Enregistrez pour lier à nouveau {name}",
   "consortium.ns.file.errPermission": "Permission d’écriture refusée",
   "consortium.ns.file.errWrite": "Impossible d’écrire le fichier",
+  "consortium.ns.file.openedWithPlaced": "{name} ouvert ({n} placée(s) dans votre plan ajoutée(s) à la palette)",
+  "consortium.ns.file.olderVersion": "Ancien fichier (v{v}) — Enregistrer crée un nouveau fichier ; l’original reste intact.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }
