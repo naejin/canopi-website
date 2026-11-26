@@ -3780,5 +3780,17 @@
   "consortium.ns.plan.onSiteSummary": "Уже на участке ({n}) — скрыто из списка покупок",
   "consortium.ns.plan.onSiteStillCounted": "(учитывается в гильдии, кроне и опылении)",
   "consortium.ns.plan.onSiteUndo": "✓ На участке (отменить)",
+  "consortium.ns.dossier.statusNative": "Аборигенный вид",
+  "consortium.ns.dossier.statusIntroduced": "Интродуцированный вид",
+  "consortium.ns.dossier.maturityYears": "one: # год | few: # года | many: # лет | other: # лет",
+  "consortium.ns.atlas.wlRain": "▮ Осадки (мм, 2:1)",
+  "consortium.ns.atlas.wlRainOver100": "▮ Осадки (мм, 2:1, 1:10 >100)",
+  "consortium.ns.atlas.wlDryDeficit": "░ Засушливый дефицит (2T > P)",
+  "consortium.ns.preset.city.montpellier": "Монпелье",
+  "consortium.ns.preset.city.lyon": "Лион",
+  "consortium.ns.preset.city.kyoto": "Киото",
+  "consortium.ns.preset.city.capetown": "Кейптаун",
+  "consortium.ns.preset.city.briancon": "Бриансон",
+  "consortium.ns.preset.city.belem": "Белен",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

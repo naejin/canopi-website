@@ -12,9 +12,6 @@ export const WARN = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"
 export const CLOSE = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 3 10 10M13 3 3 13" stroke="currentColor" stroke-width="1.8" /></svg>;
 export const BACK = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d={leftPath} fill="none" stroke="currentColor" stroke-width="1.8" /></svg>;
 
-// ---- the views' glyph ----
-export const WarnIcon = () => <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">{warnPaths}</svg>;
-
 // A light level (pf hand-off; boards Main, PaletteMore, the "Layer is light" rule): a small sun disc
 // filled clockwise from the top to its share of light, full sun whole, mostly sun three quarters, part
 // shade half, shade a quarter, in the ochre accent (base.css svg[data-light]; the palette page draws it in ink on light). Always beside its words

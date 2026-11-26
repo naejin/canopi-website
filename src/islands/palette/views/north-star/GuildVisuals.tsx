@@ -525,7 +525,7 @@ export function WalterLiethSvg({ eff, rep }: { eff: EffectiveSiteClimate; rep: P
         — {activeLabel} (°C){cmpPts ? ` · - - ${cmpLabel}` : ''}
       </text>
       <text x={W - padR} y="13" text-anchor="end" font-size="10" font-weight="600" fill="var(--climate-rain)">
-        ▮ Rain (mm, 2:1{hasOver100 ? ', 1:10 >100' : ''}){hasDryMonths ? ' · ░ Dry deficit (2T > P)' : ''}
+        {hasOver100 ? T('ns.atlas.wlRainOver100') : T('ns.atlas.wlRain')}{hasDryMonths ? ` · ${T('ns.atlas.wlDryDeficit')}` : ''}
       </text>
     </svg>
   );

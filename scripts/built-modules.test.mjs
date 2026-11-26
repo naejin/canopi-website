@@ -12,7 +12,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const graphOf = (edges) => new Map(Object.entries(edges).map(([p, imports]) => [p, { code: '', imports }]));
-const noFeatures = { location: [], future: [], pool: [], details: [], sheets: [], find: [], later: [], suggest: [], palette: [], verdict: [], climateWasm: [] };
+const noFeatures = { location: [], pool: [], details: [], sheets: [], find: [], suggest: [], palette: [], verdict: [], climateWasm: [] };
 const none = { features: noFeatures, maplibre: [], maplibreCss: [], testHook: [] };
 const sets = ({ parts, location, maplibre }) => ({ parts, location, maplibre });
 const roles = (features, maplibre = []) => ({ ...none, features: { ...noFeatures, ...features }, maplibre });
@@ -29,9 +29,8 @@ test('chunkRoles: the location entry and the suggestion by their entry module, M
     '_astro/other.g.js': { type: 'asset', fileName: '_astro/other.g.js', names: [], originalFileNames: [], source: '' },
     '_astro/where.c.css': { type: 'asset', fileName: '_astro/where.c.css', names: ['location.css'], originalFileNames: [], source: '.maplibregl-map{}' },
   };
-  bundle['_astro/f.h.js'] = chunk('_astro/f.h.js', `${root}/src/islands/palette/views/future/future.tsx`, [`${root}/src/islands/palette/views/future/future.tsx`]);
   assert.deepEqual(chunkRoles(bundle), {
-    features: { ...noFeatures, location: ['/_astro/where.b.js'], suggest: ['/_astro/suggest.f.js'], future: ['/_astro/f.h.js'] },
+    features: { ...noFeatures, location: ['/_astro/where.b.js'], suggest: ['/_astro/suggest.f.js'] },
     maplibre: ['/_astro/index.e.js', '/_astro/maplibre-gl-worker.d.js'],
     maplibreCss: ['/_astro/where.c.css'],
     testHook: [],
@@ -56,7 +55,7 @@ test('chunkRoles: the lazy island parts by their entry module, in the one role l
   ].map(([f, id, css]) => [f, chunk(f, id, css)]));
   const r = chunkRoles(bundle);
   // PP-C c1: Find and Paste (views/find/**) are the find role; Add (deleted) has none.
-  assert.deepEqual(r.features, { ...noFeatures, details: ['/_astro/Details.d.js'], sheets: ['/_astro/Swap.b.js'], find: ['/_astro/Find.f.js', '/_astro/Paste.a.js'], later: ['/_astro/later.c.js'], suggest: ['/_astro/suggest.e.js'] });
+  assert.deepEqual(r.features, { ...noFeatures, details: ['/_astro/Details.d.js'], sheets: ['/_astro/Swap.b.js'], find: ['/_astro/Find.f.js', '/_astro/Paste.a.js'], suggest: ['/_astro/suggest.e.js'] });
   assert.equal(r.lazy, undefined, 'one role list: no separate lazy table');
   // PP-B commit 0: the palette page and the verdict rule, by their entry modules (the matrix role went in 0a').
   const ppb = chunkRoles({ ...bundle,

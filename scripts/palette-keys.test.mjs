@@ -21,9 +21,9 @@ const templates = [...island.matchAll(/`([a-z][\w.]*\$\{[^`]*)`/g)].map((m) => m
 // 'correction.…' and 'climate.…' in the island are the site-wide keys of those names, never consortium.*.
 const siteWide = (k) => /^(correction|climate)\./.test(k);
 // The quoted keys in the first argument of every T( or P( call (a ternary names two).
-function namedKeys(src) {
+function namedKeys(src, re = /\b[TP]\(/g) {
   const out = new Set();
-  for (const m of src.matchAll(/\b[TP]\(/g)) {
+  for (const m of src.matchAll(re)) {
     let depth = 0, i = m.index + m[0].length, arg = '';
     for (; i < src.length; i++) {
       const c = src[i];
@@ -75,6 +75,18 @@ test('every key the island asks for by name is in all 11 locale files', () => {
     const missing = [...direct].filter((k) => !(siteWide(k) ? k in w : `consortium.${k}` in w));
     assert.deepEqual(missing, [], lang);
   }
+});
+
+test('T() is never called on a plural-formatted key (must use P())', () => {
+  const PLURAL_RE = /(?:^|\s\|\s)(?:zero|one|two|few|many|other)\s*:/;
+  const pluralKeys = new Set(
+    Object.entries(words.en)
+      .filter(([k, v]) => k.startsWith('consortium.') && typeof v === 'string' && PLURAL_RE.test(v))
+      .map(([k]) => k.slice(11)),
+  );
+  assert.ok(pluralKeys.size > 5);
+  const badCalls = [...namedKeys(island, /\bT\(/g)].filter((k) => pluralKeys.has(k));
+  assert.deepEqual(badCalls, [], `plural keys called with T() instead of P(): ${badCalls.join(', ')}`);
 });
 
 // Walk-through 2, N7: words that state a rule say the rule the code has. The room sizes Suggest

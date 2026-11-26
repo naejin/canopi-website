@@ -159,14 +159,12 @@ export const CHUNK_ROLES_FILE = 'consortium-chunks.json';
 export const ROLE_ENTRIES = {
   // P5 features
   location: { entry: /\/src\/islands\/palette\/views\/location\/location\.tsx$/, chunks: 1 }, // S5b
-  future: { entry: /\/src\/islands\/palette\/views\/future\/future\.tsx$/, chunks: 1 }, // S5d
   pool: { entry: /\/src\/islands\/palette\/views\/pool\/pool\.tsx$/, chunks: 1 }, // S5c
   // E6 lazy island parts (design check A5, A6, A11; L1-L12)
   details: { entry: /\/src\/islands\/palette\/views\/details\/Details\.tsx$/, chunks: 1 }, // K3: the plant dialog
   sheets: { entry: /\/src\/islands\/palette\/views\/(Swap|Correction)\.tsx$/, chunks: 2 }, // K3
   // PP-C c1: Find and Paste (views/find/**).
   find: { entry: /\/src\/islands\/palette\/views\/find\/.+\.tsx?$/, chunks: '1+' }, // K3
-  later: { entry: /\/src\/islands\/palette\/views\/later\.ts$/, chunks: 1 }, // K3: the views after the first view
   suggest: { entry: /\/src\/lib\/palette\/suggest\.ts$/, chunks: 1 }, // R4: loadSuggest
   // PP-B parts (plant-palette-slices, commit 0; F1a's structure and balance roles went with it, and
   // commit 0a' deleted the matrix role with the matrix): the palette page (b2 gives it a chunk) and the

@@ -137,9 +137,14 @@ export const NS_PRESETS: readonly NsPresetSite[] = [
   { id: 'belem', city: 'Belém', koppen: 'Af', lat: -1.45, lon: -48.50, zone: 'Tropical', country: 'BR' },
 ];
 
+export function presetCityName(p: NsPresetSite): string {
+  return T(`ns.preset.city.${p.id}`);
+}
+
 export function presetSiteLabel(p: NsPresetSite): string {
+  const city = presetCityName(p);
   const country = formatCountryName(p.country, currentLocale());
-  return country ? `${p.city}, ${country}` : p.city;
+  return country ? `${city}, ${country}` : city;
 }
 
 const NS_SESSION_KEY = 'canopi-ns-session';

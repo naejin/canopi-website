@@ -48,9 +48,10 @@ export function PlaceSearchBox({
     setSearching(true);
     setSearchErr(null);
     try {
-      const { results } = await findPlaces(q);
+      const { results, failed } = await findPlaces(q);
       setHits(results.slice(0, 6).map((h) => ({ label: placeName(h), lat: h.lat, lon: h.lon })));
-      if (!results.length) setSearchErr(T('ns.arrival.noPlaces'));
+      if (failed) setSearchErr(T('ns.arrival.searchFailed'));
+      else if (!results.length) setSearchErr(T('ns.arrival.noPlaces'));
     } catch {
       setSearchErr(T('ns.arrival.searchFailed'));
     } finally {

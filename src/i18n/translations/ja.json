@@ -3780,5 +3780,17 @@
   "consortium.ns.plan.onSiteSummary": "現地にあり（{n}）— 購入リストから除外",
   "consortium.ns.plan.onSiteStillCounted": "（ギルド・樹冠・受粉には引き続き計上）",
   "consortium.ns.plan.onSiteUndo": "✓ 現地にあり（戻す）",
+  "consortium.ns.dossier.statusNative": "在来種",
+  "consortium.ns.dossier.statusIntroduced": "外来種",
+  "consortium.ns.dossier.maturityYears": "other: # 年",
+  "consortium.ns.atlas.wlRain": "▮ 降水量 (mm, 2:1)",
+  "consortium.ns.atlas.wlRainOver100": "▮ 降水量 (mm, 2:1, 1:10 >100)",
+  "consortium.ns.atlas.wlDryDeficit": "░ 乾燥不足 (2T > P)",
+  "consortium.ns.preset.city.montpellier": "モンペリエ",
+  "consortium.ns.preset.city.lyon": "リヨン",
+  "consortium.ns.preset.city.kyoto": "京都",
+  "consortium.ns.preset.city.capetown": "ケープタウン",
+  "consortium.ns.preset.city.briancon": "ブリアンソン",
+  "consortium.ns.preset.city.belem": "ベレン",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

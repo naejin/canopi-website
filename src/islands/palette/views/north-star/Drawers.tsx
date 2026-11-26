@@ -33,7 +33,7 @@ import {
 import * as store from '../../store.ts';
 import { soilTextureLabel } from '../../rules/soil-labels.ts';
 import { currentFragment, linkName, shareUrl, shownFragment } from '../../state/persist.ts';
-import { T } from '../../strings.ts';
+import { P, T } from '../../strings.ts';
 import { Glyph } from '../kit/Glyph.tsx';
 import { PlantThumb, ScaleRootSvg, WalterLiethSvg } from './GuildVisuals.tsx';
 import { computeTrackCaps, localizedMonthLabels, MiniYearRibbon } from './PhenologyRibbon.tsx';
@@ -904,9 +904,9 @@ function AtlasDrawer({ rep, swapFor }: { rep: PaletteReport; swapFor?: PlantId }
   const frostCal = store.location.value?.lookup?.v07?.frostCalendar ?? null;
   const springP90Date = doyToDateLabel(frostCal?.lastSpringP90Doy);
   const frostWindowText = frostCal?.frostFree
-    ? T('ns.arrival.frostFreeDays', { n: 365 })
+    ? P('ns.arrival.frostFreeDays', 365)
     : frostCal?.frostFreeDays != null
-      ? `${T('ns.arrival.frostFreeDays', { n: frostCal.frostFreeDays })}${springP90Date ? ` (${T('ns.arrival.lateSpringFrost', { date: springP90Date })})` : ''}`
+      ? `${P('ns.arrival.frostFreeDays', frostCal.frostFreeDays)}${springP90Date ? ` (${T('ns.arrival.lateSpringFrost', { date: springP90Date })})` : ''}`
       : T('ns.unknown');
 
   return (
@@ -1189,10 +1189,10 @@ function AtlasDrawer({ rep, swapFor }: { rep: PaletteReport; swapFor?: PlantId }
             <div class="terrain-cell">
               <span class="shift-dial-k">{T('ns.atlas.terrainCell')}</span>
               <strong class="small">
-                {terrain.elevM != null ? `${terrain.elevM} m` : '—'}
-                {terrain.reliefM != null ? ` · ${terrain.reliefM} m` : ''}
+                {terrain.elevM != null ? `${fmtNum(terrain.elevM, 0)} ${T('ns.unit.m')}` : T('ns.unknown')}
+                {terrain.reliefM != null ? ` · ${fmtNum(terrain.reliefM, 0)} ${T('ns.unit.m')}` : ''}
                 {terrain.slopeDeg != null ? ` · ${fmtNum(terrain.slopeDeg)}°` : ''}
-                {terrain.handM != null ? ` · HAND ${fmtNum(terrain.handM)} m` : ''}
+                {terrain.handM != null ? ` · HAND ${fmtNum(terrain.handM)} ${T('ns.unit.m')}` : ''}
               </strong>
             </div>
           )}
@@ -1402,7 +1402,7 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
         : T('ns.notRecorded');
 
   const scaleRoomStr = rep.eff.roomLimitM != null
-    ? T('ns.dossier.scaleRoom', { m: `${fmtNum(rep.eff.roomLimitM, 0)} m` })
+    ? T('ns.dossier.scaleRoom', { m: `${fmtNum(rep.eff.roomLimitM, 0)} ${T('ns.unit.m')}` })
     : '';
 
   const monthLabels = localizedMonthLabels();
@@ -1750,7 +1750,7 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
         <div class="plant-badges">
           <span class="badge">
             {taxon.traits.age_of_maturity_years != null
-              ? (taxon.traits.age_of_maturity_years <= 0 ? T('ns.plan.ltOneYr') : `${fmtNum(taxon.traits.age_of_maturity_years)} ${T('ns.unit.yr')}`)
+              ? (taxon.traits.age_of_maturity_years <= 0 ? T('ns.plan.ltOneYr') : P('ns.dossier.maturityYears', taxon.traits.age_of_maturity_years))
               : T('ns.notRecorded')}
           </span>
           <span class="badge">{localizedTraitLevel(taxon.traits.growth_rate)}</span>
@@ -1836,7 +1836,7 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
           <span>{T('ns.dossier.sources')}</span>
           <span class="small muted">
             {taxon.climate?.cells != null
-              ? T('ns.dossier.gbifCells', { n: taxon.climate.cells.toLocaleString() })
+              ? T('ns.dossier.gbifCells', { n: fmtNum(taxon.climate.cells, 0) })
               : T('ns.dossier.gbifUnrecorded')}
           </span>
         </div>
@@ -1844,7 +1844,11 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
           {areaName && (
             <>
               <strong>{T('ns.dossier.regionLine', { area: areaName })}</strong>{' '}
-              {nativeStatus ?? T('ns.notRecorded')}
+              {nativeStatus === 'native'
+                ? T('ns.dossier.statusNative')
+                : nativeStatus === 'introduced'
+                  ? T('ns.dossier.statusIntroduced')
+                  : T('ns.notRecorded')}
               {' · '}
             </>
           )}

@@ -32,6 +32,7 @@ import {
   nsSiteLoading,
   openCanopiAndToast,
   pickCoordinates,
+  presetCityName,
   presetSiteLabel,
   siteAnalogueLabel,
   startNsWatchers,
@@ -113,7 +114,7 @@ export function NorthStarArrival() {
           void pickCoordinates(p.lat, p.lon, pLabel, p.zone, p.country);
         }}
       >
-        {fullLabel ? pLabel : p.city}
+        {fullLabel ? pLabel : presetCityName(p)}
       </button>
     );
   };

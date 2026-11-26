@@ -9,10 +9,9 @@
 // wide around x = 0. Crowns may spill into the neighbouring columns (overflow visible).
 import type { Shape } from './side.ts';
 
-export const PLOT_H = 72, MIN_COL = 16;
+export const PLOT_H = 72;
 // The widest a crown reaches from its column's centre, in units.
 const MAX_REACH = 13;
-export const DASH = '2 1.6';
 
 export interface Stroke {
   d: string;

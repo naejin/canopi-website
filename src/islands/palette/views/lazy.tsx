@@ -165,13 +165,6 @@ export function later<C extends Any>(importer: () => Promise<C>, opts: PartOptio
   register(part.prefetch);
   return part;
 }
-// A module that is not a view (the .canopi writer): loaded once, prefetched with the views.
-export function laterModule<M>(importer: () => Promise<M>): () => Promise<M> {
-  let pending: Promise<M> | null = null;
-  const fetch = (): Promise<M> => (pending ??= importer().then((m) => { loadedTick.value++; return m; }, (err: unknown) => { pending = null; throw err; }));
-  register(fetch);
-  return () => gate('later').then(fetch);
-}
 
 // Once, on the first of the consortium on screen (views/palette/Palette.tsx calls it at ct:first-view) or the data ready
 // (below): every later part, in the browser's idle time.

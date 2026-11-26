@@ -3780,5 +3780,17 @@
   "consortium.ns.plan.onSiteSummary": "Al op locatie ({n}) — niet op boodschappenlijst",
   "consortium.ns.plan.onSiteStillCounted": "(telt nog mee voor gilde, kroonlaag en bestuiving)",
   "consortium.ns.plan.onSiteUndo": "✓ Op locatie (ongedaan maken)",
+  "consortium.ns.dossier.statusNative": "Inheems",
+  "consortium.ns.dossier.statusIntroduced": "Ingevoerd",
+  "consortium.ns.dossier.maturityYears": "one: # jaar | other: # jaar",
+  "consortium.ns.atlas.wlRain": "▮ Regen (mm, 2:1)",
+  "consortium.ns.atlas.wlRainOver100": "▮ Regen (mm, 2:1, 1:10 >100)",
+  "consortium.ns.atlas.wlDryDeficit": "░ Droogtetekort (2T > P)",
+  "consortium.ns.preset.city.montpellier": "Montpellier",
+  "consortium.ns.preset.city.lyon": "Lyon",
+  "consortium.ns.preset.city.kyoto": "Kioto",
+  "consortium.ns.preset.city.capetown": "Kaapstad",
+  "consortium.ns.preset.city.briancon": "Briançon",
+  "consortium.ns.preset.city.belem": "Belém",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -3780,5 +3780,17 @@
   "consortium.ns.plan.onSiteSummary": "场地已有（{n}）— 已从采购清单排除",
   "consortium.ns.plan.onSiteStillCounted": "（仍计入共生群落、冠层与授粉）",
   "consortium.ns.plan.onSiteUndo": "✓ 已有（撤销）",
+  "consortium.ns.dossier.statusNative": "原生",
+  "consortium.ns.dossier.statusIntroduced": "引入",
+  "consortium.ns.dossier.maturityYears": "other: # 年",
+  "consortium.ns.atlas.wlRain": "▮ 降水 (mm, 2:1)",
+  "consortium.ns.atlas.wlRainOver100": "▮ 降水 (mm, 2:1, 1:10 >100)",
+  "consortium.ns.atlas.wlDryDeficit": "░ 干旱缺水 (2T > P)",
+  "consortium.ns.preset.city.montpellier": "蒙彼利埃",
+  "consortium.ns.preset.city.lyon": "里昂",
+  "consortium.ns.preset.city.kyoto": "京都",
+  "consortium.ns.preset.city.capetown": "开普敦",
+  "consortium.ns.preset.city.briancon": "布里扬松",
+  "consortium.ns.preset.city.belem": "贝伦",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

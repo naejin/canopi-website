@@ -49,7 +49,7 @@ export const listName = (c: ClimateZone): string => T(`list.${c.toLowerCase()}`)
 export { countryName } from '../../words.ts';
 
 // ---- stage and layer words ----
-export const phasePlain = (p: number): string => T(`phase.${phases[p]}.plain`);
+const phasePlain = (p: number): string => T(`phase.${phases[p]}.plain`);
 export const phaseTerm = (p: number): string => T(`phase.${phases[p]}.term`);
 const phaseWords = (p: number): string => `${phasePlain(p)} · ${phaseTerm(p)}`;
 export const layerName = (s: Stratum): string => T(`stratum.${s}`);
@@ -60,6 +60,3 @@ export function spanWords(t: Taxon): string {
   if (!s) return T('timingUnknown');
   return s.from === s.to ? phaseWords(s.from) : `${phasePlain(s.from)} → ${phasePlain(s.to)} · ${phaseTerm(s.from)} – ${phaseTerm(s.to)}`;
 }
-
-// "light: not sure · acid soil · …": what the matrix is based on.
-export const basisLine = (s: Site): string => (['light', 'soil', 'water', 'room'] as SiteKey[]).map((k) => T(`site.basis.${k}.${s[k]}`)).join(' · ');

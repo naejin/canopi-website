@@ -797,29 +797,3 @@ export function computePlotLayout(plan: PlantingPlanSummary, pattern: LayoutPatt
 
   return { isModule, moduleLabel, widthM, heightM, viewWidth, viewHeight, nodes, lanes };
 }
-
-interface PlantingActionMonth {
-  month: string;
-  tag: string;
-  brief: string;
-}
-
-export function buildPlantingActionCalendar(plan: PlantingPlanSummary, coldC?: number): PlantingActionMonth[] {
-  const mild = (coldC ?? 2) >= 0;
-  const hasBareRoot = plan.stockSummary.bareroot > 0;
-  const hasSeeds = plan.stockSummary.seedPacks > 0;
-  return [
-    { month: localMonthShort(0), tag: fb(T('studio.plan.calTag.order'), 'Order'), brief: fb(hasSeeds ? T('studio.plan.calBrief.0s') : T('studio.plan.calBrief.0'), hasSeeds ? 'Order direct-sow seed packs and check bare-root delivery dates.' : 'Confirm nursery dispatch dates and inspect soil drainage.') },
-    { month: localMonthShort(1), tag: fb(T('studio.plan.calTag.prep'), 'Prep'), brief: fb(mild ? T('studio.plan.calBrief.1m') : T('studio.plan.calBrief.1'), mild ? 'Lay 10 cm wood-chip mulch and plant early bare-root stock.' : 'Order 2 L pots and plugs; stage stakes and compost.') },
-    { month: localMonthShort(2), tag: fb(T('studio.plan.calTag.plant'), 'Plant'), brief: fb(hasBareRoot ? T('studio.plan.calBrief.2b') : T('studio.plan.calBrief.2'), hasBareRoot ? 'Plant dormant bare-root trees and stake against spring wind.' : 'Prepare planting pockets with compost and mycorrhizal mulch.') },
-    { month: localMonthShort(3), tag: fb(T('studio.plan.calTag.establish'), 'Establish'), brief: fb(T('studio.plan.calBrief.3'), 'Set out potted shrubs and perennials; water deeply after planting.') },
-    { month: localMonthShort(4), tag: fb(T('studio.plan.calTag.sow'), 'Sow'), brief: fb(hasSeeds ? T('studio.plan.calBrief.4s') : T('studio.plan.calBrief.4'), hasSeeds ? 'Direct-sow warm-season annuals and living mulch lines after last frost.' : 'Check young shoot growth and top up mulch rings.') },
-    { month: localMonthShort(5), tag: fb(T('studio.plan.calTag.mulch'), 'Mulch'), brief: fb(T('studio.plan.calBrief.5'), 'Deep-soak establishment watering twice weekly during dry spells.') },
-    { month: localMonthShort(6), tag: fb(T('studio.plan.calTag.buffer'), 'Buffer'), brief: fb(T('studio.plan.calBrief.6'), 'Chop-and-drop fast biomass to shade soil before peak summer heat.') },
-    { month: localMonthShort(7), tag: fb(T('studio.plan.calTag.harvest'), 'Harvest'), brief: fb(T('studio.plan.calBrief.7'), 'Harvest early fruit/greens; keep young roots cool under 10 cm mulch.') },
-    { month: localMonthShort(8), tag: fb(T('studio.plan.calTag.order'), 'Order'), brief: fb(T('studio.plan.calBrief.8'), 'Reserve autumn bare-root trees and spring-flowering bulbs.') },
-    { month: localMonthShort(9), tag: fb(T('studio.plan.calTag.autumn'), 'Autumn'), brief: fb(T('studio.plan.calBrief.9'), 'Plant hardy divisions and bulbs while soil retains autumn warmth.') },
-    { month: localMonthShort(10), tag: fb(T('studio.plan.calTag.dormant'), 'Dormant'), brief: fb(mild ? T('studio.plan.calBrief.10m') : T('studio.plan.calBrief.10'), mild ? 'Begin main winter bare-root planting wave.' : 'Add winter mulch collars around young woody stems.') },
-    { month: localMonthShort(11), tag: fb(T('studio.plan.calTag.review'), 'Review'), brief: fb(T('studio.plan.calBrief.11'), 'Record survival notes and update quantities for next season.') },
-  ];
-}

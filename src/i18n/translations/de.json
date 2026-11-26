@@ -3780,5 +3780,17 @@
   "consortium.ns.plan.onSiteSummary": "Bereits vor Ort ({n}) — nicht auf der Einkaufsliste",
   "consortium.ns.plan.onSiteStillCounted": "(zählt weiter für Gilde, Kronendach & Bestäubung)",
   "consortium.ns.plan.onSiteUndo": "✓ Vor Ort (rückgängig)",
+  "consortium.ns.dossier.statusNative": "Heimisch",
+  "consortium.ns.dossier.statusIntroduced": "Eingeführt",
+  "consortium.ns.dossier.maturityYears": "one: # Jahr | other: # Jahre",
+  "consortium.ns.atlas.wlRain": "▮ Regen (mm, 2:1)",
+  "consortium.ns.atlas.wlRainOver100": "▮ Regen (mm, 2:1, 1:10 >100)",
+  "consortium.ns.atlas.wlDryDeficit": "░ Trockendefizit (2T > P)",
+  "consortium.ns.preset.city.montpellier": "Montpellier",
+  "consortium.ns.preset.city.lyon": "Lyon",
+  "consortium.ns.preset.city.kyoto": "Kyoto",
+  "consortium.ns.preset.city.capetown": "Kapstadt",
+  "consortium.ns.preset.city.briancon": "Briançon",
+  "consortium.ns.preset.city.belem": "Belém",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

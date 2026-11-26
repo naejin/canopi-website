@@ -3780,5 +3780,17 @@
   "consortium.ns.plan.onSiteSummary": "Already on site ({n}) — excluded from shopping list",
   "consortium.ns.plan.onSiteStillCounted": "(still counted in guild, canopy & pollination)",
   "consortium.ns.plan.onSiteUndo": "✓ On site (undo)",
+  "consortium.ns.dossier.statusNative": "Native",
+  "consortium.ns.dossier.statusIntroduced": "Introduced",
+  "consortium.ns.dossier.maturityYears": "one: # yr | other: # yrs",
+  "consortium.ns.atlas.wlRain": "▮ Rain (mm, 2:1)",
+  "consortium.ns.atlas.wlRainOver100": "▮ Rain (mm, 2:1, 1:10 >100)",
+  "consortium.ns.atlas.wlDryDeficit": "░ Dry deficit (2T > P)",
+  "consortium.ns.preset.city.montpellier": "Montpellier",
+  "consortium.ns.preset.city.lyon": "Lyon",
+  "consortium.ns.preset.city.kyoto": "Kyoto",
+  "consortium.ns.preset.city.capetown": "Cape Town",
+  "consortium.ns.preset.city.briancon": "Briançon",
+  "consortium.ns.preset.city.belem": "Belém",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -544,12 +544,10 @@ const FIRST_RUN_BUDGET = 40 * 1024; // measured 40,953 B at the PP-B exit tip (7
 const KB = 1024;
 const ROLE_CAPS = {
   location: 11.9 * KB, // measured 11,603 B (A14 max 20)
-  future: 2.8 * KB, // measured 2,282 B with that shared chunk (A14 max 12)
   pool: 1.6 * KB, // measured 1,115 B: Place's count line since b1b (A14 max 12)
   details: 6.6 * KB, // measured 6,220 B (A14 max 8)
   sheets: 6.3 * KB, // each sheet; the largest measured 5,881 B (A14 max 8)
   find: 8 * KB, // each Find chunk (PP-C commit 0: Paste alone until c1; A14 max 8, slices 3 "about 8 KB")
-  later: 6.1 * KB, // measured 5,667 B (A14 max 8)
   suggest: 3.8 * KB, // measured 3,280 B (A14 max 8)
   palette: 10.6 * KB, // measured 10,263 B (b2's palette page with b3's Your plants; A14 max 12)
   verdict: 2.9 * KB, // measured 2,367 B (A14 max 12)

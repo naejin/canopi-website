@@ -179,16 +179,9 @@ test('real export, SSP2-4.5: whole lists through futureSummary (Lyon Temperate, 
 
 // ---- the marks and the views ----
 
-test('store.scenario starts at SSP2-4.5; FutureSlot.tsx stays a shell; the panel is the future chunk with the scenario radios', async () => {
+test('store.scenario starts at SSP2-4.5 and core exposes the four CMIP6 scenarios', async () => {
   const store = await import('../src/islands/palette/store.ts');
   assert.equal(store.scenario.value, 'ssp245');
   assert.deepEqual(core.scenarios, ['ssp126', 'ssp245', 'ssp370', 'ssp585']);
   assert.equal(core.DEFAULT_SCENARIO, 'ssp245');
-  assert.match(view('FutureSlot.tsx'), /return location\.value \? <panel\.View \/> : null;/, 'a shell: the panel loads only with a location');
-  assert.match(view('FutureSlot.tsx'), /import\('\.\/future\/future\.tsx'\)/, 'its content is the future feature chunk');
-  const panel = view('future/future.tsx');
-  assert.match(panel, /data-future-summary/);
-  assert.match(panel, /data-future=\{[^}]*'not-checked'\}/);
-  assert.match(panel, /name="ct-scenario"/, 'the scenario control: a radio of four');
-  assert.match(panel, /scenario\.value = /, 'the panel writes store.scenario');
 });

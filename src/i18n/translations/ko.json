@@ -3780,5 +3780,17 @@
   "consortium.ns.plan.onSiteSummary": "현장에 있음 ({n}) — 구매 목록에서 제외",
   "consortium.ns.plan.onSiteStillCounted": "(길드·수관·수분 계산에는 계속 포함)",
   "consortium.ns.plan.onSiteUndo": "✓ 현장에 있음 (취소)",
+  "consortium.ns.dossier.statusNative": "자생종",
+  "consortium.ns.dossier.statusIntroduced": "도입종",
+  "consortium.ns.dossier.maturityYears": "other: #년",
+  "consortium.ns.atlas.wlRain": "▮ 강수량 (mm, 2:1)",
+  "consortium.ns.atlas.wlRainOver100": "▮ 강수량 (mm, 2:1, 1:10 >100)",
+  "consortium.ns.atlas.wlDryDeficit": "░ 건조 부족 (2T > P)",
+  "consortium.ns.preset.city.montpellier": "몽펠리에",
+  "consortium.ns.preset.city.lyon": "리옹",
+  "consortium.ns.preset.city.kyoto": "교토",
+  "consortium.ns.preset.city.capetown": "케이프타운",
+  "consortium.ns.preset.city.briancon": "브리앙송",
+  "consortium.ns.preset.city.belem": "벨렝",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

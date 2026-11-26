@@ -32,7 +32,6 @@ test('Slice 3.2 touched components contain zero CSV export and clean grower voca
     '../src/islands/palette/views/north-star/PlanSurface.tsx',
     '../src/islands/palette/views/place/SitePostcard.tsx',
     '../src/islands/palette/views/place/AreaStep.tsx',
-    '../src/islands/palette/views/StageBar.tsx',
     '../src/islands/palette/views/LocationSlot.tsx',
   ];
 

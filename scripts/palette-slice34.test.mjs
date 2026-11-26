@@ -202,12 +202,11 @@ test('Planting Plan Plot Layout stays strictly bounded and non-overlapping acros
   assert.equal(studio.plantingConfig.value.quantityOverrides.p0, undefined);
 });
 
-test('Slice 3.4 views & PrintSheet contain zero native title attributes, zero CSV export, and clean grower vocabulary', () => {
+test('Slice 3.4 views contain zero native title attributes, zero CSV export, and clean grower vocabulary', () => {
   const files = [
     'src/islands/palette/rules/studio-analysis.ts',
     'src/islands/palette/views/north-star/DesignBoard.tsx',
     'src/islands/palette/views/north-star/PlanSurface.tsx',
-    'src/islands/palette/views/PrintSheet.tsx',
   ];
   const forbidden = /\b(shrub\s+layer|herbaceous|climber)\b/i;
 
@@ -217,13 +216,6 @@ test('Slice 3.4 views & PrintSheet contain zero native title attributes, zero CS
     assert.ok(!/\.csv\b|text\/csv/i.test(code), `${f}: must not include CSV export`);
     assert.ok(!forbidden.test(code), `${f}: must not contain botanical-layer jargon`);
   }
-
-  // Verify PrintSheet includes Field & Nursery Sheet sections.
-  const printSrc = readFileSync('src/islands/palette/views/PrintSheet.tsx', 'utf8');
-  assert.match(printSrc, /Field &amp; Microclimate Brief/);
-  assert.match(printSrc, /Nursery Order &amp; Spacing Sheet/);
-  assert.match(printSrc, /Field Materials &amp; 4 Planting Waves/);
-  assert.match(printSrc, /12-Month Field Action Calendar/);
 });
 
 test('Stage 1G: siteClimateProfile is the single source of truth across all 7 Studio screens (mild, cold & southern hemisphere)', async () => {

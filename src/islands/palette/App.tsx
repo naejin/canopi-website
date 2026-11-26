@@ -19,7 +19,6 @@ import type { LoadFailure } from '../../lib/palette/source.ts';
 import { retryableImport } from '../../lib/palette/index.ts';
 import { Place } from './views/place/Place.tsx';
 import { markStep } from './views/place/steps.tsx';
-import { Actions } from './views/Actions.tsx';
 import { Sheets } from './views/Sheets.tsx';
 import { lazyPart } from './views/lazy.tsx';
 import { Placeholder } from './views/palette/Placeholder.tsx';
@@ -32,7 +31,6 @@ export const PalettePage = lazyPart(retryableImport(() => import('./views/palett
 // use and no sheet imports a lazy chunk statically (check-built-site's K3 rule). The rows and the list
 // fold Find and the palette share are kept here too (astro.config.mjs FIRST_RUN_KIT builds them
 // untreeshaken, since they have no side effect of their own).
-import './views/StageBar.tsx';
 import './views/rows.tsx';
 import './views/kit/more.tsx';
 
@@ -125,7 +123,7 @@ export function App({ guide, onRetry }: AppProps) {
       <LoadingLine />
       {status === 'ready' && (
         <>
-          {onPalette && <PalettePage.View foot={<Actions />} />}
+          {onPalette && <PalettePage.View />}
         </>
       )}
       <Sheets />
