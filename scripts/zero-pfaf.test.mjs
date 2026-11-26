@@ -6,7 +6,6 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseSourceCredits, shownCredits } from '../src/lib/source-credits.js';
-import { sourceTitle, sourceLine, disputeLine } from '../src/lib/palette/verdict-line.ts';
 
 const ROOT = join(fileURLToPath(import.meta.url), '..', '..');
 const FORBIDDEN = /pfaf|plants for a future/i;
@@ -28,13 +27,4 @@ test('zero-PFAF guard: /data-sources/ shownCredits excludes PFAF rows', () => {
   for (const row of [...used, ...held]) {
     assert.doesNotMatch(`${row.source} ${row.name} ${row.credit} ${row.url}`, FORBIDDEN, `shownCredits leaked ${row.source}`);
   }
-});
-
-test('zero-PFAF guard: verdict-line sourceTitle, sourceLine, and disputeLine never emit PFAF', () => {
-  assert.doesNotMatch(sourceTitle('pfaf', 'Plants For A Future (pfaf.org)'), FORBIDDEN);
-  const sl = sourceLine({ field: 'frost_tender', source: 'pfaf', scope: 'GB', kind: 'recorded' });
-  assert.ok(sl);
-  assert.doesNotMatch(JSON.stringify(sl), FORBIDDEN);
-  const dl = disputeLine({ field: 'toxicity', kind: 'queue', value: null, unit: null, derived: false, scope: null, source: 'pfaf' }, null);
-  assert.doesNotMatch(JSON.stringify(dl), FORBIDDEN);
 });

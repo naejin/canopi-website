@@ -7,8 +7,7 @@
 // - Actions (S4): Share, Download for Canopi, Print (the print sheet), the link notices (unknown
 //   plants, cut lists) and the future panel: the palette page's foot (Palette.tsx `foot`, placed where
 //   the boards draw it);
-// - Sheets: the sheets' router and the toast; views/Sheets.tsx routes store.sheet itself (the plant
-//   dialog, Swap, Add, Search, Paste, each loaded on first use) and renders the toast.
+// - Toast: page-level toast region (views/Toast.tsx) for store actions (Start over Undo, Suggest errors).
 import type { ComponentType } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { computed } from '@preact/signals';
@@ -19,20 +18,13 @@ import type { LoadFailure } from '../../lib/palette/source.ts';
 import { retryableImport } from '../../lib/palette/index.ts';
 import { Place } from './views/place/Place.tsx';
 import { markStep } from './views/place/steps.tsx';
-import { Sheets } from './views/Sheets.tsx';
+import { Toast } from './views/Toast.tsx';
 import { lazyPart } from './views/lazy.tsx';
 import { Placeholder } from './views/palette/Placeholder.tsx';
 
 // The palette page, its own chunk (role `palette`): if it does not load, Place stays usable and the
 // failed line's Reload fetches it again in place (`?retry=n`; PP-B24).
 export const PalettePage = lazyPart(retryableImport(() => import('./views/palette/Palette.tsx'), (m) => m.Palette), { retry: true, page: true, loading: Placeholder });
-// Kept in the first run: modules the sheets, the later views and the future panel share, which no
-// first-run module imports since the matrix went (PP-B commit 0a'), so no part pays for them on first
-// use and no sheet imports a lazy chunk statically (check-built-site's K3 rule). The rows and the list
-// fold Find and the palette share are kept here too (astro.config.mjs FIRST_RUN_KIT builds them
-// untreeshaken, since they have no side effect of their own).
-import './views/rows.tsx';
-import './views/kit/more.tsx';
 
 export interface AppProps {
   // The page's guide (the noscript link's address), linked as "Read the guides" on the screens where
@@ -126,7 +118,7 @@ export function App({ guide, onRetry }: AppProps) {
           {onPalette && <PalettePage.View />}
         </>
       )}
-      <Sheets />
+      <Toast />
     </>
   );
 }

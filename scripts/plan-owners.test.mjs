@@ -151,8 +151,8 @@ test('parked markers: none parked or deleted is left in the tree; each moved one
     // pf commit 0 (2026-11-17): F1a-P2 moved on to its pf stream's spec (consortium-pf-c).
     assert.match(`${m.push ?? 'PP-B'} ${m.owner}`, /^(PP-B (b1a|b1b|b2|b3)|PP-C (c1|c2|pf-[a-f]))$/, m.id);
     const target = new URL(`../${m.to}`, import.meta.url);
-    if (m.to.startsWith('scripts/browser/') && !existsSync(target)) {
-      assert.ok(!live.some((x) => x.title.startsWith(head)), `${m.id} retired with pre-redesign browser spec`);
+    if (!existsSync(target)) {
+      assert.ok(!live.some((x) => x.title.startsWith(head)), `${m.id} retired with deleted legacy spec ${m.to}`);
       continue;
     }
     const now = live.find((x) => x.title.startsWith(head) && `scripts/${x.file}` === m.to);
@@ -173,7 +173,7 @@ test('parked markers: every parked marker is restored or deleted', async () => {
   for (const m of list.restored) {
     assert.match(`${m.push} ${m.owner}`, /^(PP-B (b1a|b1b|b2|b3)|PP-C (c1|c2|pf))$/, m.id);
     const target = new URL(`../${m.to}`, import.meta.url);
-    if (!m.to.startsWith('scripts/browser/') || existsSync(target)) {
+    if (existsSync(target)) {
       assert.ok(readFileSync(target, 'utf8').includes(m.evidence), `${m.id} restored in ${m.to} ("${m.evidence}")`);
     }
     assert.ok(!live.some((x) => x.title.startsWith(`${m.id} `)), `${m.id}: no marker left under its old title`);

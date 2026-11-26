@@ -30,11 +30,11 @@ export interface FindEntry {
   synonyms?: readonly string[];
   accepted?: readonly string[];
 }
-export type Tier = 'site' | 'scientific' | 'other';
-export type MatchKind = 'exact' | 'prefix' | 'tokens' | 'alternate';
-export type NameKind = 'name' | 'alternate' | 'canonical' | 'synonym' | 'accepted' | 'other';
-export interface FindWhy { kind: NameKind; text: string; lang?: string; match: MatchKind }
-export interface FindHit { id: PlantId; tier: Tier; why: FindWhy }
+type Tier = 'site' | 'scientific' | 'other';
+type MatchKind = 'exact' | 'prefix' | 'tokens' | 'alternate';
+type NameKind = 'name' | 'alternate' | 'canonical' | 'synonym' | 'accepted' | 'other';
+interface FindWhy { kind: NameKind; text: string; lang?: string; match: MatchKind }
+interface FindHit { id: PlantId; tier: Tier; why: FindWhy }
 // A search over the index; langs: the languages of the names-file names it holds (none without it).
 export interface Finder { (query: string): FindHit[]; langs: readonly string[]; close(query: string, words?: boolean): FindHit[]; exact(query: string): FindHit[] }
 
@@ -170,8 +170,8 @@ export function releaseIndex({ names, plants, lang }: { names: readonly FindEntr
 // ---- the names file (schema 4; canopi-data format note "The names file") ----
 
 // Its first line: `#canopi-names/1 release_id=… core_raw_sha256=…`.
-export interface NamesHeader { release_id: string; core_raw_sha256: string }
-export function namesHeader(text: string): NamesHeader | null {
+interface NamesHeader { release_id: string; core_raw_sha256: string }
+function namesHeader(text: string): NamesHeader | null {
   const first = text.slice(0, text.indexOf('\n'));
   const m = /^#canopi-names\/1 (.*)$/.exec(first);
   if (!m) return null;
@@ -180,7 +180,7 @@ export function namesHeader(text: string): NamesHeader | null {
 }
 // Whether a names file belongs to the page's database (4.4): its integers are that release's
 // plants.plant, so a file bound to another release or core is dropped, never mapped onto wrong plants.
-export const namesFor = (file: NamesHeader | null, page: NamesHeader): boolean =>
+const namesFor = (file: NamesHeader | null, page: NamesHeader): boolean =>
   !!file && file.release_id === page.release_id && file.core_raw_sha256 === page.core_raw_sha256;
 
 // The names file's kind codes (its `#codes kind=` line: 1 vernacular, 2 scientific_synonym,
@@ -205,7 +205,7 @@ const pause = (): Promise<void> => {
 // plants.plant → id (PlantSource.names); a row of a plant the core does not list is skipped.
 // The text must already be checked to belong to the page's database (namesFor).
 const SLICE = 2000;
-export async function indexSliced({ names, lang, file, plantIds }: { names: readonly FindEntry[]; lang: string; file: string; plantIds: ReadonlyMap<number, PlantId> }): Promise<Finder> {
+async function indexSliced({ names, lang, file, plantIds }: { names: readonly FindEntry[]; lang: string; file: string; plantIds: ReadonlyMap<number, PlantId> }): Promise<Finder> {
   const b = new Builder(lang);
   for (let i = 0; i < names.length; i++) { b.entry(names[i]); if ((i + 1) % SLICE === 0) await pause(); }
   const codes = kindCodes(file), langs = new Set<string>();
@@ -234,7 +234,7 @@ export async function indexSliced({ names, lang, file, plantIds }: { names: read
 // plants share gets no line (c1r3 T17, not on the boards): each row's scientific name tells them apart.
 // vars.lang is a language code: the view names it in the page's language.
 const WHY_KEY: Partial<Record<NameKind, string>> = { other: 'consortium.find.why.lang', alternate: 'consortium.find.why.alternate', synonym: 'consortium.find.why.synonym', accepted: 'consortium.find.why.accepted' };
-export function whyLines(h: FindHit): Line[] {
+function whyLines(h: FindHit): Line[] {
   const out: Line[] = [], key = WHY_KEY[h.why.kind];
   if (key) out.push({ key, vars: h.why.lang && h.why.kind === 'other' ? { lang: h.why.lang, name: h.why.text } : { name: h.why.text } });
   return out;
@@ -242,14 +242,14 @@ export function whyLines(h: FindHit): Line[] {
 
 // The names line (boards FindType, FindNone): how many languages the names file holds, never a fixed
 // count; without the file, the page's language, English and scientific names.
-export const namesLine = (fileLangs: readonly string[]): Line =>
+const namesLine = (fileLangs: readonly string[]): Line =>
   fileLangs.length ? { key: 'consortium.find.namesFile', vars: { n: fileLangs.length }, count: fileLangs.length } : { key: 'consortium.find.namesCore', vars: {} };
 
 // At most one slip (a letter added, dropped or changed, or two letters swapped), for names of four
 // letters or more (fix round 1, B14: "aple", "chesnut"); a changed letter needs five ("rose" is not
 // "rost"): the
 // close spellings of Find's no-result state and Paste's close matches.
-export function oneOff(a: string, b: string): boolean {
+function oneOff(a: string, b: string): boolean {
   if (a === b) return true;
   const la = a.length, lb = b.length;
   if (Math.abs(la - lb) > 1 || Math.min(la, lb) < 4) return false;

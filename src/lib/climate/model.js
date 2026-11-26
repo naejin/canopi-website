@@ -85,8 +85,8 @@ export const CLIMATE_V07_PINS = Object.freeze({
   climate_tiles_sha256: 'f689af2d4a81ed62937ec7c209fab42a15285aeac666ce60f2b2cf99d43e1e5b',
   packs_v07_sha256: '5d223909c56aa2df669e162a42f85fb6bb0be97f388e764df24eef20ea3de355',
   monolithic_tar_sha256: '1fd5ffd18197b34a7d0342f38ca8b0afa7a65182cd0a66aef03e3d0b33d2f079',
-  wasm_version: '0.7.0',
-  wasm_sha256: 'ba80499ce3e31df4cf67799b006740a1222b4a55f59f855273d7960f174095fc',
+  wasm_version: '0.7.1',
+  wasm_sha256: '7abdc1871882c0105f17a960c8461a5c3111f44d7760688a5f5f594a8bd42206',
 });
 
 /**

@@ -108,15 +108,6 @@ export const focusAfterStartOver = (): void => {
 // toast goes while the focus is in it (or was lost to <body>): else the page title, never <body>
 // (architecture 9; A25, PP-B17).
 let opener: HTMLElement | null = null;
-// After an add whose control leaves as the plant joins: what find gives (within an open sheet, else the
-// sheet's title), and the toast hands the focus back there, not to the removed control.
-export function focusAfterAdd(find: () => HTMLElement | null): void {
-  if (typeof document === 'undefined') return;
-  focusSoon(find, (el) => { opener = el; });
-}
-// After a Next step's Add: the Next step's title, which every state of the card shows (its next hole,
-// or none left), else the page title (Focus board; slices b2 P8).
-const focusNextStep = (): void => focusAfterAdd(() => document.getElementById('ct-next-t') ?? viewHeading());
 // Returns the region of the control that raised the toast (focusPlant's `from`), null for none.
 export function noteToastOpener(): Element | null {
   if (typeof document === 'undefined') return null;
@@ -132,12 +123,4 @@ export function focusAfterToast(): void {
   const back = opener;
   opener = null;
   focusSoon(() => (back?.isConnected && back.getClientRects().length && !(back as HTMLButtonElement).disabled ? back : viewHeading()));
-}
-
-// A toast's Show for the plant whose Details is on top (store.addMembers; c4 R2): its first warning
-// chip in the summary comes on screen and takes the focus, so a screen reader hears it; with none, the
-// summary.
-export function focusWarning(): void {
-  if (typeof document === 'undefined') return;
-  focusSoon(() => { const d = topSheet(); return d?.querySelector<HTMLElement>('[data-summary] .ct-flag') ?? d?.querySelector<HTMLElement>('[data-summary]') ?? null; });
 }

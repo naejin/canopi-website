@@ -179,12 +179,8 @@ test('M26, D7: "1.17 36" searched as a name goes to the geocoder; "Look up its n
   assert.equal(await ctl.nameOf(0, 0), null, 'no place there');
 });
 
-test('the location step stays off the first run: the shell imports its chunk only through import()', () => {
-  const shell = view('LocationSlot.tsx'), loader = view('location/load.ts');
-  assert.doesNotMatch(shell, /from '\.\/location\/location\.tsx'/);
-  assert.match(loader, /import\('\.\/location\.tsx'\)/);
-  assert.doesNotMatch(view('location/location.tsx'), /from 'maplibre-gl'/, 'MapLibre only through lib/location/maplibre.ts, its own chunk');
-  for (const f of ['registry.ts', 'place-search.ts', 'transport.ts', 'geolocation.ts', 'maplibre.ts']) {
+test('copied location helpers keep their AGPL and GeoLibre MIT headers', () => {
+  for (const f of ['registry.ts', 'place-search.ts', 'transport.ts', 'geolocation.ts']) {
     const src = readFileSync(new URL(`../src/lib/location/${f}`, import.meta.url), 'utf8');
     assert.match(src, /GNU Affero General Public License/, `${f}: AGPL header`);
     assert.match(src, /copied from canopi desktop\/web\/src\/\S+ at [0-9a-f]{40}/, `${f}: the "copied from canopi" line`);
@@ -283,9 +279,9 @@ test('review round 3 (2, 3): Start over, Change site and Start empty drop a link
   const store = await import('../src/islands/palette/store.ts');
   const load = await import('../src/islands/palette/state/lookups.ts');
   const raf = globalThis.requestAnimationFrame;
-  globalThis.requestAnimationFrame ??= () => 0; // Start empty opens the search sheet (its focus waits a frame)
-  t.after(() => { globalThis.requestAnimationFrame = raf; store.closeSheet(); });
-  for (const act of ['startOver', 'backToPlace', 'startEmpty']) {
+  globalThis.requestAnimationFrame ??= () => 0;
+  t.after(() => { globalThis.requestAnimationFrame = raf; });
+  for (const act of ['startOver', 'backToPlace']) {
     store.location.value = { lat: 45.75, lon: 4.85, source: 'link', lookup: null };
     void load.lookingThrough(() => new Promise(() => {}), async () => {}); // a link's lookup on a network that never answers
     const id = load.nextLookup?.();

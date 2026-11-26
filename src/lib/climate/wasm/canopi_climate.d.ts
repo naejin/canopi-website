@@ -193,6 +193,16 @@ export function photoperiod(lat: number): any;
 export function soilAwc(sand_pct: number, clay_pct: number, om_pct?: number | null): any;
 
 /**
+ * Compute Saxton & Rawls (2006) soil Available Water Capacity discounted for
+ * coarse fragments (`cfvo_0_30_pct` for 0–30 cm topsoil and `cfvo_30_100_pct`
+ * for 30–100 cm subsoil, in vol %), or `null` if out of domain.
+ *
+ * # Errors
+ * Throws only on serialization failure.
+ */
+export function soilAwcWithRock(sand_pct: number, clay_pct: number, om_pct?: number | null, cfvo_0_30_pct?: number | null, cfvo_30_100_pct?: number | null): any;
+
+/**
  * USDA texture class id (e.g. `"silt_loam"`) of sand and clay
  * percentages; `undefined` for impossible fractions.
  */
@@ -205,9 +215,10 @@ export function textureClass(sand_pct: number, clay_pct: number): string | undef
 export function tileName(lat: number, lon: number): string | undefined;
 
 /**
- * USDA hardiness zone (`1a` ... `13b`) of a coldest night in °C.
+ * USDA hardiness zone (`1a` ... `13b`) of a coldest night in °C, or
+ * `undefined` for non-finite input.
  */
-export function usdaZone(tmin_extreme_c: number): string;
+export function usdaZone(tmin_extreme_c: number): string | undefined;
 
 /**
  * Crate version, for logs and cache keys.
@@ -235,6 +246,7 @@ export interface InitOutput {
     readonly lookupWaterBalance: (a: number, b: number, c: number, d: number) => [number, number, number];
     readonly photoperiod: (a: number) => [number, number, number];
     readonly soilAwc: (a: number, b: number, c: number, d: number) => [number, number, number];
+    readonly soilAwcWithRock: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => [number, number, number];
     readonly textureClass: (a: number, b: number) => [number, number];
     readonly tileName: (a: number, b: number) => [number, number];
     readonly usdaZone: (a: number) => [number, number];

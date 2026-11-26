@@ -1,4 +1,4 @@
-// Typed lazy-loading bridge to the pinned canopi-climate v0.7.0 Rust WebAssembly build
+// Typed lazy-loading bridge to the pinned canopi-climate v0.7.1 Rust WebAssembly build
 // (src/lib/climate/wasm/canopi_climate_bg.wasm, AGPL-3.0-or-later, THIRD_PARTY_NOTICES.md).
 // - In the browser: dynamically imports ./wasm/canopi_climate.js (lazy chunk, zero landing-page impact).
 // - In Node: reads ./wasm/canopi_climate_bg.wasm via node:fs, verifies SHA-256 against CLIMATE_V07_PINS.wasm_sha256,
@@ -314,12 +314,6 @@ export interface SoilAwcSummary {
   awc_100cm_mm: number;
 }
 
-export interface SoilAwcWithRockResult {
-  awcMmPerM: number;
-  totalReserveMm: number;
-  dryDaysReserve: number;
-}
-
 type WasmModule = typeof WasmExports;
 
 let readyMod: WasmModule | null = null;
@@ -329,7 +323,7 @@ const isNodeRuntime = (): boolean =>
   typeof process !== 'undefined' && typeof process.versions?.node === 'string';
 
 /**
- * Lazily load and initialize the pinned canopi-climate v0.7.0 WASM module.
+ * Lazily load and initialize the pinned canopi-climate v0.7.1 WASM module.
  * - In the browser: fetches the Vite-emitted canopi_climate_bg.*.wasm on first use.
  * - In Node: reads the pinned wasm via node:fs, verifies SHA-256, and calls initSync().
  */
@@ -395,7 +389,7 @@ export async function wasmTextureClass(sandPct: number, clayPct: number): Promis
   return (await initClimateWasm()).textureClass(sandPct, clayPct);
 }
 
-export async function wasmUsdaZone(tminExtremeC: number): Promise<string> {
+export async function wasmUsdaZone(tminExtremeC: number): Promise<string | undefined> {
   return (await initClimateWasm()).usdaZone(tminExtremeC);
 }
 
@@ -451,6 +445,22 @@ export async function wasmSoilAwc(sandPct: number, clayPct: number, omPct?: numb
   return (await initClimateWasm()).soilAwc(sandPct, clayPct, omPct ?? null) as SoilAwcSummary | null;
 }
 
+export async function wasmSoilAwcWithRock(
+  sandPct: number,
+  clayPct: number,
+  omPct?: number | null,
+  cfvo0_30Pct?: number | null,
+  cfvo30_100Pct?: number | null,
+): Promise<SoilAwcSummary | null> {
+  return (await initClimateWasm()).soilAwcWithRock(
+    sandPct,
+    clayPct,
+    omPct ?? null,
+    cfvo0_30Pct ?? null,
+    cfvo30_100Pct ?? null,
+  ) as SoilAwcSummary | null;
+}
+
 export async function wasmAdjustMicroclimate(
   site: WasmSiteClimate,
   input: WasmMicroclimateInput,
@@ -482,23 +492,4 @@ export function interpolateChillPortions(phenology: PhenologyLookup, deltaWinter
   const hi = Math.min(4, lo + 1);
   const frac = clamped - lo;
   return Math.round((curve[lo] + (curve[hi] - curve[lo]) * frac) * 10) / 10;
-}
-
-/**
- * Adjust Rust soilAwc() fine-earth AWC for coarse rock fragments (cfvo %) and estimate
- * root-zone dry-day water reserve.
- */
-export function soilAwcWithRock(
-  awc: SoilAwcSummary,
-  stonePct = 0,
-  rootDepthM = 1.0,
-  dailyEtMm = 5,
-): SoilAwcWithRockResult {
-  const rockFrac = Math.max(0, Math.min(95, stonePct)) / 100;
-  const depthM = Math.max(0.1, rootDepthM);
-  const et = Math.max(1, dailyEtMm);
-  const awcMmPerM = Math.round(awc.awc_mm_per_m * (1 - rockFrac));
-  const totalReserveMm = Math.round(awcMmPerM * depthM);
-  const dryDaysReserve = Math.max(1, Math.round(totalReserveMm / et));
-  return { awcMmPerM, totalReserveMm, dryDaysReserve };
 }

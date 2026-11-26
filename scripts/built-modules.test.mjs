@@ -12,81 +12,49 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const graphOf = (edges) => new Map(Object.entries(edges).map(([p, imports]) => [p, { code: '', imports }]));
-const noFeatures = { location: [], pool: [], details: [], sheets: [], find: [], suggest: [], palette: [], verdict: [], climateWasm: [] };
+const noFeatures = { suggest: [], palette: [], climateWasm: [] };
 const none = { features: noFeatures, maplibre: [], maplibreCss: [], testHook: [] };
 const sets = ({ parts, location, maplibre }) => ({ parts, location, maplibre });
 const roles = (features, maplibre = []) => ({ ...none, features: { ...noFeatures, ...features }, maplibre });
 
-test('chunkRoles: the location entry and the suggestion by their entry module, MapLibre by its modules, its worker and the CSS they import', () => {
+test('chunkRoles: active lazy roles by entry module, plus MapLibre detection and testHook', () => {
   const root = '/w/p5';
   const chunk = (fileName, facadeModuleId, moduleIds, css = [], code = '') => ({ type: 'chunk', fileName, facadeModuleId, moduleIds, code, viteMetadata: { importedCss: new Set(css), importedAssets: new Set() } });
   const bundle = {
     '_astro/main.a.js': chunk('_astro/main.a.js', `${root}/src/islands/palette/main.ts`, [`${root}/src/islands/palette/main.ts`, `${root}/src/lib/palette/state.ts`]),
-    '_astro/where.b.js': chunk('_astro/where.b.js', `${root}/src/islands/palette/views/location/location.tsx`, [`${root}/src/islands/palette/views/location/location.tsx`], ['_astro/where.c.css'], 'new Worker("/_astro/maplibre-gl-worker.d.js")'),
-    '_astro/index.e.js': chunk('_astro/index.e.js', null, [`${root}/node_modules/maplibre-gl/dist/maplibre-gl.mjs`]),
+    '_astro/Palette.p.js': chunk('_astro/Palette.p.js', `${root}/src/islands/palette/views/palette/Palette.tsx`, [`${root}/src/islands/palette/views/palette/Palette.tsx`]),
+    '_astro/climate.w.js': chunk('_astro/climate.w.js', `${root}/src/lib/climate/wasm/canopi_climate.js`, [`${root}/src/lib/climate/wasm/canopi_climate.js`]),
     '_astro/suggest.f.js': chunk('_astro/suggest.f.js', `${root}/src/lib/palette/suggest.ts`, [`${root}/src/lib/palette/suggest.ts`, `${root}/src/lib/palette/holes.ts`]),
+    '_astro/index.e.js': chunk('_astro/index.e.js', null, [`${root}/node_modules/maplibre-gl/dist/maplibre-gl.mjs`], ['_astro/where.c.css'], 'new Worker("/_astro/maplibre-gl-worker.d.js")'),
     '_astro/maplibre-gl-worker.d.js': { type: 'asset', fileName: '_astro/maplibre-gl-worker.d.js', names: [], originalFileNames: [], source: 'self.onmessage' },
     '_astro/other.g.js': { type: 'asset', fileName: '_astro/other.g.js', names: [], originalFileNames: [], source: '' },
     '_astro/where.c.css': { type: 'asset', fileName: '_astro/where.c.css', names: ['location.css'], originalFileNames: [], source: '.maplibregl-map{}' },
   };
   assert.deepEqual(chunkRoles(bundle), {
-    features: { ...noFeatures, location: ['/_astro/where.b.js'], suggest: ['/_astro/suggest.f.js'] },
+    features: { suggest: ['/_astro/suggest.f.js'], palette: ['/_astro/Palette.p.js'], climateWasm: ['/_astro/climate.w.js'] },
     maplibre: ['/_astro/index.e.js', '/_astro/maplibre-gl-worker.d.js'],
     maplibreCss: ['/_astro/where.c.css'],
     testHook: [],
   });
   assert.deepEqual(Object.keys(ROLE_ENTRIES), Object.keys(noFeatures), 'the role entries, listed once');
-  assert.deepEqual(chunkRoles({ '_astro/main.a.js': bundle['_astro/main.a.js'] }), none, 'no location, MapLibre or providers chunk: no roles');
-  assert.deepEqual(chunkRoles({ 'a.js': chunk('a.js', '/x.ts', ['/x.ts'], [], 'new Worker("/_astro/other.g.js")'), '_astro/other.g.js': bundle['_astro/other.g.js'] }), none, 'a worker no location or MapLibre chunk names is not MapLibre\'s');
+  assert.deepEqual(chunkRoles({ '_astro/main.a.js': bundle['_astro/main.a.js'] }), none, 'no lazy role chunks: no roles');
+  assert.deepEqual(chunkRoles({ 'a.js': chunk('a.js', '/x.ts', ['/x.ts'], [], 'new Worker("/_astro/other.g.js")'), '_astro/other.g.js': bundle['_astro/other.g.js'] }), none, 'a worker no MapLibre chunk names is not MapLibre\'s');
+  assert.deepEqual(chunkRoles({ ...bundle, '_astro/test-hook.t.js': chunk('_astro/test-hook.t.js', `${root}/src/islands/palette/test-hook.ts`, [`${root}/src/islands/palette/test-hook.ts`]) }).testHook, ['/_astro/test-hook.t.js'], 'the browser-test hook by its module');
 });
 
-test('chunkRoles: the lazy island parts by their entry module, in the one role list with the features (E6 B4)', () => {
-  const root = '/w/e6';
-  const chunk = (fileName, facadeModuleId, css = []) => ({ type: 'chunk', fileName, facadeModuleId, moduleIds: [facadeModuleId ?? '/x.ts'], code: '', viteMetadata: { importedCss: new Set(css), importedAssets: new Set() } });
-  const bundle = Object.fromEntries([
-    ['_astro/Paste.a.js', `${root}/src/islands/palette/views/find/Paste.tsx`],
-    ['_astro/Find.f.js', `${root}/src/islands/palette/views/find/Find.tsx`],
-    ['_astro/Add.h.js', `${root}/src/islands/palette/views/Add.tsx`],
-    ['_astro/Swap.b.js', `${root}/src/islands/palette/views/Swap.tsx`],
-    ['_astro/later.c.js', `${root}/src/islands/palette/views/later.ts`, ['_astro/later.x.css']],
-    ['_astro/Details.d.js', `${root}/src/islands/palette/views/details/Details.tsx`],
-    ['_astro/suggest.e.js', `${root}/src/lib/palette/suggest.ts`],
-    ['_astro/shared.g.js', null],
-  ].map(([f, id, css]) => [f, chunk(f, id, css)]));
-  const r = chunkRoles(bundle);
-  // PP-C c1: Find and Paste (views/find/**) are the find role; Add (deleted) has none.
-  assert.deepEqual(r.features, { ...noFeatures, details: ['/_astro/Details.d.js'], sheets: ['/_astro/Swap.b.js'], find: ['/_astro/Find.f.js', '/_astro/Paste.a.js'], suggest: ['/_astro/suggest.e.js'] });
-  assert.equal(r.lazy, undefined, 'one role list: no separate lazy table');
-  // PP-B commit 0: the palette page and the verdict rule, by their entry modules (the matrix role went in 0a').
-  const ppb = chunkRoles({ ...bundle,
-    '_astro/Palette.p.js': chunk('_astro/Palette.p.js', `${root}/src/islands/palette/views/palette/Palette.tsx`),
-    '_astro/verdict.v.js': chunk('_astro/verdict.v.js', `${root}/src/lib/palette/verdict.ts`) });
-  assert.deepEqual([ppb.features.palette, ppb.features.verdict], [['/_astro/Palette.p.js'], ['/_astro/verdict.v.js']], 'the PP-B roles palette and verdict');
-  assert.equal(ppb.features.matrix, undefined, 'no matrix role since PP-B commit 0a\'');
-  assert.deepEqual(chunkRoles({ ...bundle, '_astro/test-hook.t.js': chunk('_astro/test-hook.t.js', `${root}/src/islands/palette/test-hook.ts`) }).testHook, ['/_astro/test-hook.t.js'], 'the browser-test hook by its module');
-});
-
-// K3 hand-off: when another chunk imports from the plant dialog's chunk, Rollup drops that chunk's
-// facade (facadeModuleId null; measured on the B4 build, 2026-11-13, when Correction imported the
-// drafts). The chunk still holds Details.tsx, so it keeps its role.
-test('chunkRoles: a chunk holding a role\'s entry module reached only through import() keeps the role without being its facade; a facade-only chunk too; a module also imported statically gives no role', () => {
+test('chunkRoles: a chunk holding a role\'s entry module reached only through import() keeps the role without being its facade; a module also imported statically gives no role', () => {
   const root = '/w/k3';
-  const details = `${root}/src/islands/palette/views/details/Details.tsx`;
+  const palette = `${root}/src/islands/palette/views/palette/Palette.tsx`;
   const bundle = {
-    '_astro/Details.d.js': { type: 'chunk', fileName: '_astro/Details.d.js', facadeModuleId: null, isDynamicEntry: true, moduleIds: [`${root}/src/islands/palette/views/layers.ts`, `${root}/src/islands/palette/views/kit/correction.ts`, details], code: '', viteMetadata: { importedCss: new Set(), importedAssets: new Set() } },
-    '_astro/Correction.c.js': { type: 'chunk', fileName: '_astro/Correction.c.js', facadeModuleId: `${root}/src/islands/palette/views/Correction.tsx`, moduleIds: [`${root}/src/islands/palette/views/Correction.tsx`], code: '', viteMetadata: { importedCss: new Set(), importedAssets: new Set() } },
+    '_astro/Palette.p.js': { type: 'chunk', fileName: '_astro/Palette.p.js', facadeModuleId: null, isDynamicEntry: true, moduleIds: [palette], code: '', viteMetadata: { importedCss: new Set(), importedAssets: new Set() } },
     '_astro/main.m.js': { type: 'chunk', fileName: '_astro/main.m.js', facadeModuleId: `${root}/src/islands/palette/main.ts`, isDynamicEntry: true, moduleIds: [`${root}/src/islands/palette/main.ts`, `${root}/src/lib/palette/suggest.ts`], code: '', viteMetadata: { importedCss: new Set(), importedAssets: new Set() } },
-    '_astro/shared.n.js': { type: 'chunk', fileName: '_astro/shared.n.js', facadeModuleId: null, isDynamicEntry: false, moduleIds: [`${root}/src/islands/palette/views/Swap.tsx`], code: '', viteMetadata: { importedCss: new Set(), importedAssets: new Set() } },
     '_astro/suggest.s.js': { type: 'chunk', fileName: '_astro/suggest.s.js', facadeModuleId: `${root}/src/lib/palette/suggest.ts?x`, moduleIds: [], code: '', viteMetadata: { importedCss: new Set(), importedAssets: new Set() } },
   };
-  // Rollup's module info: Details.tsx and Swap.tsx reached by import() only; suggest.ts imported statically too.
-  const info = { [details]: { importers: [], dynamicImporters: ['/w/k3/src/islands/palette/views/Sheets.tsx'] }, [`${root}/src/lib/palette/suggest.ts`]: { importers: [`${root}/src/lib/palette/index.ts`], dynamicImporters: ['/w/k3/x.ts'] }, [`${root}/src/islands/palette/views/Swap.tsx`]: { importers: [`${root}/src/islands/palette/views/x.ts`], dynamicImporters: [] } };
-  assert.deepEqual(chunkRoles(bundle).features.details, [], 'without the module info, facades only');
+  const info = { [palette]: { importers: [], dynamicImporters: [`${root}/src/islands/palette/App.tsx`] }, [`${root}/src/lib/palette/suggest.ts`]: { importers: [`${root}/src/lib/palette/index.ts`], dynamicImporters: ['/w/k3/x.ts'] } };
+  assert.deepEqual(chunkRoles(bundle).features.palette, [], 'without the module info, facades only');
   const r = chunkRoles(bundle, (id) => info[id] ?? null).features;
-  assert.deepEqual(r.details, ['/_astro/Details.d.js']);
-  assert.deepEqual(r.sheets, ['/_astro/Correction.c.js']);
+  assert.deepEqual(r.palette, ['/_astro/Palette.p.js']);
   assert.deepEqual(r.suggest, ['/_astro/suggest.s.js'], 'a facade-only chunk (query stripped); not the island entry, where suggest.ts is imported statically');
-  assert.ok(!r.sheets.includes('/_astro/shared.n.js'), 'a chunk holding a sheet module that is imported statically takes no role');
 });
 
 // PP-C commit 0 (slices 3.2, design check c2 5.4): the role table is final, so each role's pattern

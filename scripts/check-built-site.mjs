@@ -543,35 +543,23 @@ const sizeNotes = [];
 const FIRST_RUN_BUDGET = 40 * 1024; // measured 40,953 B at the PP-B exit tip (7 B under)
 const KB = 1024;
 const ROLE_CAPS = {
-  location: 11.9 * KB, // measured 11,603 B (A14 max 20)
-  pool: 1.6 * KB, // measured 1,115 B: Place's count line since b1b (A14 max 12)
-  details: 6.6 * KB, // measured 6,220 B (A14 max 8)
-  sheets: 6.3 * KB, // each sheet; the largest measured 5,881 B (A14 max 8)
-  find: 8 * KB, // each Find chunk (PP-C commit 0: Paste alone until c1; A14 max 8, slices 3 "about 8 KB")
   suggest: 3.8 * KB, // measured 3,280 B (A14 max 8)
-  palette: 10.6 * KB, // measured 10,263 B (b2's palette page with b3's Your plants; A14 max 12)
-  verdict: 2.9 * KB, // measured 2,367 B (A14 max 12)
-  climateWasm: 10 * KB, // Goal #40: lazy canopi-climate v0.7.0 wasm-bindgen JS glue
+  palette: 10.6 * KB, // North Star Studio chunk (size notes only)
+  climateWasm: 10 * KB, // canopi-climate v0.7.1 wasm-bindgen JS glue
 };
-const LOCATION_BUDGET = 20 * KB;
-const MAPLIBRE_BUDGET = 330 * KB;
 const kb = (n) => `${(n / KB).toFixed(1)} KB`;
-const locationSource = existsSync(new URL('../src/islands/palette/views/location/', import.meta.url));
-if (locationSource) assert.ok(existsSync(new URL('../src/islands/palette/views/location/location.tsx', import.meta.url)), 'src/islands/palette/views/location/ has no location.tsx, the lazy entry the location budget finds by its module id');
 assert.ok(existsSync(join(root, '..', CHUNK_ROLES_FILE)), `${join(root, '..', CHUNK_ROLES_FILE)} is missing: the build writes it (astro.config.mjs canopi:consortium-chunk-roles)`);
 assert.ok(!existsSync(join(root, CHUNK_ROLES_FILE)), `${CHUNK_ROLES_FILE} must not be served`);
 const roles = readChunkRoles(root);
 assert.deepEqual(roles.testHook, [], `the browser-test hook's chunk is in a production build (${roles.testHook.join(', ')}): build with npm run build`);
 assert.deepEqual(Object.keys(ROLE_CAPS).sort(), Object.keys(roles.features).sort(), 'every chunk role has a cap (ROLE_CAPS) and every cap a role');
-// Each role's chunk count, from its ROLE_ENTRIES row (PP-C commit 0, slices 3.2): a number exactly,
-// '1+' at least one.
+// Each role's chunk count, from its ROLE_ENTRIES row: a number exactly, or '1+' at least one.
 for (const [kind, { chunks }] of Object.entries(ROLE_ENTRIES)) {
-  if (kind === 'location' && !locationSource) continue; // asked below, per page
   const found = roles.features[kind], list = found.join(', ') || 'none';
   if (chunks === '1+') assert.ok(found.length >= 1, `at least one ${kind} chunk, found none`);
   else assert.equal(found.length, chunks, `${chunks} ${kind} chunk(s), found ${list}`);
 }
-const report = { firstRun: 0, firstRunList: [], costs: {}, location: 0, maplibre: 0, preloads: [] };
+const report = { firstRun: 0, firstRunList: [], costs: {}, preloads: [] };
 for (const lang of locales) {
   const path = `${consortiumPath(lang)}index.html`;
   const html = readFileSync(join(root, path), 'utf8');
@@ -590,19 +578,9 @@ for (const lang of locales) {
   const roleChunks = Object.values(roles.features).flat();
   for (const p of roleChunks) assert.ok(graph.has(p), `${path}: the role chunk ${p} is not in the page's graph`);
   const astro = readdirSync(join(root, '_astro')).map((f) => `/_astro/${f}`);
-  if (locationSource) {
-    assert.equal(roles.features.location.length, 1, `${path}: one location chunk (entry views/location/location.tsx), found ${roles.features.location.length}`);
-    assert.ok(lazy.location.includes(roles.features.location[0]), `${path}: the location chunk ${roles.features.location[0]} is in the island's graph and loads on demand`);
-    assert.ok(roles.maplibre.length > 0 && lazy.maplibre.length > 0, `${path}: MapLibre is in the build and loads on demand once the location chunk exists`);
-  } else {
-    assert.deepEqual([...roles.features.location, ...roles.maplibre, ...roles.maplibreCss], [], `${path}: no location or MapLibre chunk before S5b lands`);
-    for (const p of astro.filter((f) => f.endsWith('.js'))) assert.ok(!readFileSync(join(root, p), 'utf8').includes('maplibregl'), `${path}: ${p} holds MapLibre before S5b lands`);
-  }
-  report.location = gz(lazy.location);
-  report.maplibre = gz(lazy.maplibre) + roles.maplibreCss.reduce((n, p) => n + gzipSync(readFileSync(join(root, p)), { level: 9 }).length, 0);
-  if (locationSource) assert.ok(report.maplibre > 0, `${path}: MapLibre counts 0 bytes: its chunks were not found`);
-  if (report.location > LOCATION_BUDGET) sizeNotes.push(`${path}: the location part is ${kb(report.location)} gzip, the reference is 20 KB`);
-  if (report.maplibre > MAPLIBRE_BUDGET) sizeNotes.push(`${path}: MapLibre is ${kb(report.maplibre)} gzip, the reference is 330 KB`);
+  // Legacy views/location/ (MapLibre map dialog) was retired in Wave 7.5: verify MapLibre stays absent from dist/.
+  assert.deepEqual([...roles.maplibre, ...roles.maplibreCss], [], `${path}: no MapLibre chunks or CSS in dist/`);
+  for (const p of astro.filter((f) => f.endsWith('.js'))) assert.ok(!readFileSync(join(root, p), 'utf8').includes('maplibregl'), `${path}: ${p} unexpectedly bundles MapLibre`);
   // Per-part caps (A14).
   const roleOf = (p) => Object.entries(roles.features).find(([, list]) => list.includes(p))?.[0];
   for (const [chunk, cost] of Object.entries(lazy.costs)) {
@@ -635,15 +613,11 @@ for (const lang of locales) {
     const css = lists.flatMap((l) => [...l.matchAll(/["']([^"']+\.css)["']/g)].map((m) => `/${m[1].replace(/^\//, '')}`)).filter((c) => !roles.maplibreCss.includes(c));
     assert.deepEqual(css, [], `${path}: ${p} loads the stylesheet ${css.join(', ')} with a lazy part: it would arrive late and flash`);
   }
-  // K3 round-2 review (E6 hand-off A; Find joins in PP-C commit 0): a plant dialog, sheet or Find
-  // chunk statically imports only first-run chunks (and the page-wide chunks the first run imports),
-  // never another sheet's or the dialog's: retryable mends the part's own chunk only, so a failed
-  // shared chunk would stay failed.
+  // K3: the lazy palette chunk statically imports only first-run chunks (never another lazy chunk).
   const firstRunAll = new Set(staticClosure(graph, [...scripts, all.entry]));
-  const sheetLike = new Set([...roles.features.details, ...roles.features.sheets, ...roles.features.find]);
-  for (const p of sheetLike) {
+  for (const p of roles.features.palette) {
     const stray = staticClosure(graph, [p]).filter((q) => q !== p && !firstRunAll.has(q));
-    assert.deepEqual(stray, [], `${path}: the sheet, Find or plant dialog chunk ${p} statically imports ${stray.join(', ')}, outside the first run: a failed request for it would break that sheet until Reload`);
+    assert.deepEqual(stray, [], `${path}: the palette chunk ${p} statically imports ${stray.join(', ')}, outside the first run`);
   }
   // A5 (L5): the first run and the loader with the glue are preloaded; no lazy part, feature or
   // MapLibre chunk is.
@@ -657,7 +631,7 @@ for (const lang of locales) {
 }
 const costLine = Object.keys(ROLE_CAPS).map((r) => `${r} ${report.costs[r] === undefined ? 'none' : kb(report.costs[r])}/${kb(ROLE_CAPS[r])}`).join(', ');
 for (const n of sizeNotes) console.warn(`size warning (reported, not a failure): ${n}`);
-console.log(`Consortium island JS (gzip -9, caps per chunk, no total): first run ${kb(report.firstRun)} over ${report.firstRunList.map((p) => p.replace('/_astro/', '')).join(', ')} (budget ${FIRST_RUN_BUDGET / KB} KB); parts on first use, largest per role/cap: ${costLine}; location with what only it reaches ${kb(report.location)} (budget 20 KB${locationSource ? '' : ', none before S5b'}); MapLibre with its worker and CSS ${kb(report.maplibre)} (budget 330 KB); modulepreload ${report.preloads.map((p) => p.replace('/_astro/', '')).join(', ')}.`);
+console.log(`Consortium island JS (gzip -9, caps per chunk, no total): first run ${kb(report.firstRun)} over ${report.firstRunList.map((p) => p.replace('/_astro/', '')).join(', ')} (budget ${FIRST_RUN_BUDGET / KB} KB); parts on first use, largest per role/cap: ${costLine}; MapLibre absent; modulepreload ${report.preloads.map((p) => p.replace('/_astro/', '')).join(', ')}.`);
 
 // P5 design check A: Workers static assets take at most 20,000 files on the Free plan (100,000 Paid);
 // every file of the build counts, the Web Edition under /app/ and the climate tiles included.

@@ -8,7 +8,7 @@ import { P, pageLang, T } from './strings.ts';
 
 // A country's name in the page language (English where the browser has none for it), else its code.
 const regionNames = new Map<string, Intl.DisplayNames>();
-export function countryName(code: string): string {
+function countryName(code: string): string {
   try {
     const lang = pageLang();
     let names = regionNames.get(lang);
@@ -37,7 +37,7 @@ function varsOf(l: Line): Record<string, string> {
   for (const [k, p] of Object.entries(l.parts ?? {})) out[k] = Array.isArray(p) ? listOf(p.map(words)) : words(p);
   return out;
 }
-export const listOf = (items: string[]): string => {
+const listOf = (items: string[]): string => {
   try { return new Intl.ListFormat(pageLang(), { type: 'conjunction' }).format(items); } catch { return items.join(', '); }
 };
 

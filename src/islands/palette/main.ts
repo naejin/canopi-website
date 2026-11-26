@@ -11,13 +11,13 @@ import { h, render } from 'preact';
 import wasmUrl from '@sqlite.org/sqlite-wasm/sqlite3.wasm?url';
 import { App, PalettePage } from './App.tsx';
 import { effect } from '@preact/signals';
-import { adoptEntry, arrivalOpensPalette, forgetEntries, historyMoved, load, loadProgress, pushWaiting, opening, setPageClimates, setPageCountries, setSource, slow, start, view, wantVerdict, watchPools, watchSteps } from './store.ts';
+import { adoptEntry, arrivalOpensPalette, forgetEntries, historyMoved, load, loadProgress, pushWaiting, opening, setPageClimates, setPageCountries, setSource, slow, start, view, watchPools, watchSteps } from './store.ts';
 import { LANG_SWITCH_KEY, openingArrival, startMemory } from './state/arrival.ts';
 import { backToPlace } from './state/draft.ts';
 import { currentFragment, lastWritten, ownAddressState, writeAddress } from './state/persist.ts';
 import { suppressLeaveWarning } from './state/save.ts';
 import { provideLocationStep } from './state/restore.ts';
-import { loadLocationStep } from './views/location/load.ts';
+import { adoptLinkLocation, settle } from './state/location.ts';
 import { zoneOf } from '../../lib/palette/index.ts';
 import { setStrings } from './strings.ts';
 import { watchFocus } from './focus.ts';
@@ -82,7 +82,7 @@ const root = document.getElementById('ct-root');
 const data = pageData() as PageData | null;
 if (root && data) {
   start();
-  provideLocationStep(loadLocationStep);
+  provideLocationStep(() => Promise.resolve({ settle, adopt: adoptLinkLocation }));
   setStrings(data.strings, data.lang);
   setPageCountries(data.countries);
   setPageClimates(data.climates);
@@ -110,7 +110,7 @@ if (root && data) {
   // after the first render (so they never delay it). A failed prefetch leaves the page's own load to
   // try again and say so (PP-B24).
   const ahead = how.kind === 'saved' || how.kind === 'link' || how.kind === 'preset';
-  const fetchAhead = () => { if (ahead) { PalettePage.prefetch().catch(() => {}); wantVerdict(); } };
+  const fetchAhead = () => { if (ahead) PalettePage.prefetch().catch(() => {}); };
   // Back and Forward across the entries a sheet or the palette step pushed (store.historyMoved;
   // coordinator row 2026-11-14): the sheet closes or Place shows, then the entry landed on takes the
   // current link at once. The hashchange that may follow then lands on the address the page last

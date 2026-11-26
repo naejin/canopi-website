@@ -102,13 +102,4 @@ export const consortiumGuides: Record<string, readonly string[]> = {
   'Ziziphus jujuba': ['trees-in-the-field'],
 };
 
-// The guide behind each job of the Jobs view, and the one the "?" explanations point to.
-export const jobGuides = {
-  feeds_you: 'perennial-staples',
-  feeds_soil: 'food-forest',
-  mulch: 'mulch',
-  ground: 'living-soil',
-  helpers: 'garden-helpers',
-  shelter: 'windbreaks-and-living-fences',
-} as const;
 export const explainGuide = 'food-forest';

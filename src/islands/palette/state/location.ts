@@ -51,32 +51,32 @@ import { microclimate } from './studio.ts';
 // ---- the step's own state (pf-c) ----
 // What the step is asking, while line is 'loading': the device ('geo', "Waiting for your device…"),
 // the place search ('search', "Looking for “q”…"), or nothing (the climate read, "Reading the climate…").
-export const asking = signal<'geo' | 'search' | null>(null);
+const asking = signal<'geo' | 'search' | null>(null);
 // Several answers to a search: the grower chooses one (board LocStates "3 places answer …").
-export interface Choices { query: string; results: readonly PlaceSearchResult[]; attribution: string | null }
-export const choices = signal<Choices | null>(null);
+interface Choices { query: string; results: readonly PlaceSearchResult[]; attribution: string | null }
+const choices = signal<Choices | null>(null);
 // Text that looks like coordinates but could not be read (board: "We could not read “1.17 36” …").
-export const badCoords = signal<string | null>(null);
+const badCoords = signal<string | null>(null);
 // "Look up its name" on typed coordinates (M26): asking, none found, or no answer; cleared with the step.
-export const naming = signal<'asking' | 'none' | 'failed' | null>(null);
+const naming = signal<'asking' | 'none' | 'failed' | null>(null);
 // The grower's own acts on the place (locate, Forget, "Use it" on a link's place), counted: the place
 // field (views/LocationSlot.tsx) follows these and leaves the grower's typing to anything else the
 // page does (a restore, a link, a re-read).
-export const acts = signal(0);
+const acts = signal(0);
 // A place read from typed coordinates carries the mark itself (final1 N2): "Read on this device.
 // Nothing was sent, so the place has no name." holds for that very place and no other, whichever path
 // replaces it (a link's place, one adopted from a link, the saved one read again).
-export type Place = SiteLocation & { typed?: true };
-export const typed = computed(() => !!(store.location.value as Place | null)?.typed);
+type Place = SiteLocation & { typed?: true };
+const typed = computed(() => !!(store.location.value as Place | null)?.typed);
 // How long "Use my location" waited before it gave up, in seconds, as the read used it (R10;
 // devicePosition).
-export const waited = signal(Math.round(PROMPT_CAP_MS / 1000));
+const waited = signal(Math.round(PROMPT_CAP_MS / 1000));
 // The last ask, for "Try again" (offline search, device timeout, a climate that did not load).
 let lastAsk: (() => Promise<void>) | null = null;
 export const tryAgain = (): Promise<void> => (lastAsk ? lastAsk() : Promise.resolve());
 const clearStep = () => batch(() => { asking.value = null; choices.value = null; badCoords.value = null; naming.value = null; });
 // Stop: the ask in flight goes (its late answer is dropped), and so does its line.
-export function stop(): void {
+function stop(): void {
   nextLookup();
   batch(() => { clearStep(); line.value = null; });
 }
@@ -207,7 +207,7 @@ function soilLater(site: SiteLocation): void {
 type Ask = { climate: ReturnType<typeof store.climate.peek> };
 // name: the place's label, and whether it is town-level (SiteLocation placeLevel), for a search answer.
 type Named = { label: string; placeLevel?: true };
-export const locate = (lat: number, lon: number, source: LocationSource, name: Named | undefined, extra: Partial<Line> = {}, fromTyped = false, asked: Ask | null = null): Promise<void> =>
+const locate = (lat: number, lon: number, source: LocationSource, name: Named | undefined, extra: Partial<Line> = {}, fromTyped = false, asked: Ask | null = null): Promise<void> =>
   looking(() => locateNow(lat, lon, source, name, extra, fromTyped, asked));
 async function locateNow(lat: number, lon: number, source: LocationSource, name: Named | undefined, extra: Partial<Line> = {}, fromTyped = false, asked: Ask | null = null): Promise<void> {
   const id = nextLookup();
@@ -288,13 +288,13 @@ export async function settle(how: 'link' | 'saved', savedText: string | null): P
 // (lib/location/geolocation.ts currentPosition). "Use my location" and the map's "Centre on my
 // location" both read through it, so the seconds a timeout names are the ones it waited.
 type Read = Awaited<ReturnType<typeof currentPosition>>;
-export async function devicePosition(): Promise<{ at: Read; seconds: number }> {
+async function devicePosition(): Promise<{ at: Read; seconds: number }> {
   const permission = await queryGeolocationPermission();
   const seconds = Math.round((permission?.state === 'granted' ? SITE_POSITION_OPTIONS.timeout ?? 15_000 : PROMPT_CAP_MS) / 1000);
   if (permission?.state === 'denied') return { at: { code: 1 }, seconds };
   return { at: await currentPosition(undefined, permission), seconds };
 }
-export async function useMyLocation(): Promise<void> {
+async function useMyLocation(): Promise<void> {
   const id = nextLookup();
   lastAsk = useMyLocation;
   const asked = { climate: store.climate.peek() };
@@ -321,8 +321,8 @@ export const placeName = (r: PlaceSearchResult) => (r.detail ? `${r.label}, ${r.
 // The place field's Search (or Enter), with what the view read of it (views/location/location.tsx
 // searchPlace): coordinates are taken here and sent nowhere; 'bad' (looks like coordinates but is not
 // understood) says so, and the same text searched again comes back as a name (read null).
-export type CoordsRead = { lat: number; lon: number } | 'bad' | null;
-export async function searchRead(q: string, read: CoordsRead): Promise<void> {
+type CoordsRead = { lat: number; lon: number } | 'bad' | null;
+async function searchRead(q: string, read: CoordsRead): Promise<void> {
   const query = q.trim();
   if (!query) return;
   if (read === 'bad') { nextLookup(); batch(() => { clearStep(); line.value = null; badCoords.value = query; }); return; }
@@ -359,7 +359,7 @@ const stillUnnamed = (l: Place): Place | null => {
 // Each ask is numbered (nameAsk): only the latest ask writes `naming`, so an earlier one answered or
 // cut short after the grower moved on never clears a newer ask's busy state (h3 G1#1).
 let nameAsk = 0;
-export async function lookUpName(): Promise<void> {
+async function lookUpName(): Promise<void> {
   const l = store.location.peek() as Place | null;
   if (!l?.typed || l.label || naming.peek() === 'asking') return;
   const at = snapOrigin({ lat: l.lat, lon: l.lon });
@@ -386,7 +386,7 @@ export async function lookUpName(): Promise<void> {
 // One answer taken: the only one (take, the search's ask), or the grower's choice among several (a new ask).
 const take = (r: PlaceSearchResult, extra: Partial<Line> = {}, asked: Ask | null = null): Promise<void> =>
   locate(r.lat, r.lon, 'search', r.source === 'geocoder' ? { label: placeName(r), ...(r.placeType ? { placeLevel: true as const } : {}) } : undefined, extra, false, asked);
-export const choose = (r: PlaceSearchResult, extra: Partial<Line> = {}): Promise<void> => take(r, extra);
+const choose = (r: PlaceSearchResult, extra: Partial<Line> = {}): Promise<void> => take(r, extra);
 
 // "Forget this location": the site, its suggestion, its country and the saved copy go. A link's
 // location goes alone: the reader's own saved location is not the link's to remove.

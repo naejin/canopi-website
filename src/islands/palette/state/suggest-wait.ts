@@ -16,94 +16,30 @@ export const pendingSuggest = signal(false);
 // Suggest has waited its 10 s for a location lookup (requestSuggest).
 export const waited = signal(false);
 let cap: ReturnType<typeof setTimeout> | undefined;
-// The id of the toast capped() showed for a suggest chunk that had not come, until the chunk comes.
 let lateToast: number | null = null;
-// The same for a verdict chunk that had not come (b1br-4).
-let lateVerdictToast: number | null = null;
-// The waiting Suggest has one owner, here (seam review round 4, 1): requestSuggest starts the wait,
-// the effect in watchSuggest runs it once its lists are read, and dropSuggest ends it: when the reader
-// changes the plants or opens a sheet (another action: Add, search, Details, paste; Start's "Start
-// empty and search" too), when the plant list fails (the load screen says so), when Start can no
-// longer suggest for the chosen climate or another is chosen (views/PoolSlot.tsx), or once its 10 s are
-// up with a kept guest's list still unread (a toast says so), or when the suggestion's chunk fails or
-// has not come once its 10 s are up with the list read (a toast with Reload), or, with a site climate,
-// when the verdict chunk is refused (a toast with Try again) or has not come once its 10 s are up (a
-// toast with Reload, as for the suggestion's chunk: the import is still pending, so Try again could
-// not ask again; F1a-P7, PP-B b1b: the suggestion reads the verdicts). Each wait therefore
-// ends, with a suggestion or one toast. That last toast is taken down if the chunk then arrives
-// (lateToast; the wait stays ended, so it runs no suggestion), and only while it is still the toast
-// shown: a newer one stays.
 const SUGGEST_WAIT_MS = 10_000;
-// A browser test may shorten the wait in the test build (window.__ctTimeouts.suggest; A4, as in
-// data/load.ts); production folds it to SUGGEST_WAIT_MS.
-// Swap's own wait for the suggestion's chunk ends after as long (views/Swap.tsx; not this wait).
 export const suggestWaitMs = (): number => (typeof __CT_TEST_HOOK__ !== 'undefined' && __CT_TEST_HOOK__ ? Number((globalThis as { __ctTimeouts?: { suggest?: number } }).__ctTimeouts?.suggest) || SUGGEST_WAIT_MS : SUGGEST_WAIT_MS);
 const reloadToast = (): void => store.showToast(T('details.loadFailed'), null, { label: T('details.reload'), run: () => globalThis.location.reload() });
-// The verdict chunk refused while a Suggest waited for it: nothing suggested; Try again asks for the
-// chunk again in place and waits once more (requestSuggest).
-// When no retry can work (store.ts verdictNeedsReload), Reload in place of Try again.
-const verdictToast = (): void => store.showToast(T('place.count.suggestStopped'), null, store.verdictNeedsReload.peek()
-  ? { label: T('load.reload'), run: () => globalThis.location.reload() }
-  : { label: T('load.retry'), run: () => requestSuggest() });
-// Verdicts the suggestion still waits for (store.ts waitsForVerdicts, suggestMembers).
-const verdictsMissing = (): boolean => untracked(store.waitsForVerdicts) && !store.verdictRule.peek();
-// Ends the wait (the one way to: views call it, as PoolSlot does when Start can no longer suggest).
 export function dropSuggest(): void {
   if (!pendingSuggest.peek()) return;
   clearTimeout(cap);
   waited.value = false;
   pendingSuggest.value = false;
 }
-// The chosen climate's list is read (store.pools; store.pool itself stays null with a site climate
-// until the verdict rule settles, so it cannot tell a stalled verdict chunk from an unread list).
 const listRead = (): boolean => { const c = store.climate.peek(); return !!c && !!store.pools.peek()[c]; };
 function capped(): void {
   if (!pendingSuggest.peek()) return;
-  // A location lookup no longer holds it (it runs without the site; the line says so) ...
   waited.value = true;
-  // ... but a guest list never read leaves nothing to run: the wait ends, with a word. (The database
-  // itself, and the range rule, end their own waits: the load screen, rangeFailed.)
   if (listRead() && store.guestsPending.peek().length) { dropSuggest(); store.showToast(T('start.suggestStopped')); return; }
-  // The verdict chunk still missing, the list read. A refused load already ended the wait (the
-  // verdictFailed effect in watchSuggest), and verdictFailed means the current load failed (store.ts
-  // wantVerdict clears it as a load starts), so here the load is still pending: a stalled request. The
-  // wait ends with Reload, as for the suggestion's chunk (no loader times out its import, so Retry
-  // could not ask again), taken down if the chunk then comes. A stall that outlasts it leaves
-  // "Checking…" until the browser fails the request (no timer of our own).
-  if (listRead() && store.suggestRule.peek() && verdictsMissing()) {
-    dropSuggest(); reloadToast(); lateVerdictToast = store.toast.peek()?.id ?? null;
-    return;
-  }
-  // The suggestion's chunk requested and never answered (a stalled request): with the list read,
-  // the wait ends with Reload (R4 re-review); with the list still being read, it is checked again
-  // after another wait (the load screen ends a failed list's wait).
   if (!store.suggestRule.peek()) {
-    // (Here the pool, not listRead: with the range rule held too the pool is still to come, and the wait
-    // goes on, E6-18; only the stalled verdict chunk alone, above, reads the list itself.)
     if (store.pool.peek()) { dropSuggest(); reloadToast(); lateToast = store.toast.peek()?.id ?? null; } else cap = setTimeout(capped, suggestWaitMs());
   }
 }
-// "Suggest plants" (Place, the palette's next step): now when the plants are read, else once they are
-// (§5 Loading). The suggestion placed offers its own Undo (store.ts suggestMembers; PP-B3).
 export function requestSuggest(): void {
   adoptPending();
-  // A location being read: Suggest waits for it (the effect below runs it once lookups settle), 10 s
-  // at most; then it runs without it, and the location line says the climate was not read (review
-  // round 2, 3).
-  // Each press has its own 10 s: an earlier press's timer is cleared (review round 3, 1).
   if (!pendingSuggest.peek()) { clearTimeout(cap); waited.value = false; }
-  // The suggestion's chunk still missing (or failed before: tried again, L8): this press waits for it.
   store.wantSuggest();
-  // So does a verdict chunk refused before, with a site climate: asked again in place; when no retry
-  // can work (store.ts verdictNeedsReload), the press ends at once with Reload, never a 10 s wait.
-  if (store.verdictFailed.peek() && untracked(store.waitsForVerdicts)) {
-    if (store.verdictNeedsReload.peek()) { dropSuggest(); verdictToast(); return; }
-    store.retryVerdict();
-  }
   const busy = lookups.peek() && !waited.peek();
-  // Board Loading "Suggested before the climate was read", with "Read it again": said in the
-  // suggestion's own toast, after its words and beside its Undo (Place's note is not on screen on the
-  // palette page, and a second toast would replace the Undo the Empty card promises).
   const late = !!lookups.peek();
   if (!busy && store.suggestMembers(late ? { text: T('location.unread'), action: { label: T('location.readAgain'), run: () => void tryAgain() } } : null)) {
     clearTimeout(cap); unread.value = late; waited.value = false; store.view.value = 'matrix'; pendingSuggest.value = false; focusView();
@@ -113,47 +49,27 @@ export function requestSuggest(): void {
   pendingSuggest.value = true;
 }
 
-// The wait's effects, set up once by startMemory (arrival.ts).
 export function watchSuggest(): void {
-  // "Suggest plants" pressed early runs when the climate's plants (and every guest list) are read.
   effect(() => {
-    void store.suggestRule.value; // the suggestion's chunk arriving after a restore's list (store.ts suggestRule)
-    void store.verdictRule.value; // the verdict chunk arriving, with a site climate (store.ts suggestMembers)
+    void store.suggestRule.value;
     if (!pendingSuggest.value || !store.pool.value || store.guestsPending.value.length || (lookups.value && !waited.value)) return;
     queueMicrotask(() => { if (pendingSuggest.peek()) requestSuggest(); });
   });
-  // ... or ends, with a toast and Reload, when the suggestion's chunk fails (L8): a press whose chunk
-  // failed always says so, whatever else it waited for.
   effect(() => {
     if (!store.suggestFailed.value || !untracked(() => pendingSuggest.value)) return;
     untracked(() => { dropSuggest(); reloadToast(); });
   });
-  // ... or ends, with a toast and Try again, when the verdict chunk it waits for is refused (a site
-  // climate with range checks on only: otherwise the suggestion never waits for it).
-  effect(() => {
-    if (!store.verdictFailed.value || !untracked(() => pendingSuggest.value && store.waitsForVerdicts())) return;
-    untracked(() => { dropSuggest(); verdictToast(); });
-  });
-  // The chunk capped() gave up on arrives after all: its "did not load" toast goes, if still shown.
   effect(() => {
     if (!store.suggestRule.value || lateToast === null) return;
     const id = lateToast;
     lateToast = null;
     if (untracked(() => store.toast.value?.id) === id) untracked(store.hideToast);
   });
-  // So does the verdict chunk's (b1br-4).
-  effect(() => {
-    if (!store.verdictRule.value || lateVerdictToast === null) return;
-    const id = lateVerdictToast;
-    lateVerdictToast = null;
-    if (untracked(() => store.toast.value?.id) === id) untracked(store.hideToast);
-  });
-  // ... unless the reader changed the plants, opened a sheet, or the plant list failed meanwhile.
   let primed = false;
   effect(() => {
     void schema.track(schema.lists.plants);
     if (primed) untracked(dropSuggest);
     primed = true;
   });
-  effect(() => { if (store.sheet.value || store.load.value.status === 'failed') untracked(dropSuggest); });
+  effect(() => { if (store.load.value.status === 'failed') untracked(dropSuggest); });
 }

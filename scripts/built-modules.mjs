@@ -157,24 +157,9 @@ export const staticClosure = (graph, roots, stop = new Set()) => [...walk(graph,
 // and `native` roles were dropped (slices 3.7).
 export const CHUNK_ROLES_FILE = 'consortium-chunks.json';
 export const ROLE_ENTRIES = {
-  // P5 features
-  location: { entry: /\/src\/islands\/palette\/views\/location\/location\.tsx$/, chunks: 1 }, // S5b
-  pool: { entry: /\/src\/islands\/palette\/views\/pool\/pool\.tsx$/, chunks: 1 }, // S5c
-  // E6 lazy island parts (design check A5, A6, A11; L1-L12)
-  details: { entry: /\/src\/islands\/palette\/views\/details\/Details\.tsx$/, chunks: 1 }, // K3: the plant dialog
-  sheets: { entry: /\/src\/islands\/palette\/views\/(Swap|Correction)\.tsx$/, chunks: 2 }, // K3
-  // PP-C c1: Find and Paste (views/find/**).
-  find: { entry: /\/src\/islands\/palette\/views\/find\/.+\.tsx?$/, chunks: '1+' }, // K3
   suggest: { entry: /\/src\/lib\/palette\/suggest\.ts$/, chunks: 1 }, // R4: loadSuggest
-  // PP-B parts (plant-palette-slices, commit 0; F1a's structure and balance roles went with it, and
-  // commit 0a' deleted the matrix role with the matrix): the palette page (b2 gives it a chunk) and the
-  // verdict rule (core verdict-load.ts).
-  palette: { entry: /\/src\/islands\/palette\/views\/palette\/Palette\.tsx$/, chunks: 1 }, // b2
-  // The verdict rule (core verdict-load.ts), the range checks with it (PP-C c2 folded the range and
-  // markProviders roles away with the mark providers).
-  verdict: { entry: /\/src\/lib\/palette\/verdict\.ts$/, chunks: 1 }, // b2 writes the body
-  // Goal #40: canopi-climate v0.7.0 Rust WASM glue (lazy-loaded on demand by wasm-bridge.ts).
-  climateWasm: { entry: /\/src\/lib\/climate\/wasm\/canopi_climate\.js$/, chunks: 1 },
+  palette: { entry: /\/src\/islands\/palette\/views\/palette\/Palette\.tsx$/, chunks: 1 }, // North Star Studio
+  climateWasm: { entry: /\/src\/lib\/climate\/wasm\/canopi_climate\.js$/, chunks: 1 }, // canopi-climate v0.7.1 WASM glue
 };
 const MAPLIBRE_MODULE = /\/node_modules\/maplibre-gl\//;
 // The browser-test hook (main.ts imports it with import() under __CT_TEST_HOOK__ and awaits it before
@@ -194,7 +179,7 @@ export function chunkRoles(bundle, moduleInfo = null) {
   const holds = (c, re) => re.test(norm(c.facadeModuleId)) || (c.moduleIds ?? []).some((m) => re.test(norm(m)) && lazyOnly(m));
   const byRole = Object.fromEntries(Object.entries(ROLE_ENTRIES).map(([k, { entry }]) => [k, chunks.filter((c) => holds(c, entry))]));
   const maplibreJs = chunks.filter((c) => (c.moduleIds ?? []).some((m) => MAPLIBRE_MODULE.test(norm(m))));
-  const named = [...byRole.location, ...maplibreJs];
+  const named = [...(byRole.location ?? []), ...maplibreJs];
   const workers = files.filter((f) => f.type === 'asset' && f.fileName.endsWith('.js') && named.some((c) => c.code.includes(f.fileName.split('/').pop())));
   const css = new Set(named.flatMap((c) => [...(c.viteMetadata?.importedCss ?? [])]));
   return {

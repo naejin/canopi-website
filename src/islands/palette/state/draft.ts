@@ -90,7 +90,6 @@ export function startOver(): void {
   placeSaid.value = '';
   batch(() => {
     schema.write(schema.valuesOf(schema.lists.plants));
-    store.closeSheet();
     store.view.value = 'start';
     dropLinkLocation();
     notices.value = { ...NO_NOTICES };
@@ -146,30 +145,8 @@ function answered(line: string): void {
   focusView();
 }
 
-// "Search all plants" (the pool panel's "nothing fits" line): Find over the palette. It
-// never removes a plant (fix round 4, s-4): with plants, the search opens over them; with none, this is
-// the empty palette's start.
-export function startEmpty(): void {
-  adoptPending();
-  batch(() => {
-    dropLinkLocation();
-    store.view.value = 'matrix';
-    store.openFind();
-  });
-}
-
-// "Show my palette": the palette with the grower's own plants (none is a valid start); the focus goes
-// to it (W4). Navigation only: Place's answers and plants are saved as they are given (owner
-// 2026-11-15), so nothing is replaced here and nothing is offered to undo.
 export function showPalette(): void {
   adoptPending();
   store.view.value = 'matrix';
   focusView();
-}
-
-// "Add a plant by name" on Place: Find; a plant added joins the list on Place
-// (store.ts addMembers leaves the view alone; b1a review r1 conformance-2).
-export function addOwnPlant(): void {
-  adoptPending();
-  store.openFind();
 }

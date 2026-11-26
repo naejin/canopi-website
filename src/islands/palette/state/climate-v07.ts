@@ -26,7 +26,7 @@ interface SiteAnalogueView {
 }
 
 /** Latest Rust WASM adjustMicroclimate() output for the active site & tuner state. */
-export const wasmMicro = signal<MicroclimateAdjustment | null>(null);
+const wasmMicro = signal<MicroclimateAdjustment | null>(null);
 /** Latest in-browser analogues.bin findAnalogues() result for the active site & horizon. */
 export const siteAnalogue = signal<SiteAnalogueView | null>(null);
 const analogueStatus = signal<'idle' | 'loading' | 'ready' | 'unavailable'>('idle');
@@ -70,7 +70,7 @@ function landformToTopo(landform: MicroLandform, frostPocket: boolean): TopoPosi
   return 'mid_slope';
 }
 
-export function elevClampOf(reliefM: number | null | undefined): number {
+function elevClampOf(reliefM: number | null | undefined): number {
   return Math.max(150, Math.round((reliefM ?? 0) / 2));
 }
 
@@ -150,13 +150,13 @@ export function seedMicroclimateFromTerrain(v07: SiteV07 | null | undefined, for
   microclimate.value = next;
 }
 
-/** Build Tier 2A SiteV07 slice using Rust WASM soilAwcWithRock + interpolateChillPortions. */
+/** Build Tier 2A SiteV07 slice using native Rust WASM soilAwcWithRock + interpolateChillPortions. */
 export async function buildTier2AV07(
   loc: SiteLocation,
   tier2A: SiteTier2A,
   existingV07?: SiteV07 | null,
 ): Promise<Partial<SiteV07>> {
-  const { interpolateChillPortions, soilAwcWithRock } = await import('../../../lib/climate/wasm-bridge.ts');
+  const { interpolateChillPortions, wasmSoilAwcWithRock } = await import('../../../lib/climate/wasm-bridge.ts');
   const out: Partial<SiteV07> = {};
   const ext = existingV07?.extremes;
   const periods = loc.lookup?.climate?.periods ?? [];
@@ -223,18 +223,21 @@ export async function buildTier2AV07(
     const sand = loc.lookup?.soil?.sandPct ?? null;
     const clay = loc.lookup?.soil?.clayPct ?? null;
     const vpd = tier2A.waterBalance?.vpd_summer_kpa ?? null;
-    const weightedStone = ((sp.cfvo_0_30_pct ?? 0) * 0.3) + ((sp.cfvo_30_100_pct ?? sp.cfvo_0_30_pct ?? 0) * 0.7);
     let awcMmPerM: number | null = null;
     let dryDaysReserve: number | null = null;
     if (sand !== null && clay !== null) {
       try {
-        const { wasmSoilAwc } = await import('../../../lib/climate/wasm-bridge.ts');
-        const rawAwc = await wasmSoilAwc(sand, clay, sp.om_0_30_pct);
-        if (rawAwc) {
+        const awc = await wasmSoilAwcWithRock(
+          sand,
+          clay,
+          sp.om_0_30_pct,
+          sp.cfvo_0_30_pct,
+          sp.cfvo_30_100_pct,
+        );
+        if (awc) {
+          awcMmPerM = Math.round(awc.awc_mm_per_m);
           const etMmDay = vpd !== null ? Math.max(3.0, Math.min(7.5, 3.2 + vpd * 1.4)) : null;
-          const tank = soilAwcWithRock(rawAwc, weightedStone, 1.0, etMmDay ?? 4.5);
-          awcMmPerM = tank.awcMmPerM;
-          dryDaysReserve = etMmDay !== null ? tank.dryDaysReserve : null;
+          dryDaysReserve = etMmDay !== null ? Math.max(1, Math.round(awc.awc_100cm_mm / etMmDay)) : null;
         }
       } catch {
         awcMmPerM = null;

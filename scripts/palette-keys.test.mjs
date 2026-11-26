@@ -41,10 +41,7 @@ const named = namedKeys(island);
 // layer values' labels (views/layers.ts), the load screens (App.tsx), the correction form's errors and
 // results (views/Correction.tsx).
 const INDIRECT = [
-  't.bloom', 't.fruit', 't.sowing', 't.wind',
   'load.tooOld', 'load.wasmBlocked', 'load.toolFailed', 'load.fetch', 'load.damaged', 'load.stale',
-  'correction.fieldError', 'correction.proposedError', 'correction.unchanged', 'correction.tooLong', 'correction.emailError',
-  'correction.consentError', 'correction.invalid', 'correction.failed', 'correction.refused', 'correction.offline',
 ];
 // The site-fit vocabulary (src/lib/palette/verdict-line.ts siteLines, fix round 1 B2) writes its
 // keys as quoted strings; views/kit/flags.ts draws each line through say. (The P5 mark providers that
@@ -56,12 +53,6 @@ const asked = (k) => named.has(k) || markKeys.has(k) || INDIRECT.includes(k) || 
 
 test('no consortium.ns.* key is left unused (H9)', () => {
   assert.deepEqual(short.filter((k) => k.startsWith('ns.') && !asked(k)), []);
-});
-
-test('no correction.* key is left unused', () => {
-  const correction = Object.keys(words.en).filter((k) => k.startsWith('correction.'));
-  assert.ok(correction.length > 10);
-  assert.deepEqual(correction.filter((k) => !asked(k)), []);
 });
 
 test('every INDIRECT key is written in the island as a quoted string', () => {

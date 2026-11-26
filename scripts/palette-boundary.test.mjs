@@ -69,7 +69,7 @@ test('the core never imports the island; the island reaches the core through its
 export const outsideImportsOf = (text) => importsOf(text).filter((spec) => spec.startsWith('.') && !spec.startsWith('./') || spec.includes('..'));
 
 test('src/lib/climate and src/lib/location import only their own files and packages', () => {
-  for (const [dir, seams] of [[climate, ['index.ts', 'lookup.ts']], [place, ['place-search.ts', 'geolocation.ts', 'maplibre.ts']]]) {
+  for (const [dir, seams] of [[climate, ['index.ts', 'lookup.ts']], [place, ['place-search.ts', 'geolocation.ts']]]) {
     const list = files(dir);
     for (const seam of seams) assert.ok(list.some((f) => f.name === seam), `${dir}/${seam} exists`);
     for (const { name, text } of list) assert.deepEqual(outsideImportsOf(text), [], `${name}: imports leave ${dir}`);

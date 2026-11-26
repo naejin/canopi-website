@@ -2,7 +2,7 @@
 type: Module
 title: Consortium site inputs
 description: The core module that owns every site input the Plant palette engine reads, merged from the climate grid and soil map with the grower's edits as shifts, plus the palette goals read beside them.
-generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:09:48Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-26T21:30:32Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:21:16Z }
   - { by: antigravity/gemini, at: 2026-11-23T12:36:37Z }
@@ -10,13 +10,13 @@ sources:
   - id: site-inputs-ts
     resource: ../../src/lib/palette/site-inputs.ts
     title: src/lib/palette/site-inputs.ts
-    digest: sha256:579c7c0952cb3f5c
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:f0a6da530fcf8f34
+    last_modified: 2026-11-26T20:27:44Z
   - id: types-ts
     resource: ../../src/lib/palette/types.ts
     title: src/lib/palette/types.ts
-    digest: sha256:442b3a87d9b94d8f
-    last_modified: 2026-11-25T11:09:08Z
+    digest: sha256:c3ef47a89698597d
+    last_modified: 2026-11-25T23:58:13Z
   - id: place-ts
     resource: ../../src/lib/palette/place.ts
     title: src/lib/palette/place.ts
@@ -30,8 +30,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/palette/store.ts
     title: src/islands/palette/store.ts
-    digest: sha256:2db1720b440cca21
-    last_modified: 2026-11-25T11:09:08Z
+    digest: sha256:0bb7b8ef1fb9ed6e
+    last_modified: 2026-11-26T21:19:30Z
   - id: consortium-scenarios-mjs
     resource: ../../scripts/palette-scenarios.mjs
     title: scripts/palette-scenarios.mjs
@@ -40,13 +40,13 @@ sources:
   - id: consortium-scenarios-json
     resource: ../../scripts/fixtures/consortium-scenarios.json
     title: scripts/fixtures/consortium-scenarios.json
-    digest: sha256:f45b862ed618d1ca
-    last_modified: 2026-11-18T21:45:59Z
+    digest: sha256:ef3178d1f05f6f0d
+    last_modified: 2026-11-25T11:43:47Z
   - id: state-ts
     resource: ../../src/lib/palette/state.ts
     title: src/lib/palette/state.ts
-    digest: sha256:023783ecbccd0096
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:06a83ad33407a2ff
+    last_modified: 2026-11-26T20:27:44Z
   - id: site-change-line-ts
     resource: ../../src/lib/palette/site-change-line.ts
     title: src/lib/palette/site-change-line.ts
@@ -54,7 +54,7 @@ sources:
     last_modified: 2026-11-23T21:07:43Z
 enforced_by:
   - scripts/palette-site-inputs.test.mjs
-  - scripts/palette-scenarios.test.mjs
+  - scripts/palette-wave7-5.test.mjs
 ---
 
 # Consortium site inputs

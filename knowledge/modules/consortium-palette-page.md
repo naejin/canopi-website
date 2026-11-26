@@ -2,7 +2,7 @@
 type: Module
 title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
-generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:39:56Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-26T21:30:31Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:09Z }
   - { by: antigravity/gemini, at: 2026-11-23T18:52:42Z }
@@ -12,8 +12,8 @@ sources:
   - id: palette-tsx
     resource: ../../src/islands/palette/views/palette/Palette.tsx
     title: src/islands/palette/views/palette/Palette.tsx
-    digest: sha256:2d7ef4aa4d340fcb
-    last_modified: 2026-11-25T02:23:53Z
+    digest: sha256:614d25536a30b13f
+    last_modified: 2026-11-26T18:57:08Z
   - id: nextstep-tsx
     resource: ../../src/islands/palette/views/palette/NextStep.tsx
     title: src/islands/palette/views/palette/NextStep.tsx
@@ -42,23 +42,23 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/palette/App.tsx
     title: src/islands/palette/App.tsx
-    digest: sha256:685ec7e12121c7e4
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:9c27ab0e23b77533
+    last_modified: 2026-11-26T21:28:59Z
   - id: lazy-tsx
     resource: ../../src/islands/palette/views/lazy.tsx
     title: src/islands/palette/views/lazy.tsx
-    digest: sha256:344fe88870182c63
-    last_modified: 2026-11-25T02:05:24Z
+    digest: sha256:640a257abc85192c
+    last_modified: 2026-11-26T21:26:09Z
   - id: store-ts
     resource: ../../src/islands/palette/store.ts
     title: src/islands/palette/store.ts
-    digest: sha256:2db1720b440cca21
-    last_modified: 2026-11-25T11:27:38Z
+    digest: sha256:0bb7b8ef1fb9ed6e
+    last_modified: 2026-11-26T21:19:30Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
-    digest: sha256:85453d34141dd7db
-    last_modified: 2026-11-25T11:27:38Z
+    digest: sha256:3d6f36ed83f14a26
+    last_modified: 2026-11-26T21:15:40Z
   - id: weigh-ts
     resource: ../../src/lib/palette/weigh.ts
     title: src/lib/palette/weigh.ts
@@ -147,8 +147,8 @@ sources:
   - id: toast-tsx
     resource: ../../src/islands/palette/views/Toast.tsx
     title: src/islands/palette/views/Toast.tsx
-    digest: sha256:86cdcc6fd7c86414
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:ac29d91d13d63974
+    last_modified: 2026-11-26T21:14:34Z
   - id: flags-ts
     resource: ../../src/islands/palette/views/kit/flags.ts
     title: src/islands/palette/views/kit/flags.ts
@@ -171,8 +171,7 @@ sources:
     last_modified: 2026-11-23T21:07:43Z
 enforced_by:
   - scripts/browser/palette-studio-palette.browser.test.mjs
-  - scripts/palette-pf-b.test.mjs
-  - scripts/palette-pp-b2.test.mjs
+  - scripts/palette-wave7-5.test.mjs
 ---
 
 ## What it is

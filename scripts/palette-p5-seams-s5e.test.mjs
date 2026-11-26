@@ -20,7 +20,7 @@ test('S5e ships nothing in P5: no native or soil-likely module, slot or reader',
   assert.equal('nativeHere' in core, false);
   assert.equal('likelyFor' in core, false);
   assert.doesNotMatch(view('place/Place.tsx'), /LikelySlot/);
-  assert.doesNotMatch(view('details/Details.tsx'), /NativeSlot/);
+  assert.equal(existsSync(file('islands/palette/views/details/Details.tsx')), false, 'retired Details.tsx removed');
   // Stage 2A (Palette North Star) reads plant_areas for WGSRPD L3 distribution; legacy nativeIn stub stays absent.
   assert.doesNotMatch(text('islands/palette/data/sqlite-source.ts'), /nativeIn/);
   assert.doesNotMatch(text('lib/palette/source.ts'), /nativeIn/);

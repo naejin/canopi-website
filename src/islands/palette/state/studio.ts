@@ -16,9 +16,9 @@ type StudioTab = 'palette' | 'system' | 'climate' | 'plan';
 type PaletteViewMode = 'cards' | 'compact';
 type PaletteGroupMode = 'none' | 'sun' | 'stage' | 'status';
 type RailTab = 'coach' | 'all';
-export type WateringMode = 'Rain-fed' | 'Occasional' | 'Irrigated';
+type WateringMode = 'Rain-fed' | 'Occasional' | 'Irrigated';
 
-export interface ClimateStressState {
+interface ClimateStressState {
   heatDeltaC: number;
   droughtPct: number;
   winterDeltaC: number;
@@ -27,7 +27,7 @@ export interface ClimateStressState {
   extremeRainPct: number;
 }
 
-export const DEFAULT_CLIMATE_STRESS: ClimateStressState = {
+const DEFAULT_CLIMATE_STRESS: ClimateStressState = {
   heatDeltaC: 0,
   droughtPct: 0,
   winterDeltaC: 0,
@@ -113,13 +113,13 @@ function cycleWateringMode(): void {
     store.siteEdits.value = { ...store.siteEdits.peek(), watering: WATERING_TO_EDIT[next] };
   });
 }
-export const designName = signal<string>('');
-export const plantingConfig = signal<PlantingPlanConfig>({ ...DEFAULT_PLANTING_PLAN_CONFIG });
+const designName = signal<string>('');
+const plantingConfig = signal<PlantingPlanConfig>({ ...DEFAULT_PLANTING_PLAN_CONFIG });
 export const microclimate = signal<MicroclimateState>({ ...DEFAULT_MICROCLIMATE });
-export const dossierId = signal<PlantId | null>(null);
+const dossierId = signal<PlantId | null>(null);
 const dossierList = signal<readonly PlantId[]>([]);
 
-export function setQuantityOverride(id: PlantId, qty: number | null): void {
+function setQuantityOverride(id: PlantId, qty: number | null): void {
   const cur = plantingConfig.peek();
   const nextOverrides: Record<string, number> = { ...cur.quantityOverrides };
   if (qty === null || !Number.isFinite(qty) || qty < 0) {
@@ -130,7 +130,7 @@ export function setQuantityOverride(id: PlantId, qty: number | null): void {
   setPlantingConfig({ quantityOverrides: nextOverrides });
 }
 
-export function openFieldDossier(id: PlantId, list?: readonly PlantId[]): void {
+function openFieldDossier(id: PlantId, list?: readonly PlantId[]): void {
   batch(() => {
     dossierId.value = id;
     if (list && list.length) dossierList.value = list;
@@ -138,11 +138,11 @@ export function openFieldDossier(id: PlantId, list?: readonly PlantId[]): void {
   });
 }
 
-export function closeFieldDossier(): void {
+function closeFieldDossier(): void {
   dossierId.value = null;
 }
 
-export function stepFieldDossier(delta: -1 | 1): void {
+function stepFieldDossier(delta: -1 | 1): void {
   const cur = dossierId.peek();
   const list = dossierList.peek();
   if (!cur || list.length < 2) return;
@@ -152,13 +152,13 @@ export function stepFieldDossier(delta: -1 | 1): void {
   dossierId.value = list[next];
 }
 
-export function setDesignName(name: string): void {
+function setDesignName(name: string): void {
   const clean = name.slice(0, 120);
   if (clean === designName.peek()) return;
   designName.value = clean;
 }
 
-export function setPlantingConfig(patch: Partial<PlantingPlanConfig>): void {
+function setPlantingConfig(patch: Partial<PlantingPlanConfig>): void {
   const next: PlantingPlanConfig = { ...plantingConfig.peek(), ...patch };
   batch(() => {
     plantingConfig.value = next;
@@ -168,6 +168,6 @@ export function setPlantingConfig(patch: Partial<PlantingPlanConfig>): void {
   });
 }
 
-export function setMicroclimate(patch: Partial<MicroclimateState>): void {
+function setMicroclimate(patch: Partial<MicroclimateState>): void {
   microclimate.value = { ...microclimate.peek(), ...patch };
 }

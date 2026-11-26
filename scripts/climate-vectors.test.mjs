@@ -45,7 +45,10 @@ test('E5a vectors: every rule-table row of lookup.json (legend, margins, texture
   }
   for (const r of vectors.tables.photoperiod) {
     const got = await C.wasmPhotoperiod(r.lat);
-    assert.deepEqual(got, r.result, `photoperiod ${r.lat}`);
+    // canopi-climate v0.7.1 (BUG-07) widened Photoperiod::monthly_hours from [f32; 12] to [f64; 12];
+    // normalize the v0.7.0 lookup.json f32-serialized floats to 2 decimals for exact parity.
+    const expected = r.result ? { ...r.result, monthly_hours: r.result.monthly_hours.map((h) => Math.round(h * 100) / 100) } : null;
+    assert.deepEqual(got, expected, `photoperiod ${r.lat}`);
   }
   for (const r of vectors.tables.awc) {
     const got = await C.wasmSoilAwc(r.sand_pct, r.clay_pct, r.om_pct ?? null);

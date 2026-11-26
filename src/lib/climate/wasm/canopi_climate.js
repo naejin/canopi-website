@@ -408,6 +408,28 @@ export function soilAwc(sand_pct, clay_pct, om_pct) {
 }
 
 /**
+ * Compute Saxton & Rawls (2006) soil Available Water Capacity discounted for
+ * coarse fragments (`cfvo_0_30_pct` for 0–30 cm topsoil and `cfvo_30_100_pct`
+ * for 30–100 cm subsoil, in vol %), or `null` if out of domain.
+ *
+ * # Errors
+ * Throws only on serialization failure.
+ * @param {number} sand_pct
+ * @param {number} clay_pct
+ * @param {number | null} [om_pct]
+ * @param {number | null} [cfvo_0_30_pct]
+ * @param {number | null} [cfvo_30_100_pct]
+ * @returns {any}
+ */
+export function soilAwcWithRock(sand_pct, clay_pct, om_pct, cfvo_0_30_pct, cfvo_30_100_pct) {
+    const ret = wasm.soilAwcWithRock(sand_pct, clay_pct, !isLikeNone(om_pct), isLikeNone(om_pct) ? 0 : om_pct, !isLikeNone(cfvo_0_30_pct), isLikeNone(cfvo_0_30_pct) ? 0 : cfvo_0_30_pct, !isLikeNone(cfvo_30_100_pct), isLikeNone(cfvo_30_100_pct) ? 0 : cfvo_30_100_pct);
+    if (ret[2]) {
+        throw takeFromExternrefTable0(ret[1]);
+    }
+    return takeFromExternrefTable0(ret[0]);
+}
+
+/**
  * USDA texture class id (e.g. `"silt_loam"`) of sand and clay
  * percentages; `undefined` for impossible fractions.
  * @param {number} sand_pct
@@ -442,21 +464,19 @@ export function tileName(lat, lon) {
 }
 
 /**
- * USDA hardiness zone (`1a` ... `13b`) of a coldest night in °C.
+ * USDA hardiness zone (`1a` ... `13b`) of a coldest night in °C, or
+ * `undefined` for non-finite input.
  * @param {number} tmin_extreme_c
- * @returns {string}
+ * @returns {string | undefined}
  */
 export function usdaZone(tmin_extreme_c) {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.usdaZone(tmin_extreme_c);
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    const ret = wasm.usdaZone(tmin_extreme_c);
+    let v1;
+    if (ret[0] !== 0) {
+        v1 = getStringFromWasm0(ret[0], ret[1]);
+        wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
     }
+    return v1;
 }
 
 /**

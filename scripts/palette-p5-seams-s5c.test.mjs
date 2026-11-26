@@ -99,12 +99,10 @@ test('withinRange: leaves out only the plants outside, never a kept one; the sam
 
 // ---- "can Suggest now" (E6 R2, rules/suggest-block.ts): the rule views/PoolSlot.tsx and the store read ----
 
-test('E6 R2 suggest-block: noList, needsSite, needsRule, nothingFits in that order; hasList; nothingFits and notOutside from the verdicts (PP-C c2); the old pool counts gone (PP-B b1b)', async () => {
+test('E6 R2 suggest-block: noList, needsSite, needsRule, nothingFits in that order; hasList; nothingFits and notOutside', async () => {
   const rules = await import('../src/islands/palette/rules/suggest-block.ts');
-  const rule = await core.loadVerdictRule();
-  assert.equal('withinRange' in rule, false, 'the islands read verdicts, never the range checks (PP-C c2, one verdict)');
+  assert.equal('loadVerdictRule' in core, false, 'retired verdict-load.ts removed (A10)');
   const scene = (over = {}) => ({ curated: ['Mediterranean', 'Temperate'], siteClimate: false, rangeFailed: false, nothingFits: false, ...over });
-  // Boreal borrows Temperate (NEAREST_LISTS); Tropical's nearest lists are not curated here.
   const borrowed = 'Boreal', none = 'Tropical';
   assert.ok(core.hasPlants(borrowed, scene().curated) && !core.hasPlants(none, scene().curated), 'fixture climates');
   assert.equal(rules.suggestBlock(none, scene({ siteClimate: true, rangeFailed: true, nothingFits: true })), 'noList');
@@ -117,22 +115,17 @@ test('E6 R2 suggest-block: noList, needsSite, needsRule, nothingFits in that ord
   assert.deepEqual(['Temperate', borrowed, none].map((z) => rules.hasList(z, scene({ siteClimate: true }))), [true, true, false]);
   assert.equal(rules.needsSite(borrowed, scene()), true);
   assert.equal(rules.needsRule(borrowed, scene({ siteClimate: true, rangeFailed: true })), true);
-  // nothingFits: a list with plants, every one judged outside (the page period's verdicts, as
-  // store.poolVerdicts), once the rule is in.
-  const pool = [taxon({ id: 'a' }), taxon({ id: 'c', climate: { ...taxon().climate, tminCold: { low: 5, median: 9, high: 15, count: 9, basis: 'thinned_cells' } } })];
-  const judged = (site, list = pool) => rule.verdicts(list, { inputs: site ?? core.NO_INPUTS, period: '1991-2020', scenario: 'ssp245' });
-  assert.equal(rules.nothingFits(pool, judged(at(-30, 25))), true, 'colder than every plant');
-  assert.equal(rules.nothingFits(pool, null), false, 'not before the verdicts arrive');
-  assert.equal(rules.nothingFits(pool, judged(at(0, 25))), false);
-  assert.equal(rules.nothingFits([], judged(at(-30, 25))), false, 'an empty list is not "nothing fits"');
-  assert.equal(rules.nothingFits(pool, judged(null)), false, 'no site climate: nothing is checked');
-  // notOutside: the list less the plants judged outside, never a kept one; the same list when none goes.
-  const three = [...pool.slice(0, 1), taxon({ id: 'b', climate: null }), pool[1]];
-  assert.deepEqual(rules.notOutside(three, judged(at(0, 25), three)).map((t) => t.id), ['a', 'b']);
-  assert.deepEqual(rules.notOutside(three, judged(at(0, 25), three), ['c']).map((t) => t.id), ['a', 'b', 'c'], 'a kept plant stays, outside or not');
+  const pool = [taxon({ id: 'a' }), taxon({ id: 'c' })];
+  const mapOf = (entries) => new Map(entries.map(([id, level]) => [id, { level }]));
+  assert.equal(rules.nothingFits(pool, mapOf([['a', 'outside'], ['c', 'outside']])), true, 'all outside');
+  assert.equal(rules.nothingFits(pool, null), false, 'not before verdicts arrive');
+  assert.equal(rules.nothingFits(pool, mapOf([['a', 'fits'], ['c', 'outside']])), false);
+  assert.equal(rules.nothingFits([], mapOf([['a', 'outside']])), false, 'an empty list is not "nothing fits"');
+  const three = [taxon({ id: 'a' }), taxon({ id: 'b' }), taxon({ id: 'c' })];
+  const v = mapOf([['a', 'fits'], ['b', 'unknown'], ['c', 'outside']]);
+  assert.deepEqual(rules.notOutside(three, v).map((t) => t.id), ['a', 'b']);
+  assert.deepEqual(rules.notOutside(three, v, ['c']).map((t) => t.id), ['a', 'b', 'c'], 'a kept plant stays, outside or not');
   assert.equal(rules.notOutside(three, null), three, 'no verdicts: the same list');
-  assert.equal(rules.notOutside(three, judged(null, three)), three, 'no site climate: the same list');
-  // PP-B b1b: Place's count line reads the verdicts (store.countFits); the range-verdict counts went.
   assert.equal('poolCounts' in rules, false);
 });
 

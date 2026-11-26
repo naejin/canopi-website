@@ -23,20 +23,13 @@
 import type { ComponentType } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { effect, signal } from '@preact/signals';
-import { closeSheet, load as dataLoad, offline, showToast } from '../store.ts';
+import { load as dataLoad, offline } from '../store.ts';
 import { T } from '../strings.ts';
 
-type Kind = 'sheets' | 'find' | 'later' | 'page';
-// Browser-test builds only (A13): a part's chunk fails, or waits until the test releases it
-// (globalThis.__ctFaults, written by test-hook.ts; `sheets` for sheet parts, `later` for the others).
-// Read when a part is used, not when it is fetched, so a part the prefetch already loaded still fails
-// or waits as if its chunk had not come. The palette page itself (`page`) and Find's parts (`find`)
-// take none: the later faults stand for the chunks after the first view, and a spec fails Find's
-// chunk by blocking its request (the harness's block: { find }; review c0 4.1).
+type Kind = 'later' | 'page';
 function faultOf(kind: Kind): 'fail' | 'hold' | null {
-  if (!__CT_TEST_HOOK__ || kind === 'page' || kind === 'find') return null;
+  if (!__CT_TEST_HOOK__ || kind === 'page') return null;
   const f = globalThis.__ctFaults;
-  if (kind === 'sheets') return f?.sheets ? 'fail' : null;
   return f?.later ?? null;
 }
 async function gate(kind: Kind): Promise<void> {
@@ -69,7 +62,7 @@ export interface PartOptions<C extends Any> {
 // browser is back online, never reloading the page (architecture 9; PP-B16). Online, Reload tries the
 // part again in place when the part can (`inPlace`: a retryable importer fetches `?retry=n`, PP-B24),
 // else reloads the page.
-export function LoadFailed({ retry, inPlace = false }: { retry?: () => void; inPlace?: boolean }) {
+function LoadFailed({ retry, inPlace = false }: { retry?: () => void; inPlace?: boolean }) {
   const off = offline.value;
   // Back online (store.ts sets `offline` from the browser's events), a part that failed offline is
   // asked again. Read from the signal's change, not from a listener of its own: one added in an effect
@@ -88,8 +81,8 @@ export function LoadFailed({ retry, inPlace = false }: { retry?: () => void; inP
 // loops on its own failure.
 const loadedTick = signal(0);
 
-export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = false, idle = false, onFail = 'notice', loading, retry = false, page = false, find = false }: PartOptions<C> = {}): LazyPart<C> {
-  const kind: Kind = onFail === 'closeSheet' ? (find ? 'find' : 'sheets') : page ? 'page' : 'later';
+export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = false, idle = false, loading, retry = false, page = false }: PartOptions<C> = {}): LazyPart<C> {
+  const kind: Kind = page ? 'page' : 'later';
   const done = signal<C | null>(null);
   let pending: Promise<C> | null = null;
   // lastFailed: the last load failed, when loadedTick read failedAt.
@@ -131,13 +124,7 @@ export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = fa
       load().then(() => { if (live) wake((n) => n + 1); }, (err: unknown) => {
         console.error(`Consortium: a part did not load: ${(err as Error).message}`);
         if (!live) return;
-        if (onFail === 'closeSheet') {
-          closeSheet();
-          // Offline, a Reload would lose the page (architecture 9): it says it needs a connection; the
-          // sheet's next opening asks for its chunk again (retryableImport).
-          if (offline.peek()) showToast(T('load.needsConnection'), null);
-          else showToast(T('details.loadFailed'), null, { label: T('details.reload'), run: () => location.reload() });
-        } else setFailed(true);
+        setFailed(true);
       });
       return () => { live = false; };
     }, [C, tick, attempt]);
@@ -145,7 +132,7 @@ export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = fa
     if (quiet || idle) return null;
     if (failed) return <LoadFailed inPlace={retry} retry={() => { setFailed(false); setAttempt((n) => n + 1); }} />;
     if (loading) { const Loading = loading as ComponentType<Record<string, unknown>>; return <Loading {...props} />; }
-    return <p class="status-line" role="status">{T(onFail === 'closeSheet' ? 'details.loading' : 'load.plants')}</p>;
+    return <p class="status-line" role="status">{T('load.plants')}</p>;
   }
   return { View: LazyView as unknown as C, load, ready: () => (faultOf(kind) ? null : done.peek()), prefetch };
 }
@@ -160,7 +147,7 @@ function register(fetch: () => Promise<unknown>): void {
   // A part registered once the prefetch ran (the correction form, in the dialog's chunk) follows it.
   if (started) whenIdle(() => { fetch().catch(() => {}); });
 }
-export function later<C extends Any>(importer: () => Promise<C>, opts: PartOptions<C> = {}): LazyPart<C> {
+function later<C extends Any>(importer: () => Promise<C>, opts: PartOptions<C> = {}): LazyPart<C> {
   const part = lazyPart(importer, opts);
   register(part.prefetch);
   return part;

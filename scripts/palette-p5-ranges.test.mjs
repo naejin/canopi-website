@@ -70,13 +70,6 @@ test('siteClimate: a disagreement that changes no zone, or a class the means can
   assert.deepEqual([consistent.state, consistent.koppen, consistent.mapKoppen, consistent.suggested], ['ready', 'Af', null, 'Tropical'], 'consistent: as before');
 });
 
-test('location line: names the class the means give and the map class when they differ', () => {
-  const src = view('location/location.tsx');
-  assert.match(src, /koppen: sc\.koppen/, 'the why line names the class the zone comes from');
-  assert.match(src, /'location\.means'/);
-  assert.match(src, /'location\.meansNear'/);
-});
-
 // ---- 2. the mild-winter side only for plants that can need winter chill ----
 
 test('rangeCheck: lowland tropical plants are never "edge" from warm winters (cacao and cassava at Manaus and Singapore)', () => {

@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 
-const core = { ...(await import('../src/lib/palette/index.ts')), ...(await import('../src/lib/palette/verdict.ts')) };
+const core = { ...(await import('../src/lib/palette/index.ts')) };
 // The places of the scenario file: all 9 slots as the climate grid reader answers them.
 const { places } = JSON.parse(readFileSync(new URL('fixtures/consortium-scenarios.json', import.meta.url), 'utf8'));
 const lookupOf = (name) => ({ lat: places[name].lat, lon: places[name].lon, climate: { cellLat: 0, cellLon: 0, distanceCells: 0, periods: places[name].periods }, soil: { phH2o: 6.4, texture: null, filled: false, fillDistanceCells: 0, distanceCells: 0 }, regions: { wgsrpdL3: null, isoA2: null } });
@@ -81,7 +81,7 @@ test('"2 °C colder": the cold check reads the shifted nights in every period', 
 
 test('the engine reads the merged inputs only: no rule file names the lookup, a stored spot or soil answer', () => {
   const dir = new URL('../src/lib/palette/', import.meta.url);
-  for (const f of ['verdict.ts', 'range.ts', 'future.ts', 'weigh.ts', 'holes.ts', 'site.ts', 'site-today.ts', 'place.ts']) {
+  for (const f of ['range.ts', 'future.ts', 'weigh.ts', 'holes.ts', 'site.ts', 'site-today.ts', 'place.ts']) {
     const src = readFileSync(new URL(f, dir), 'utf8').replace(/\/\/.*$/gm, '');
     assert.doesNotMatch(src, /\blookup\b/, `${f} reads no lookup`);
     assert.doesNotMatch(src, /\bctx\.place\b|\bspot\.(light|water|wind|height)\b/, `${f} reads no stored answer`);

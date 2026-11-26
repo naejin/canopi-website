@@ -37,20 +37,18 @@ test('importing store.ts and every state/* module registers no effect and touche
   assert.equal(typeof store.start, 'function', 'store.ts exports start (main.ts calls it before the first render)');
 });
 
-test('store.start registers store.ts\'s effects in their old module order', async () => {
+test('store.start registers store.ts\'s Undo offer effect once', async () => {
   const store = await import(new URL('store.ts', island).href);
   const before = effects().length;
   store.start();
   const made = effects().slice(before);
-  assert.equal(made.length, 2, 'the verdict rule and the Undo offer (PP-C c2 folded the range rule into the verdict chunk and deleted the mark providers)');
-  // The store.ts line that called effect() in each (the stack's first frame below the wrapper).
+  assert.equal(made.length, 1, 'the Undo offer effect');
   const lines = made.map((s) => Number(/store\.ts:(\d+)/.exec(s)?.[1]));
   const src = readFileSync(new URL('store.ts', island), 'utf8').split('\n');
   const at = (re) => src.findIndex((l) => re.test(l)) + 1;
-  // Each effect's first body line, found by content; its effect( call is the line above.
-  const bodies = [at(/if \(siteClimate\.value\) wantVerdict\(\);/), at(/const now = state\.track\(SNAP_KEYS\);/)];
-  assert.ok(bodies.every((n) => n > 0), 'the two effect bodies are found');
-  assert.deepEqual(lines, bodies.map((n) => n - 1), 'made in the old order: the verdict rule, the Undo offer');
+  const bodies = [at(/const now = state\.track\(SNAP_KEYS\);/)];
+  assert.ok(bodies.every((n) => n > 0), 'the Undo effect body is found');
+  assert.deepEqual(lines, bodies.map((n) => n - 1), 'registered at the Undo effect line');
   assert.deepEqual(touches, [], 'starting the effects reads no localStorage');
 });
 

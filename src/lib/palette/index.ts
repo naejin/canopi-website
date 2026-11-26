@@ -36,12 +36,9 @@ export * from './place.ts';
 export * from './site-inputs.ts';
 export * from './years.ts';
 export * from './verdict-line.ts';
-export * from './verdict-load.ts';
 export * from './holes.ts';
 export * from './weigh.ts';
-// v14 pf commit 0W (chk #3): the change summary of a grower's edit and its words, typed stubs pf-d fills.
 export * from './site-change.ts';
-export * from './site-change-line.ts';
 // Stage 2A North Star single source of truth report engine + Wave 6 recommendation engine + WGSRPD L3/ISO area names
 export * from './area-names.ts';
 export * from './report.ts';

@@ -18,6 +18,7 @@ export const lookupTerrain: (a: number, b: number, c: number, d: number) => [num
 export const lookupWaterBalance: (a: number, b: number, c: number, d: number) => [number, number, number];
 export const photoperiod: (a: number) => [number, number, number];
 export const soilAwc: (a: number, b: number, c: number, d: number) => [number, number, number];
+export const soilAwcWithRock: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => [number, number, number];
 export const textureClass: (a: number, b: number) => [number, number];
 export const tileName: (a: number, b: number) => [number, number];
 export const usdaZone: (a: number) => [number, number];

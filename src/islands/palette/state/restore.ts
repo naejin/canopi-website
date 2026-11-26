@@ -108,8 +108,6 @@ function applyDecoded(d: DecodedLink, countryFrom: Extract<CountrySource, 'link'
     schema.apply(d.state, { countryFrom, bringsPlace: place });
     store.suggestedIds.value = suggested ? [...d.state.members] : [];
     store.view.value = 'matrix';
-    // A sheet left open would show a plant of the consortium replaced (X8).
-    store.closeSheet();
   });
 }
 
