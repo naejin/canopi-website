@@ -408,7 +408,7 @@ function effVerdictKey(eff: EffectiveSiteClimate, alreadyOnSite: boolean): strin
     eff.koppen, eff.tminColdC, eff.tmaxWarmC, eff.tmeanColdC, eff.tmeanWarmC, eff.tmeanYearC,
     eff.precipMm, eff.dryMonths, eff.aridityIndex,
     eff.freeze10C, eff.heat10C, eff.soilPh, eff.subsoilPh,
-    eff.cddDays, eff.tankDays, eff.clayPct,
+    eff.cddDays, eff.tankDays, eff.clayPct, eff.stonesPct,
     eff.watering, eff.drainage, eff.wind, eff.siteLight, eff.roomLimitM,
     alreadyOnSite ? 1 : 0,
   ].join('|');

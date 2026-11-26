@@ -3654,7 +3654,7 @@
   "consortium.ns.reason.waterFutureDry": "Seca futura além da faixa observada — pode precisar de rega no verão",
   "consortium.ns.reason.waterWetterNote": "Mais úmido que a faixa observada",
   "consortium.ns.reason.waterWetDrainage": "Mais úmido que a faixa observada — precisa de drenagem rápida",
-  "consortium.ns.arrival.tooDryRainFed": "Seco demais apenas com chuva aqui — ative «Rego regularmente» para ver uma paleta inicial irrigada.",
+  "consortium.ns.arrival.tooDryRainFed": "Seco demais apenas com chuva aqui — ative «{toggle}» para ver uma paleta inicial irrigada.",
   "consortium.ns.arrival.desertEstablishNote": "Clima desértico: mesmo plantas de terras secas precisam de rega nos primeiros anos.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

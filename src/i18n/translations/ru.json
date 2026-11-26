@@ -3654,7 +3654,7 @@
   "consortium.ns.reason.waterFutureDry": "Будущее иссушение за пределами диапазона — может понадобиться летний полив",
   "consortium.ns.reason.waterWetterNote": "Влажнее зафиксированного диапазона",
   "consortium.ns.reason.waterWetDrainage": "Влажнее зафиксированного диапазона — нужен хороший дренаж",
-  "consortium.ns.arrival.tooDryRainFed": "Слишком сухо только для осадков — включите «Я поливаю регулярно», чтобы увидеть стартовую палитру с поливом.",
+  "consortium.ns.arrival.tooDryRainFed": "Слишком сухо только для осадков — включите «{toggle}», чтобы увидеть стартовую палитру с поливом.",
   "consortium.ns.arrival.desertEstablishNote": "Пустынный климат: даже засухоустойчивым растениям нужен полив в первые годы.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

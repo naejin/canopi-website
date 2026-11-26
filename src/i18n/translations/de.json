@@ -3654,7 +3654,7 @@
   "consortium.ns.reason.waterFutureDry": "Künftige Trockenheit außerhalb des Bereichs — Sommerbewässerung evtl. nötig",
   "consortium.ns.reason.waterWetterNote": "Feuchter als der erfasste Bereich",
   "consortium.ns.reason.waterWetDrainage": "Feuchter als der erfasste Bereich — sehr gute Drainage nötig",
-  "consortium.ns.arrival.tooDryRainFed": "Für reinen Regen zu trocken — aktiviere „Ich bewässere regelmäßig“, um eine bewässerte Startpalette zu sehen.",
+  "consortium.ns.arrival.tooDryRainFed": "Für reinen Regen zu trocken — aktiviere „{toggle}“, um eine bewässerte Startpalette zu sehen.",
   "consortium.ns.arrival.desertEstablishNote": "Wüstenklima: Selbst Trockenpflanzen brauchen in den ersten Jahren Bewässerung.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

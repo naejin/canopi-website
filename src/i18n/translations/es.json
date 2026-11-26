@@ -3654,7 +3654,7 @@
   "consortium.ns.reason.waterFutureDry": "Sequedad futura fuera del rango observado — puede necesitar riego estival",
   "consortium.ns.reason.waterWetterNote": "Más húmedo que el rango observado",
   "consortium.ns.reason.waterWetDrainage": "Más húmedo que el rango observado — necesita buen drenaje",
-  "consortium.ns.arrival.tooDryRainFed": "Demasiado seco solo con lluvia aquí — activa «Riego regularmente» para ver una paleta inicial con riego.",
+  "consortium.ns.arrival.tooDryRainFed": "Demasiado seco solo con lluvia aquí — activa «{toggle}» para ver una paleta inicial con riego.",
   "consortium.ns.arrival.desertEstablishNote": "Clima desértico: incluso las plantas de secano necesitan riego sus primeros años.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

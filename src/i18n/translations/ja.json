@@ -3654,7 +3654,7 @@
   "consortium.ns.reason.waterFutureDry": "将来の乾燥が記録範囲を超過 — 夏季灌水が必要な可能性",
   "consortium.ns.reason.waterWetterNote": "記録範囲より湿潤",
   "consortium.ns.reason.waterWetDrainage": "記録範囲より湿潤 — 高い排水性が必要",
-  "consortium.ns.arrival.tooDryRainFed": "ここでは雨水だけでは乾燥しすぎます —「定期的に水やりする」をオンにすると灌水スターター候補を表示できます。",
+  "consortium.ns.arrival.tooDryRainFed": "ここでは雨水だけでは乾燥しすぎます —「{toggle}」をオンにすると灌水スターター候補を表示できます。",
   "consortium.ns.arrival.desertEstablishNote": "砂漠気候：乾燥地植物でも定着初期の数年間は水やりが必要です。",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

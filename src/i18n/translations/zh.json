@@ -3654,7 +3654,7 @@
   "consortium.ns.reason.waterFutureDry": "未来干旱超出记录范围——夏季可能需要补水",
   "consortium.ns.reason.waterWetterNote": "比记录范围更湿润",
   "consortium.ns.reason.waterWetDrainage": "比记录范围更湿润——需要良好排水",
-  "consortium.ns.arrival.tooDryRainFed": "此处仅靠降雨过于干旱——开启“我定期浇水”以查看灌溉起步组合。",
+  "consortium.ns.arrival.tooDryRainFed": "此处仅靠降雨过于干旱——开启“{toggle}”以查看灌溉起步组合。",
   "consortium.ns.arrival.desertEstablishNote": "沙漠气候：即使是耐旱植物在定植初期也需要浇水。",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

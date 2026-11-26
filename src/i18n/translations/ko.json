@@ -3654,7 +3654,7 @@
   "consortium.ns.reason.waterFutureDry": "향후 건조가 기록 범위를 벗어남 — 여름 관수 필요 가능",
   "consortium.ns.reason.waterWetterNote": "기록 범위보다 습함",
   "consortium.ns.reason.waterWetDrainage": "기록 범위보다 습함 — 배수가 매우 잘되어야 함",
-  "consortium.ns.arrival.tooDryRainFed": "이곳은 빗물만으로는 너무 건조합니다 — “정기적으로 물을 줍니다”를 켜면 관수 기준 스타터 팔레트를 볼 수 있습니다.",
+  "consortium.ns.arrival.tooDryRainFed": "이곳은 빗물만으로는 너무 건조합니다 — “{toggle}”를 켜면 관수 기준 스타터 팔레트를 볼 수 있습니다.",
   "consortium.ns.arrival.desertEstablishNote": "사막 기후: 건조지 식물도 초기 몇 년 동안은 물주기가 필요합니다.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

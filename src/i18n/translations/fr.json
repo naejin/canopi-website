@@ -3654,7 +3654,7 @@
   "consortium.ns.reason.waterFutureDry": "Assèchement futur au-delà de l’aire observée — arrosage d’été possible",
   "consortium.ns.reason.waterWetterNote": "Plus humide que l’aire observée",
   "consortium.ns.reason.waterWetDrainage": "Plus humide que l’aire observée — drainage très efficace nécessaire",
-  "consortium.ns.arrival.tooDryRainFed": "Trop sec pour la pluie seule ici — activez « J’arrose régulièrement » pour voir une palette de départ irriguée.",
+  "consortium.ns.arrival.tooDryRainFed": "Trop sec pour la pluie seule ici — activez « {toggle} » pour voir une palette de départ irriguée.",
   "consortium.ns.arrival.desertEstablishNote": "Climat désertique : même les plantes de milieu sec ont besoin d’arrosage les premières années.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

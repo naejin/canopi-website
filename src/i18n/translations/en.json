@@ -3654,7 +3654,7 @@
   "consortium.ns.reason.waterFutureDry": "Future drying beyond recorded range — may need summer water",
   "consortium.ns.reason.waterWetterNote": "Wetter than recorded range",
   "consortium.ns.reason.waterWetDrainage": "Wetter than recorded range — needs sharp drainage",
-  "consortium.ns.arrival.tooDryRainFed": "Too dry for rain alone here — turn on \"I water regularly\" to see an irrigated starter palette.",
+  "consortium.ns.arrival.tooDryRainFed": "Too dry for rain alone here — turn on \"{toggle}\" to see an irrigated starter palette.",
   "consortium.ns.arrival.desertEstablishNote": "Desert climate: even dry-land plants need watering for their first years.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

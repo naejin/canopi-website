@@ -281,7 +281,7 @@ export function NorthStarArrival() {
               <span class="ns-skel ns-skel-sub" aria-hidden="true" />
             ) : noStarter ? (
               !isRegularWatering && (((effToday.koppen ?? '').toUpperCase().startsWith('B')) || (effToday.precipMm !== null && effToday.precipMm < 250))
-                ? T('ns.arrival.tooDryRainFed')
+                ? T('ns.arrival.tooDryRainFed', { toggle: T('ns.arrival.waterRegularly') })
                 : T('ns.arrival.noStarter')
             ) : (
               <>
