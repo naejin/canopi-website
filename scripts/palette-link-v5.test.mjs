@@ -11,8 +11,7 @@ const core = await import('../src/lib/palette/index.ts');
 const { decodeLink, encodeLink, linkVersionStatus, linkOrigin, snapOrigin, isLongLink, bringsPlace, zoneOf, siteIdOf, siteOf, siteInputsOf, NO_INPUTS, climateFor, LINK_VERSION } = core;
 const grid = await import('../src/lib/climate/grid.ts');
 const persist = await import('../src/islands/palette/state/persist.ts');
-const { saveRecord, readRecord } = persist;
-const { arrival, placeOfSeed } = await import('../src/islands/palette/state/arrival.ts');
+const { arrival } = await import('../src/islands/palette/state/arrival.ts');
 const { state: schema } = await import('../src/islands/palette/state/schema.ts');
 
 const V = JSON.parse(readFileSync(new URL('vectors/link-v5.json', import.meta.url), 'utf8'));
@@ -150,35 +149,12 @@ test('link v5: the private place kept beside a save fills only the keys the frag
   assert.equal(d.state.room, 'small', 'm is not a place key');
 });
 
-// ---- the save record and the arrival on each version (8.2) ----
-const AT = '2026-11-14T00:00:00Z';
-test('the save record: only a v5 fragment is read back; v1–v4 (the old beta tool), v6 and no-v are not read', () => {
-  const r = (fragment) => saveRecord(fragment, AT, 'chosen', null, 'l=sun');
-  assert.deepEqual(readRecord(r('v=5&c=temperate&a=&e=1')), { fragment: 'v=5&c=temperate&a=&e=1', place: 'l=sun', at: AT, src: 'chosen' });
-  for (const f of ['v=4&c=temperate&a=&e=1', 'v=1&c=temperate&a=', 'v=6&c=temperate&a=&e=1', 'c=temperate&a=&e=1', 'v=5.0&c=temperate&a=']) assert.equal(readRecord(r(f)), null, f);
-  assert.equal(readRecord(JSON.stringify({ q: 'v=3&c=te', at: AT, src: null })), null, 'the beta tool\'s { q } save');
-  assert.equal('oldRecord' in persist, false, 'no older-save path (owner 2026-11-17)');
-});
-
-test('the save record keeps a link\'s or a location\'s country beside the public fragment, and a place under 2000 characters', () => {
-  const f = 'v=5&c=temperate&a=&e=1';
-  assert.equal(readRecord(saveRecord(f, AT, 'link', 'FR')).country, 'FR');
-  assert.equal(readRecord(saveRecord(f, AT, 'location', 'ES')).country, 'ES');
-  assert.equal(readRecord(saveRecord(f, AT, 'chosen', 'DE')).country, undefined, 'a chosen country lives in canopi-country');
-  assert.equal(readRecord(saveRecord(f, AT, null, null, 'l='.padEnd(2_100, 'x'))).place, '');
-  assert.equal(readRecord(JSON.stringify({ fragment: f, at: AT, src: null })).place, '', 'a record without place reads unsure');
-});
-
-test('arrival: a v4 or v6 link in the fragment is a link (restore gives its notice); a v4 save is not restored', () => {
-  for (const hash of ['#v=4&c=temperate&a=&e=1', '#v=6&c=temperate&a=&e=1']) assert.deepEqual(arrival({ hash, search: '' }, null, null), { kind: 'link', fragment: hash.slice(1) });
-  const old = readRecord(saveRecord('v=4&c=temperate&a=&e=1', AT, null));
-  assert.deepEqual(arrival({ hash: '', search: '' }, old, 'temperate'), { kind: 'start', climate: 'Temperate' });
-});
-
-test('a place seed (canopi-place) reads back room, plot size and the grower\'s own values (old spot and soil keys ignored); nothing on damage', () => {
-  assert.deepEqual(placeOfSeed('m=pots&z=6&l=shade&s=pots'), { room: 'pots', plot: 6, siteEdits: core.NO_EDITS });
-  assert.deepEqual(placeOfSeed('m=pots&z=6&b=62&p=0&d=wet'), { room: 'pots', plot: 6, siteEdits: { soilPh: 6.2, pots: false, drainage: 'wet' } });
-  assert.equal(placeOfSeed(null), null);
+// ---- arrival on each version (8.2; Wave 7.1: no localStorage save record or canopi-place seed) ----
+test('arrival: a v4 or v6 link in the fragment is a link (restore gives its notice); no localStorage save record exists', () => {
+  for (const hash of ['#v=4&c=temperate&a=&e=1', '#v=6&c=temperate&a=&e=1']) assert.deepEqual(arrival({ hash, search: '' }, null), { kind: 'link', fragment: hash.slice(1) });
+  assert.deepEqual(arrival({ hash: '', search: '' }, 'temperate'), { kind: 'start', climate: 'Temperate' });
+  assert.equal('readRecord' in persist, false, 'no localStorage save record reader');
+  assert.equal('saveRecord' in persist, false, 'no localStorage save record writer');
 });
 
 // ---- the country gate of the schema (8.1 k, 8.3) ----

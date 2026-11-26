@@ -16,7 +16,7 @@ import type { Signal } from '@preact/signals';
 import { cellCentre, isLongLink } from '../../../lib/palette/index.ts';
 import { T } from '../strings.ts';
 import { country, location as site } from '../store.ts';
-import { currentFragment, linkName, shareUrl, shownFragment, storageWorks } from '../state/persist.ts';
+import { currentFragment, linkName, shareUrl, shownFragment } from '../state/persist.ts';
 
 export interface ShareState { withPlace: Signal<boolean>; copied: Signal<{ url: string; ok: boolean } | null> }
 
@@ -56,7 +56,6 @@ export function Share({ onClose, state }: { onClose: () => void; state: ShareSta
       )}
       <p class="ct-muted" role="status">{copied === 'yes' ? T('share.done') : copied === 'no' ? T('share.copyByHand') : ''}</p>
       {isLongLink(url) && <p class="ct-note">{T('share.long')}</p>}
-      {!storageWorks.value && <p class="ct-note">{T('share.noStorage')}</p>}
       <p class="ct-muted ct-small-text">{T('share.privacy')}</p>
       <p><button type="button" class="link-button ct-link" onClick={onClose}>{T('share.close')}</button></p>
     </section>

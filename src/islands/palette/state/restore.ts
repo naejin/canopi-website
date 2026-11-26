@@ -11,7 +11,7 @@ import { bringsPlace, decodeLink, linkClimates, linkOrigin, linkPlaceName, linkV
 import type { Country, CountrySource } from '../store.ts';
 import * as store from '../store.ts';
 import { state as schema } from './schema.ts';
-import { actionCount, attempt, holdSave, inFlight, linkPlace, memory, placeSaid, quietly, savedInstead, writeAddress, LOCATION_STORE, SUGGESTED_KEY, type CountryFrom, type OwnPlace } from './persist.ts';
+import { actionCount, attempt, inFlight, linkPlace, memory, placeSaid, quietly, writeAddress, LOCATION_STORE, SUGGESTED_KEY, type CountryFrom, type OwnPlace } from './persist.ts';
 import { lookingThrough } from './lookups.ts';
 
 // The notices a link (or the save) left for the reader (Place shows them).
@@ -27,7 +27,7 @@ export const NO_NOTICES: Notices = { unknownCount: 0, cut: false, newer: false, 
 export const notices = signal<Notices>({ ...NO_NOTICES });
 // A link that brings a place (persist.ts keeps the signal, below this module, so the save follows it),
 // and the save to go back to (persist.ts derives it from the held save).
-export { linkPlace, savedInstead };
+export { linkPlace };
 
 // ---- the site location a page brings (P5 S5b) ----
 
@@ -154,7 +154,7 @@ function cancelRestore(): void {
   inFlight.value = null;
 }
 
-export interface RestoreOptions { from: 'link' | 'saved'; src?: CountryFrom; keep?: boolean; place?: string | null; ask?: OwnPlace; hold?: boolean; country?: Country }
+export interface RestoreOptions { from: 'link' | 'saved'; src?: CountryFrom; keep?: boolean; place?: string | null; ask?: OwnPlace; country?: Country }
 // Restores a fragment (a link or the save) once its climates are read. Returns whether it opened.
 // src: the saved country's source (a save's country that came from a link keeps that label).
 // place: the private place kept apart from a saved fragment (the record's `place`, history.state.pl).
@@ -165,7 +165,7 @@ export interface RestoreOptions { from: 'link' | 'saved'; src?: CountryFrom; kee
 // hold: a reload or Back/Forward of a page that held the save (history.state hold): the save stays
 // held (8.3). Each flag is read only as itself (fix round 4, s-3). country: the reader's own country, worked out before a link's was shown (startMemory),
 // which the notice gives back and the held save keeps.
-export async function restore(fragment: string, { from, src = null, keep = false, place = null, ask = undefined, hold = false, country = undefined }: RestoreOptions): Promise<boolean> {
+export async function restore(fragment: string, { from, src = null, keep = false, place = null, ask = undefined, country = undefined }: RestoreOptions): Promise<boolean> {
   // A new arrival: what an earlier notice's answer did is said no more (review round 2, 4).
   placeSaid.value = '';
   const refuse = (problem: PastedProblem, notice: Partial<Notices>): false => {
@@ -220,9 +220,6 @@ export async function restore(fragment: string, { from, src = null, keep = false
     // the reader's own place and country come back first, so nothing of the earlier link stays.
     quietly(() => batch(() => {
       if (waiting && !ask) { store.siteEdits.value = waiting.own.siteEdits; store.country.value = waiting.own.country; }
-      // Arriving by a link holds the save until a plant change, as does a reload or Back/Forward of
-      // it; opening the save owns it (state/save.ts). In the batch, so the save sees the palette applied.
-      holdSave(from === 'link' || hold);
       applyDecoded(d, from === 'link' || src === 'link' ? 'link' : 'chosen', brings, from === 'saved' && !!place && new URLSearchParams(place).get(SUGGESTED_KEY) === '1');
       notices.value = { ...notices.peek(), unknownCount: d.notice.unknownCount, cut: false, newer: false, period: d.notice.period, unreadable: false, pasted: null, failed: false };
       linkPlace.value = asks ? { own: mine } : null;
@@ -264,8 +261,7 @@ async function guideName(src: PlantSource, plant: string): Promise<string> {
 // save until a plant change; a new suggestion is built around it). The plant applies only if the reader
 // has not acted while it was read (another card: pre-push review 2).
 export async function applyPreset(climate: ClimateZone, plant: string | null): Promise<void> {
-  // The guide's climate is the guide's choice, not the reader acting (it ends no "Open my saved palette instead").
-  quietly(() => batch(() => { holdSave(true); store.climate.value = climate; }));
+  quietly(() => { store.climate.value = climate; });
   if (!plant) return;
   const began = actionCount();
   await waitForSource();

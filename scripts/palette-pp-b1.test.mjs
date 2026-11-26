@@ -60,37 +60,21 @@ import { gunzipSync } from 'node:zlib';
 import { encodeLink, encodePlace, linkOrigin, decodeLink, NO_EDITS } from '../src/lib/palette/index.ts';
 
 const persist = await import('../src/islands/palette/state/persist.ts');
-// The device save's own state (fix round 3 save model, state/save.ts): held, and the save as this page
-// last wrote or read it.
-const saveM = await import('../src/islands/palette/state/save.ts');
-const opened = (raw) => { saveM.lastSave.value = raw; };
-const isHeld = () => saveM.held.peek();
 const restoreM = await import('../src/islands/palette/state/restore.ts');
 const arrivalM = await import('../src/islands/palette/state/arrival.ts');
 const draft = await import('../src/islands/palette/state/draft.ts');
 const locationM = await import('../src/islands/palette/state/location.ts');
 const store = await import('../src/islands/palette/store.ts');
-const { state: schema } = await import('../src/islands/palette/state/schema.ts');
 const { openBytes } = await import('../src/islands/palette/data/load.ts');
 const { createSqliteSource } = await import('../src/islands/palette/data/sqlite-source.ts');
-const { STORE, PLACE_STORE, LOCATION_STORE, COUNTRY_STORE, readRecord, saveRecord } = persist;
+const { LOCATION_STORE, COUNTRY_STORE } = persist;
+const STORE = 'canopi-consortium';
+const PLACE_STORE = 'canopi-place';
 
-test('b1a arrival with the v5 record { fragment, place, at, src, country? }: the save, the tab\'s pl, and canopi-place only as a seed', () => {
-  const rec = readRecord(saveRecord('v=5&c=temperate&m=pots&a=&e=1', '2026-11-14', 'location', 'KE', 'l=shade&w=dry'));
-  assert.deepEqual(rec, { fragment: 'v=5&c=temperate&m=pots&a=&e=1', place: 'l=shade&w=dry', at: '2026-11-14', src: 'location', country: 'KE' });
-  assert.deepEqual(arrivalM.arrival({ hash: '', search: '' }, rec, null), { kind: 'saved', fragment: rec.fragment, at: '2026-11-14', src: 'location', place: 'l=shade&w=dry' });
-  // A reload of the page's own address: the tab's place (history.state.pl), not the shared save's;
-  // held, since the save holds another palette (pre-push fix 5: never written over).
-  assert.deepEqual(arrivalM.arrival({ hash: '#v=5&c=temperate&a=&e=1', search: '' }, rec, null, { ct: 'v=5&c=temperate&a=&e=1', src: 'chosen', pl: 'l=sun' }), { kind: 'saved', fragment: 'v=5&c=temperate&a=&e=1', at: '', src: 'chosen', place: 'l=sun', hold: true });
-  // A reload while a link's place still waited (history.state ask: 1, with the link's country in pl):
-  // asked again, so the save stays held until the reader chooses.
-  assert.deepEqual(arrivalM.arrival({ hash: '#v=5&c=temperate&a=&e=1', search: '' }, rec, null, { ct: 'v=5&c=temperate&a=&e=1', src: 'link', pl: 'k=FR&l=sun', ask: 1 }), { kind: 'saved', fragment: 'v=5&c=temperate&a=&e=1', at: '', src: 'link', place: 'k=FR&l=sun', ask: true, hold: true });
-  // A save with no v, and v4 / v6 saves: not a record.
-  for (const f of ['c=temperate&a=&e=1', 'v=4&c=temperate&a=&e=1', 'v=6&c=temperate&a=&e=1']) assert.equal(readRecord(saveRecord(f, 'x', null)), null, f);
-  // The seed: room, plot and the grower's own values read through the link's words (old spot and soil
-  // keys ignored, R4).
-  assert.deepEqual(arrivalM.placeOfSeed('m=pots&z=40&l=shade&q=windy&s=own.acid.-'), { room: 'pots', plot: 40, siteEdits: NO_EDITS });
-  assert.equal(arrivalM.placeOfSeed(null), null);
+test('b1a arrival with history.state: tab reload restores pl and ask; plain visit starts fresh', () => {
+  assert.deepEqual(arrivalM.arrival({ hash: '', search: '' }, null), { kind: 'start', climate: null });
+  assert.deepEqual(arrivalM.arrival({ hash: '#v=5&c=temperate&a=&e=1', search: '' }, null, { ct: 'v=5&c=temperate&a=&e=1', src: 'chosen', pl: 'l=sun' }), { kind: 'saved', fragment: 'v=5&c=temperate&a=&e=1', src: 'chosen', place: 'l=sun' });
+  assert.deepEqual(arrivalM.arrival({ hash: '#v=5&c=temperate&a=&e=1', search: '' }, null, { ct: 'v=5&c=temperate&a=&e=1', src: 'link', pl: 'k=FR&l=sun', ask: 1 }), { kind: 'saved', fragment: 'v=5&c=temperate&a=&e=1', src: 'link', place: 'k=FR&l=sun', ask: true });
 });
 
 // The store on the installed export, as palette-memory.test.mjs sets it up.
@@ -111,11 +95,7 @@ const OWN_PLACE = '';
 // A Temperate palette of n plants on screen with the reader's own place (full sun), saved.
 async function mine(n = 5) {
   kept.clear();
-  // As a page that owns its palette (a save restored), over an empty storage.
-  opened(null);
-  // Nothing of an earlier test's arrival stays: its link-place notice, its held save.
   persist.linkPlace.value = null;
-  persist.holdSave(false);
   store.setSource(realSource);
   store.load.value = { status: 'ready', error: null };
   const pool = await store.loadPool('Temperate');
@@ -134,7 +114,7 @@ async function mine(n = 5) {
   store.hideToast();
   return pool;
 }
-const saved = () => readRecord(kept.get(STORE) ?? null);
+const saved = () => kept.get(STORE) ?? null;
 const known = async (zone) => ({ [zone]: (await realSource.pool(zone)).map((t) => t.id) });
 const linkWith = async (zone, n, extra = {}, opts = {}) => {
   const k = await known(zone);
@@ -453,11 +433,11 @@ test('b1a2-2: with a borrowed climate and no location, the pool the palette offe
 // fresh: run once the address is read (the new page's own state).
 async function reloadAsking(fresh = () => {}) {
   store.location.value = null;
-  const how = arrivalM.arrival({ hash: location.hash, search: '' }, saved(), null, history.state);
+  const how = arrivalM.arrival({ hash: location.hash, search: '' }, null, history.state);
   assert.equal(how.ask, true);
   fresh();
   const ask = { siteEdits: SUN, country: { code: 'FR', source: 'chosen' }, location: null };
-  assert.equal(await restoreM.restore(how.fragment, { from: 'saved', src: how.src, place: how.place, ask, hold: how.hold }), true);
+  assert.equal(await restoreM.restore(how.fragment, { from: 'saved', src: how.src, place: how.place, ask }), true);
   return how;
 }
 test('b1a bugs-9: a reload while the notice waits keeps the link\'s cell, so "Use it" still adopts it', async () => {
@@ -530,8 +510,7 @@ test('b1a r2-5: arrivalPlan works out the arrival: the reader\'s own country bef
   let reads = 0;
   const PARIS = { lat: 48.85, lon: 2.35 };
   const cell = () => { reads++; return PARIS; };
-  const plan = (how, over = {}) => arrivalM.arrivalPlan(how, { saved: null, pref: null, guess: () => null, seed: null, cell, ...over });
-  // A link that brings a place (k=FR, l=shade, o=): the link's country shown, the reader's own (KE) kept.
+  const plan = (how, over = {}) => arrivalM.arrivalPlan(how, { pref: null, guess: () => null, cell, ...over });
   const shade = SHADE;
   const link = await linkWith('Temperate', 3, { country: 'FR', siteEdits: shade }, { origin: { lat: 37.39, lon: -5.98 }, place: true });
   const p = plan({ kind: 'link', fragment: link }, { pref: 'KE', guess: () => 'DE' });
@@ -541,55 +520,32 @@ test('b1a r2-5: arrivalPlan works out the arrival: the reader\'s own country bef
   assert.ok(p.linkCell, 'the link\'s cell');
   assert.equal(p.ask, undefined);
   assert.equal(reads, 0, 'canopi-location read on a plain link arrival');
-  // k alone brings no place: the reader's own country (else the guess).
   const kOnly = await linkWith('Temperate', 3, { country: 'DE' }, { place: true });
   assert.deepEqual(plan({ kind: 'link', fragment: kOnly }, { pref: 'KE' }).country, { code: 'KE', source: 'chosen' });
   assert.deepEqual(plan({ kind: 'link', fragment: kOnly }, { guess: () => 'ES' }).country, { code: 'ES', source: 'guess' });
-  // The save with a location's country beside it.
-  const f = await linkWith('Temperate', 2);
-  const rec = { fragment: f, place: 'l=sun', at: '2026-11-14', src: 'location', country: 'KE' };
-  const s = plan({ kind: 'saved', fragment: f, at: rec.at, src: 'location', place: rec.place }, { saved: rec, guess: () => 'DE' });
-  assert.deepEqual(s.country, { code: 'KE', source: 'location' });
-  assert.equal(s.linkCell, null);
-  assert.equal(s.ask, undefined);
-  // A reload while a link's place waited (history.state ask, the link's cell in pl): the link's cell,
-  // and the ask against the reader's own place (the held save's), country and own cell.
   const pl = encodePlace({ country: 'FR', siteEdits: shade }, { lat: 37.35, lon: -5.95 });
-  const r = plan({ kind: 'saved', fragment: link, at: '', src: 'link', place: pl, ask: true }, { saved: rec, pref: 'KE', seed: 'w=dry' });
+  const r = plan({ kind: 'saved', fragment: link, src: 'link', place: pl, ask: true }, { pref: 'KE' });
   assert.deepEqual(r.linkCell, linkOrigin(pl));
   assert.ok(r.linkCell, 'the link\'s cell from the tab\'s place');
   assert.equal(reads, 1, 'the reader\'s own cell read once for the ask');
   assert.deepEqual(r.ask, { siteEdits: NO_EDITS, country: { code: 'KE', source: 'chosen' }, location: PARIS });
-  // No save: the reader's own values are none (the seed holds room and plot only).
-  const n = plan({ kind: 'saved', fragment: link, at: '', src: 'link', place: pl, ask: true }, { pref: 'KE', seed: 'w=dry' });
-  assert.deepEqual(n.ask.siteEdits, NO_EDITS);
 });
 
-// perf-1 (b2's review, confirmed): the browser's guess walks every country's time zones (about 0.4 s,
-// 1.6 s on a slow phone) before the database opens; it runs only when no link, choice or save names one.
-test('b1a perf-1: the browser\'s country guess is worked out only when no link, choice or save names a country', async () => {
+test('b1a perf-1: the browser\'s country guess is worked out only when no link or choice names a country', async () => {
   let calls = 0;
   const guess = () => { calls++; return 'US'; };
   const { countryAtStart } = arrivalM;
   assert.deepEqual(countryAtStart({ link: 'fr', pref: null, saved: null, guess }), { code: 'FR', source: 'link' });
   assert.deepEqual(countryAtStart({ link: null, pref: 'DE', saved: null, guess }), { code: 'DE', source: 'chosen' });
   assert.deepEqual(countryAtStart({ link: null, pref: '-', saved: null, guess }), { code: null, source: 'chosen' });
-  assert.deepEqual(countryAtStart({ link: null, pref: null, saved: 'es', savedFrom: 'location', guess }), { code: 'ES', source: 'location' });
   assert.equal(calls, 0, 'the guess was worked out although a country was named');
   assert.deepEqual(countryAtStart({ link: null, pref: null, saved: null, guess }), { code: 'US', source: 'guess' });
   assert.equal(calls, 1);
-  // Through arrivalPlan: a saved country (a location's, kept beside the save) needs no guess, also
-  // with a link that brings a place (its own country and the reader's own both worked out).
   calls = 0;
-  const f = await linkWith('Temperate', 2);
-  const rec = { fragment: f, place: '', at: '2026-11-14', src: 'location', country: 'KE' };
-  const p = arrivalM.arrivalPlan({ kind: 'saved', fragment: f, at: rec.at, src: 'location', place: '' }, { saved: rec, pref: null, guess, seed: null, cell: () => null });
-  assert.deepEqual(p.country, { code: 'KE', source: 'location' });
   const link = await linkWith('Temperate', 3, { country: 'FR', siteEdits: SHADE }, { place: true });
-  arrivalM.arrivalPlan({ kind: 'link', fragment: link }, { saved: null, pref: 'KE', guess, seed: null, cell: () => null });
-  assert.equal(calls, 0, 'the guess was worked out although a country was saved or chosen');
-  // No country anywhere: worked out once, though both the link's and the reader's own are decided.
-  arrivalM.arrivalPlan({ kind: 'link', fragment: link }, { saved: null, pref: null, guess, seed: null, cell: () => null });
+  arrivalM.arrivalPlan({ kind: 'link', fragment: link }, { pref: 'KE', guess, cell: () => null });
+  assert.equal(calls, 0, 'the guess was worked out although a country was chosen');
+  arrivalM.arrivalPlan({ kind: 'link', fragment: link }, { pref: null, guess, cell: () => null });
   assert.equal(calls, 1, 'the guess was worked out more than once');
 });
 
@@ -630,9 +586,9 @@ test('b1a r3-3: startMemory\'s wiring passes the reader\'s own country to a link
     await mine(5);
     await wait(0);
     const link = await linkWith('Temperate', 3, { country: 'FR', siteEdits: SHADE }, { place: true });
-    const how = arrivalM.arrival({ hash: `#${link}`, search: '' }, saved(), null);
-    const plan = arrivalM.arrivalPlan(how, { saved: saved(), pref: 'KE', guess: () => null, seed: null, cell: () => null });
-    arrivalM.openWith({ how, plan, saved: saved(), seed: null, keptLocation: null });
+    const how = arrivalM.arrival({ hash: `#${link}`, search: '' }, null);
+    const plan = arrivalM.arrivalPlan(how, { pref: 'KE', guess: () => null, cell: () => null });
+    arrivalM.openWith({ how, plan, keptLocation: null });
     await until(() => restoreM.linkPlace.peek());
     assert.ok(restoreM.linkPlace.peek(), 'no link-place notice');
     store.removeMember(store.members.peek()[0]);
@@ -647,16 +603,39 @@ test('b1a r3-3: startMemory\'s wiring passes the reader\'s own country to a link
     settled.length = 0;
     const pl = encodePlace({ country: 'FR', siteEdits: SHADE }, { lat: 37.35, lon: -5.95 });
     const f = await linkWith('Temperate', 3);
-    const reload = arrivalM.arrival({ hash: `#${f}`, search: '' }, saved(), null, { ct: f, src: 'link', pl, ask: 1 });
+    const reload = arrivalM.arrival({ hash: `#${f}`, search: '' }, null, { ct: f, src: 'link', pl, ask: 1 });
     assert.equal(reload.ask, true);
     const PARIS = JSON.stringify({ lat: 48.85, lon: 2.35, source: 'geo' });
-    const plan2 = arrivalM.arrivalPlan(reload, { saved: saved(), pref: null, guess: () => null, seed: null, cell: () => restoreM.ownCell(PARIS) });
-    arrivalM.openWith({ how: reload, plan: plan2, saved: saved(), seed: null, keptLocation: PARIS });
+    const plan2 = arrivalM.arrivalPlan(reload, { pref: null, guess: () => null, cell: () => restoreM.ownCell(PARIS) });
+    arrivalM.openWith({ how: reload, plan: plan2, keptLocation: PARIS });
     await until(() => store.location.peek()?.source === 'link');
     await wait(20);
     assert.deepEqual(settled.filter((x) => x === 'saved'), [], 'the saved location was looked up over the link\'s cell');
     assert.equal(restoreM.locationAtStart.peek(), false, 'a location kept on this device that is not looked up holds the cards');
   } finally { restoreAddress(); restoreM.provideLocationStep(before); store.location.value = null; persist.linkPlace.value = null; }
+});
+
+test('pre-push re-review: "In the ground" under "Pots or a balcony" with a soil pH survives a plant change and a share link carrying p=0', async () => {
+  const GROUND = Object.freeze({ pots: false, soilPh: 6.2 });
+  const counts = (at) => {
+    const i = store.siteInputs.peek();
+    assert.equal(i.pots.value, false, `${at}: "In the ground" was lost`);
+    assert.equal(i.soilPh.value, 6.2, `${at}: the soil pH no longer counts`);
+  };
+  await mine(5);
+  store.room.value = 'pots';
+  store.siteEdits.value = GROUND;
+  await wait(0);
+  store.removeMember(store.members.peek()[0]);
+  await wait(0);
+  counts('after the plant change');
+  const link = await linkWith('Temperate', 3, { room: 'pots', siteEdits: GROUND }, { place: true });
+  assert.match(link, /(^|&)p=0(&|$)/, 'premise: the link says "In the ground" (p=0)');
+  kept.clear();
+  assert.equal(await restoreM.restore(link, { from: 'link' }), true);
+  assert.equal(store.room.peek(), 'pots');
+  counts('through the link');
+  persist.linkPlace.value = null;
 });
 
 // ---- Wave 7.1: no browser localStorage palette auto-save ----
@@ -686,9 +665,9 @@ test('Wave 7.1: palette edits, room/plot/siteEdits changes, Start over and Undo 
   }
 });
 
-test('Wave 7.1: openingArrival ignores any leftover canopi-consortium key and lands on start', () => {
-  kept.set(STORE, saveRecord('v=5&c=temperate&m=small&a=&e=1', '2026-11-26T00:00:00.000Z', 'chosen', null, ''));
-  const how = arrivalM.arrival({ hash: '', search: '' }, null, 'temperate', null, false);
+test('Wave 7.1: arrival ignores any leftover canopi-consortium key and lands on start', () => {
+  kept.set(STORE, '{"fragment":"v=5&c=temperate&m=small&a=&e=1","at":"2026-11-26T00:00:00.000Z","src":"chosen"}');
+  const how = arrivalM.arrival({ hash: '', search: '' }, 'temperate', null);
   assert.equal(how.kind, 'start');
-  assert.equal(restoreM.savedInstead.peek(), null);
+  assert.equal('savedInstead' in restoreM, false);
 });

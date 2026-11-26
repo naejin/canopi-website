@@ -1,107 +1,35 @@
-// What the consortium tool keeps on this device and in the address bar (stream S4; E6 S2 split it
-// out of memory.ts; owner row "Memory", 2026-10-27: the shared site climate plus the last consortium
-// on this device; sharing is a link that restores the exact state, with no list of saved designs).
-//
+// What the consortium tool keeps on this device and in the address bar (Wave 7.1):
 // - The share link: link v5 in the address's fragment (core state.ts encodeLink / decodeLink), so it
-//   never reaches a server log. The address bar holds its public form only (no k o l w q r h s,
-//   plant-palette-architecture 8.3): the page keeps it on the palette shown, so a reload restores it,
-//   and rewrites it after a link with plants no longer in the list (§5).
-// - The last consortium: localStorage STORE, { fragment, place, at, src, country? }, written on each
-//   change: fragment the public v5 form (room `m` and plot `z` live there), place the private place
-//   answers `l w q r h s` (no k, no o), src whether its country came from a shared link, so it keeps
-//   that label; a visit with no link opens it. A guide preset (?plant=&climate=, A5) wins over it. A
-//   save readRecord cannot read (the old beta tool's, a newer or unreadable one) opens nothing and is
-//   left untouched; the next change overwrites it (owner 2026-11-17: no backward compatibility work).
-// - PLACE_STORE (canopi-place): the reader's last place answers `m z f b p i d`, written on every
-//   place change the reader makes, read only to seed a palette that starts with no place of its own
-//   (arrival.ts startMemory), so a page that does not open the save keeps the grower's own values.
+//   never reaches a server log. The address bar holds its public form only (no k o l w q r h s).
 // - The page's own address: replaceState writes history.state { ct: fragment, src, pl: place }, so a
-//   reload of the page's own link opens as the save (its country label and this tab's place kept),
-//   not as a link someone shared (v1 bca954c). A link pasted into the open tab (hashchange) is opened
-//   (arrival.ts). Two flags, each written from its own source and read only as itself (fix round 4,
-//   s-3): ask: 1 while a link's place waits on the reader (linkPlace, with the link's cell `o` in pl),
-//   so a reload asks again; hold: 1 while the page holds the save (state/save.ts held), so a reload or
-//   Back/Forward holds it again (plant-palette-architecture 8.3: arriving by a link writes nothing
-//   until the reader acts). A plant added while the place question is open writes ask without hold.
-// - The reader's country choice: localStorage COUNTRY_STORE ('FR', or '-' for "No country"), apart
-//   from the consortium. A guess from the browser is shown as a guess, used for the warnings, and
-//   never written, neither here nor in a link (owner row "Climate first, details").
-// - The shared site climate: localStorage SITE_CLIMATE (knowledge/decisions/climate-ux.md), written
-//   when the reader picks a climate on Start (draft.ts), and read when nothing else names one. A
-//   link's or a guide's climate never writes it.
-// - The site location (P5 S5b): localStorage LOCATION_STORE { lat, lon, source, label } (location.ts),
-//   apart from the consortium and never in a link or the address; a link carries the climate cell's
-//   centre (`o=`) only when the reader ticks "include my location" in Share (owner answer 5).
-// Every storage call may throw (private mode, blocked cookies): each one is caught, and the tool
-// works without it; Share then says the link keeps the consortium (§5 "Storage unavailable").
-//
-// When the save is written: state/save.ts `held` (this page's palette is not the save); not held,
-// every change of the palette is written; held, the save is left as it is.
-//
-// Also here, below restore.ts and the location step so that neither imports the other: the restore
-// in flight (what Start shows while a link opens) and the count of the reader's actions, which the
-// store watcher (watchStore) keeps.
+//   same-tab reload restores the tab's palette and place.
+// - Non-palette device preferences in localStorage: COUNTRY_STORE (canopi-country), SITE_CLIMATE
+//   (canopi-climate), and LOCATION_STORE (canopi-location). Palettes are never auto-saved to
+//   localStorage; users save .canopi files explicitly.
 import { batch, computed, effect, signal, untracked } from '@preact/signals';
 import type { ClimateZone, LinkOrigin, PlantId, ShareState, SiteEdits, SiteLocation } from '../../../lib/palette/index.ts';
-import { encodeLink, encodePlace, linkVersionStatus, NO_EDITS } from '../../../lib/palette/index.ts';
+import { encodeLink, encodePlace, NO_EDITS } from '../../../lib/palette/index.ts';
 import type { Country, CountrySource } from '../store.ts';
 import * as store from '../store.ts';
 import { state as schema } from './schema.ts';
 import type { Consortium, ShareInput } from './schema.ts';
-import { attempt, forgets, held, memory, SAVE_FRAGMENT_MAX } from './save.ts';
+import { attempt, forgets } from './save.ts';
 
-export { attempt, guarded, memory, STORE, type StorageLike } from './save.ts';
+export { attempt, guarded, memory, type StorageLike } from './save.ts';
 export const COUNTRY_STORE = 'canopi-country';
 export const SITE_CLIMATE = 'canopi-climate';
 export const LOCATION_STORE = 'canopi-location';
-export const PLACE_STORE = 'canopi-place';
 export const NO_COUNTRY = '-';
-
-// ---- storage ----
-
-// Whether this browser keeps the consortium (false: Share says the link does).
-export const storageWorks = signal(true);
 
 // ---- where the country came from ----
 
-// One country-source enum: store.ts CountrySource (where the reader's country came from). The save
-// and history.state keep it without 'guess' (a guess is never written): CountryFrom, null for none.
+// One country-source enum: store.ts CountrySource (where the reader's country came from).
+// history.state keeps it without 'guess' (a guess is never written): CountryFrom, null for none.
 export type CountryFrom = Exclude<CountrySource, 'guess'> | null;
 const KEPT_SOURCES: readonly CountrySource[] = ['link', 'chosen', 'location'];
 export const fromOf = (v: unknown): CountryFrom => (KEPT_SOURCES.includes(v as CountrySource) ? (v as Exclude<CountrySource, 'guess'>) : null);
-// Where a country came from, as the save and history.state keep it.
 const countryFrom = (c: Country = store.country.peek()): CountryFrom =>
   (!c.code || c.source === 'guess' ? null : fromOf(c.source) ?? 'chosen');
-
-// ---- the save record ----
-
-// src: where the saved consortium's country came from ('link': a shared link; 'chosen'; 'location':
-// the site location (P5 owner answer 5); null: none). country: a location's or a link's country, kept
-// beside the fragment, never in it (the fragment is public: `k` goes only in a link with "Include my
-// place"). place: the private place answers (core encodePlace without k and o; '' for none).
-export interface SavedRecord { fragment: string; place: string; at: string; src: CountryFrom; country?: string }
-const BESIDE: readonly CountryFrom[] = ['location', 'link'];
-export const saveRecord = (fragment: string, at: string, src: CountryFrom, country: string | null = null, place = ''): string =>
-  JSON.stringify(BESIDE.includes(src) && country ? { fragment, place, at, src, country } : { fragment, place, at, src });
-const versionOf = (fragment: string): string | null => new URLSearchParams(fragment).get('v');
-const parsed = (text: string | null): Record<string, unknown> | null => {
-  if (!text) return null;
-  const v = attempt(() => JSON.parse(text) as unknown);
-  return v && typeof v === 'object' ? (v as Record<string, unknown>) : null;
-};
-// A record read back, or null when it is not one: the old beta format, a fragment that is not of the
-// current link version (newer, unreadable, or no `v` at all: core linkVersionStatus), damaged
-// JSON. A record without `place` reads with every place answer unsure ('').
-export function readRecord(text: string | null): SavedRecord | null {
-  const v = parsed(text);
-  if (!v) return null;
-  const { fragment, place, at, src, country } = v;
-  if (typeof fragment !== 'string' || !fragment.length || fragment.length >= SAVE_FRAGMENT_MAX || typeof at !== 'string') return null;
-  if (linkVersionStatus(versionOf(fragment)) !== 'current') return null;
-  const from = fromOf(src);
-  const pl = typeof place === 'string' && place.length < 2_000 ? place : '';
-  return BESIDE.includes(from) && typeof country === 'string' && /^[A-Z]{2}$/.test(country) ? { fragment, place: pl, at, src: from, country } : { fragment, place: pl, at, src: from };
-}
 
 // ---- the share state ----
 
@@ -165,12 +93,12 @@ export function palette(): Consortium | null {
   for (const id of own) delete guests[id];
   return { ...now, guests };
 }
-// Whether the page shows a palette of its own the address keeps: a climate, and the save owned, the
-// palette page shown or any plant on Place.
+// Whether the page shows a palette of its own the address keeps: a climate, and either the palette
+// page shown or any plant on Place.
 export function shows(): boolean {
   if (!store.climate.peek()) return false;
   const p = schema.peek(schema.lists.plants);
-  return !held.peek() || store.view.peek() !== 'start' || p.members.length > 0 || p.removed.length > 0 || Object.keys(p.guests).length > 0;
+  return store.view.peek() !== 'start' || p.members.length > 0 || p.removed.length > 0 || Object.keys(p.guests).length > 0;
 }
 
 // The ids a palette's links are matched against: its climate's and each guest list's.
@@ -222,47 +150,24 @@ function addressPlace(): string {
   const o = linkPlace.peek() && at?.source === 'link' ? { lat: at.lat, lon: at.lon } : null;
   return joined(encodePlace({ ...shareState(now, { place: true }), country: now.country.source === 'link' ? now.country.code : null }, o), suggestedPart());
 }
-// The canopi-place seed: room and plot size (`m z`) and the grower's own values (`f b p i d`, core
-// encodePlace), without the country. While a link's place waits on the reader, their own values, never
-// the link's (8.3: the link's place is for this page only; pre-push saves-1).
-export function placeSeed(): string {
-  const s = schema.peek(['room', 'plot']);
-  const siteEdits = linkPlace.peek()?.own.siteEdits ?? store.siteEdits.peek();
-  return joined(`m=${s.room}`, s.plot !== null ? `z=${s.plot}` : '', encodePlace({ country: null, siteEdits }));
-}
-
-// ---- a link that brings a place, and the save held until the reader acts (plant-palette-architecture 8.3) ----
+// ---- a link that brings a place ----
 
 // A link that brings a place applies it to this page only, with the notice "Use it" / "Use my own
 // place" (restore.ts sets it; draft.ts useLinkPlace / useOwnPlace end it). own: the reader's place,
-// country and site cell (location: their own, never a link's) just before the link applied; the save
-// keeps them until the reader chooses.
+// country and site cell (location: their own, never a link's) just before the link applied.
 export interface OwnPlace { siteEdits: SiteEdits; country: Country; location: LinkOrigin | null }
 export const linkPlace = signal<{ own: OwnPlace } | null>(null);
-// The reader's own place set aside while a link's place waits follows what the reader does to their
-// own place meanwhile (placeSeed writes it into canopi-place; pre-push re-review 2): Forget empties it
-// (state/location.ts forget), another climate cell drops its values (placeAt). Nothing waiting: nothing.
 export function changeOwnPlace(patch: Partial<OwnPlace>): void {
   const w = linkPlace.peek();
   if (w) linkPlace.value = { own: { ...w.own, ...patch } };
 }
-// The reader's new location (state/location.ts locate): store.placeAt, and when another cell clears
-// the page's values, the set-aside ones too, in the same batch, so canopi-place never keeps the old
-// cell's shifts for the new one (A7).
 export function placeAt(loc: SiteLocation): void {
   batch(() => {
     store.placeAt(loc);
     if (store.editsCleared.peek()) changeOwnPlace({ siteEdits: NO_EDITS });
   });
 }
-// What the last answer to an arrival notice did, for Place's status line (draft.ts answered: the
-// notice's button leaves the page with its line, so the focus moves on and this says what happened:
-// A25). '' for nothing. Kept here, below restore.ts, so the reader's next action (watchStore) and the
-// next arrival (restore.ts restore) clear it (review round 2, 4).
 export const placeSaid = signal('');
-// Arriving by a link or a guide preset, the page holds the save (restore.ts, and for a reload or
-// Back/Forward of that page: history.state hold); a restore of the save, or a plant change, lets it go.
-export const holdSave = (on: boolean): void => { held.value = on; };
 
 // The address bar holds the consortium's link (replaceState, no history entry). Same address:
 // nothing written (browsers drop replaceState calls past a rate limit).
@@ -273,7 +178,7 @@ export const lastWritten = (): string => written;
 export function ownAddressState(fragment: string | null = currentFragment()): Record<string, unknown> | null {
   if (!fragment) return null;
   const fg = forgets();
-  return { ct: fragment, src: countryFrom(), pl: addressPlace(), ...(linkPlace.peek() ? { ask: 1 } : {}), ...(held.peek() ? { hold: 1 } : {}), ...(fg ? { fg } : {}) };
+  return { ct: fragment, src: countryFrom(), pl: addressPlace(), ...(linkPlace.peek() ? { ask: 1 } : {}), ...(fg ? { fg } : {}) };
 }
 export function writeAddress(force = false): void {
   if (typeof location === 'undefined') return;
@@ -307,8 +212,6 @@ export const shownFragment = computed(() => {
   void [schema.track(schema.lists.reader), store.pools.value];
   return currentFragment();
 });
-// Browser localStorage no longer auto-saves palettes (Wave 7.1), so there is no saved-in-browser offer.
-export const savedInstead = computed((): SavedRecord | null => null);
 
 let watching = false;
 // The address bar follows every change of the palette, and any write to it that is not a
@@ -338,7 +241,6 @@ export function watchStore(): void {
   effect(() => {
     void store.pools.value;
     void linkPlace.value;
-    void held.value;
     untracked(persist);
   });
 }

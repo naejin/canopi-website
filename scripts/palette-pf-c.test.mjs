@@ -175,18 +175,6 @@ test('chunk 4 T17: a guide\'s plant missing from the chosen list is named by its
   assert.equal(await missingFor('Nothingus fakeus'), 'Nothingus fakeus', 'not in the release: the guide\'s own words');
 });
 
-test('chunk 4 T18: keepShownAsMine() makes the palette on screen the save (no longer held) and offers one Undo that holds it again', () => {
-  saveM.held.value = true;
-  store.members.value = ['p-apple', 'p-fr'];
-  draftM.keepShownAsMine();
-  assert.equal(saveM.held.peek(), false, 'the palette on screen is the save now');
-  const line = store.toast.peek();
-  assert.ok(line && typeof line.undo === 'function', 'one toast with its Undo');
-  line.undo();
-  assert.equal(saveM.held.peek(), true, 'Undo holds the save again');
-  assert.deepEqual(store.members.peek(), ['p-apple', 'p-fr'], 'the plants on screen stay');
-});
-
 // Chunk 4 C2 fix round 1 (C3): the release names are read after the "has the reader acted" check, so
 // the check runs again once they are in; a reader who picked another climate (or opened the saved
 // palette) meanwhile never gets the stale notice back.

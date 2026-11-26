@@ -3,7 +3,7 @@ type: Module
 title: Consortium state (schema and state/ modules)
 description: "The consortium island's state layer under src/islands/palette/state/: the schema that declares each field once (Undo, save, #v=4 link, watchers), and the modules E6 S2 split out of the old memory.ts (deleted in E6 chunk 5) for storage, restore, arrival, Start's draft, the waiting Suggest, the location lookups and the location step."
 tags: [consortium, state]
-generated: { by: antigravity/gemini, at: 2026-11-26T07:09:52Z }
+generated: { by: antigravity/gemini, at: 2026-11-26T08:21:35Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T07:28:39Z }
   - { by: antigravity/gemini, at: 2026-11-23T18:52:44Z }
@@ -16,33 +16,33 @@ sources:
   - id: store-ts
     resource: ../../src/islands/palette/store.ts
     title: src/islands/palette/store.ts
-    digest: sha256:2db1720b440cca21
-    last_modified: 2026-11-25T11:27:38Z
+    digest: sha256:dc0e5c97f4cb15ce
+    last_modified: 2026-11-26T08:18:12Z
   - id: consortium-memory-test-mjs
     resource: ../../scripts/palette-memory.test.mjs
     title: scripts/palette-memory.test.mjs
-    digest: sha256:ce959257c9df3c8d
-    last_modified: 2026-11-26T07:06:21Z
+    digest: sha256:35192235b7e64f3a
+    last_modified: 2026-11-26T08:21:12Z
   - id: persist-ts
     resource: ../../src/islands/palette/state/persist.ts
     title: src/islands/palette/state/persist.ts
-    digest: sha256:2a890a1f06c18c50
-    last_modified: 2026-11-26T07:01:15Z
+    digest: sha256:30680221c11d1eed
+    last_modified: 2026-11-26T08:14:40Z
   - id: restore-ts
     resource: ../../src/islands/palette/state/restore.ts
     title: src/islands/palette/state/restore.ts
-    digest: sha256:030d6d5d5be6780b
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:4848f9e07c787510
+    last_modified: 2026-11-26T08:14:56Z
   - id: arrival-ts
     resource: ../../src/islands/palette/state/arrival.ts
     title: src/islands/palette/state/arrival.ts
-    digest: sha256:01cf4aacd7781665
-    last_modified: 2026-11-26T07:01:19Z
+    digest: sha256:2a69af1ed1de89c0
+    last_modified: 2026-11-26T08:17:03Z
   - id: draft-ts
     resource: ../../src/islands/palette/state/draft.ts
     title: src/islands/palette/state/draft.ts
-    digest: sha256:456c988f8c29de70
-    last_modified: 2026-11-26T07:00:17Z
+    digest: sha256:73537e90dc28bfe9
+    last_modified: 2026-11-26T08:17:52Z
   - id: suggest-wait-ts
     resource: ../../src/islands/palette/state/suggest-wait.ts
     title: src/islands/palette/state/suggest-wait.ts
@@ -57,7 +57,7 @@ sources:
     resource: ../../src/islands/palette/state/location.ts
     title: src/islands/palette/state/location.ts
     digest: sha256:b83aef806bdf626b
-    last_modified: 2026-11-26T07:04:30Z
+    last_modified: 2026-11-26T07:19:35Z
   - id: main-ts
     resource: ../../src/islands/palette/main.ts
     title: src/islands/palette/main.ts
@@ -76,13 +76,13 @@ sources:
   - id: save-ts
     resource: ../../src/islands/palette/state/save.ts
     title: src/islands/palette/state/save.ts
-    digest: sha256:1d3a285736a4851a
-    last_modified: 2026-11-26T07:00:07Z
+    digest: sha256:db5b010cd7930ee0
+    last_modified: 2026-11-26T08:13:22Z
   - id: place-tsx
     resource: ../../src/islands/palette/views/place/Place.tsx
     title: src/islands/palette/views/place/Place.tsx
-    digest: sha256:2f0dc16ae4caace9
-    last_modified: 2026-11-26T02:46:12Z
+    digest: sha256:e1f879b0dd99c2ff
+    last_modified: 2026-11-26T08:17:07Z
 enforced_by: [scripts/palette-memory.test.mjs, scripts/palette-start.test.mjs]
 ---
 
@@ -96,10 +96,10 @@ E6 stream S2 split `memory.ts` (about 780 lines) into the modules below. E6 chun
 
 | Module | Holds |
 |---|---|
-| [state/persist.ts](../../src/islands/palette/state/persist.ts) | Storage keys (`canopi-country`, `canopi-climate`, `canopi-location`; `canopi-consortium` and `canopi-place` retired in Wave 7.1), guarded storage (`memory`, `attempt`, re-exported from `save.ts`; `storageWorks`), `CountryFrom`, `shareState` (`schema.share`), `shareUrl`, restore in flight (`inFlight`, `restoring`, `pendingClimate`, `pendingLinkClimate`), `climateChosen`, `palette()`, `shows()`, `currentFragment`, `holdSave`, `writeAddress`, `shownFragment`, `watchStore` (updates the URL fragment/history.state only; never writes palette state to `localStorage`), `actionCount`, `quietly`, `linkPlace`, `savedInstead` (always `null` since Wave 7.1), and `placeSaid`. Below restore.ts and the location step so neither imports the other |
+| [state/persist.ts](../../src/islands/palette/state/persist.ts) | Storage keys (`canopi-country`, `canopi-climate`, `canopi-location`; `canopi-consortium` and `canopi-place` retired in Wave 7.1), guarded storage (`memory`, `attempt`, re-exported from `save.ts`), `CountryFrom`, `shareState` (`schema.share`), `shareUrl`, restore in flight (`inFlight`, `restoring`, `pendingClimate`, `pendingLinkClimate`), `climateChosen`, `palette()`, `shows()`, `currentFragment`, `writeAddress`, `shownFragment`, `watchStore` (updates the URL fragment/history.state only; never writes palette state to `localStorage`), `actionCount`, `quietly`, `linkPlace`, and `placeSaid`. Below restore.ts and the location step so neither imports the other |
 | [state/restore.ts](../../src/islands/palette/state/restore.ts) | `notices`, `restore(fragment, {from, src, keep})` (reads everything first, applies in one batch only if still the newest restore and the reader has not acted), `applyPreset` (guide `?plant=&climate=`), `ownLocation` (the saved site looked up again), `waitForSource`, and `provideLocationStep(load)`: main.ts hands it `views/location/load.ts`'s loader before the first render (E6 S3), so state never imports a view (ADR-1 L2); a missing step logs an error |
 | [state/arrival.ts](../../src/islands/palette/state/arrival.ts) | How the page opens: pure `arrival()`, `hashAction()`, `countryAtStart()`, `guessCountry()`, `arrivalPlan()`, `openWith()`, and `startMemory()`. Since Wave 7.1, `startMemory()` removes any leftover legacy palette keys (`canopi-consortium`, `canopi-place`, `canopi-ns-existing`, `canopi-ns-checked`) once on load via plain `removeItem` without reading them, never auto-restores a palette from `localStorage`, and keeps `canopi-country`, `canopi-climate`, `canopi-location`, per-tab `sessionStorage` (`canopi-lang-switch`, `canopi-ns-session`), and same-tab `history.state` + `#hash` reloads |
-| [state/save.ts](../../src/islands/palette/state/save.ts) | Leaf imported by `store.ts` and `persist.ts`: `STORE`, `LEGACY_PALETTE_KEYS`, `memory`, `attempt`, `guarded`, `held`, `lastSave` (always `null`), in-memory `markSave`/`undoSave`, `forgets`/`noteForget` (`sessionStorage` `canopi-forget`), and `suppressLeaveWarning`/`isLeaveWarningSuppressed` (Wave 7 language-switch coordination) |
+| [state/save.ts](../../src/islands/palette/state/save.ts) | Leaf imported by `persist.ts` and `arrival.ts`: `LEGACY_PALETTE_KEYS`, `memory`, `attempt`, `guarded`, `forgets`/`noteForget` (`sessionStorage` `canopi-forget`), and `suppressLeaveWarning`/`isLeaveWarningSuppressed` (Wave 7 language-switch coordination) |
 | [state/draft.ts](../../src/islands/palette/state/draft.ts) | Start's draft: `chooseClimate`, `chooseCountry`, `pickingCountry`, `backToPlace` (the palette's step 1 and Back to Place), `startOver`, `startEmpty` (the pool panel's "Search all plants": opens the search sheet and never removes a plant, fix round 4, s-4; each drops a link's location through `dropLinkLocation` → `letGo`), `openSavedInstead` (adopts what storage holds when pressed: `lastSave` set to it, so another tab's save is opened, never written over; fix round 4, s-5), `cardsLatched` (the climate cards opened by the page, latched until Start over), `cropExamples`. `chooseClimate` keeps every plant (b1a conformance-4: no climate change empties the palette) and makes a member the new climate's list lacks a guest of the climate it was in, so it is still drawn, checked and saved (b1a2-1); `canGoBack`/`backToConsortium` and the `start.back` key went with the "Your place" sheet |
 | [state/suggest-wait.ts](../../src/islands/palette/state/suggest-wait.ts) | The waiting Suggest, one owner: `pendingSuggest`, `waited`, `requestSuggest` (the one press, Place's and the Next step's; it keeps no Undo of its own: the suggestion placed offers it, `store.suggestMembers`, fix round 4, s-1, s-2; asks the store for the suggestion's chunk, `store.wantSuggest()`, then waits for the plant lists, the location lookups and that chunk, capped at 10 s, `suggestWaitMs()` (exported since the E6 hand-off: Swap's own wait for the chunk lasts as long), shortened in the test build by `window.__ctTimeouts.suggest`), `dropSuggest` (exported since the E6 hand-off: the one way a wait ends; `views/PoolSlot.tsx` calls it, untracked, when Start can no longer suggest for the chosen climate or another is chosen; no other island module writes `pendingSuggest`, checked by `scripts/palette-memory.test.mjs`), `watchSuggest` (reruns a waiting Suggest when `store.suggestRule` arrives; since E6 R4 ends every waiting Suggest with the `details.loadFailed` toast and Reload when `store.suggestFailed`, L8; since PP-B b1b also reruns it when `store.verdictRule` arrives and ends it with `place.count.suggestStopped` and Try again when the verdict chunk is refused while `store.waitsForVerdicts()`). See the wait cap rule below |
 | [state/lookups.ts](../../src/islands/palette/state/lookups.ts) | The location lookups in flight, in the first run (the location module is lazy): `lookups`, `looking`, `lookingThrough`, `unread`, the result `line`, `nextLookup`/`liveLookup`, `unlessReplaced`, `letGo(drop)`. Moved out of `views/location/load.ts` (its re-exports for the seam tests removed in chunk 5) |

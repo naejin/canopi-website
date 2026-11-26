@@ -14,7 +14,6 @@ import type { LoadFailure, PlantSource } from '../../lib/palette/source.ts';
 import { P, T, nameOf } from './strings.ts';
 import { say, sayAll } from './words.ts';
 import { state } from './state/schema.ts';
-import { changedOf, held, lastSave, markSave, undoSave } from './state/save.ts';
 import { focusAfterToast, focusWarning, noteToastOpener } from './focus.ts';
 
 // Where the country came from: the reader chose it, a link carried it, the page guessed it from
@@ -75,13 +74,6 @@ export const sheet = computed<Sheet | null>(() => sheets.value[sheets.value.leng
 export const sheetBack = computed<Sheet | null>(() => sheets.value[sheets.value.length - 2] ?? null);
 // Find's opening wherever it is in the stack (Find reads its own opening and target, not the top's).
 export const findSheet = computed<Sheet | null>(() => sheets.value.find((s) => s.kind === 'find') ?? null);
-// When the save last changed (pf hand-off; owner answer Q3): the save as this page last read or wrote
-// it (state/save.ts lastSave; arrival.ts reads it at opening), its ISO date, or null with no save. The
-// return-visit line reads it ("Your palette is back: 8 plants near Kiambu, last changed …").
-export const lastChanged = computed<string | null>(() => changedOf(lastSave.value));
-// The signals above are the palette on Place and on the palette page alike: Place's answers and plants
-// change it as they are given (owner 2026-11-15), and the save follows it while the page owns it
-// (state/save.ts held).
 export const load = signal<Load>({ status: 'idle', error: null });
 // P5 (commit 0 seam): where the site is. S5b writes it (device location, place search, map pick, a
 // link's `o=`); S5c (range check, nearest lists), S5d (future check) and S5e (native here, soil
@@ -710,7 +702,6 @@ export function suggestMembers(note: { text: string; action: ToastAction | null 
   batch(() => {
     members.value = s.members;
     suggestedIds.value = [...s.members];
-    held.value = false;
     if (Object.keys(extraGuests).length) guests.value = { ...before.guests, ...extraGuests };
   });
   offerUndo(note ? `${P('place.suggested', s.members.length)} ${note.text}` : P('place.suggested', s.members.length), before, note?.action ?? null);
@@ -977,10 +968,8 @@ export function taxonOf(id: PlantId): Taxon | null {
 }
 const nameById = (id: PlantId) => { const t = taxonOf(id); return t ? nameOf(t) : id; };
 
-// Undo's snapshot: the fields state/schema.ts marks `undo` (the view: Undo of a list pasted on Place
-// goes back to Place), the plant lists, and the save as it was with the held flag (state/save.ts
-// markSave), so an Undo back to a held page puts the reader's save back exactly (F2, R2-1).
-export const snapshot = () => ({ ...state.snapshot(), save: markSave() });
+// Undo's snapshot: the fields state/schema.ts marks `undo`.
+export const snapshot = () => state.snapshot();
 type Snapshot = ReturnType<typeof snapshot>;
 const without = (list: PlantId[], ids: PlantId[]) => list.filter((x) => !ids.includes(x));
 
@@ -993,7 +982,7 @@ let undoAfter: ReturnType<typeof state.peek<(typeof SNAP_KEYS)[number]>> | null 
 // (Place's moves, in state/draft.ts, and suggestMembers offer their Undo through it too.)
 export function offerUndo(text: string, before: Snapshot, action: ToastAction | null = null, focus: PlantId[] = []): void {
   undoAfter = state.peek(SNAP_KEYS);
-  showToast(text, () => { undoAfter = null; undoSave(before.save, () => state.restore(before)); }, action, focus);
+  showToast(text, () => { undoAfter = null; state.restore(before); }, action, focus);
 }
 // (The effect that ends the offer starts in start(), at the end of this file.)
 
@@ -1002,7 +991,6 @@ export function offerUndo(text: string, before: Snapshot, action: ToastAction | 
 export function removeMember(id: PlantId): void {
   const before = snapshot(), name = nameById(id);
   batch(() => {
-    held.value = false;
     suggestedIds.value = [];
     members.value = without(before.members, [id]);
     removed.value = [...without(before.removed, [id]), id];
@@ -1017,7 +1005,6 @@ export function takeBackAdd(id: PlantId): void {
   const before = snapshot();
   if (!before.members.includes(id)) return;
   batch(() => {
-    held.value = false;
     suggestedIds.value = [];
     members.value = without(before.members, [id]);
     if (before.guests[id]) { const g = { ...before.guests }; delete g[id]; guests.value = g; }
@@ -1029,7 +1016,6 @@ export function takeBackAdd(id: PlantId): void {
 export function swapMember(oldId: PlantId, newId: PlantId): void {
   const before = snapshot(), a = nameById(oldId), b = nameById(newId);
   batch(() => {
-    held.value = false;
     suggestedIds.value = [];
     members.value = before.members.map((x) => (x === oldId ? newId : x)).filter((x, i, all) => all.indexOf(x) === i);
     removed.value = [...without(before.removed, [newId, oldId]), oldId];
@@ -1037,15 +1023,6 @@ export function swapMember(oldId: PlantId, newId: PlantId): void {
   });
   offerUndo(T('swapped', { a, b }), before, null, [oldId]);
 }
-// Add: plants chosen by hand join (a new suggestion is built around them). from: guests, each with
-// the climate whose list it comes from ("Add anyway", A9). warned: plants added that carry a misfit or
-// a serious conflict ("Add all" from a paste, 2026-10-28 "Scale build" row): the toast keeps its one
-// wording and offers Show (the first one's details) before Undo (board Toasts; M45).
-// On Place, an add (search or paste) leaves the view alone and is saved at once (owner 2026-11-15).
-// Each of the three is a plant change: the page owns the save from here (state/save.ts).
-// text: the toast's own words (the Next step names the plant it added), or a function of what the add
-// did, called after the state changed (v14 0W-1 item 6: the bulk add's "2 plants added: … Covers the
-// ground: nobody after year 25. 7 holes left."), else paste.added's count.
 export interface AddResult { added: PlantId[]; size: number; holeChange: HoleChange; thinChange: ThinChange }
 export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, ClimateZone>> = {}, { warned = [], text: said }: { warned?: PlantId[]; text?: string | ((r: AddResult) => string) } = {}): void {
   const before = snapshot();
@@ -1053,7 +1030,6 @@ export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, Climate
   if (!fresh.length) return;
   const was = typeof said === 'function' ? { holes: paletteHoles.peek(), thins: thinSpots.peek() } : null;
   batch(() => {
-    held.value = false;
     suggestedIds.value = [];
     members.value = [...before.members, ...fresh];
     removed.value = without(before.removed, fresh);
@@ -1109,7 +1085,6 @@ export function removeMembers(ids: readonly PlantId[]): void {
   if (!gone.length) return;
   const was = paletteHoles.peek(), wasThins = thinSpots.peek();
   batch(() => {
-    held.value = false;
     suggestedIds.value = [];
     members.value = without(before.members, gone);
     removed.value = [...without(before.removed, gone), ...gone];

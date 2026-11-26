@@ -25,21 +25,20 @@ import { Fragment, type ComponentChildren } from 'preact';
 import { useEffect, useId, useRef, useState } from 'preact/hooks';
 import type { ClimateZone, Room } from '../../../../lib/palette/index.ts';
 import { countryStatus, NEAREST_LISTS, periodIds, roomValues, ROOM_LIMIT_M, siteClimate as climateOf, siteEditLines, zoneOf } from '../../../../lib/palette/index.ts';
-import { type Country, addMembers, climate, country, countFits, curatedClimates, laterFits, editsCleared, guests, knownCountries, loadAllPools, location as siteLocation, memberTaxa, members, openFigure, openSheet, removeMember, room, siteEdits, view } from '../../store.ts';
+import { type Country, climate, country, countFits, curatedClimates, laterFits, editsCleared, knownCountries, loadAllPools, location as siteLocation, memberTaxa, members, openFigure, openSheet, removeMember, room, siteEdits, view } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import { say } from '../../words.ts';
 import { formatLength, formatTemp } from '../../format.ts';
 import { LocationSlot } from '../LocationSlot.tsx';
 import { PoolSlot, cardPill, hasList, suggestBlock } from '../PoolSlot.tsx';
 import { climateChosen, linkPlace, memory, restoring, COUNTRY_STORE } from '../../state/persist.ts';
-import { locationAtStart, notices, savedInstead } from '../../state/restore.ts';
+import { locationAtStart, notices } from '../../state/restore.ts';
 import { openingArrival } from '../../state/arrival.ts';
-import { STORE } from '../../state/save.ts';
-import { addOwnPlant, answering, backToPlace, chooseClimate, chooseCountry, keepShownAsMine, openSavedInstead, placeSaid, showPalette, startOver, useLinkPlace, useOwnPlace } from '../../state/draft.ts';
+import { addOwnPlant, answering, backToPlace, chooseClimate, chooseCountry, placeSaid, showPalette, startOver, useLinkPlace, useOwnPlace } from '../../state/draft.ts';
 import { pendingSuggest, requestSuggest } from '../../state/suggest-wait.ts';
 import { page } from '../kit/page.ts';
 import { markStart } from '../kit/start-mark.ts';
-import { focusAfterAdd, focusView } from '../../focus.ts';
+import { focusAfterAdd } from '../../focus.ts';
 import { countryName, nameOf, num, zoneName } from '../kit/names.ts';
 import { cardsAsked, closeClimates, desk, focusField, openClimates, placeWords, shortPlace } from '../location/shared.ts';
 import { koppenWordsKey } from '../location/koppen-words.ts';
@@ -457,122 +456,36 @@ function Notice({ id, tone = 'neutral', mark, text, children }: { id: string; to
   );
 }
 
-// The shared link over your palette: asked (Look / Add / Stay), then looked at (Keep it as mine / Back
-// to mine). The shown palette is the link's from the start, yours held (state/persist.ts holdSave).
-const sharedSeen = signal<'ask' | 'looking' | 'done'>('ask');
 const laterPlace = signal(false);
-// "Add its plants to mine" (R4, C11; R1, C1 of fix round 2): the reader's own palette comes back as
-// saved, with its place and values (the merge only adds plants and never touches the place), then
-// each of the link's plants joins with the list it came from (the link's climate, or its own guest
-// list), as one undoable add.
-async function addShared(): Promise<void> {
-  const theirs = members.peek().slice(), homes = { ...guests.peek() }, linkZone = climate.peek();
-  sharedSeen.value = 'done';
-  await openSavedInstead();
-  const mine = climate.peek();
-  const from: Partial<Record<string, ClimateZone>> = {};
-  for (const id of theirs) { const z = homes[id] ?? linkZone; if (z && z !== mine) from[id] = z; }
-  addMembers(theirs, from);
-}
-// "Keep it as mine" (R3): the shared palette becomes the save now (state/draft.ts keepShownAsMine, with
-// its Undo), then the palette.
-function keepShared(): void {
-  sharedSeen.value = 'done';
-  keepShownAsMine();
-  showPalette();
-}
-// "9 November" (board Arrivals): day then month; English in its day-first form, unambiguous worldwide.
-const dayMonth = (iso: string | undefined): string => {
-  const d = iso ? new Date(iso) : null;
-  return d && !Number.isNaN(d.getTime()) ? d.toLocaleDateString(pageLang() === 'en' ? 'en-GB' : pageLang(), { day: 'numeric', month: 'long' }) : '';
-};
-function savedWords(): { n: number; at: string } | null {
-  try {
-    const rec = JSON.parse(memory.read(STORE) ?? 'null') as { fragment?: string; at?: string } | null;
-    if (!rec?.fragment) return null;
-    const q = new URLSearchParams(rec.fragment);
-    return { n: countTokens(q), at: dayMonth(rec.at) };
-  } catch { return null; }
-}
-// The plants a saved address names (R8, C5): its member tokens (lib state.ts readTokens: 6 characters,
-// or "." and 22) in `a`; guests travel in `a` too, `g` only names their lists.
-function countTokens(q: URLSearchParams): number {
-  const v = q.get('a') ?? '';
-  let k = 0;
-  for (let i = 0; i < v.length; i += v[i] === '.' ? 23 : 6) k++;
-  return k;
-}
 // "near Kiambu" (board Arrivals): the place's short name in a sentence; none for a link's place.
 const near = () => shortPlace(siteLocation.value);
 function PlaceNotices() {
   const n = notices.value;
   const guideId = n.guidePlant;
   const guide = guideId ? memberTaxa.value.find((t) => t.id === guideId) : null;
-  const saved = savedInstead.value;
   const theirs = linkPlace.value;
   const busy = answering.value;
   const onPalette = view.value !== 'start';
   const z = climate.value;
   const mine = near();
   const opened = openingArrival();
-  const savedN = saved ? savedWords() : null;
-  const savedCount = savedN ? `${P('start.count', savedN.n)}${mine ? ` ${mine}` : ''}` : '';
   const linkOpen = onPalette && opened.kind === 'link' && !n.unreadable && !n.failed;
-  const shared = linkOpen && saved && !guide && sharedSeen.value !== 'done' ? sharedSeen.value : null;
   const ownLookup = !!siteLocation.value?.lookup && siteLocation.value?.source !== 'link';
-  const noPlace = linkOpen && !saved && !theirs && !laterPlace.value && !siteLocation.value?.lookup && !locationAtStart.value;
-  const checkedAgainst = linkOpen && !saved && !theirs && !!mine && ownLookup;
-  const list = members.value;
+  const noPlace = linkOpen && !theirs && !laterPlace.value && !siteLocation.value?.lookup && !locationAtStart.value;
+  const checkedAgainst = linkOpen && !theirs && !!mine && ownLookup;
   const givePlace = () => { backToPlace(); setTimeout(focusField, 50); };
   const values = siteEditLines(siteEdits.value).map(say).join(', ');
-  // One list of the arrivals (C3 of fix round 3): each with the sentence a screen reader hears and
-  // what the page draws, in the board's order; Announcer says each once, PlaceNotices draws them.
   const items: Arrival[] = [];
   const notice = (id: string, text: string, props: { tone?: Tone; mark: keyof typeof ICONS }, children?: ComponentChildren) =>
     items.push({ id, said: heard(text), view: <Notice id={id} text={text} {...props}>{children}</Notice> });
-  if (shared === 'ask' && z) {
-    const title = T('place.shared.title');
-    const body = T('place.shared.body', { count: P('start.count', list.length), list: T('place.line.list', { climate: zoneName(z) }), mine: savedCount });
-    items.push({
-      id: 'shared',
-      said: T('palette.place.sharedSaid', { title, body }),
-      view: (
-        <section class="ct-arrival ct-arrival-card is-neutral" data-place-notice="shared" aria-labelledby="ct-shared-h">
-          <h3 class="ct-arrival-title" id="ct-shared-h">{icon('share')}{title}</h3>
-          <p>{body}</p>
-          <p class="ct-arrival-acts ct-arrival-stack">
-            {act(T('place.shared.look'), () => { sharedSeen.value = 'looking'; focusView(); }, 'primary')}
-            {act(T('place.shared.add'), addShared, 'secondary')}
-            {act(T('place.shared.stay'), () => { sharedSeen.value = 'done'; return openSavedInstead(); }, 'quiet', { 'data-back-mine': '' })}
-          </p>
-        </section>
-      ),
-    });
-  }
-  if (shared === 'looking') {
-    notice('looking', T('place.shared.looking'), { mark: 'share' }, <>
-      {act(T('place.shared.keep'), keepShared, 'secondary')}
-      {act(T('place.backToMine'), () => { sharedSeen.value = 'done'; return openSavedInstead(); }, 'quiet', { 'data-back-mine': '' })}
-    </>);
-  }
   if (n.unreadable) {
-    notice('unreadable', T('place.unreadable'), { tone: 'danger', mark: 'alert' }, <>
-      {act(T('place.newPalette'), startOver, 'secondary')}
-      {saved && act(T('place.backToMine'), () => openSavedInstead(), 'quiet', { 'data-back-mine': '' })}
-    </>);
+    notice('unreadable', T('place.unreadable'), { tone: 'danger', mark: 'alert' }, act(T('place.newPalette'), startOver, 'secondary'));
   }
   if (n.period) notice('period', T('place.period'), { tone: 'warning', mark: 'clock' });
   if (n.failed) notice('failed', T('share.failed'), { tone: 'danger', mark: 'alert' }, act(T('location.tryAgain'), () => location.reload(), 'secondary'));
   if (n.guideMissing && z) notice('guideMissing', T('start.guideMissing', { name: n.guideMissing, climate: zoneName(z) }), { tone: 'warning', mark: 'leaf' }, act(T('place.findPlant'), addOwnPlant, 'secondary'));
   if (guide && z) {
-    notice('guide', saved && savedN ? T('place.guideSaved', { name: nameOf(guide), climate: zoneName(z), count: savedCount }) : T('place.guidePlant', { name: nameOf(guide), climate: zoneName(z) }), { mark: 'leaf' }, <>
-      {!siteLocation.value?.lookup && act(T('place.givePlace'), givePlace, 'primary')}
-      {saved && act(T('place.openSaved'), () => openSavedInstead(), 'quiet', { 'data-open-saved': '' })}
-    </>);
-  }
-  // Your own save, not the one shown (another tab saved, or a guide over it): back to it (no sentence).
-  if (saved && !guide && !shared && sharedSeen.value !== 'looking' && !n.unreadable) {
-    items.push({ id: 'saved', said: null, view: <p class="ct-arrival-acts" data-place-notice="saved">{act(T('place.openSaved'), () => openSavedInstead(), 'quiet', { 'data-open-saved': '' })}</p> });
+    notice('guide', T('place.guidePlant', { name: nameOf(guide), climate: zoneName(z) }), { mark: 'leaf' }, !siteLocation.value?.lookup ? act(T('place.givePlace'), givePlace, 'primary') : undefined);
   }
   if (noPlace && z) {
     notice('noPlace', T('place.noPlace', { list: T('place.line.list', { climate: zoneName(z) }) }), { tone: 'warning', mark: 'pin' }, <>

@@ -134,7 +134,6 @@ function ActionsView() {
     <section class="ct-page-actions ct-foot" aria-label={T('page.actions')}>
       <LinkNotices />
       <p class="ct-foot-line">
-        {T('palette.chart.saved')}{' '}
         <button ref={copyButton} type="button" class="link-button ct-link" aria-expanded={sharing.value} aria-controls="ct-share-panel" onClick={() => { if (sharing.peek()) closeShare(); else sharing.value = true; }}>{T('palette.chart.copyLink')}</button>{' · '}
         <button type="button" class="link-button ct-link" onClick={() => void printNow()}>{T('print.button')}</button>{' · '}
         <button type="button" class="link-button ct-link" aria-describedby="ct-download-note" onClick={() => void download()}>{T('download.button')}</button>

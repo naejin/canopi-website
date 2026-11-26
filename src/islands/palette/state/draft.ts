@@ -11,9 +11,8 @@ import * as store from '../store.ts';
 import { focusAfterStartOver, focusView } from '../focus.ts';
 import { state as schema } from './schema.ts';
 import { P, T } from '../strings.ts';
-import { adoptPending, attempt, holdSave, linkPlace, memory, placeSaid, COUNTRY_STORE, NO_COUNTRY, SITE_CLIMATE } from './persist.ts';
-import { held } from './save.ts';
-import { adoptLinkLocation, notices, ownLocation, restore, savedInstead, NO_NOTICES } from './restore.ts';
+import { adoptPending, attempt, linkPlace, memory, placeSaid, COUNTRY_STORE, NO_COUNTRY, SITE_CLIMATE } from './persist.ts';
+import { adoptLinkLocation, notices, ownLocation, NO_NOTICES } from './restore.ts';
 import { letGo } from './lookups.ts';
 
 // The country picker on the country line is open.
@@ -89,9 +88,7 @@ export function backToPlace(): void {
 export function startOver(): void {
   const before = store.snapshot();
   placeSaid.value = '';
-  if (!held.peek()) holdSave(true);
   batch(() => {
-    holdSave(true);
     schema.write(schema.valuesOf(schema.lists.plants));
     store.closeSheet();
     store.view.value = 'start';
@@ -143,24 +140,6 @@ export function useOwnPlace(): void {
   answered(T('place.usedMine'));
 }
 
-// "Open my saved palette instead" (any held page over a different readable save: owner 2026-11-15,
-// decision 3) and "Back to mine" (a newer or unreadable link over one): the save restored as on a visit
-// with no link, which owns it. What storage holds when pressed, another tab's save included, becomes
-// the save this page writes over (fix round 4, s-5), so it never writes a palette of its own over it.
-export async function openSavedInstead(): Promise<void> {
-  const saved = savedInstead.peek();
-  if (!saved) return;
-  notices.value = { ...notices.peek(), guidePlant: null, guideMissing: null, newer: false, unreadable: false };
-  if (await restore(saved.fragment, { from: 'saved', src: saved.src, place: saved.place })) answered(T('place.openedSaved'));
-}
-// "Keep it as mine" (chunk-2 D9): the palette on screen (a shared one being looked at) becomes the save
-// now, with one Undo that puts the earlier save back and holds it again; the toast says the palette
-// that is now yours (D3: "Your palette: N plants.").
-export function keepShownAsMine(): void {
-  const before = store.snapshot();
-  holdSave(false);
-  store.offerUndo(P('palette.place.keptMine', store.members.peek().length), before);
-}
 // An answer given: said on Place's status line, the focus on the view (never on <body>).
 function answered(line: string): void {
   placeSaid.value = line;

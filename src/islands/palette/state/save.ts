@@ -1,25 +1,11 @@
-// The device save's own state (fix round 3, save-model design check 2026-11-15): a leaf both
-// store.ts (Undo) and persist.ts (the save's writes) import, so neither imports the other for it.
-//
-// One flag, `held`: this page's palette is not the save. Every page starts held; a restore of the save,
-// or a plant change that can be undone (store.ts Add, Remove, Swap, a suggestion placed), lets it go;
-// Start over holds it again. Not held, persist.ts writes the current palette; held, the save is left
-// as it is (a link's or a guide's page, Place's answers, "Use it", "Show my palette": owner
-// 2026-11-15, decision 2). Each undoable action's snapshot records the save as it was then and the
-// flag (markSave); its Undo puts both back in one batch, and the save only once it holds again, and
-// only while the storage still holds what this page last wrote (another tab's save is never lost).
-import { batch, signal } from '@preact/signals';
-
-export const STORE = 'canopi-consortium';
-// Legacy palette localStorage keys removed in Wave 7.1 (cleaned up once on load, never written).
+// Storage guards, legacy localStorage cleanup list, per-tab forget counter, and language-switch
+// leave-warning suppression. Browser localStorage never auto-saves palettes (Wave 7.1).
 export const LEGACY_PALETTE_KEYS = [
   'canopi-consortium',
   'canopi-place',
   'canopi-ns-existing',
   'canopi-ns-checked',
 ] as const;
-// The longest save fragment read back (persist.ts readRecord).
-export const SAVE_FRAGMENT_MAX = 20_000;
 
 // ---- storage, guarded ----
 
@@ -48,26 +34,6 @@ export function guarded(get: () => StorageLike | null | undefined) {
 }
 
 export const memory = guarded(() => (typeof localStorage === 'undefined' ? null : localStorage));
-
-// ---- the save's state ----
-
-// This page's palette is not owned yet (e.g. a shared link until edited).
-export const held = signal(true);
-// Always null in Wave 7.1+: browser localStorage never auto-saves palettes.
-export const lastSave = signal<string | null>(null);
-
-export function changedOf(text: string | null): string | null {
-  const at = attempt(() => (text ? (JSON.parse(text) as { at?: unknown } | null)?.at : null));
-  return typeof at === 'string' && !Number.isNaN(Date.parse(at)) ? at : null;
-}
-
-// What an undoable action saw (in-memory only; never reads or writes localStorage).
-export interface SaveMark { text: string | null; held: boolean }
-export const markSave = (): SaveMark => ({ text: null, held: held.peek() });
-// Undo: restore the held flag and the in-memory state in one batch.
-export function undoSave(m: SaveMark, put: () => void): void {
-  batch(() => { held.value = m.held; put(); });
-}
 
 // "Forget this location" in this tab, counted (sessionStorage, so it outlasts a reload, as the tab's
 // history entries do; a module count when the browser keeps none). Each address entry records the
