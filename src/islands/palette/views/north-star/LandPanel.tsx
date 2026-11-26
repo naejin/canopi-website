@@ -143,7 +143,7 @@ export function LandPanel({ rep, returnFocusTo }: { rep: PaletteReport; returnFo
 
   const soilValueParts = [
     eff.soilPh != null ? `pH ${fmtNum(eff.soilPh)}` : null,
-    ov.drainage ? drainageChoiceLabel(ov.drainage) : (baseTexture ? soilTextureLabel(baseTexture) : null),
+    ov.drainage ? drainageChoiceLabel(ov.drainage) : soilTextureLabel(baseTexture),
     eff.stonesPct != null ? T('ns.land.rockPct', { n: Math.round(eff.stonesPct) }) : null,
   ].filter(Boolean);
 
