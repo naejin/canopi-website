@@ -3683,7 +3683,6 @@
   "consortium.ns.board.noFilterMatch": "팔레트에 “{q}”와 일치하는 식물이 없습니다.",
   "consortium.ns.board.clearFilter": "필터 지우기",
   "consortium.ns.unit.m": "m",
-  "consortium.ns.unit.yr": "년",
   "consortium.ns.atlas.phTop": "표토",
   "consortium.ns.atlas.phSub": "심토",
   "consortium.ns.habit.ground": "지피식물",

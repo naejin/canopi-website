@@ -59,7 +59,6 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
   const toBuy = rep.nurseryList;
   const alreadyOnSite = rep.taxa.filter((p) => rep.verdicts.get(p.id)?.alreadyOnSite);
 
-  const yrUnit = T('ns.unit.yr');
   const mUnit = T('ns.unit.m');
   const y1: { p: Taxon; label: string }[] = [];
   const y5: { p: Taxon; label: string }[] = [];
@@ -67,7 +66,7 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
   for (const p of rep.taxa) {
     const mat = p.traits.age_of_maturity_years ?? null;
     if (mat != null) {
-      const matLabel = mat <= 0 ? T('ns.plan.ltOneYr') : `${fmtNum(mat)} ${yrUnit}`;
+      const matLabel = mat <= 0 ? T('ns.plan.ltOneYr') : P('ns.dossier.maturityYears', mat);
       if (mat <= 1.5) y1.push({ p, label: matLabel });
       else if (mat <= 5) y5.push({ p, label: matLabel });
       else y15.push({ p, label: matLabel });

@@ -31,6 +31,7 @@ import {
   vineSupportTree,
 } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
+import { formatNumber } from '../../format.ts';
 import { soilTextureLabel } from '../../rules/soil-labels.ts';
 import { currentFragment, linkName, shareUrl, shownFragment } from '../../state/persist.ts';
 import { P, T } from '../../strings.ts';
@@ -222,7 +223,6 @@ function SwapDiffTable({ curPlant, candPlant, rep }: { curPlant: Taxon; candPlan
   const vcC = evaluatePlantVerdict(curPlant, cmpEff);
   const vnT = evaluatePlantVerdict(candPlant, rep.effToday);
   const vnC = evaluatePlantVerdict(candPlant, cmpEff);
-  const yrUnit = T('ns.unit.yr');
   const mUnit = T('ns.unit.m');
 
   const extStr = (p: Taxon) => (p.extremes?.tminExtreme?.low != null && p.extremes?.tmaxExtreme?.high != null)
@@ -231,7 +231,7 @@ function SwapDiffTable({ curPlant, candPlant, rep }: { curPlant: Taxon; candPlan
   const matStr = (p: Taxon) => {
     const m = p.traits.age_of_maturity_years;
     if (m == null) return T('ns.unknown');
-    return m <= 0 ? T('ns.plan.ltOneYr') : `${fmtNum(m)} ${yrUnit}`;
+    return m <= 0 ? T('ns.plan.ltOneYr') : P('ns.dossier.maturityYears', m);
   };
   const sizeStr = (p: Taxon) => `${p.traits.height_m?.max != null ? `${fmtNum(p.traits.height_m.max)} ${mUnit}` : '—'} × ${p.traits.width_max_m != null ? `${fmtNum(p.traits.width_max_m)} ${mUnit}` : '—'}`;
   const waterStr = (p: Taxon) => T('ns.swaps.waterPair', {
@@ -1836,7 +1836,7 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
           <span>{T('ns.dossier.sources')}</span>
           <span class="small muted">
             {taxon.climate?.cells != null
-              ? T('ns.dossier.gbifCells', { n: fmtNum(taxon.climate.cells, 0) })
+              ? T('ns.dossier.gbifCells', { n: formatNumber(taxon.climate.cells, currentLocale(), 0) })
               : T('ns.dossier.gbifUnrecorded')}
           </span>
         </div>

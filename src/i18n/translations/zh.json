@@ -3683,7 +3683,6 @@
   "consortium.ns.board.noFilterMatch": "您的植物组合中没有匹配“{q}”的植物。",
   "consortium.ns.board.clearFilter": "清除筛选",
   "consortium.ns.unit.m": "米",
-  "consortium.ns.unit.yr": "年",
   "consortium.ns.atlas.phTop": "表层",
   "consortium.ns.atlas.phSub": "下层",
   "consortium.ns.habit.ground": "地被植物",

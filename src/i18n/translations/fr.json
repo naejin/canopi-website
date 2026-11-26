@@ -3683,7 +3683,6 @@
   "consortium.ns.board.noFilterMatch": "Aucune plante de votre palette ne correspond à « {q} ».",
   "consortium.ns.board.clearFilter": "Effacer le filtre",
   "consortium.ns.unit.m": "m",
-  "consortium.ns.unit.yr": "an",
   "consortium.ns.atlas.phTop": "Surf.",
   "consortium.ns.atlas.phSub": "Sous-sol",
   "consortium.ns.habit.ground": "Couvre-sol",

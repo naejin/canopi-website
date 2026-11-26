@@ -3683,7 +3683,6 @@
   "consortium.ns.board.noFilterMatch": "В вашей палитре нет растений по запросу «{q}».",
   "consortium.ns.board.clearFilter": "Сбросить фильтр",
   "consortium.ns.unit.m": "м",
-  "consortium.ns.unit.yr": "г.",
   "consortium.ns.atlas.phTop": "Верх",
   "consortium.ns.atlas.phSub": "Подп.",
   "consortium.ns.habit.ground": "Почвопокровное",
