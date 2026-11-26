@@ -3646,5 +3646,15 @@
   "consortium.ns.rec.understoryShade": "Schaduwtolerante ondergroei",
   "consortium.ns.rec.fits2050": "Past in 2050",
   "consortium.ns.rec.unknown2050": "2050 onbekend",
+  "consortium.ns.reason.mildWinter": "Winterminimum ({site}) te zacht voor koudebehoefte (gemeten tot {lim})",
+  "consortium.ns.reason.mildWinterEdge": "Winterminimum ({site}) nabij de grens voor zachte winters ({lim})",
+  "consortium.ns.reason.coolSummerEdge": "Gemiddelde warmste maand ({site}) nabij de koele-zomergrens ({lim})",
+  "consortium.ns.reason.waterNeedsIrrigation": "Droger dan het gemeten bereik — water geven nodig",
+  "consortium.ns.reason.waterIrrigated": "Droger dan het gemeten bereik — gedekt door regelmatig water geven",
+  "consortium.ns.reason.waterFutureDry": "Toekomstige droogte buiten bereik — mogelijk zomerwater nodig",
+  "consortium.ns.reason.waterWetterNote": "Natter dan het gemeten bereik",
+  "consortium.ns.reason.waterWetDrainage": "Natter dan het gemeten bereik — scherpe drainage nodig",
+  "consortium.ns.arrival.tooDryRainFed": "Te droog voor alleen regen hier — zet “Ik geef regelmatig water” aan voor een geïrrigeerd startpalet.",
+  "consortium.ns.arrival.desertEstablishNote": "Woestijnklimaat: zelfs droogtebestendige planten hebben in de eerste jaren water nodig.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

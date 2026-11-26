@@ -3646,5 +3646,15 @@
   "consortium.ns.rec.understoryShade": "Sottobosco tollerante all’ombra",
   "consortium.ns.rec.fits2050": "Adatta nel 2050",
   "consortium.ns.rec.unknown2050": "2050 sconosciuto",
+  "consortium.ns.reason.mildWinter": "Minima invernale ({site}) troppo mite per il fabbisogno di freddo (fino a {lim})",
+  "consortium.ns.reason.mildWinterEdge": "Minima invernale ({site}) vicina al limite di inverno mite ({lim})",
+  "consortium.ns.reason.coolSummerEdge": "Media del mese più caldo ({site}) vicina al limite di estate fresca ({lim})",
+  "consortium.ns.reason.waterNeedsIrrigation": "Più secco dell’intervallo osservato — richiede irrigazione",
+  "consortium.ns.reason.waterIrrigated": "Più secco dell’intervallo osservato — coperto dall’irrigazione regolare",
+  "consortium.ns.reason.waterFutureDry": "Siccità futura oltre l’intervallo osservato — può servire acqua estiva",
+  "consortium.ns.reason.waterWetterNote": "Più umido dell’intervallo osservato",
+  "consortium.ns.reason.waterWetDrainage": "Più umido dell’intervallo osservato — serve drenaggio rapido",
+  "consortium.ns.arrival.tooDryRainFed": "Troppo secco solo con la pioggia qui — attiva «Irrigo regolarmente» per vedere una palette iniziale irrigata.",
+  "consortium.ns.arrival.desertEstablishNote": "Clima desertico: anche le piante di terreni aridi richiedono irrigazione nei primi anni.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -3646,5 +3646,15 @@
   "consortium.ns.rec.understoryShade": "Shade-tolerant understory",
   "consortium.ns.rec.fits2050": "Fits 2050s",
   "consortium.ns.rec.unknown2050": "2050s unknown",
+  "consortium.ns.reason.mildWinter": "Winter minimum ({site}) too mild for winter chill (recorded up to {lim})",
+  "consortium.ns.reason.mildWinterEdge": "Winter minimum ({site}) near mild-winter chill edge ({lim})",
+  "consortium.ns.reason.coolSummerEdge": "Warmest-month mean ({site}) near cool-summer edge ({lim})",
+  "consortium.ns.reason.waterNeedsIrrigation": "Drier than recorded range — needs watering",
+  "consortium.ns.reason.waterIrrigated": "Drier than recorded range — covered by regular watering",
+  "consortium.ns.reason.waterFutureDry": "Future drying beyond recorded range — may need summer water",
+  "consortium.ns.reason.waterWetterNote": "Wetter than recorded range",
+  "consortium.ns.reason.waterWetDrainage": "Wetter than recorded range — needs sharp drainage",
+  "consortium.ns.arrival.tooDryRainFed": "Too dry for rain alone here — turn on \"I water regularly\" to see an irrigated starter palette.",
+  "consortium.ns.arrival.desertEstablishNote": "Desert climate: even dry-land plants need watering for their first years.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

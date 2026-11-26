@@ -3646,5 +3646,15 @@
   "consortium.ns.rec.understoryShade": "Теневыносливый подлесок",
   "consortium.ns.rec.fits2050": "Подходит в 2050-х",
   "consortium.ns.rec.unknown2050": "2050-е неизвестны",
+  "consortium.ns.reason.mildWinter": "Зимний минимум ({site}) слишком мягкий для периода покоя (зафиксировано до {lim})",
+  "consortium.ns.reason.mildWinterEdge": "Зимний минимум ({site}) близок к пределу мягкой зимы ({lim})",
+  "consortium.ns.reason.coolSummerEdge": "Средняя самого тёплого месяца ({site}) близка к пределу прохладного лета ({lim})",
+  "consortium.ns.reason.waterNeedsIrrigation": "Суше зафиксированного диапазона — требуется полив",
+  "consortium.ns.reason.waterIrrigated": "Суше зафиксированного диапазона — покрывается регулярным поливом",
+  "consortium.ns.reason.waterFutureDry": "Будущее иссушение за пределами диапазона — может понадобиться летний полив",
+  "consortium.ns.reason.waterWetterNote": "Влажнее зафиксированного диапазона",
+  "consortium.ns.reason.waterWetDrainage": "Влажнее зафиксированного диапазона — нужен хороший дренаж",
+  "consortium.ns.arrival.tooDryRainFed": "Слишком сухо только для осадков — включите «Я поливаю регулярно», чтобы увидеть стартовую палитру с поливом.",
+  "consortium.ns.arrival.desertEstablishNote": "Пустынный климат: даже засухоустойчивым растениям нужен полив в первые годы.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

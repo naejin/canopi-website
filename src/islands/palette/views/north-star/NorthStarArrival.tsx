@@ -280,7 +280,9 @@ export function NorthStarArrival() {
             {isHydrating ? (
               <span class="ns-skel ns-skel-sub" aria-hidden="true" />
             ) : noStarter ? (
-              T('ns.arrival.noStarter')
+              !isRegularWatering && (((effToday.koppen ?? '').toUpperCase().startsWith('B')) || (effToday.precipMm !== null && effToday.precipMm < 250))
+                ? T('ns.arrival.tooDryRainFed')
+                : T('ns.arrival.noStarter')
             ) : (
               <>
                 {allFit
@@ -292,8 +294,11 @@ export function NorthStarArrival() {
               </>
             )}
           </p>
+          {!isHydrating && !isRegularWatering && !noStarter && (effToday.koppen ?? '').toUpperCase().startsWith('BW') && (
+            <p class="arrival-desert-note small muted">{T('ns.arrival.desertEstablishNote')}</p>
+          )}
           {!isHydrating && (
-            <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+            <div class="arrival-water-row">
               <button
                 type="button"
                 class="sample-chip"

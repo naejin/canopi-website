@@ -22,15 +22,20 @@ import {
 import { buildMonthlyV07, buildTier1V07, buildTier2AV07 } from '../src/islands/palette/state/climate-v07.ts';
 
 const ROOT = process.cwd();
-const climateIndex = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/data/climate-index.json'), 'utf8'));
+const CLIMATE_INDEX_PATH = path.join(ROOT, 'src/data/climate-index.json');
+const HAS_CLIMATE_TILES = fs.existsSync(CLIMATE_INDEX_PATH);
+const climateIndex = HAS_CLIMATE_TILES ? JSON.parse(fs.readFileSync(CLIMATE_INDEX_PATH, 'utf8')) : null;
 const paletteIndex = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/data/palette-index.json'), 'utf8'));
-const tileSource = createTileSource({
-  index: siteIndex(climateIndex),
-  fetchBytes: async (rel) => {
-    const buf = fs.readFileSync(path.join(ROOT, 'public', rel.replace(/^\/+/, '')));
-    return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
-  },
-});
+const tileSource = climateIndex
+  ? createTileSource({
+      index: siteIndex(climateIndex),
+      fetchBytes: async (rel) => {
+        const buf = fs.readFileSync(path.join(ROOT, 'public', rel.replace(/^\/+/, '')));
+        return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+      },
+    })
+  : null;
+const SKIP_NO_TILES = !HAS_CLIMATE_TILES && 'climate tiles not installed (run npm run install:climate)';
 
 const tmpDb = '/tmp/canopi-w6-test.sqlite';
 if (!fs.existsSync(tmpDb)) {
@@ -209,7 +214,7 @@ const BENCHMARK_SITES = [
   { id: 'reykjavik', label: 'Reykjavík, IS', lat: 64.15, lon: -21.94, watering: 'rain' },
 ];
 
-test('B1 strict invariance: permuting toxicity, invasive_in, weed_potential, and flat allelopathic yields byte-identical output on Starter, Picker, and Swaps', async () => {
+test('B1 strict invariance: permuting toxicity, invasive_in, weed_potential, and flat allelopathic yields byte-identical output on Starter, Picker, and Swaps', { skip: SKIP_NO_TILES }, async () => {
   const lookup = await loadSiteLookup(43.61, 3.88);
   const pool = readPool('Mediterranean');
   const effToday = resolveEffectiveSite(lookup, 'today', { room: 'small', plotM2: 150 });
@@ -241,7 +246,7 @@ test('B1 strict invariance: permuting toxicity, invasive_in, weed_potential, and
   assert.deepEqual(sw1, sw2, 'Swap ranking must be invariant to warning flags');
 });
 
-test('B2 mild-winter chill & B3 approved water-verdict rule (Sahara, Belém, Riyadh, Kochi, Singapore)', async () => {
+test('B2 mild-winter chill & B3 approved water-verdict rule (Sahara, Belém, Riyadh, Kochi, Singapore)', { skip: SKIP_NO_TILES }, async () => {
   const medPool = readPool('Mediterranean');
   const aridPool = readPool('Arid');
   const contPool = readPool('Continental');
@@ -302,7 +307,7 @@ test('A3 managed orchard genera exclude large forest nut trees (Juglans, Castane
   assert.equal(isManagedOrchardTree(fakeCoconut), false);
 });
 
-test('22-site global real-DB benchmark: regional staples, 0 severe conflicts, crown budget, perennial vines', async () => {
+test('22-site global real-DB benchmark: regional staples, 0 severe conflicts, crown budget, perennial vines', { skip: SKIP_NO_TILES }, async () => {
   for (const s of BENCHMARK_SITES) {
     const lookup = await loadSiteLookup(s.lat, s.lon);
     const todayK = lookup.climate?.periods?.find((p) => p.period === '1991-2020')?.koppen ?? '';

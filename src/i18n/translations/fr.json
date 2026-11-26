@@ -3646,5 +3646,15 @@
   "consortium.ns.rec.understoryShade": "Sous-étage tolérant l’ombre",
   "consortium.ns.rec.fits2050": "Adapté en 2050",
   "consortium.ns.rec.unknown2050": "2050 inconnu",
+  "consortium.ns.reason.mildWinter": "Minimum hivernal ({site}) trop doux pour le besoin en froid (observé jusqu’à {lim})",
+  "consortium.ns.reason.mildWinterEdge": "Minimum hivernal ({site}) proche de la limite d’hiver doux ({lim})",
+  "consortium.ns.reason.coolSummerEdge": "Moyenne du mois le plus chaud ({site}) proche de la limite d’été frais ({lim})",
+  "consortium.ns.reason.waterNeedsIrrigation": "Plus sec que l’aire observée — arrosage nécessaire",
+  "consortium.ns.reason.waterIrrigated": "Plus sec que l’aire observée — couvert par l’arrosage régulier",
+  "consortium.ns.reason.waterFutureDry": "Assèchement futur au-delà de l’aire observée — arrosage d’été possible",
+  "consortium.ns.reason.waterWetterNote": "Plus humide que l’aire observée",
+  "consortium.ns.reason.waterWetDrainage": "Plus humide que l’aire observée — drainage très efficace nécessaire",
+  "consortium.ns.arrival.tooDryRainFed": "Trop sec pour la pluie seule ici — activez « J’arrose régulièrement » pour voir une palette de départ irriguée.",
+  "consortium.ns.arrival.desertEstablishNote": "Climat désertique : même les plantes de milieu sec ont besoin d’arrosage les premières années.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

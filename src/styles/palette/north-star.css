@@ -1090,6 +1090,9 @@ input[type="range"] { accent-color: var(--accent); width: 100%; min-height: 44px
   gap: 10px; align-items: center; padding: 10px;
   border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg);
 }
+.picker-rationale { margin-top: 2px; }
+.arrival-water-row { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.arrival-desert-note { margin-top: 4px; }
 
 /* Visual Botanical Field Dossier */
 .viz-card {

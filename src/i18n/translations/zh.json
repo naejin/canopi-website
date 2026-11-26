@@ -3646,5 +3646,15 @@
   "consortium.ns.rec.understoryShade": "耐阴下层植物",
   "consortium.ns.rec.fits2050": "适应2050年代",
   "consortium.ns.rec.unknown2050": "2050年代未知",
+  "consortium.ns.reason.mildWinter": "冬季最低温（{site}）偏暖，缺乏需冷量（记录上限 {lim}）",
+  "consortium.ns.reason.mildWinterEdge": "冬季最低温（{site}）接近暖冬需冷量边缘（{lim}）",
+  "consortium.ns.reason.coolSummerEdge": "最暖月均温（{site}）接近凉夏边缘（{lim}）",
+  "consortium.ns.reason.waterNeedsIrrigation": "比记录范围更干燥——需要灌溉",
+  "consortium.ns.reason.waterIrrigated": "比记录范围更干燥——常规灌溉可覆盖",
+  "consortium.ns.reason.waterFutureDry": "未来干旱超出记录范围——夏季可能需要补水",
+  "consortium.ns.reason.waterWetterNote": "比记录范围更湿润",
+  "consortium.ns.reason.waterWetDrainage": "比记录范围更湿润——需要良好排水",
+  "consortium.ns.arrival.tooDryRainFed": "此处仅靠降雨过于干旱——开启“我定期浇水”以查看灌溉起步组合。",
+  "consortium.ns.arrival.desertEstablishNote": "沙漠气候：即使是耐旱植物在定植初期也需要浇水。",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

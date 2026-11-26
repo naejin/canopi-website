@@ -165,12 +165,20 @@ export function localizedReason(r: ReportVerdictReason, eff: EffectiveSiteClimat
   switch (r.code) {
     case 'cold_monthly': return T('ns.reason.coldMonthly', { site: fmtC(eff.tminColdC), lim: fmtC(cl?.tminCold?.low) });
     case 'cold_monthly_edge': return T('ns.reason.coldMonthlyEdge', { site: fmtC(eff.tminColdC), lim: fmtC(cl?.tminCold?.low) });
+    case 'mild_winter': return T('ns.reason.mildWinter', { site: fmtC(eff.tminColdC), lim: fmtC(cl?.tminCold?.high) });
+    case 'mild_winter_edge': return T('ns.reason.mildWinterEdge', { site: fmtC(eff.tminColdC), lim: fmtC(cl?.tminCold?.high) });
     case 'heat_annual_cool_season': return T('ns.reason.heatAnnual', { site: fmtC(eff.tmaxWarmC), lim: fmtC(cl?.tmaxWarm?.high) });
     case 'heat_monthly': return T('ns.reason.heatMonthly', { site: fmtC(eff.tmaxWarmC), lim: fmtC(cl?.tmaxWarm?.high) });
     case 'heat_monthly_edge': return T('ns.reason.heatMonthlyEdge', { site: fmtC(eff.tmaxWarmC), lim: fmtC(cl?.tmaxWarm?.high) });
     case 'cool_year': return T('ns.reason.coolYear', { site: fmtC(eff.tmeanYearC), lim: fmtC(cl?.tmeanYear?.low) });
     case 'cool_year_edge': return T('ns.reason.coolYearEdge', { site: fmtC(eff.tmeanYearC), lim: fmtC(cl?.tmeanYear?.low) });
     case 'cool_summer': return T('ns.reason.coolSummer', { site: fmtC(eff.tmeanWarmC), lim: fmtC(cl?.tmeanWarm?.low) });
+    case 'cool_summer_edge': return T('ns.reason.coolSummerEdge', { site: fmtC(eff.tmeanWarmC), lim: fmtC(cl?.tmeanWarm?.low) });
+    case 'water_needs_irrigation': return T('ns.reason.waterNeedsIrrigation');
+    case 'water_irrigated': return T('ns.reason.waterIrrigated');
+    case 'water_future_dry': return T('ns.reason.waterFutureDry');
+    case 'water_wetter_note': return T('ns.reason.waterWetterNote');
+    case 'water_wet_drainage': return T('ns.reason.waterWetDrainage');
     case 'extreme_freeze': return T('ns.reason.extremeFreeze', { site: fmtC(eff.freeze10C), lim: fmtC(ext?.tminExtreme?.low ?? ext?.coldTailC) });
     case 'extreme_freeze_edge': return T('ns.reason.extremeFreezeEdge', { site: fmtC(eff.freeze10C), lim: fmtC(ext?.tminExtreme?.low ?? ext?.coldTailC) });
     case 'extreme_heat': return T('ns.reason.extremeHeat', { site: fmtC(eff.heat10C), lim: fmtC(ext?.tmaxExtreme?.high ?? ext?.heatDomeC) });

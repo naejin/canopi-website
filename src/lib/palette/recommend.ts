@@ -70,6 +70,7 @@ export type RecommendReasonCode =
 export interface RecommendReason {
   code: RecommendReasonCode;
   job?: JobId;
+  partnerId?: PlantId;
   partnerName?: string;
 }
 
@@ -206,12 +207,12 @@ function computeHeadroom(
     ? Math.max(-12, minNorm * 24)
     : clamp01(minNorm / 0.45) * 24;
 
-  // A10: Ripening heat headroom for fruiting perennials (ranking only, never a verdict change)
+  // A10: Ripening & summer-warmth headroom for fruiting perennials AND warm-season annuals (ranking only, never a verdict change)
   let ripening = 0;
-  if (!annual && jobsOf(taxon).includes('feeds_you') && cl.tmeanWarm?.low != null && eff.tmeanWarmC !== null) {
+  if (cl.tmeanWarm?.low != null && eff.tmeanWarmC !== null && (annual || jobsOf(taxon).includes('feeds_you'))) {
     const diff = eff.tmeanWarmC - cl.tmeanWarm.low;
-    if (diff < 0) ripening = Math.max(-14, diff * 2.5);
-    else ripening = Math.min(8, diff * 1.2);
+    if (diff < 0) ripening = annual ? Math.max(-24, diff * 4.5) : Math.max(-14, diff * 2.5);
+    else if (!annual) ripening = Math.min(8, diff * 1.2);
   }
 
   return { headroom, ripening, limitingBound };
@@ -323,27 +324,187 @@ function verdictLevelScore(level: ReportPlantVerdict['level'], weightFits: numbe
   return 0;
 }
 
-// ---- Unified Decomposed Candidate Scorer ----
+interface GuildCache {
+  guild: readonly Taxon[];
+  guildJobsToday: Map<JobId, Taxon[]>;
+  guildJobs2050: Map<JobId, Taxon[]>;
+  guildFamilies: Map<string, number>;
+  guildHasCanopy: boolean;
+  guildMyco: Set<string>;
+  guildHasDeepRoot: boolean;
+  guildHolderBounds: Map<PlantId, LimitingBound>;
+  partnerById: Map<PlantId, Taxon>;
+  beforeActiveMonths: Set<string> | null;
+  zoneInteractions: readonly Interaction[];
+  guildByIdOrGenus: Map<string, Taxon[]>;
+  interactionsByKey: Map<string, Interaction[]>;
+}
 
-export function scoreCandidateForGuild(
+function taxonRefKeys(t: Taxon): string[] {
+  const keys = [`species:${t.canonical_name.toLowerCase()}`];
+  if (t.genus) keys.push(`genus:${t.genus.toLowerCase()}`);
+  if (t.family) keys.push(`family:${t.family.toLowerCase()}`);
+  return keys;
+}
+
+function buildGuildCache(guild: readonly Taxon[], hp: HorizonPack, ctx: RecommendContext): GuildCache {
+  const guildJobsToday = new Map<JobId, Taxon[]>();
+  const guildJobs2050 = new Map<JobId, Taxon[]>();
+  const guildFamilies = new Map<string, number>();
+  const guildHasCanopy = guild.some((t) => sizeClassOf(t) === 'tree');
+  const guildMyco = new Set<string>();
+  let guildHasDeepRoot = false;
+  const guildHolderBounds = new Map<PlantId, LimitingBound>();
+  const partnerById = new Map<PlantId, Taxon>();
+  const guildByIdOrGenus = new Map<string, Taxon[]>();
+
+  const boundEff = hp.eff2050 ?? hp.effToday;
+  for (const g of guild) {
+    partnerById.set(g.id, g);
+    for (const k of taxonRefKeys(g)) {
+      const list = guildByIdOrGenus.get(k);
+      if (list) list.push(g);
+      else guildByIdOrGenus.set(k, [g]);
+    }
+    if (g.family) guildFamilies.set(g.family, (guildFamilies.get(g.family) ?? 0) + 1);
+    if (g.traits.mycorrhizal_type) guildMyco.add(g.traits.mycorrhizal_type);
+    if ((g.traits.root_depth_min_cm ?? 0) >= 45 || g.traits.taproot_persistent === true) guildHasDeepRoot = true;
+    guildHolderBounds.set(g.id, computeHeadroom(g, boundEff).limitingBound);
+    const gv2050 = hp.eff2050 ? evaluatePlantVerdict(g, hp.eff2050, ctx.existingIds) : null;
+    for (const j of jobsOf(g)) {
+      const list = guildJobsToday.get(j) ?? [];
+      list.push(g);
+      guildJobsToday.set(j, list);
+      if (!gv2050 || gv2050.level === 'fits') {
+        const l50 = guildJobs2050.get(j) ?? [];
+        l50.push(g);
+        guildJobs2050.set(j, l50);
+      }
+    }
+  }
+
+  let beforeActiveMonths: Set<string> | null = null;
+  if (ctx.layerValuesByPlant && guild.length > 0) {
+    const place = { lat: hp.effToday.lat, country: hp.effToday.country, zone: ctx.climateZone ?? null };
+    beforeActiveMonths = new Set(computeGrowingYear(guild, ctx.layerValuesByPlant, place, hp.effToday.hemisphere).activeMonths);
+  }
+
+  const climateZone = ctx.climateZone ?? null;
+  const zoneInteractions = (ctx.interactions ?? []).filter(
+    (ix) => ix.climate_zone === null || !climateZone || ix.climate_zone === climateZone,
+  );
+  const interactionsByKey = new Map<string, Interaction[]>();
+  const addIxKey = (k: string, ix: Interaction) => {
+    const arr = interactionsByKey.get(k);
+    if (arr) arr.push(ix);
+    else interactionsByKey.set(k, [ix]);
+  };
+  for (const ix of zoneInteractions) {
+    addIxKey(`${ix.subject.rank}:${ix.subject.name.toLowerCase()}`, ix);
+    addIxKey(`${ix.object.rank}:${ix.object.name.toLowerCase()}`, ix);
+  }
+
+  return {
+    guild,
+    guildJobsToday,
+    guildJobs2050,
+    guildFamilies,
+    guildHasCanopy,
+    guildMyco,
+    guildHasDeepRoot,
+    guildHolderBounds,
+    partnerById,
+    beforeActiveMonths,
+    zoneInteractions,
+    guildByIdOrGenus,
+    interactionsByKey,
+  };
+}
+
+function interactionScoreWithCache(
   candidate: Taxon,
-  guild: readonly Taxon[],
-  ctx: RecommendContext,
-  pack?: HorizonPack,
-): CandidateEvaluation {
-  const hp = pack ?? buildHorizonPack(ctx);
-  const verdictToday = evaluatePlantVerdict(candidate, hp.effToday, ctx.existingIds);
-  const verdict2050 = hp.eff2050 ? evaluatePlantVerdict(candidate, hp.eff2050, ctx.existingIds) : null;
+  cache: GuildCache,
+): { score: number; conflicts: PalettePairInteraction[]; yieldGains: PalettePairInteraction[]; severeConflict: boolean } {
+  if (!cache.guild.length || !cache.zoneInteractions.length) {
+    return { score: 0, conflicts: [], yieldGains: [], severeConflict: false };
+  }
+  const candIxs = new Set<Interaction>();
+  for (const k of taxonRefKeys(candidate)) {
+    for (const ix of cache.interactionsByKey.get(k) ?? []) candIxs.add(ix);
+  }
+  if (!candIxs.size) {
+    return { score: 0, conflicts: [], yieldGains: [], severeConflict: false };
+  }
+  const relevantGuild = new Map<PlantId, Taxon>();
+  for (const ix of candIxs) {
+    const keys = [
+      `${ix.subject.rank}:${ix.subject.name.toLowerCase()}`,
+      `${ix.object.rank}:${ix.object.name.toLowerCase()}`,
+    ];
+    for (const k of keys) {
+      for (const g of cache.guildByIdOrGenus.get(k) ?? []) {
+        if (g.id !== candidate.id) relevantGuild.set(g.id, g);
+      }
+    }
+  }
+  if (!relevantGuild.size) {
+    return { score: 0, conflicts: [], yieldGains: [], severeConflict: false };
+  }
+  return interactionScoreAgainstGuild(candidate, [...relevantGuild.values()], [...candIxs], null);
+}
+
+interface SiteBaseEval {
+  verdictToday: ReportPlantVerdict;
+  verdict2050: ReportPlantVerdict | null;
+  verdictTarget: ReportPlantVerdict;
+  sspAgreement: number | null;
+  climate: number;
+  headroom: number;
+  ripening: number;
+  limitingBound: LimitingBound;
+  koppen: number;
+  ph: number;
+  edibility: number;
+  uncertainty: number;
+}
+
+const siteBaseMemo = new WeakMap<Taxon, Map<string, SiteBaseEval>>();
+
+function horizonPackKey(hp: HorizonPack, alreadyOnSite: boolean): string {
+  const e = hp.effToday;
+  const e50 = hp.eff2050;
+  return [
+    e.lat, e.lon, e.koppen, e.tminColdC, e.tmaxWarmC, e.tmeanWarmC, e.precipMm, e.dryMonths,
+    e.freeze10C, e.heat10C, e.soilPh, e.watering, e.drainage, e.wind, e.siteLight, e.roomLimitM, e.plotM2,
+    e50 ? `${e50.tminColdC},${e50.tmaxWarmC},${e50.precipMm}` : '-',
+    hp.sspEffs.length, hp.shockEffs.length,
+    alreadyOnSite ? 1 : 0,
+  ].join('|');
+}
+
+function getSiteBaseEval(
+  candidate: Taxon,
+  hp: HorizonPack,
+  existingIds?: ReadonlySet<PlantId>,
+): SiteBaseEval {
+  const alreadyOnSite = !!existingIds?.has(candidate.id);
+  const key = horizonPackKey(hp, alreadyOnSite);
+  let perTaxon = siteBaseMemo.get(candidate);
+  const hit = perTaxon?.get(key);
+  if (hit) return hit;
+
+  const verdictToday = evaluatePlantVerdict(candidate, hp.effToday, existingIds);
+  const verdict2050 = hp.eff2050 ? evaluatePlantVerdict(candidate, hp.eff2050, existingIds) : null;
   const targetH = targetHorizonForTaxon(candidate);
   const targetEff = targetH === 'today' ? hp.effToday : targetH === 'y2080_ssp245' ? (hp.eff2080 ?? hp.eff2050 ?? hp.effToday) : (hp.eff2050 ?? hp.effToday);
-  const verdictTarget = targetEff === hp.effToday ? verdictToday : (targetEff === hp.eff2050 && verdict2050 ? verdict2050 : evaluatePlantVerdict(candidate, targetEff, ctx.existingIds));
+  const verdictTarget = targetEff === hp.effToday ? verdictToday : (targetEff === hp.eff2050 && verdict2050 ? verdict2050 : evaluatePlantVerdict(candidate, targetEff, existingIds));
 
   // SSP agreement across 4 SSPs (A2)
   let sspAgreement: number | null = null;
   if (hp.sspEffs.length >= 2) {
     let ok = 0;
     for (const se of hp.sspEffs) {
-      const sv = evaluatePlantVerdict(candidate, se, ctx.existingIds);
+      const sv = evaluatePlantVerdict(candidate, se, existingIds);
       if (sv.level !== 'at_risk') ok++;
     }
     sspAgreement = ok;
@@ -354,7 +515,7 @@ export function scoreCandidateForGuild(
   if (hp.shockEffs.length) {
     let okShocks = 0;
     for (const se of hp.shockEffs) {
-      const sv = evaluatePlantVerdict(candidate, se, ctx.existingIds);
+      const sv = evaluatePlantVerdict(candidate, se, existingIds);
       if (sv.level === 'fits') okShocks++;
       else if (sv.level === 'at_risk') okShocks -= 0.5;
     }
@@ -388,32 +549,62 @@ export function scoreCandidateForGuild(
   const fewRecPenalty = verdictToday.notes.includes('few_records') ? 6 : 0;
   const uncertainty = -(unknownWidthPenalty + fewRecPenalty);
 
+  const out: SiteBaseEval = {
+    verdictToday,
+    verdict2050,
+    verdictTarget,
+    sspAgreement,
+    climate,
+    headroom,
+    ripening,
+    limitingBound,
+    koppen,
+    ph,
+    edibility,
+    uncertainty,
+  };
+  if (!perTaxon) {
+    perTaxon = new Map();
+    siteBaseMemo.set(candidate, perTaxon);
+  } else if (perTaxon.size > 32) {
+    perTaxon.clear();
+  }
+  perTaxon.set(key, out);
+  return out;
+}
+
+// ---- Unified Decomposed Candidate Scorer ----
+
+export function scoreCandidateForGuild(
+  candidate: Taxon,
+  guild: readonly Taxon[],
+  ctx: RecommendContext,
+  pack?: HorizonPack,
+  guildCache?: GuildCache,
+): CandidateEvaluation {
+  const hp = pack ?? buildHorizonPack(ctx);
+  const gc = guildCache ?? buildGuildCache(guild, hp, ctx);
+  const {
+    verdictToday,
+    verdict2050,
+    verdictTarget,
+    sspAgreement,
+    climate,
+    headroom,
+    ripening,
+    limitingBound,
+    koppen,
+    ph,
+    edibility,
+    uncertainty,
+  } = getSiteBaseEval(candidate, hp, ctx.existingIds);
+
   // Guild synergy & response diversity (A4, A7)
   const jobs = jobsOf(candidate);
   let synergy = 0;
   const reasons: RecommendReason[] = [];
 
-  const guildJobsToday = new Map<JobId, Taxon[]>();
-  const guildJobs2050 = new Map<JobId, Taxon[]>();
-  const guildFamilies = new Map<string, number>();
-  const guildHasCanopy = guild.some((t) => sizeClassOf(t) === 'tree');
-  const guildMyco = new Set(guild.map((t) => t.traits.mycorrhizal_type).filter(Boolean));
-  const guildHasDeepRoot = guild.some((t) => (t.traits.root_depth_min_cm ?? 0) >= 45 || t.traits.taproot_persistent === true);
-
-  for (const g of guild) {
-    if (g.family) guildFamilies.set(g.family, (guildFamilies.get(g.family) ?? 0) + 1);
-    const gv2050 = hp.eff2050 ? evaluatePlantVerdict(g, hp.eff2050, ctx.existingIds) : null;
-    for (const j of jobsOf(g)) {
-      const list = guildJobsToday.get(j) ?? [];
-      list.push(g);
-      guildJobsToday.set(j, list);
-      if (!gv2050 || gv2050.level === 'fits') {
-        const l50 = guildJobs2050.get(j) ?? [];
-        l50.push(g);
-        guildJobs2050.set(j, l50);
-      }
-    }
-  }
+  const { guildJobsToday, guildJobs2050, guildFamilies, guildHasCanopy, guildMyco, guildHasDeepRoot, guildHolderBounds, partnerById, beforeActiveMonths } = gc;
 
   let filledMissingJob: JobId | null = null;
   let backedUp2050Job: JobId | null = null;
@@ -435,10 +626,7 @@ export function scoreCandidateForGuild(
         if (!backedUp2050Job) backedUp2050Job = j;
         // A7: Response diversity — different family AND different limiting climate bound from existing holder
         const sameFamily = candidate.family !== null && holders.some((h) => h.family === candidate.family);
-        const sameBound = limitingBound !== null && holders.some((h) => {
-          const hHr = computeHeadroom(h, hp.eff2050 ?? hp.effToday);
-          return hHr.limitingBound === limitingBound;
-        });
+        const sameBound = limitingBound !== null && holders.some((h) => guildHolderBounds.get(h.id) === limitingBound);
         if (!sameFamily && !sameBound) {
           synergy += 10;
           responseDiverse = true;
@@ -486,11 +674,10 @@ export function scoreCandidateForGuild(
   }
 
   // Seasonality stagger (new bloom/harvest months via site-scoped layerValuesByPlant)
-  if (ctx.layerValuesByPlant && guild.length > 0) {
+  if (ctx.layerValuesByPlant && beforeActiveMonths) {
     const place = { lat: hp.effToday.lat, country: hp.effToday.country, zone: ctx.climateZone ?? null };
-    const beforeGy = computeGrowingYear(guild, ctx.layerValuesByPlant, place, hp.effToday.hemisphere);
     const candGy = computeGrowingYear([candidate], ctx.layerValuesByPlant, place, hp.effToday.hemisphere);
-    const newMonths = candGy.activeMonths.filter((m) => !beforeGy.activeMonths.includes(m));
+    const newMonths = candGy.activeMonths.filter((m) => !beforeActiveMonths.has(m));
     if (newMonths.length > 0) {
       synergy += Math.min(8, newMonths.length * 3);
       reasons.push({ code: 'seasonality' });
@@ -498,18 +685,18 @@ export function scoreCandidateForGuild(
   }
 
   // Curated pairwise interactions (A4)
-  const ix = interactionScoreAgainstGuild(candidate, guild, ctx.interactions ?? [], ctx.climateZone ?? null);
-  const partnerById = new Map(guild.map((g) => [g.id, g]));
+  const ix = interactionScoreWithCache(candidate, gc);
   for (const yg of ix.yieldGains) {
     const otherId = yg.a === candidate.id ? yg.b : yg.a;
     const other = partnerById.get(otherId);
-    reasons.push({ code: 'yield_gain', partnerName: other?.names.en ?? other?.canonical_name });
+    reasons.push({ code: 'yield_gain', partnerId: otherId, partnerName: other?.names.en ?? other?.canonical_name });
   }
   for (const cf of ix.conflicts) {
     const otherId = cf.a === candidate.id ? cf.b : cf.a;
     const other = partnerById.get(otherId);
     reasons.push({
       code: cf.interaction.type === 'shared_pest' ? 'shared_pest' : 'conflict',
+      partnerId: otherId,
       partnerName: other?.names.en ?? other?.canonical_name,
     });
   }
@@ -556,9 +743,10 @@ export function rankCandidatesForGuild(
   ctx: RecommendContext,
 ): Map<PlantId, CandidateEvaluation> {
   const pack = buildHorizonPack(ctx);
+  const guildCache = buildGuildCache(guild, pack, ctx);
   const out = new Map<PlantId, CandidateEvaluation>();
   for (const c of candidates) {
-    out.set(c.id, scoreCandidateForGuild(c, guild, ctx, pack));
+    out.set(c.id, scoreCandidateForGuild(c, guild, ctx, pack, guildCache));
   }
   return out;
 }

@@ -399,10 +399,46 @@ function elevate(current: ReportVerdictLevel, next: ReportVerdictLevel): ReportV
   return SEVERITY_RANK[next] > SEVERITY_RANK[current] ? next : current;
 }
 
+const verdictMemo = new WeakMap<Taxon, Map<string, ReportPlantVerdict>>();
+
+function effVerdictKey(eff: EffectiveSiteClimate, alreadyOnSite: boolean): string {
+  return [
+    eff.hasClimate ? 1 : 0,
+    eff.meta.period, eff.meta.scenario, eff.meta.kind,
+    eff.koppen, eff.tminColdC, eff.tmaxWarmC, eff.tmeanColdC, eff.tmeanWarmC, eff.tmeanYearC,
+    eff.precipMm, eff.dryMonths, eff.aridityIndex,
+    eff.freeze10C, eff.heat10C, eff.soilPh, eff.subsoilPh,
+    eff.cddDays, eff.tankDays, eff.clayPct,
+    eff.watering, eff.drainage, eff.wind, eff.siteLight, eff.roomLimitM,
+    alreadyOnSite ? 1 : 0,
+  ].join('|');
+}
+
 export function evaluatePlantVerdict(
   taxon: Taxon,
   eff: EffectiveSiteClimate,
   existingIds?: ReadonlySet<PlantId>,
+): ReportPlantVerdict {
+  const alreadyOnSite = !!existingIds?.has(taxon.id);
+  const key = effVerdictKey(eff, alreadyOnSite);
+  let perTaxon = verdictMemo.get(taxon);
+  const hit = perTaxon?.get(key);
+  if (hit) return hit;
+  const out = evaluatePlantVerdictUncached(taxon, eff, alreadyOnSite);
+  if (!perTaxon) {
+    perTaxon = new Map();
+    verdictMemo.set(taxon, perTaxon);
+  } else if (perTaxon.size > 64) {
+    perTaxon.clear();
+  }
+  perTaxon.set(key, out);
+  return out;
+}
+
+function evaluatePlantVerdictUncached(
+  taxon: Taxon,
+  eff: EffectiveSiteClimate,
+  alreadyOnSite: boolean,
 ): ReportPlantVerdict {
   const reasons: ReportVerdictReason[] = [];
   const notes = new Set<ReportVerdictNote>();
@@ -411,7 +447,6 @@ export function evaluatePlantVerdict(
   let judgedClimate = false;
 
   if (taxon.phases === null) notes.add('stage_unknown');
-  const alreadyOnSite = !!existingIds?.has(taxon.id);
   if (alreadyOnSite) notes.add('already_on_site');
 
   // 1. Monthly observed climate range checks — delegated to range.ts slotCheck (one verdict owner:
@@ -483,7 +518,7 @@ export function evaluatePlantVerdict(
     //     - Wetter than range (precip > high) -> note, elevated to check only for drainage-sensitive / high-drought xerophytes (NEVER at_risk)
     const drierPrecip = eff.precipMm !== null && cl.precip?.low != null && eff.precipMm < cl.precip.low;
     const drierAridity = eff.aridityIndex !== null && cl.aridity?.low != null && eff.aridityIndex < cl.aridity.low;
-    const drierMonths = eff.dryMonths !== null && cl.dryMonths?.high != null && eff.dryMonths > cl.dryMonths.high;
+    const drierMonths = !isAnnualTaxon(taxon) && eff.dryMonths !== null && cl.dryMonths?.high != null && eff.dryMonths > cl.dryMonths.high;
     if (drierPrecip || drierAridity || drierMonths) {
       const dryDetail = drierPrecip
         ? `Site rainfall ${eff.precipMm} mm below recorded ${cl.precip?.low} mm — needs watering`
@@ -868,31 +903,41 @@ export interface PalettePairInteraction {
   positive: boolean;
 }
 
-function refMatchesTaxon(ref: Interaction['subject'], t: Taxon): boolean {
-  if (ref.rank === 'species') return t.canonical_name === ref.name;
-  if (ref.rank === 'genus') return t.genus === ref.name;
-  if (ref.rank === 'family') return t.family === ref.name;
-  return false;
-}
-
 export function matchPaletteInteractions(
   taxa: readonly Taxon[],
   interactions: readonly Interaction[],
 ): PalettePairInteraction[] {
+  if (taxa.length < 2 || interactions.length === 0) return [];
+  const byKey = new Map<string, number[]>();
+  const add = (k: string, idx: number) => {
+    const arr = byKey.get(k);
+    if (arr) arr.push(idx);
+    else byKey.set(k, [idx]);
+  };
+  for (let i = 0; i < taxa.length; i++) {
+    const t = taxa[i];
+    add(`species:${t.canonical_name}`, i);
+    if (t.genus) add(`genus:${t.genus}`, i);
+    if (t.family) add(`family:${t.family}`, i);
+  }
   const out: PalettePairInteraction[] = [];
   const seen = new Set<string>();
-  for (let i = 0; i < taxa.length; i++) {
-    for (let j = i + 1; j < taxa.length; j++) {
-      const ta = taxa[i];
-      const tb = taxa[j];
-      for (const inter of interactions) {
-        const fwd = refMatchesTaxon(inter.subject, ta) && refMatchesTaxon(inter.object, tb);
-        const rev = refMatchesTaxon(inter.subject, tb) && refMatchesTaxon(inter.object, ta);
-        if (!fwd && !rev) continue;
+  for (const inter of interactions) {
+    const subIdx = byKey.get(`${inter.subject.rank}:${inter.subject.name}`);
+    if (!subIdx) continue;
+    const objIdx = byKey.get(`${inter.object.rank}:${inter.object.name}`);
+    if (!objIdx) continue;
+    const positive = inter.type === 'intercropped_yield_gain' || inter.type === 'allelopathy_tolerant';
+    for (const si of subIdx) {
+      for (const oi of objIdx) {
+        if (si === oi) continue;
+        const i = si < oi ? si : oi;
+        const j = si < oi ? oi : si;
+        const ta = taxa[i];
+        const tb = taxa[j];
         const key = `${ta.id}|${tb.id}|${inter.type}|${inter.agent ?? ''}`;
         if (seen.has(key)) continue;
         seen.add(key);
-        const positive = inter.type === 'intercropped_yield_gain' || inter.type === 'allelopathy_tolerant';
         out.push({ a: ta.id, b: tb.id, interaction: inter, positive });
       }
     }

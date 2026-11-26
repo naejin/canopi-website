@@ -3646,5 +3646,15 @@
   "consortium.ns.rec.understoryShade": "Sotobosque tolerante a la sombra",
   "consortium.ns.rec.fits2050": "Apta en 2050",
   "consortium.ns.rec.unknown2050": "2050 desconocido",
+  "consortium.ns.reason.mildWinter": "Mínima invernal ({site}) demasiado suave para el frío invernal (hasta {lim})",
+  "consortium.ns.reason.mildWinterEdge": "Mínima invernal ({site}) cerca del límite de invierno suave ({lim})",
+  "consortium.ns.reason.coolSummerEdge": "Media del mes más cálido ({site}) cerca del límite de verano fresco ({lim})",
+  "consortium.ns.reason.waterNeedsIrrigation": "Más seco que el rango observado — necesita riego",
+  "consortium.ns.reason.waterIrrigated": "Más seco que el rango observado — cubierto por el riego regular",
+  "consortium.ns.reason.waterFutureDry": "Sequedad futura fuera del rango observado — puede necesitar riego estival",
+  "consortium.ns.reason.waterWetterNote": "Más húmedo que el rango observado",
+  "consortium.ns.reason.waterWetDrainage": "Más húmedo que el rango observado — necesita buen drenaje",
+  "consortium.ns.arrival.tooDryRainFed": "Demasiado seco solo con lluvia aquí — activa «Riego regularmente» para ver una paleta inicial con riego.",
+  "consortium.ns.arrival.desertEstablishNote": "Clima desértico: incluso las plantas de secano necesitan riego sus primeros años.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

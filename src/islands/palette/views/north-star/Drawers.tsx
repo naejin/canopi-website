@@ -257,17 +257,21 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
   const inPalette = useMemo(() => new Set(store.members.value), [store.members.value]);
   const neededJobs = useMemo(() => new Set([...rep.missingJobs, ...rep.noBackupJobs]), [rep.missingJobs, rep.noBackupJobs]);
 
+  const effSig = `${rep.horizon}|${rep.eff.lat}|${rep.eff.lon}|${rep.eff.soilPh}|${rep.eff.watering}|${rep.eff.drainage}|${rep.eff.wind}|${rep.eff.siteLight}|${rep.eff.roomLimitM}|${rep.eff.plotM2}`;
   const verdictsToday = useMemo(
     () => new Map(catalog.map((t) => [t.id, evaluatePlantVerdict(t, rep.effToday)])),
-    [catalog, rep.effToday],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [catalog, effSig],
   );
   const verdictsActive = useMemo(
     () => new Map(catalog.map((t) => [t.id, evaluatePlantVerdict(t, rep.eff)])),
-    [catalog, rep.eff],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [catalog, effSig],
   );
   const verdicts2050 = useMemo(
     () => new Map(catalog.map((t) => [t.id, evaluatePlantVerdict(t, rep.eff2050)])),
-    [catalog, rep.eff2050],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [catalog, effSig],
   );
   const pickerTracks = useMemo(() => {
     const gy = computeGrowingYear(
@@ -356,15 +360,19 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
     [searchMatches, rep.taxa, rep.effToday, rep.eff2050, store.location.value?.lookup, store.climate.value, allInteractions, nsLayerValues.value],
   );
 
+  const guildById = useMemo(() => new Map(rep.taxa.map((t) => [t.id, t])), [rep.taxa]);
+
   const formatRationale = (reasons: readonly RecommendReason[]): string | null => {
     const parts: string[] = [];
     for (const r of reasons) {
       if (parts.length >= 2) break;
+      const partner = r.partnerId ? guildById.get(r.partnerId) : null;
+      const pName = partner ? taxCommonName(partner) : r.partnerName;
       if (r.code === 'fills_gap' && r.job) parts.push(T('ns.rec.fillsGap', { job: jobLabel(r.job) }));
       else if (r.code === 'backs_up_2050' && r.job) parts.push(T('ns.rec.backsUp2050', { job: jobLabel(r.job) }));
-      else if (r.code === 'yield_gain' && r.partnerName) parts.push(T('ns.rec.yieldGain', { name: r.partnerName }));
-      else if (r.code === 'shared_pest' && r.partnerName) parts.push(T('ns.rec.sharedPest', { name: r.partnerName }));
-      else if (r.code === 'conflict' && r.partnerName) parts.push(T('ns.rec.conflict', { name: r.partnerName }));
+      else if (r.code === 'yield_gain' && pName) parts.push(T('ns.rec.yieldGain', { name: pName }));
+      else if (r.code === 'shared_pest' && pName) parts.push(T('ns.rec.sharedPest', { name: pName }));
+      else if (r.code === 'conflict' && pName) parts.push(T('ns.rec.conflict', { name: pName }));
       else if (r.code === 'understory_shade') parts.push(T('ns.rec.understoryShade'));
       else if (r.code === 'fits_2050') parts.push(T('ns.rec.fits2050'));
       else if (r.code === 'unknown_2050') parts.push(T('ns.rec.unknown2050'));
@@ -663,7 +671,7 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
                       <strong>{taxCommonName(p)}</strong>{' '}
                       <span class="plant-bot">{p.canonical_name}</span>
                     </div>
-                    {recLine && <div class="small muted" style={{ marginTop: '2px' }}>{recLine}</div>}
+                    {recLine && <div class="small muted picker-rationale">{recLine}</div>}
                     <div class="plant-badges" style={{ marginTop: '4px' }}>
                       {v && <span class={`badge ${verdictBadgeClass(v.level)}`}>{verdictSymbolLabel(v.level)}</span>}
                       <span class="badge">{lightSpanLabel(p)}{hMax != null ? ` · ${fmtNum(hMax)} m` : ''}</span>

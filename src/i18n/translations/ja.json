@@ -3646,5 +3646,15 @@
   "consortium.ns.rec.understoryShade": "耐陰性の下層植物",
   "consortium.ns.rec.fits2050": "2050年代も適合",
   "consortium.ns.rec.unknown2050": "2050年代は不明",
+  "consortium.ns.reason.mildWinter": "冬季最低気温（{site}）が温暖すぎて低温要求を満たせません（記録上限 {lim}）",
+  "consortium.ns.reason.mildWinterEdge": "冬季最低気温（{site}）が暖冬限界付近です（{lim}）",
+  "consortium.ns.reason.coolSummerEdge": "最暖月平均気温（{site}）が冷夏限界付近です（{lim}）",
+  "consortium.ns.reason.waterNeedsIrrigation": "記録範囲より乾燥 — 灌水が必要",
+  "consortium.ns.reason.waterIrrigated": "記録範囲より乾燥 — 定期灌水で対応",
+  "consortium.ns.reason.waterFutureDry": "将来の乾燥が記録範囲を超過 — 夏季灌水が必要な可能性",
+  "consortium.ns.reason.waterWetterNote": "記録範囲より湿潤",
+  "consortium.ns.reason.waterWetDrainage": "記録範囲より湿潤 — 高い排水性が必要",
+  "consortium.ns.arrival.tooDryRainFed": "ここでは雨水だけでは乾燥しすぎます —「定期的に水やりする」をオンにすると灌水スターター候補を表示できます。",
+  "consortium.ns.arrival.desertEstablishNote": "砂漠気候：乾燥地植物でも定着初期の数年間は水やりが必要です。",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }
