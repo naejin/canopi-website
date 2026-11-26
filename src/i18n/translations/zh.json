@@ -3660,6 +3660,7 @@
   "consortium.ns.land.everydayHead": "日常场地条件",
   "consortium.ns.land.openArrival": "浏览示例地点与气候",
   "consortium.ns.land.resetAll": "重置所有微调",
+  "consortium.ns.land.clampedUsed": "已使用 {val}",
   "consortium.ns.land.done": "完成",
   "consortium.ns.land.phAcidic": "酸性",
   "consortium.ns.land.phSlightlyAcidic": "微酸性",

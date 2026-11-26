@@ -31,6 +31,7 @@ import {
   vineSupportTree,
 } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
+import { soilTextureLabel } from '../../rules/soil-labels.ts';
 import { currentFragment, linkName, shareUrl, shownFragment } from '../../state/persist.ts';
 import { T } from '../../strings.ts';
 import { Glyph } from '../kit/Glyph.tsx';
@@ -820,7 +821,7 @@ function AtlasDrawer({ rep, swapFor }: { rep: PaletteReport; swapFor?: PlantId }
   };
   const weakLeader = leaderCoords(weakestPillar);
 
-  const texture = store.location.value?.lookup?.soil?.texture ?? 'loam';
+  const texture = soilTextureLabel(store.location.value?.lookup?.soil?.texture);
   const terrain = store.location.value?.lookup?.v07?.terrain ?? null;
   const frostCal = store.location.value?.lookup?.v07?.frostCalendar ?? null;
   const springP90Date = doyToDateLabel(frostCal?.lastSpringP90Doy);

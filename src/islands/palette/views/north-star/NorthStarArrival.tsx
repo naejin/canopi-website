@@ -5,6 +5,7 @@ import type { ClimateZone } from '../../../../lib/palette/index.ts';
 import { evaluatePlantVerdict, formatCountryName, isStructuralVine, resolveEffectiveSite, vineSupportTree } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
+import { soilTextureLabel } from '../../rules/soil-labels.ts';
 import { markStart } from '../kit/start-mark.ts';
 import { PlantThumb } from './GuildVisuals.tsx';
 import { PlaceSearchBox } from './PlaceSearchBox.tsx';
@@ -74,7 +75,7 @@ export function NorthStarArrival() {
 
   const siteLabel = loc?.label ?? NS_PRESETS[0].label;
   const shortName = shortSiteName(siteLabel);
-  const texture = loc?.lookup?.soil?.texture ?? 'loam';
+  const texture = soilTextureLabel(loc?.lookup?.soil?.texture);
   const dryMoT = effToday.dryMonths;
   const dryMo50 = eff2050.dryMonths;
   const frostCal = loc?.lookup?.v07?.frostCalendar ?? null;

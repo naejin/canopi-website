@@ -3660,6 +3660,7 @@
   "consortium.ns.land.everydayHead": "정원 기본 조건",
   "consortium.ns.land.openArrival": "예시 장소 및 기후 둘러보기",
   "consortium.ns.land.resetAll": "모든 수정 초기화",
+  "consortium.ns.land.clampedUsed": "{val} 적용됨",
   "consortium.ns.land.done": "완료",
   "consortium.ns.land.phAcidic": "산성",
   "consortium.ns.land.phSlightlyAcidic": "약산성",

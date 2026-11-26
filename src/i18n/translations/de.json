@@ -3660,6 +3660,7 @@
   "consortium.ns.land.everydayHead": "Bedingungen auf Ihrem Gelände",
   "consortium.ns.land.openArrival": "Beispielorte und Klimazonen ansehen",
   "consortium.ns.land.resetAll": "Alle Änderungen zurücksetzen",
+  "consortium.ns.land.clampedUsed": "{val} verwendet",
   "consortium.ns.land.done": "Fertig",
   "consortium.ns.land.phAcidic": "Sauer",
   "consortium.ns.land.phSlightlyAcidic": "Leicht sauer",

@@ -3660,6 +3660,7 @@
   "consortium.ns.land.everydayHead": "Условия вашего участка",
   "consortium.ns.land.openArrival": "Выбрать пример места и климата",
   "consortium.ns.land.resetAll": "Сбросить все правки",
+  "consortium.ns.land.clampedUsed": "Использовано: {val}",
   "consortium.ns.land.done": "Готово",
   "consortium.ns.land.phAcidic": "Кислая",
   "consortium.ns.land.phSlightlyAcidic": "Слабокислая",

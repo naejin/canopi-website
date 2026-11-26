@@ -3660,6 +3660,7 @@
   "consortium.ns.land.everydayHead": "Your garden conditions",
   "consortium.ns.land.openArrival": "Browse sample places & climates",
   "consortium.ns.land.resetAll": "Reset all edits",
+  "consortium.ns.land.clampedUsed": "{val} used",
   "consortium.ns.land.done": "Done",
   "consortium.ns.land.phAcidic": "Acidic",
   "consortium.ns.land.phSlightlyAcidic": "Slightly acidic",

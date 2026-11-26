@@ -3660,6 +3660,7 @@
   "consortium.ns.land.everydayHead": "敷地の基本条件",
   "consortium.ns.land.openArrival": "サンプル地点・気候を見る",
   "consortium.ns.land.resetAll": "編集をすべて戻す",
+  "consortium.ns.land.clampedUsed": "{val} を適用",
   "consortium.ns.land.done": "完了",
   "consortium.ns.land.phAcidic": "酸性",
   "consortium.ns.land.phSlightlyAcidic": "弱酸性",

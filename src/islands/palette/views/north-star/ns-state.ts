@@ -352,11 +352,6 @@ export function resetAllSiteOverrides(): void {
   markNsDirty();
 }
 
-export function handlePlotM2Input(e: Event): void {
-  const n = Number((e.target as HTMLInputElement).value);
-  if (Number.isFinite(n) && n >= 1) updateOverrides({ plotM2: Math.round(n) });
-}
-
 export function setRoomChoice(r: Room): void {
   batch(() => {
     store.room.value = r;

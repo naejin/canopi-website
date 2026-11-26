@@ -18,11 +18,12 @@ import type {
 } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
+import { drainageChoiceLabel, soilTextureLabel } from '../../rules/soil-labels.ts';
+import { NumericField } from './NumericField.tsx';
 import { PlaceSearchBox } from './PlaceSearchBox.tsx';
 import { fmtNum, freezeText, heatText, roomOptions } from './ns-helpers.ts';
 import {
   effectiveOverrides,
-  handlePlotM2Input,
   nsDrawer,
   nsLandOpen,
   nsOverrides,
@@ -65,11 +66,15 @@ export function LandPanel({ rep, returnFocusTo }: { rep: PaletteReport; returnFo
   const [changePlaceOpen, setChangePlaceOpen] = useState(false);
   const [soilOpen, setSoilOpen] = useState(false);
   const [microOpen, setMicroOpen] = useState(false);
+  const [resetSeq, setResetSeq] = useState(0);
   const panelRef = useRef<HTMLDivElement>(null);
 
   const ov = effectiveOverrides.value;
   const rawOv = nsOverrides.value;
   const loc = store.location.value;
+  const locKey = loc ? `${loc.lat.toFixed(2)},${loc.lon.toFixed(2)}` : '';
+  const fieldResetKey = `${locKey}|${resetSeq}`;
+  const bumpReset = () => setResetSeq((s) => s + 1);
   const eff = rep.eff;
   const basePh = loc?.lookup?.soil?.phH2o ?? null;
   const baseTexture = loc?.lookup?.soil?.texture ?? null;
@@ -138,7 +143,7 @@ export function LandPanel({ rep, returnFocusTo }: { rep: PaletteReport; returnFo
 
   const soilValueParts = [
     eff.soilPh != null ? `pH ${fmtNum(eff.soilPh)}` : null,
-    ov.drainage ?? baseTexture,
+    ov.drainage ? drainageChoiceLabel(ov.drainage) : (baseTexture ? soilTextureLabel(baseTexture) : null),
     eff.stonesPct != null ? T('ns.land.rockPct', { n: Math.round(eff.stonesPct) }) : null,
   ].filter(Boolean);
 
@@ -277,15 +282,15 @@ export function LandPanel({ rep, returnFocusTo }: { rep: PaletteReport; returnFo
 
             <div class="tuner-group">
               <label class="tuner-label" for="land-plot-m2">{T('ns.land.plot')} (m²)</label>
-              <input
+              <NumericField
                 id="land-plot-m2"
-                class="tuner-input"
-                type="number"
-                min="20"
-                max="50000"
-                step="10"
                 value={eff.plotM2}
-                onInput={handlePlotM2Input}
+                min={20}
+                max={50000}
+                inputMode="numeric"
+                unit="m²"
+                resetKey={fieldResetKey}
+                onCommit={(n) => { if (n != null) updateOverrides({ plotM2: n }); }}
               />
             </div>
 
@@ -343,7 +348,14 @@ export function LandPanel({ rep, returnFocusTo }: { rep: PaletteReport; returnFo
                 {T('ns.land.tuneSite')}{editCount > 0 ? ` (${T('ns.land.edited', { n: editCount })})` : ''}
               </h3>
               {editCount > 0 && (
-                <button type="button" class="edit-reset" onClick={resetAllSiteOverrides}>
+                <button
+                  type="button"
+                  class="edit-reset"
+                  onClick={() => {
+                    resetAllSiteOverrides();
+                    bumpReset();
+                  }}
+                >
                   {T('ns.land.resetAll')}
                 </button>
               )}
@@ -393,7 +405,7 @@ export function LandPanel({ rep, returnFocusTo }: { rep: PaletteReport; returnFo
                     }}
                   >
                     <option value="sandy">{T('ns.land.drainSandy')}</option>
-                    <option value="">{T('ns.land.drainDefault', { tex: baseTexture ?? T('ns.unknown') })}</option>
+                    <option value="">{T('ns.land.drainDefault', { tex: soilTextureLabel(baseTexture) })}</option>
                     <option value="clay">{T('ns.land.drainClay')}</option>
                     <option value="wet">{T('ns.land.drainWet')}</option>
                   </select>
@@ -436,38 +448,40 @@ export function LandPanel({ rep, returnFocusTo }: { rep: PaletteReport; returnFo
                     {elevEdited && (
                       <EditResetBadge
                         label={T('ns.land.yourEditEst', { delta: fmtSignedDeltaC(eff.elevDeltaC) })}
-                        onReset={() => updateOverrides({ elevM: null })}
+                        onReset={() => { updateOverrides({ elevM: null }); bumpReset(); }}
                       />
                     )}
                   </div>
-                  <input
+                  <NumericField
                     id="elev-input"
-                    class="tuner-input"
-                    type="number"
-                    step="25"
-                    min="0"
-                    max="4000"
-                    value={eff.elevEff != null ? Math.round(eff.elevEff) : ''}
-                    onInput={(e) => updateOverrides({ elevM: parseOptionalNum((e.target as HTMLInputElement).value) })}
-                    onChange={(e) => updateOverrides({ elevM: parseOptionalNum((e.target as HTMLInputElement).value) })}
+                    value={eff.elevEff != null ? Math.round(eff.elevEff) : null}
+                    min={0}
+                    max={4000}
+                    optional
+                    isEdited={elevEdited}
+                    inputMode="numeric"
+                    unit="m"
+                    resetKey={fieldResetKey}
+                    onCommit={(n) => updateOverrides({ elevM: n })}
                   />
                 </div>
 
                 <div class="tuner-group">
                   <div class="tuner-label">
                     <label for="slope-input">{T('ns.land.slope')}</label>
-                    {slopeEdited && <EditResetBadge onReset={() => updateOverrides({ slopeDeg: null })} />}
+                    {slopeEdited && <EditResetBadge onReset={() => { updateOverrides({ slopeDeg: null }); bumpReset(); }} />}
                   </div>
-                  <input
+                  <NumericField
                     id="slope-input"
-                    class="tuner-input"
-                    type="number"
-                    step="1"
-                    min="0"
-                    max="45"
-                    value={eff.slopeDeg != null ? Math.round(eff.slopeDeg) : ''}
-                    onInput={(e) => updateOverrides({ slopeDeg: parseOptionalNum((e.target as HTMLInputElement).value) })}
-                    onChange={(e) => updateOverrides({ slopeDeg: parseOptionalNum((e.target as HTMLInputElement).value) })}
+                    value={eff.slopeDeg != null ? Math.round(eff.slopeDeg) : null}
+                    min={0}
+                    max={45}
+                    optional
+                    isEdited={slopeEdited}
+                    inputMode="numeric"
+                    unit="°"
+                    resetKey={fieldResetKey}
+                    onCommit={(n) => updateOverrides({ slopeDeg: n })}
                   />
                 </div>
 
@@ -518,54 +532,59 @@ export function LandPanel({ rep, returnFocusTo }: { rep: PaletteReport; returnFo
                 <div class="tuner-group">
                   <div class="tuner-label">
                     <label for="freeze-input">{T('ns.land.freeze10Input')}</label>
-                    {freezeEdited && <EditResetBadge onReset={() => updateOverrides({ freeze10: null })} />}
+                    {freezeEdited && <EditResetBadge onReset={() => { updateOverrides({ freeze10: null }); bumpReset(); }} />}
                   </div>
-                  <input
+                  <NumericField
                     id="freeze-input"
-                    class="tuner-input"
-                    type="number"
-                    step="0.5"
-                    min="-40"
-                    max="20"
-                    value={eff.freeze10C ?? ''}
-                    onInput={(e) => updateOverrides({ freeze10: parseOptionalNum((e.target as HTMLInputElement).value) })}
-                    onChange={(e) => updateOverrides({ freeze10: parseOptionalNum((e.target as HTMLInputElement).value) })}
+                    value={eff.freeze10C}
+                    min={-40}
+                    max={20}
+                    allowDecimal
+                    allowNegative
+                    optional
+                    isEdited={freezeEdited}
+                    unit="°C"
+                    resetKey={fieldResetKey}
+                    onCommit={(n) => updateOverrides({ freeze10: n })}
                   />
                 </div>
 
                 <div class="tuner-group">
                   <div class="tuner-label">
                     <label for="heat-input">{T('ns.land.heat10Input')}</label>
-                    {heatEdited && <EditResetBadge onReset={() => updateOverrides({ heat10: null })} />}
+                    {heatEdited && <EditResetBadge onReset={() => { updateOverrides({ heat10: null }); bumpReset(); }} />}
                   </div>
-                  <input
+                  <NumericField
                     id="heat-input"
-                    class="tuner-input"
-                    type="number"
-                    step="0.5"
-                    min="15"
-                    max="55"
-                    value={eff.heat10C ?? ''}
-                    onInput={(e) => updateOverrides({ heat10: parseOptionalNum((e.target as HTMLInputElement).value) })}
-                    onChange={(e) => updateOverrides({ heat10: parseOptionalNum((e.target as HTMLInputElement).value) })}
+                    value={eff.heat10C}
+                    min={15}
+                    max={55}
+                    allowDecimal
+                    optional
+                    isEdited={heatEdited}
+                    inputMode="decimal"
+                    unit="°C"
+                    resetKey={fieldResetKey}
+                    onCommit={(n) => updateOverrides({ heat10: n })}
                   />
                 </div>
 
                 <div class="tuner-group">
                   <div class="tuner-label">
                     <label for="cdd-input">{T('ns.land.cddInput')}</label>
-                    {cddEdited && <EditResetBadge onReset={() => updateOverrides({ cddDays: null })} />}
+                    {cddEdited && <EditResetBadge onReset={() => { updateOverrides({ cddDays: null }); bumpReset(); }} />}
                   </div>
-                  <input
+                  <NumericField
                     id="cdd-input"
-                    class="tuner-input"
-                    type="number"
-                    step="5"
-                    min="5"
-                    max="150"
-                    value={eff.cddDays ?? ''}
-                    onInput={(e) => updateOverrides({ cddDays: parseOptionalNum((e.target as HTMLInputElement).value) })}
-                    onChange={(e) => updateOverrides({ cddDays: parseOptionalNum((e.target as HTMLInputElement).value) })}
+                    value={eff.cddDays}
+                    min={5}
+                    max={150}
+                    optional
+                    isEdited={cddEdited}
+                    inputMode="numeric"
+                    unit={dShort}
+                    resetKey={fieldResetKey}
+                    onCommit={(n) => updateOverrides({ cddDays: n })}
                   />
                 </div>
               </div>

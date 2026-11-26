@@ -3660,6 +3660,7 @@
   "consortium.ns.land.everydayHead": "Conditions de votre jardin",
   "consortium.ns.land.openArrival": "Parcourir les lieux et climats exemples",
   "consortium.ns.land.resetAll": "Tout réinitialiser",
+  "consortium.ns.land.clampedUsed": "{val} utilisé",
   "consortium.ns.land.done": "Terminé",
   "consortium.ns.land.phAcidic": "Acide",
   "consortium.ns.land.phSlightlyAcidic": "Légèrement acide",

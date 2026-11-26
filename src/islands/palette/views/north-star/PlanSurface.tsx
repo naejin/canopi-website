@@ -5,7 +5,9 @@ import type { PaletteReport, Taxon } from '../../../../lib/palette/index.ts';
 import { buildSilhouetteGeometry, classifyHabitSilhouette } from '../../../../lib/botanical-silhouettes.ts';
 import * as store from '../../store.ts';
 import { P, T } from '../../strings.ts';
+import { drainageChoiceLabel, soilTextureLabel } from '../../rules/soil-labels.ts';
 import { PlantThumb } from './GuildVisuals.tsx';
+import { NumericField } from './NumericField.tsx';
 import { PhotoLightbox } from './PhotoLightbox.tsx';
 import {
   defaultQtyFor,
@@ -21,7 +23,6 @@ import {
   nsUnrecognizedPlants,
 } from './ns-file.ts';
 import {
-  handlePlotM2Input,
   nsCheckedIds,
   nsDrawer,
   nsPathPct,
@@ -32,6 +33,7 @@ import {
   stepQty,
   toggleChecked,
   toggleExisting,
+  updateOverrides,
 } from './ns-state.ts';
 
 export function PlanSurface({ rep }: { rep: PaletteReport }) {
@@ -41,7 +43,11 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
   const qtyMap = nsQtyById.value;
   const pathPct = nsPathPct.value;
   const eff = rep.eff;
-  const texture = eff.drainage ?? store.location.value?.lookup?.soil?.texture ?? 'loam';
+  const loc = store.location.value;
+  const locKey = loc ? `${loc.lat.toFixed(2)},${loc.lon.toFixed(2)}` : '';
+  const texture = eff.drainage
+    ? drainageChoiceLabel(eff.drainage)
+    : soilTextureLabel(loc?.lookup?.soil?.texture);
 
   const netM2 = Math.max(1, Math.round(eff.plotM2 * (1 - pathPct / 100)));
   const knownCrownM2 = Math.round(rep.crownBudget.totalCrownM2 * 10) / 10;
@@ -100,15 +106,15 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
         <div class="plan-inputs">
           <div class="tuner-group">
             <label class="tuner-label" for="plot-m2">{T('ns.land.plot')} (m²)</label>
-            <input
+            <NumericField
               id="plot-m2"
-              class="tuner-input"
-              type="number"
-              min="20"
-              max="50000"
-              step="10"
               value={eff.plotM2}
-              onInput={handlePlotM2Input}
+              min={20}
+              max={50000}
+              inputMode="numeric"
+              unit="m²"
+              resetKey={locKey}
+              onCommit={(n) => { if (n != null) updateOverrides({ plotM2: n }); }}
             />
           </div>
           <div class="tuner-group">
@@ -288,8 +294,8 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
         <div class="land-alert">
           <strong>Site-prep &amp; planting window:</strong>
           <span>
-            {texture} topsoil (pH {fmtNum(eff.soilPh)}
-            {eff.subsoilPh != null ? `, subsoil pH ${fmtNum(eff.subsoilPh)}` : ''}) · 1-in-10 freeze {freezeText(eff)}.
+            {T('studio.tuner.phTexture', { texture })} (pH {fmtNum(eff.soilPh)}
+            {eff.subsoilPh != null ? `, ${T('studio.v07.subsoilPhTag', { ph: fmtNum(eff.subsoilPh) })}` : ''}) · {T('ns.land.freeze10')} {freezeText(eff)}.
           </span>
         </div>
         {rootTraps.length > 0 && (

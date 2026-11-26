@@ -3660,6 +3660,7 @@
   "consortium.ns.land.everydayHead": "Condições do seu terreno",
   "consortium.ns.land.openArrival": "Ver locais e climas de exemplo",
   "consortium.ns.land.resetAll": "Redefinir ajustes",
+  "consortium.ns.land.clampedUsed": "{val} usado",
   "consortium.ns.land.done": "Concluir",
   "consortium.ns.land.phAcidic": "Ácido",
   "consortium.ns.land.phSlightlyAcidic": "Levemente ácido",

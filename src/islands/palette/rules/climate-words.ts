@@ -6,6 +6,7 @@ import { siteClimate } from '../../../lib/palette/index.ts';
 import type { MicroclimateAdjustment } from '../../../lib/climate/wasm-bridge.ts';
 import type { MicroAspect, MicroLandform } from '../state/studio.ts';
 import { pageLang, T } from '../strings.ts';
+import { soilTextureLabel } from './soil-labels.ts';
 
 const fb = (v: string, d: string): string => (v.startsWith('studio.') ? d : v);
 
@@ -234,7 +235,7 @@ export function siteClimateProfile(
   const phRaw = edits?.soilPh ?? loc?.lookup?.soil?.phH2o ?? null;
   const ph = phRaw != null && Number.isFinite(phRaw) ? r1(phRaw) : null;
   const phReaction = ph != null ? phReactionLabel(ph) : null;
-  const soilTexture = loc?.lookup?.soil?.texture ?? null;
+  const soilTexture = loc?.lookup?.soil?.texture ? soilTextureLabel(loc.lookup.soil.texture) : null;
 
   if (!loc?.lookup || !today) {
     const winterTier: WinterTier =

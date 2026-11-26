@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { has, useHarness } from './helpers.mjs';
-import { clickNth, closeDrawerWithEscape, horizontalOverflow, openSuggestedPalette, pageErrorsOf, PFAF_PATTERN, RAW_TECH_PATTERN } from './studio-helpers.mjs';
+import { clickNth, closeDrawerWithEscape, horizontalOverflow, openArrival, openSuggestedPalette, pageErrorsOf, PFAF_PATTERN, RAW_TECH_PATTERN } from './studio-helpers.mjs';
 
 useHarness();
 
@@ -102,4 +102,150 @@ test('i18n (/fr/palette/): zero English leaks, zero PFAF, zero KTMPR across Desi
     assert.ok(!re.test(combined), `/fr/palette/ must not leak ${re}`);
   }
   assert.deepEqual(await pageErrorsOf(page), [], 'zero console/page errors on /fr/palette/');
+});
+
+async function setSoilTexture(page, tex) {
+  await page.evaluate((nextTex) => {
+    const loc = window.__ctTest.store.location.value;
+    if (!loc?.lookup?.soil) return;
+    window.__ctTest.store.location.value = {
+      ...loc,
+      lookup: { ...loc.lookup, soil: { ...loc.lookup.soil, texture: nextTex } },
+    };
+  }, tex);
+}
+
+async function clearFieldWithBackspace(page, sel) {
+  await page.click(sel);
+  await page.evaluate((s) => { document.querySelector(s)?.select(); }, sel);
+  await page.keyboard.press('Backspace');
+}
+
+test('Wave 7.2: localized soil textures (zero snake_case, unknown on null) across Arrival, Land Panel, Atlas, and Plan in en/fr/ru @real-data', async () => {
+  const cases = [
+    { path: '/palette/', expectedTex: 'silty clay loam', expectedUnknown: 'Unknown' },
+    { path: '/fr/palette/', expectedTex: 'limon argilo-silteux', expectedUnknown: 'Inconnu' },
+    { path: '/ru/palette/', expectedTex: 'пылеватый глинистый суглинок', expectedUnknown: 'Неизвестно' },
+  ];
+
+  for (const { path, expectedTex, expectedUnknown } of cases) {
+    const page = await openArrival({ path, width: 390, theme: 'light', hook: true });
+
+    // Force silty_clay_loam on current location
+    await setSoilTexture(page, 'silty_clay_loam');
+    await page.waitForFunction(
+      (exp) => (document.querySelector('.arrival-metrics')?.innerText ?? '').includes(exp),
+      { timeout: 5_000 },
+      expectedTex,
+    );
+    const arrivalText = await page.evaluate(() => document.querySelector('.arrival-metrics')?.innerText ?? '');
+    assert.ok(!arrivalText.includes('silty_clay_loam'), `${path} Arrival must not leak raw silty_clay_loam`);
+    assert.ok(arrivalText.includes(expectedTex), `${path} Arrival renders localized "${expectedTex}"`);
+
+    // Open Studio -> Your land -> Atlas -> Plan
+    await clickNth(page, '.arrival-card .btn-primary:not([disabled])', 0);
+    assert.ok(await has(page, '.studio-shell', 15_000), `${path} Studio renders`);
+
+    await clickNth(page, '.place-pill', 0);
+    assert.ok(await has(page, '.land-panel[role="dialog"]', 5_000), `${path} Land panel opens`);
+    const landText = await page.evaluate(() => document.querySelector('.land-panel')?.innerText ?? '');
+    assert.ok(!landText.includes('silty_clay_loam'), `${path} Land panel must not leak raw silty_clay_loam`);
+    assert.ok(landText.includes(expectedTex), `${path} Land panel renders localized "${expectedTex}"`);
+
+    // Open Atlas from Land panel footer
+    await clickNth(page, '.land-drawer-foot .btn-ghost', 0);
+    assert.ok(await has(page, '.drawer[role="dialog"]', 8_000), `${path} Atlas opens`);
+    const atlasText = await page.evaluate(() => document.querySelector('.drawer')?.innerText ?? '');
+    assert.ok(!atlasText.includes('silty_clay_loam'), `${path} Atlas must not leak raw silty_clay_loam`);
+    assert.ok(atlasText.includes(expectedTex), `${path} Atlas renders localized "${expectedTex}"`);
+    await closeDrawerWithEscape(page);
+
+    // Switch to Plan surface
+    await clickNth(page, '.studio-left .seg button', 1);
+    assert.ok(await has(page, '.budget-bar[role="progressbar"]', 8_000), `${path} Plan renders`);
+    const planText = await page.evaluate(() => document.querySelector('main')?.innerText ?? '');
+    assert.ok(!planText.includes('silty_clay_loam'), `${path} Plan must not leak raw silty_clay_loam`);
+    assert.ok(planText.includes(expectedTex), `${path} Plan renders localized "${expectedTex}"`);
+
+    // Force null soil texture -> must render localized Unknown (never fake 'loam')
+    await setSoilTexture(page, null);
+    await page.waitForFunction(
+      (unk) => (document.querySelector('main')?.innerText ?? '').includes(unk),
+      { timeout: 5_000 },
+      expectedUnknown,
+    );
+    assert.deepEqual(await pageErrorsOf(page), [], `${path} zero console/page errors`);
+  }
+});
+
+test('Wave 7.2: NumericField editing (clear, decimal comma, clamp notice, Escape, Reset) on 1440px en and 390px fr @real-data', async () => {
+  for (const cfg of [
+    { path: '/palette/', width: 1440, decimalInput: '-12.5' },
+    { path: '/fr/palette/', width: 390, decimalInput: '-12,5' },
+  ]) {
+    const page = await openSuggestedPalette({ path: cfg.path, width: cfg.width, theme: 'light' });
+    await clickNth(page, '.place-pill', 0);
+    assert.ok(await has(page, '.land-panel[role="dialog"]', 5_000), `${cfg.path} Land panel opens`);
+
+    // Expand Climate & microclimate details to expose elev/slope/freeze/heat/cdd
+    await clickNth(page, '.land-panel .tune-details summary', 1);
+    assert.ok(await has(page, '#freeze-input', 5_000), `${cfg.path} #freeze-input visible`);
+
+    // Check input type & inputMode per field
+    const modes = await page.evaluate(() => ({
+      plotType: document.querySelector('#land-plot-m2')?.getAttribute('type'),
+      plotMode: document.querySelector('#land-plot-m2')?.getAttribute('inputmode'),
+      freezeType: document.querySelector('#freeze-input')?.getAttribute('type'),
+      freezeMode: document.querySelector('#freeze-input')?.getAttribute('inputmode'),
+      heatMode: document.querySelector('#heat-input')?.getAttribute('inputmode'),
+      elevMode: document.querySelector('#elev-input')?.getAttribute('inputmode'),
+    }));
+    assert.equal(modes.plotType, 'text', 'plot input is type=text');
+    assert.equal(modes.plotMode, 'numeric', 'plot input has inputMode=numeric');
+    assert.equal(modes.freezeType, 'text', 'freeze input is type=text');
+    assert.equal(modes.freezeMode, null, 'freeze input omits inputMode so iOS keeps minus key');
+    assert.equal(modes.heatMode, 'decimal', 'heat input has inputMode=decimal');
+    assert.equal(modes.elevMode, 'numeric', 'elev input has inputMode=numeric');
+
+    // Clear #freeze-input with select + Backspace -> stays empty with zero snap-back
+    const origFreeze = await page.evaluate(() => document.querySelector('#freeze-input')?.value ?? '');
+    await clearFieldWithBackspace(page, '#freeze-input');
+    assert.equal(await page.evaluate(() => document.querySelector('#freeze-input')?.value), '', 'freeze stays empty while focused');
+
+    // Type "-" then full decimal (-12.5 or -12,5) and press Enter
+    await page.keyboard.type('-');
+    assert.equal(await page.evaluate(() => document.querySelector('#freeze-input')?.value), '-', 'minus sign does not snap back');
+    await page.keyboard.type(cfg.decimalInput.slice(1));
+    await page.keyboard.press('Enter');
+    assert.equal(await page.evaluate(() => document.querySelector('#freeze-input')?.value), '-12.5', 'freeze commits -12.5');
+
+    // Escape cancels draft without closing Land panel
+    await clearFieldWithBackspace(page, '#freeze-input');
+    await page.keyboard.type('-3');
+    await page.keyboard.press('Escape');
+    assert.ok(await has(page, '.land-panel[role="dialog"]', 2_000), 'Escape cancels draft without closing Land panel');
+    assert.equal(await page.evaluate(() => document.querySelector('#freeze-input')?.value), '-12.5', 'Escape restores committed value');
+
+    // Clamping on blur announces used value
+    await clearFieldWithBackspace(page, '#freeze-input');
+    await page.keyboard.type('-99');
+    await page.evaluate(() => document.querySelector('#freeze-input')?.blur());
+    assert.equal(await page.evaluate(() => document.querySelector('#freeze-input')?.value), '-40', 'out-of-range freeze clamps to -40');
+    assert.ok(await has(page, '[data-clamp-note="freeze-input"]', 2_000), 'clamp status note renders');
+
+    // Clearing optional freeze and blurring restores map default
+    await clearFieldWithBackspace(page, '#freeze-input');
+    await page.evaluate(() => document.querySelector('#freeze-input')?.blur());
+    assert.equal(await page.evaluate(() => document.querySelector('#freeze-input')?.value), origFreeze, 'empty optional blur restores map default');
+
+    // Plot area: type "5" -> "0" -> "0" with no jump at "5"
+    await clearFieldWithBackspace(page, '#land-plot-m2');
+    await page.keyboard.type('5');
+    assert.equal(await page.evaluate(() => document.querySelector('#land-plot-m2')?.value), '5', 'plot stays "5" mid-typing without clamping to 20');
+    await page.keyboard.type('00');
+    await page.keyboard.press('Enter');
+    assert.equal(await page.evaluate(() => document.querySelector('#land-plot-m2')?.value), '500', 'plot commits 500');
+
+    assert.deepEqual(await pageErrorsOf(page), [], `${cfg.path} zero console/page errors`);
+  }
 });
