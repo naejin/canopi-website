@@ -3680,5 +3680,11 @@
   "consortium.ns.land.phSlightlyAcidic": "Ligeramente ácido",
   "consortium.ns.land.phNeutral": "Neutro",
   "consortium.ns.land.phAlkaline": "Alcalino",
+  "consortium.ns.share.btn": "Compartir",
+  "consortium.ns.file.unsaved": "Cambios sin guardar",
+  "consortium.ns.file.readOnlyOpened": "Abierto en solo lectura — Guarda para conservar cambios en {name}",
+  "consortium.ns.file.relinkNeeded": "Sin vincular — Guarda para volver a vincular {name}",
+  "consortium.ns.file.errPermission": "Permiso de escritura denegado",
+  "consortium.ns.file.errWrite": "No se pudo escribir el archivo",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

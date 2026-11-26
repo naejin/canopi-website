@@ -221,7 +221,10 @@
 }
 .seg button[aria-pressed="true"] { background: var(--text); color: var(--bg); }
 .seg-full { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
-.seg-full button { padding: 0 6px; text-align: center; overflow: hidden; text-overflow: ellipsis; }
+.seg-full button {
+  padding: 6px 6px; text-align: center; white-space: normal; line-height: 1.2;
+  display: flex; align-items: center; justify-content: center; overflow-wrap: anywhere;
+}
 .bar-btn {
   display: inline-flex; align-items: center; justify-content: center;
   min-height: 44px; padding: 0 10px; border: 1px solid var(--border-strong);

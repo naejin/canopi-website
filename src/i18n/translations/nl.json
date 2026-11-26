@@ -3680,5 +3680,11 @@
   "consortium.ns.land.phSlightlyAcidic": "Licht zuur",
   "consortium.ns.land.phNeutral": "Neutraal",
   "consortium.ns.land.phAlkaline": "Kalkrijk",
+  "consortium.ns.share.btn": "Delen",
+  "consortium.ns.file.unsaved": "Niet-opgeslagen wijzigingen",
+  "consortium.ns.file.readOnlyOpened": "Alleen-lezen geopend — Sla op om wijzigingen in {name} te bewaren",
+  "consortium.ns.file.relinkNeeded": "Niet gekoppeld — Sla op om {name} opnieuw te koppelen",
+  "consortium.ns.file.errPermission": "Schrijfrechten geweigerd",
+  "consortium.ns.file.errWrite": "Kan bestand niet schrijven",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

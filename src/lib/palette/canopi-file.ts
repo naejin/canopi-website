@@ -152,14 +152,15 @@ export function canopiFile(members: readonly Taxon[], opts: CanopiFileOptions): 
   const sourceEntries = opts.preservedEntries
     ?? (Array.isArray(opts.baseDoc?.consortiums) ? (opts.baseDoc.consortiums as Record<string, unknown>[]) : []);
   for (const entry of sourceEntries) {
-    if (isNonSpeciesConsortiumEntry(entry)) {
-      consortiums.push(entry);
-      continue;
-    }
     if (isSpeciesConsortiumEntry(entry)) {
       const key = entry.target.canonical_name.trim().toLowerCase();
       if (!activeSpecies.has(key) || seenSpecies.has(key)) continue;
       seenSpecies.add(key);
+      consortiums.push(entry);
+      continue;
+    }
+    // Preserve non-species targets (genus/family) and any unknown/malformed entries verbatim
+    if (entry && typeof entry === 'object' && !Array.isArray(entry)) {
       consortiums.push(entry);
     }
   }
@@ -312,6 +313,9 @@ export function parseCanopiFile(jsonText: string): ParsedCanopiFile {
       } else if (isNonSpeciesConsortiumEntry(c)) {
         rawConsortiums.push(c);
         nonSpeciesEntries.push(c);
+      } else if (c && typeof c === 'object' && !Array.isArray(c)) {
+        // Keep malformed/unknown target entries verbatim so round-tripping never drops data
+        rawConsortiums.push(c as Record<string, unknown>);
       }
     }
   }

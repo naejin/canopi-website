@@ -3680,5 +3680,11 @@
   "consortium.ns.land.phSlightlyAcidic": "微酸性",
   "consortium.ns.land.phNeutral": "中性",
   "consortium.ns.land.phAlkaline": "碱性",
+  "consortium.ns.share.btn": "分享",
+  "consortium.ns.file.unsaved": "有未保存的更改",
+  "consortium.ns.file.readOnlyOpened": "以只读方式打开 — 保存以将更改写入 {name}",
+  "consortium.ns.file.relinkNeeded": "未关联文件 — 保存以重新关联 {name}",
+  "consortium.ns.file.errPermission": "写入权限被拒绝",
+  "consortium.ns.file.errWrite": "无法写入文件",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

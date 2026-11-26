@@ -209,3 +209,76 @@ test('R4 & R5: language-switch suppression works cleanly and v8 files are never 
   await new Promise((r) => setTimeout(r, 50));
   assert.equal(writeCalls, 0, 'v8 handle is never written to');
 });
+
+test('Review round 1 fixes: malformed target preserved, language-switch baseDoc/relink survival, pickCoordinates dirty, localized errors', async () => {
+  // 1. Malformed consortiums target entry is preserved verbatim
+  nsFile.resetCanopiFileState();
+  const malformedEntry = { target: { strange: 42 }, stratum: 'medium', start_phase: 1, end_phase: 5 };
+  const docWithMalformed = {
+    version: 9,
+    name: 'Malformed Entry Test',
+    description: null,
+    plant_species_colors: {},
+    layers: [{ id: 'l1' }],
+    plants: [{ id: 'p1', species_canonical_name: temperate[0].canonical_name }],
+    zones: [{ id: 'z1' }],
+    annotations: [],
+    consortiums: [
+      { target: { kind: 'species', canonical_name: temperate[0].canonical_name }, stratum: 'high', start_phase: 2, end_phase: 6 },
+      malformedEntry,
+    ],
+    groups: [],
+    timeline: [],
+    budget: [],
+    created_at: '2026-11-01T00:00:00Z',
+    updated_at: '2026-11-01T00:00:00Z',
+  };
+  const parsed = core.parseCanopiFile(JSON.stringify(docWithMalformed));
+  const out = JSON.parse(core.canopiFile([temperate[0]], {
+    name: parsed.name,
+    description: parsed.description,
+    at: '2026-11-26T00:00:00Z',
+    baseDoc: parsed.baseDoc,
+    preservedEntries: parsed.rawConsortiums,
+  }));
+  assert.ok(out.consortiums.some((c) => c.target?.strange === 42), 'malformed target entry survives verbatim');
+
+  // 2. Language-switch session hydration preserves baseDoc + rawConsortiums + flags relinkNeeded when IDB unavailable
+  await nsFile.openCanopiText(JSON.stringify(docWithMalformed), { fileName: 'app.canopi', handle: { name: 'app.canopi', async createWritable() { return { async write() {}, async close() {} }; } } });
+  const snap = nsFile.getFileSessionState();
+  assert.equal(snap.wasLinked, true);
+  assert.deepEqual(snap.baseDoc?.zones, [{ id: 'z1' }]);
+  nsFile.resetCanopiFileState();
+  nsFile.hydrateFileSession({
+    fileName: 'app.canopi',
+    dirty: false,
+    baseDoc: snap.baseDoc,
+    preservedEntries: snap.preservedEntries,
+    wasLinked: snap.wasLinked,
+  });
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(nsFile.nsFileRelinkNeeded.value, true, 'signals relinkNeeded when handle cannot be restored');
+  store.members.value = [temperate[0].id];
+  const rebuilt = JSON.parse(nsFile.buildCurrentCanopiText());
+  assert.deepEqual(rebuilt.zones, [{ id: 'z1' }], 'baseDoc zones survive language switch');
+  assert.deepEqual(rebuilt.layers, [{ id: 'l1' }], 'baseDoc layers survive language switch');
+  assert.ok(rebuilt.consortiums.some((c) => c.target?.strange === 42), 'preservedEntries survive language switch');
+
+  // 3. pickCoordinates marks dirty in Studio when user changes place
+  store.view.value = 'matrix';
+  nsFile.nsDirty.value = false;
+  await nsState.pickCoordinates(43.61, 3.88, 'Montpellier, France', 'Mediterranean', 'FR');
+  assert.equal(nsFile.nsDirty.value, true, 'user Change place marks dirty');
+
+  // 4. Denied write permission sets localized error status (never crashes or leaves raw error)
+  const deniedHandle = {
+    name: 'denied.canopi',
+    async requestPermission() { return 'denied'; },
+    async createWritable() { throw new Error('should not reach'); },
+  };
+  await nsFile.openCanopiText(JSON.stringify(docWithMalformed), { fileName: 'denied.canopi', handle: deniedHandle });
+  const saved = await nsFile.saveCanopiFile();
+  assert.equal(saved, false);
+  assert.equal(nsFile.nsFileStatus.value.kind, 'error');
+  assert.ok(nsFile.nsFileStatus.value.reason.length > 0);
+});

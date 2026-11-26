@@ -19,7 +19,9 @@ import {
   nsDirty,
   nsFileLinked,
   nsFileName,
+  nsFileRelinkNeeded,
   nsFileStatus,
+  nsFileWriteGranted,
 } from './ns-file.ts';
 import {
   nsDrawer,
@@ -54,6 +56,8 @@ export function NorthStarStudio() {
   const dirty = nsDirty.value;
   const fileName = nsFileName.value;
   const linked = nsFileLinked.value;
+  const writeGranted = nsFileWriteGranted.value;
+  const relinkNeeded = nsFileRelinkNeeded.value;
   const fileStatus = nsFileStatus.value;
 
   const rawOv = nsOverrides.value;
@@ -126,9 +130,15 @@ export function NorthStarStudio() {
     ? T('ns.file.saving')
     : fileStatus.kind === 'error'
       ? T('ns.file.notSaved', { reason: fileStatus.reason })
-      : linked && fileStatus.kind === 'saved' && !dirty && fileName
-        ? T('ns.file.savedTo', { name: fileName })
-        : null;
+      : relinkNeeded && fileName
+        ? T('ns.file.relinkNeeded', { name: fileName })
+        : linked && !writeGranted && fileName
+          ? T('ns.file.readOnlyOpened', { name: fileName })
+          : dirty
+            ? T('ns.file.unsaved')
+            : linked && fileStatus.kind === 'saved' && !dirty && fileName
+              ? T('ns.file.savedTo', { name: fileName })
+              : null;
 
   return (
     <div class="ns-studio">
@@ -193,7 +203,7 @@ export function NorthStarStudio() {
               type="button"
               onClick={() => { nsDrawer.value = { kind: 'share' }; }}
             >
-              {T('ns.plan.share')}
+              {T('ns.share.btn')}
             </button>
             <button
               class={`bar-btn bar-desktop-only${dirty ? ' bar-btn-dirty' : ''}`}

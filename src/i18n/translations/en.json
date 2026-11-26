@@ -3680,5 +3680,11 @@
   "consortium.ns.land.phSlightlyAcidic": "Slightly acidic",
   "consortium.ns.land.phNeutral": "Neutral",
   "consortium.ns.land.phAlkaline": "Alkaline",
+  "consortium.ns.share.btn": "Share",
+  "consortium.ns.file.unsaved": "Unsaved changes",
+  "consortium.ns.file.readOnlyOpened": "Opened read-only — Save to keep changes in {name}",
+  "consortium.ns.file.relinkNeeded": "Not linked — Save to link {name} again",
+  "consortium.ns.file.errPermission": "Write permission denied",
+  "consortium.ns.file.errWrite": "Could not write file",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

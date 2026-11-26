@@ -33,9 +33,11 @@ import { pageLang, T } from '../../strings.ts';
 import type { LightKey } from './ns-helpers.ts';
 import {
   ensureBeforeUnloadGuard,
+  getFileSessionState,
   hydrateFileSession,
   markNsDirty,
   nsDirty,
+  nsFileLinked,
   nsFileName,
   nsFileStatus,
   nsNonSpeciesEntries,
@@ -44,6 +46,7 @@ import {
   registerStudioFileHooks,
   resetCanopiFileState,
   saveCanopiFile,
+  type NsFileSessionSnapshot,
 } from './ns-file.ts';
 
 export function currentLocale(): Locale {
@@ -136,7 +139,7 @@ const EXISTING_KEY = 'canopi-ns-existing';
 const CHECKED_KEY = 'canopi-ns-checked';
 const NS_SESSION_KEY = 'canopi-ns-session';
 
-interface NsSessionSnapshot {
+interface NsSessionSnapshot extends NsFileSessionSnapshot {
   surface?: NsSurface;
   viewMode?: NsViewMode;
   scenario?: ReportHorizonId;
@@ -152,10 +155,6 @@ interface NsSessionSnapshot {
   pickerScrollTop?: number;
   pickerFocusId?: PlantId | null;
   site?: { lat: number; lon: number; label: string; zone?: ClimateZone; country?: string };
-  dirty?: boolean;
-  fileName?: string | null;
-  unrecognizedPlants?: readonly CanopiCustomPlant[];
-  nonSpeciesEntries?: readonly CanopiNonSpeciesEntry[];
 }
 
 function readNsSession(): NsSessionSnapshot {
@@ -227,6 +226,7 @@ function writeNsSessionSnapshot(): void {
   try {
     if (typeof sessionStorage === 'undefined') return;
     const loc = store.location.peek();
+    const fileSnap = getFileSessionState();
     const snap: NsSessionSnapshot = {
       surface: nsSurface.peek(),
       viewMode: nsViewMode.peek(),
@@ -246,6 +246,9 @@ function writeNsSessionSnapshot(): void {
       fileName: nsFileName.peek(),
       unrecognizedPlants: nsUnrecognizedPlants.peek(),
       nonSpeciesEntries: nsNonSpeciesEntries.peek(),
+      baseDoc: fileSnap.baseDoc,
+      preservedEntries: fileSnap.preservedEntries,
+      wasLinked: fileSnap.wasLinked,
       ...(loc && loc.label
         ? {
             site: {
@@ -500,6 +503,7 @@ export function startNsWatchers(): void {
     void nsPickerFocusId.value;
     void nsDirty.value;
     void nsFileName.value;
+    void nsFileLinked.value;
     void nsUnrecognizedPlants.value;
     void nsNonSpeciesEntries.value;
     void store.location.value;
@@ -637,6 +641,7 @@ export async function pickCoordinates(
       store.climate.value = zone;
       if (country) store.country.value = { code: country, source: 'location' };
     });
+    if (!preserveOverrides) markNsDirty();
     writeNsSessionSnapshot();
   } finally {
     nsSiteLoading.value = false;

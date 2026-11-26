@@ -49,6 +49,7 @@ export const nsDirty = signal<boolean>(false);
 export const nsFileName = signal<string | null>(null);
 export const nsFileLinked = signal<boolean>(false);
 export const nsFileWriteGranted = signal<boolean>(false);
+export const nsFileRelinkNeeded = signal<boolean>(false);
 export const nsFileStatus = signal<NsFileStatus>({ kind: 'idle' });
 export const nsUnrecognizedPlants = signal<readonly CanopiCustomPlant[]>([]);
 export const nsNonSpeciesEntries = signal<readonly CanopiNonSpeciesEntry[]>([]);
@@ -59,14 +60,59 @@ let preservedEntries: readonly Record<string, unknown>[] = [];
 let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
 let unloadBound = false;
 
-function supportsFileSystemSave(): boolean {
-  return typeof window !== 'undefined'
-    && typeof (window as unknown as { showSaveFilePicker?: unknown }).showSaveFilePicker === 'function';
+const HANDLE_DB_NAME = 'canopi-ns-file-handles';
+const HANDLE_STORE_NAME = 'handles';
+const HANDLE_KEY = 'active';
+
+function openHandleDb(): Promise<IDBDatabase | null> {
+  if (typeof indexedDB === 'undefined') return Promise.resolve(null);
+  return new Promise((resolve) => {
+    try {
+      const req = indexedDB.open(HANDLE_DB_NAME, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(HANDLE_STORE_NAME)) db.createObjectStore(HANDLE_STORE_NAME);
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+    } catch {
+      resolve(null);
+    }
+  });
 }
 
-function supportsFileSystemOpen(): boolean {
-  return typeof window !== 'undefined'
-    && typeof (window as unknown as { showOpenFilePicker?: unknown }).showOpenFilePicker === 'function';
+async function saveFileHandleToIdb(handle: FileSystemFileHandleLike | null): Promise<void> {
+  const db = await openHandleDb();
+  if (!db) return;
+  try {
+    await new Promise<void>((resolve) => {
+      const tx = db.transaction(HANDLE_STORE_NAME, 'readwrite');
+      const storeObj = tx.objectStore(HANDLE_STORE_NAME);
+      if (handle) storeObj.put(handle, HANDLE_KEY);
+      else storeObj.delete(HANDLE_KEY);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+    });
+  } catch { /* ignore private-mode or non-cloneable test stub */ }
+  db.close();
+}
+
+async function loadFileHandleFromIdb(): Promise<FileSystemFileHandleLike | null> {
+  const db = await openHandleDb();
+  if (!db) return null;
+  try {
+    const found = await new Promise<FileSystemFileHandleLike | null>((resolve) => {
+      const tx = db.transaction(HANDLE_STORE_NAME, 'readonly');
+      const req = tx.objectStore(HANDLE_STORE_NAME).get(HANDLE_KEY);
+      req.onsuccess = () => resolve((req.result as FileSystemFileHandleLike | undefined) ?? null);
+      req.onerror = () => resolve(null);
+    });
+    db.close();
+    return found;
+  } catch {
+    db.close();
+    return null;
+  }
 }
 
 function cancelAutoSaveTimer(): void {
@@ -81,29 +127,72 @@ export function resetCanopiFileState(): void {
   activeFileHandle = null;
   baseCanopiDoc = null;
   preservedEntries = [];
+  void saveFileHandleToIdb(null);
   batch(() => {
     nsDirty.value = false;
     nsFileName.value = null;
     nsFileLinked.value = false;
     nsFileWriteGranted.value = false;
+    nsFileRelinkNeeded.value = false;
     nsFileStatus.value = { kind: 'idle' };
     nsUnrecognizedPlants.value = [];
     nsNonSpeciesEntries.value = [];
   });
 }
 
-export function hydrateFileSession(snap: {
+export function getFileSessionState(): {
+  baseDoc: Record<string, unknown> | null;
+  preservedEntries: readonly Record<string, unknown>[];
+  wasLinked: boolean;
+} {
+  return {
+    baseDoc: baseCanopiDoc,
+    preservedEntries,
+    wasLinked: nsFileLinked.peek(),
+  };
+}
+
+export interface NsFileSessionSnapshot {
   dirty?: boolean;
   fileName?: string | null;
   unrecognizedPlants?: readonly CanopiCustomPlant[];
   nonSpeciesEntries?: readonly CanopiNonSpeciesEntry[];
-}): void {
+  baseDoc?: Record<string, unknown> | null;
+  preservedEntries?: readonly Record<string, unknown>[];
+  wasLinked?: boolean;
+}
+
+export function hydrateFileSession(snap: NsFileSessionSnapshot): void {
+  if (snap.baseDoc && typeof snap.baseDoc === 'object' && !Array.isArray(snap.baseDoc)) {
+    baseCanopiDoc = snap.baseDoc;
+  }
+  if (Array.isArray(snap.preservedEntries)) {
+    preservedEntries = snap.preservedEntries;
+  }
   batch(() => {
     if (typeof snap.dirty === 'boolean') nsDirty.value = snap.dirty;
     if (typeof snap.fileName === 'string' && snap.fileName) nsFileName.value = snap.fileName;
     if (Array.isArray(snap.unrecognizedPlants)) nsUnrecognizedPlants.value = snap.unrecognizedPlants;
     if (Array.isArray(snap.nonSpeciesEntries)) nsNonSpeciesEntries.value = snap.nonSpeciesEntries;
   });
+  if (snap.wasLinked) {
+    void loadFileHandleFromIdb().then((handle) => {
+      if (handle && typeof handle.createWritable === 'function') {
+        activeFileHandle = handle;
+        batch(() => {
+          nsFileLinked.value = true;
+          nsFileWriteGranted.value = false;
+          nsFileRelinkNeeded.value = false;
+        });
+      } else {
+        batch(() => {
+          nsFileLinked.value = false;
+          nsFileWriteGranted.value = false;
+          nsFileRelinkNeeded.value = true;
+        });
+      }
+    });
+  }
 }
 
 export interface StudioFilePayloadContext {
@@ -178,11 +267,22 @@ export function buildCurrentCanopiText(): string {
 async function writeToHandle(handle: FileSystemFileHandleLike, text: string): Promise<void> {
   if (typeof handle.requestPermission === 'function' && !nsFileWriteGranted.peek()) {
     const perm = await handle.requestPermission({ mode: 'readwrite' });
-    if (perm !== 'granted') throw new Error('Write permission denied');
+    if (perm !== 'granted') {
+      const err = new Error('PERMISSION_DENIED');
+      err.name = 'NotAllowedError';
+      throw err;
+    }
   }
   const writable = await handle.createWritable();
   await writable.write(text);
   await writable.close();
+}
+
+function localizedWriteError(err: unknown): string {
+  const name = (err as { name?: string })?.name;
+  const msg = (err as Error)?.message ?? '';
+  if (name === 'NotAllowedError' || msg === 'PERMISSION_DENIED') return T('ns.file.errPermission');
+  return T('ns.file.errWrite');
 }
 
 export function markNsDirty(): void {
@@ -223,9 +323,11 @@ export async function saveCanopiFile(opts: { saveAs?: boolean; silent?: boolean 
         nsFileStatus.value = { kind: 'saving' };
         await writeToHandle(target, text);
         activeFileHandle = target;
+        void saveFileHandleToIdb(target);
         batch(() => {
           nsFileLinked.value = true;
           nsFileWriteGranted.value = true;
+          nsFileRelinkNeeded.value = false;
           if (target?.name) nsFileName.value = target.name;
           else if (!nsFileName.peek()) nsFileName.value = defaultName;
           nsDirty.value = false;
@@ -239,10 +341,10 @@ export async function saveCanopiFile(opts: { saveAs?: boolean; silent?: boolean 
         nsFileStatus.value = { kind: 'idle' };
         return false;
       }
-      const msg = (err as Error)?.message || 'Write failed';
+      const reason = localizedWriteError(err);
       batch(() => {
         if (opts.silent) nsFileWriteGranted.value = false;
-        nsFileStatus.value = { kind: 'error', reason: msg };
+        nsFileStatus.value = { kind: 'error', reason };
       });
       return false;
     }
@@ -350,6 +452,7 @@ export async function openCanopiText(
   // Rule 3: If opened file version !== 9, NEVER overwrite it in place.
   const canLinkInPlace = parsed.version === CANOPI_FILE_VERSION && Boolean(opts.handle);
   activeFileHandle = canLinkInPlace ? (opts.handle ?? null) : null;
+  void saveFileHandleToIdb(activeFileHandle);
   baseCanopiDoc = parsed.baseDoc;
   preservedEntries = parsed.rawConsortiums;
 
@@ -358,6 +461,7 @@ export async function openCanopiText(
     nsFileLinked.value = canLinkInPlace;
     // Open starts read-only: first explicit Save asks write permission, then edits auto-save.
     nsFileWriteGranted.value = false;
+    nsFileRelinkNeeded.value = false;
     nsFileStatus.value = { kind: 'idle' };
     nsUnrecognizedPlants.value = unrecognized;
     nsNonSpeciesEntries.value = parsed.nonSpeciesEntries;

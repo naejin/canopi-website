@@ -3680,5 +3680,11 @@
   "consortium.ns.land.phSlightlyAcidic": "Слабокислая",
   "consortium.ns.land.phNeutral": "Нейтральная",
   "consortium.ns.land.phAlkaline": "Щелочная",
+  "consortium.ns.share.btn": "Поделиться",
+  "consortium.ns.file.unsaved": "Есть несохранённые изменения",
+  "consortium.ns.file.readOnlyOpened": "Открыто только для чтения — сохраните, чтобы записать в {name}",
+  "consortium.ns.file.relinkNeeded": "Связь потеряна — сохраните, чтобы снова связать {name}",
+  "consortium.ns.file.errPermission": "Нет разрешения на запись",
+  "consortium.ns.file.errWrite": "Не удалось записать файл",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

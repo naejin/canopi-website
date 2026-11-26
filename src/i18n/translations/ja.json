@@ -3680,5 +3680,11 @@
   "consortium.ns.land.phSlightlyAcidic": "弱酸性",
   "consortium.ns.land.phNeutral": "中性",
   "consortium.ns.land.phAlkaline": "アルカリ性",
+  "consortium.ns.share.btn": "共有",
+  "consortium.ns.file.unsaved": "未保存の変更があります",
+  "consortium.ns.file.readOnlyOpened": "読み取り専用で開きました — 保存すると {name} に記録されます",
+  "consortium.ns.file.relinkNeeded": "未リンク — 保存して {name} を再リンクしてください",
+  "consortium.ns.file.errPermission": "書き込み権限が拒否されました",
+  "consortium.ns.file.errWrite": "ファイルを書き込めませんでした",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }
