@@ -8,7 +8,6 @@ import { T } from '../../strings.ts';
 import { markStart } from '../kit/start-mark.ts';
 import { PlantThumb } from './GuildVisuals.tsx';
 import { PlaceSearchBox } from './PlaceSearchBox.tsx';
-import { openCanopiFilePicker } from './ns-file.ts';
 import {
   doyToDateLabel,
   fmtNum,
@@ -28,6 +27,7 @@ import {
   launchWithStarter,
   NS_PRESETS,
   nsSiteLoading,
+  openCanopiAndToast,
   pickCoordinates,
   siteAnalogueLabel,
   startNsWatchers,
@@ -92,9 +92,8 @@ export function NorthStarArrival() {
 
   async function onOpenCanopiFile() {
     setOpenErr(null);
-    const res = await openCanopiFilePicker();
-    if (!res) return;
-    if (!res.ok) setOpenErr(res.error);
+    const res = await openCanopiAndToast();
+    if (res && !res.ok) setOpenErr(res.error);
   }
 
   const renderPresetChip = (p: (typeof NS_PRESETS)[number], fullLabel: boolean, onPicked?: () => void) => (

@@ -325,19 +325,19 @@ export async function saveCanopiAndToast(saveAs = false): Promise<boolean> {
   return ok;
 }
 
-export async function openCanopiAndToast(): Promise<boolean> {
+export async function openCanopiAndToast() {
   const res = await openCanopiFilePicker();
-  if (!res) return false;
+  if (!res) return null;
   if (!res.ok) {
     showNsToast(res.error);
-    return false;
+    return res;
   }
   showNsToast(
     res.placedAdded > 0
       ? T('ns.file.openedWithPlaced', { name: res.name, n: res.placedAdded })
       : T('ns.file.opened', { name: res.name }),
   );
-  return true;
+  return res;
 }
 
 export function updateOverrides(patch: Partial<ReportSiteOverrides>): void {
