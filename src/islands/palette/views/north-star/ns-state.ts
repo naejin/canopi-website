@@ -136,8 +136,6 @@ export const NS_PRESETS: readonly NsPresetSite[] = [
   { id: 'belem', label: 'Belém, Brazil', sub: 'Tropical (Af)', lat: -1.45, lon: -48.50, zone: 'Tropical', country: 'BR' },
 ];
 
-const EXISTING_KEY = 'canopi-ns-existing';
-const CHECKED_KEY = 'canopi-ns-checked';
 const NS_SESSION_KEY = 'canopi-ns-session';
 
 interface NsSessionSnapshot extends NsFileSessionSnapshot {
@@ -146,6 +144,8 @@ interface NsSessionSnapshot extends NsFileSessionSnapshot {
   scenario?: ReportHorizonId;
   overrides?: ReportSiteOverrides;
   qtyById?: Record<string, number>;
+  existingIds?: PlantId[];
+  checkedIds?: PlantId[];
   pathPct?: number;
   kidsPets?: boolean;
   drawer?: NsDrawer;
@@ -172,20 +172,8 @@ function readNsSession(): NsSessionSnapshot {
 
 const initialSession = readNsSession();
 
-function readIdSet(key: string): ReadonlySet<PlantId> {
-  try {
-    const raw = localStorage.getItem(key);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return new Set(Array.isArray(parsed) ? parsed.filter((x) => typeof x === 'string') : []);
-  } catch {
-    return new Set();
-  }
-}
-
-function writeIdSet(key: string, set: ReadonlySet<PlantId>): void {
-  try {
-    localStorage.setItem(key, JSON.stringify([...set]));
-  } catch { /* ignore storage quota */ }
+function idSetFromSession(ids: readonly PlantId[] | undefined): ReadonlySet<PlantId> {
+  return new Set(Array.isArray(ids) ? ids.filter((x): x is PlantId => typeof x === 'string') : []);
 }
 
 export const nsSurface = signal<NsSurface>(initialSession.surface ?? 'design');
@@ -234,6 +222,8 @@ function writeNsSessionSnapshot(): void {
       scenario: nsScenario.peek(),
       overrides: nsOverrides.peek(),
       qtyById: nsQtyById.peek(),
+      existingIds: [...nsExistingIds.peek()],
+      checkedIds: [...nsCheckedIds.peek()],
       pathPct: nsPathPct.peek(),
       kidsPets: nsKidsPets.peek(),
       drawer: nsDrawer.peek(),
@@ -266,8 +256,8 @@ function writeNsSessionSnapshot(): void {
     sessionStorage.setItem(NS_SESSION_KEY, JSON.stringify(snap));
   } catch { /* ignore private-mode quota */ }
 }
-const nsExistingIds = signal<ReadonlySet<PlantId>>(readIdSet(EXISTING_KEY));
-export const nsCheckedIds = signal<ReadonlySet<PlantId>>(readIdSet(CHECKED_KEY));
+const nsExistingIds = signal<ReadonlySet<PlantId>>(idSetFromSession(initialSession.existingIds));
+export const nsCheckedIds = signal<ReadonlySet<PlantId>>(idSetFromSession(initialSession.checkedIds));
 export const nsLayerValues = signal<ReadonlyMap<PlantId, readonly LayerValue[]>>(new Map());
 export const nsAllNames = signal<readonly PlantNames[] | null>(null);
 export const nsAllTaxa = signal<readonly Taxon[] | null>(null);
@@ -287,7 +277,6 @@ export function toggleExisting(id: PlantId): void {
   if (next.has(id)) next.delete(id);
   else next.add(id);
   nsExistingIds.value = next;
-  writeIdSet(EXISTING_KEY, next);
   markNsDirty();
 }
 
@@ -296,7 +285,6 @@ export function toggleChecked(id: PlantId): void {
   if (next.has(id)) next.delete(id);
   else next.add(id);
   nsCheckedIds.value = next;
-  writeIdSet(CHECKED_KEY, next);
 }
 
 export function stepQty(id: PlantId, delta: number, defaultQty: number): void {
@@ -470,9 +458,7 @@ export function startNsWatchers(): void {
         }
         if (meta.qtyById) nsQtyById.value = { ...meta.qtyById };
         if (Array.isArray(meta.existingIds)) {
-          const next = new Set<PlantId>(meta.existingIds);
-          nsExistingIds.value = next;
-          writeIdSet(EXISTING_KEY, next);
+          nsExistingIds.value = new Set<PlantId>(meta.existingIds);
         }
         if (typeof meta.pathPct === 'number') nsPathPct.value = meta.pathPct;
       });
@@ -502,6 +488,8 @@ export function startNsWatchers(): void {
     void nsScenario.value;
     void nsOverrides.value;
     void nsQtyById.value;
+    void nsExistingIds.value;
+    void nsCheckedIds.value;
     void nsPathPct.value;
     void nsKidsPets.value;
     void nsDrawer.value;

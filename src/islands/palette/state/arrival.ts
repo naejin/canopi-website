@@ -9,12 +9,12 @@ import { bringsPlace, countryZones, decodeLink, linkOrigin, NO_EDITS, readPreset
 import type { Country } from '../store.ts';
 import * as store from '../store.ts';
 import {
-  attempt, currentFragment, fromOf, memory, quietly, readRecord, shows, storageWorks, watchStore,
-  COUNTRY_STORE, LOCATION_STORE, NO_COUNTRY, PLACE_STORE, SITE_CLIMATE, STORE, type CountryFrom, type OwnPlace, type SavedRecord,
+  attempt, currentFragment, fromOf, memory, quietly, shows, storageWorks, watchStore,
+  COUNTRY_STORE, LOCATION_STORE, NO_COUNTRY, SITE_CLIMATE, type CountryFrom, type OwnPlace, type SavedRecord,
 } from './persist.ts';
 import { state as schema } from './schema.ts';
 import { applyPreset, locationAtStart, notices, ownCell, ownLocation, restore, waitForSource, NO_NOTICES } from './restore.ts';
-import { forgets, lastSave } from './save.ts';
+import { forgets, lastSave, LEGACY_PALETTE_KEYS } from './save.ts';
 import { watchSuggest } from './suggest-wait.ts';
 
 // A fragment is a share link when it holds the link's version or its member list (a member list with
@@ -246,7 +246,8 @@ export function openingArrival(): Arrival {
   if (opened) return opened;
   const hist = attempt(() => history.state);
   const state = ownOf(hist) ? hist : (consumeLangSwitchState() ?? hist);
-  return opened = arrival({ hash: location.hash, search: location.search }, readRecord(memory.read(STORE)), memory.read(SITE_CLIMATE), state, memory.works());
+  // Palettes are never auto-restored from localStorage (Wave 7.1): saved is always null.
+  return opened = arrival({ hash: location.hash, search: location.search }, null, memory.read(SITE_CLIMATE), state, false);
 }
 
 let started = false;
@@ -256,10 +257,10 @@ let started = false;
 export function startMemory(): void {
   if (started || typeof window === 'undefined') return;
   started = true;
+  // One-time cleanup of legacy palette localStorage keys (plain removeItem, never read; Wave 7.1).
+  for (const key of LEGACY_PALETTE_KEYS) memory.remove(key);
   storageWorks.value = memory.works();
-  const raw = memory.read(STORE);
-  const saved = readRecord(raw);
-  lastSave.value = raw;
+  lastSave.value = null;
   const how = openingArrival();
   const languages = attempt(() => [...navigator.languages]) ?? [];
   const zone = attempt(() => Intl.DateTimeFormat().resolvedOptions().timeZone) ?? null;
@@ -269,17 +270,16 @@ export function startMemory(): void {
   // Each country's zones come from the page (built from the same CLDR data); the browser's own only
   // for a country the page has none for, or a page built without them.
   const guess = (): string | null => guessCountry([...store.knownCountries.peek().keys()], { zone, languages, zonesOf: (c) => store.zonesOfCountry(c) ?? countryZones(c) });
-  const seed = memory.read(PLACE_STORE);
   // canopi-location, read once here: whether Place's climate cards wait for its lookup, the reader's
   // own cell for a reload's ask, and the lookup itself.
   const keptLocation = memory.read(LOCATION_STORE);
-  const plan = arrivalPlan(how, { saved, pref: memory.read(COUNTRY_STORE), guess, seed, cell: () => ownCell(keptLocation) });
-  openWith({ how, plan, saved, seed, keptLocation });
+  const plan = arrivalPlan(how, { saved: null, pref: memory.read(COUNTRY_STORE), guess, seed: null, cell: () => ownCell(keptLocation) });
+  openWith({ how, plan, saved: null, seed: null, keptLocation });
 
   // A link pasted into the open tab: opened, unless it is the page's own address (review 3).
   // Back/Forward to the page's own address reopens it as the save, its country label kept (round 2).
   window.addEventListener('hashchange', () => {
-    const act = hashAction(location.hash, attempt(() => history.state), currentFragment(), memory.read(STORE) !== lastSave.peek());
+    const act = hashAction(location.hash, attempt(() => history.state), currentFragment(), false);
     if (act.kind === 'ignore') return;
     const keep = shows();
     if (act.kind === 'saved') { void restore(act.fragment, { from: 'saved', src: act.src, keep, place: act.place, hold: act.hold }); return; }

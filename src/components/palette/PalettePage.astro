@@ -23,7 +23,6 @@ import index from '../../data/palette-index.json';
 import { climatePageData } from '../../data/climate-page-data';
 import { setStrings } from '../../islands/palette/strings.ts';
 import { END_KEY, LINK_VERSION } from '../../lib/palette/state.ts';
-import { SAVE_FRAGMENT_MAX, STORE } from '../../islands/palette/state/save.ts';
 import { LOCATION_STORE, SITE_CLIMATE } from '../../islands/palette/state/persist.ts';
 import '../../styles/palette/north-star.css';
 import '../../styles/palette/print.css';
@@ -143,16 +142,13 @@ setStrings(strings, lang);
           data-kept: a place or a climate is kept on this device (persist.ts LOCATION_STORE,
           SITE_CLIMATE), or the page opens as a palette: a part lands after the island (the figures
           panel), so the island keeps a screen until it renders (base.css; PFD49, fix round 1 R5). */}
-      <script is:inline define:vars={{ linkVersion: String(LINK_VERSION), endKey: END_KEY, saveStore: STORE, saveMax: SAVE_FRAGMENT_MAX, locationStore: LOCATION_STORE, siteClimate: SITE_CLIMATE }}>try {
+      <script is:inline define:vars={{ linkVersion: String(LINK_VERSION), endKey: END_KEY, locationStore: LOCATION_STORE, siteClimate: SITE_CLIMATE }}>try {
         var h = document.getElementById('ct-head');
         var hp = new URLSearchParams((location.hash || '').replace(/^#/, '')), q = new URLSearchParams(location.search);
         var opens = hp.has('v') || hp.has('a') ? 'link' : q.has('plant') && q.has('climate') ? 'preset' : 'start';
         h.dataset.opens = opens;
         var readable = function (f) { var p = new URLSearchParams(f); return p.get('v') === linkVersion && !!p.get('c') && p.get(endKey) === '1'; };
-        var saved = null;
-        try { saved = JSON.parse(localStorage.getItem(saveStore) || 'null'); } catch (e) {}
-        var save = !!saved && typeof saved.fragment === 'string' && saved.fragment.length < saveMax && typeof saved.at === 'string' && readable(saved.fragment);
-        h.dataset.step = (opens === 'link' ? readable(location.hash.slice(1)) : opens === 'preset' || save) ? 'palette' : 'place';
+        h.dataset.step = (opens === 'link' ? readable(location.hash.slice(1)) : opens === 'preset') ? 'palette' : 'place';
         if (h.dataset.step === 'palette') { var li = h.querySelectorAll('#ct-steps > li'); li[0].removeAttribute('aria-current'); li[1].setAttribute('aria-current', 'step'); }
         var kept = false;
         try { kept = !!(localStorage.getItem(locationStore) || localStorage.getItem(siteClimate)); } catch (e) {}

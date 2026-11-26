@@ -284,3 +284,47 @@ test('Review round 1 fixes: malformed target preserved, language-switch baseDoc/
   assert.equal(nsFile.nsFileStatus.value.kind, 'error');
   assert.ok(nsFile.nsFileStatus.value.reason.length > 0);
 });
+
+test('Wave 7.1: startMemory removes leftover legacy palette localStorage keys once on load while keeping site preferences', async () => {
+  const storeMap = new Map([
+    ['canopi-consortium', '{"fragment":"v=5&c=temperate&a=&e=1","at":"2026-11-26T00:00:00Z","src":"chosen"}'],
+    ['canopi-place', 'm=small&z=120'],
+    ['canopi-ns-existing', '["ficus_carica"]'],
+    ['canopi-ns-checked', '["ficus_carica"]'],
+    ['canopi-country', 'FR'],
+    ['canopi-climate', 'mediterranean'],
+    ['canopi-location', '{"lat":43.61,"lon":3.88,"source":"search"}'],
+    ['canopi-theme', 'dark'],
+  ]);
+  const readKeys = [];
+  const origLocal = globalThis.localStorage;
+  const origWindow = globalThis.window;
+  const origLocation = globalThis.location;
+  const origHistory = globalThis.history;
+  globalThis.localStorage = {
+    getItem: (k) => { readKeys.push(k); return storeMap.get(k) ?? null; },
+    setItem: (k, v) => { storeMap.set(k, String(v)); },
+    removeItem: (k) => { storeMap.delete(k); },
+  };
+  globalThis.location = { origin: 'https://projectcanopi.test', pathname: '/palette/', search: '', hash: '', href: 'https://projectcanopi.test/palette/' };
+  globalThis.history = { state: null, replaceState() {} };
+  globalThis.window = { addEventListener() {}, removeEventListener() {} };
+  try {
+    const { LEGACY_PALETTE_KEYS } = await import('../src/islands/palette/state/save.ts');
+    const { startMemory } = await import('../src/islands/palette/state/arrival.ts');
+    startMemory();
+    for (const k of LEGACY_PALETTE_KEYS) {
+      assert.equal(storeMap.has(k), false, `legacy key ${k} removed on load`);
+      assert.equal(readKeys.includes(k), false, `legacy key ${k} is never read`);
+    }
+    assert.equal(storeMap.get('canopi-country'), 'FR', 'canopi-country kept');
+    assert.equal(storeMap.get('canopi-climate'), 'mediterranean', 'canopi-climate kept');
+    assert.ok(storeMap.has('canopi-location'), 'canopi-location kept');
+    assert.equal(storeMap.get('canopi-theme'), 'dark', 'canopi-theme kept');
+  } finally {
+    globalThis.localStorage = origLocal;
+    if (origWindow === undefined) delete globalThis.window; else globalThis.window = origWindow;
+    if (origLocation === undefined) delete globalThis.location; else globalThis.location = origLocation;
+    if (origHistory === undefined) delete globalThis.history; else globalThis.history = origHistory;
+  }
+});

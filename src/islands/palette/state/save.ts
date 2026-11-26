@@ -11,7 +11,14 @@
 import { batch, signal } from '@preact/signals';
 
 export const STORE = 'canopi-consortium';
-// The longest save fragment read back (persist.ts readRecord; PalettePage.astro's head script reads the same cap).
+// Legacy palette localStorage keys removed in Wave 7.1 (cleaned up once on load, never written).
+export const LEGACY_PALETTE_KEYS = [
+  'canopi-consortium',
+  'canopi-place',
+  'canopi-ns-existing',
+  'canopi-ns-checked',
+] as const;
+// The longest save fragment read back (persist.ts readRecord).
 export const SAVE_FRAGMENT_MAX = 20_000;
 
 // ---- storage, guarded ----
@@ -30,7 +37,7 @@ export function guarded(get: () => StorageLike | null | undefined) {
       return attempt(() => {
         const s = get();
         if (!s) return false;
-        const key = `${STORE}-probe`;
+        const key = 'canopi-storage-probe';
         s.setItem(key, '1');
         const ok = s.getItem(key) === '1';
         s.removeItem(key);
@@ -44,36 +51,22 @@ export const memory = guarded(() => (typeof localStorage === 'undefined' ? null 
 
 // ---- the save's state ----
 
-// This page's palette is not the save.
+// This page's palette is not owned yet (e.g. a shared link until edited).
 export const held = signal(true);
-// The save as this page last wrote it, or read it when it opened (arrival.ts startMemory).
+// Always null in Wave 7.1+: browser localStorage never auto-saves palettes.
 export const lastSave = signal<string | null>(null);
 
-// The save's last-changed date (pf hand-off; owner answer Q3, board Arrivals "Your palette is back: …,
-// last changed …"): the record's `at` (persist.ts saveRecord), an ISO 8601 time written only when the
-// palette, its place answers or its country source change (persist.ts writeSave: the time alone never
-// rewrites the save; Undo puts the old record back, `at` with it), so it is the date the palette last
-// changed. null: no save, or no readable date.
 export function changedOf(text: string | null): string | null {
   const at = attempt(() => (text ? (JSON.parse(text) as { at?: unknown } | null)?.at : null));
   return typeof at === 'string' && !Number.isNaN(Date.parse(at)) ? at : null;
 }
 
-// What an undoable action saw: the save as stored, and the flag.
+// What an undoable action saw (in-memory only; never reads or writes localStorage).
 export interface SaveMark { text: string | null; held: boolean }
-export const markSave = (): SaveMark => ({ text: memory.read(STORE), held: held.peek() });
-// The save put back exactly (text) or removed (null), only while the storage still holds what this
-// page last wrote or read: another tab's save, written since, is left alone (R2-2, M1-M3).
-export function putSave(text: string | null): void {
-  const now = memory.read(STORE);
-  if (now !== lastSave.peek() || now === text) return;
-  if (text === null ? memory.remove(STORE) : memory.write(STORE, text)) lastSave.value = text;
-}
-// Undo: the flag and the state back in one batch (persist.ts sees both together), then, held again,
-// the save as it was.
+export const markSave = (): SaveMark => ({ text: null, held: held.peek() });
+// Undo: restore the held flag and the in-memory state in one batch.
 export function undoSave(m: SaveMark, put: () => void): void {
   batch(() => { held.value = m.held; put(); });
-  if (m.held) putSave(m.text);
 }
 
 // "Forget this location" in this tab, counted (sessionStorage, so it outlasts a reload, as the tab's

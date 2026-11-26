@@ -7,9 +7,9 @@
 //   src/lib/contact.mjs and src/lib/correction.mjs log codes only, never content;
 // - storage on the device: src/layouts/Base.astro (theme, climate, the language offer in
 //   sessionStorage), src/components/guides/Checklist.astro, src/islands/palette/state/persist.ts
-//   (the palette with its height limit, plot size and spot answers, the last spot answers that seed a
-//   new palette, country, location, site climate in localStorage; share links in the address's
-//   fragment; privacy.tool.device as owner-approved 2026-11-14, PP-B commit 0b);
+//   (country, location, site climate in localStorage; palettes are not auto-saved in localStorage
+//   and stay in per-tab sessionStorage only for language switches, or in a user-saved .canopi file;
+//   share links live in the address's fragment);
 // - location, place search and map: the P5 design check §B and the owner's answers 4 and 5 (asked
 //   only on the reader's click; the precise point kept on the device; a link holds the 0.1° cell only
 //   with the reader's tick; Nominatim on Enter; OpenFreeMap only once the map opens); the climate

@@ -2,7 +2,7 @@
 type: Module
 title: Privacy page and tool credits
 description: The /privacy/ page in 11 locales, its footer link, and the consortium tool's climate, occurrence, map and search credits on /data-sources/.
-generated: { by: antigravity/gemini-4-neon, at: 2026-11-25T11:39:59Z }
+generated: { by: antigravity/gemini, at: 2026-11-26T07:09:54Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:18Z }
   - { by: antigravity/gemini, at: 2026-11-23T12:36:40Z }
@@ -10,18 +10,18 @@ sources:
   - id: privacypage-astro
     resource: ../../src/components/PrivacyPage.astro
     title: src/components/PrivacyPage.astro
-    digest: sha256:1a2cf7d7db89b2b7
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:9332b762997ea24c
+    last_modified: 2026-11-26T07:01:35Z
   - id: consortium-credits-ts
     resource: ../../src/data/palette-credits.ts
     title: src/data/palette-credits.ts
-    digest: sha256:5fe9e4603c9c8b88
-    last_modified: 2026-11-25T11:27:38Z
+    digest: sha256:74b464a6188aea53
+    last_modified: 2026-11-25T18:47:20Z
   - id: datasourcespage-astro
     resource: ../../src/components/DataSourcesPage.astro
     title: src/components/DataSourcesPage.astro
-    digest: sha256:faeee5017da6b50f
-    last_modified: 2026-11-25T11:27:38Z
+    digest: sha256:b66c56571c531244
+    last_modified: 2026-11-25T18:47:20Z
   - id: footer-astro
     resource: ../../src/components/Footer.astro
     title: src/components/Footer.astro
@@ -61,7 +61,7 @@ sources:
     resource: ../../src/lib/palette/state.ts
     title: src/lib/palette/state.ts
     digest: sha256:2e0eca30c5b18733
-    last_modified: 2026-11-25T11:39:24Z
+    last_modified: 2026-11-25T11:43:47Z
   - id: location-tsx
     resource: ../../src/islands/palette/views/location/location.tsx
     title: src/islands/palette/views/location/location.tsx
@@ -72,13 +72,13 @@ sources:
   - id: persist-ts
     resource: ../../src/islands/palette/state/persist.ts
     title: src/islands/palette/state/persist.ts
-    digest: sha256:abaa195b434f5099
-    last_modified: 2026-11-23T21:07:43Z
+    digest: sha256:2a890a1f06c18c50
+    last_modified: 2026-11-26T07:01:15Z
   - id: location-ts
     resource: ../../src/islands/palette/state/location.ts
     title: src/islands/palette/state/location.ts
-    digest: sha256:86dd45160353ac46
-    last_modified: 2026-11-25T11:27:38Z
+    digest: sha256:b83aef806bdf626b
+    last_modified: 2026-11-26T07:04:30Z
 enforced_by:
   - scripts/palette-p5-seams-s5f.test.mjs
   - scripts/check-built-site.mjs
@@ -99,7 +99,7 @@ The `/privacy/` page in 11 locales (owner answer 4, decision "P5 owner answers",
 
 # What the page claims, and why it is true
 - Hosting: Cloudflare Workers with observability on (`wrangler.jsonc`): Workers Logs hold request details (address, time, browser, approximate location such as city, country and network) for up to 7 days, Cloudflare's documented maximum (linked on the page); the contact and correction handlers log codes only (`src/lib/contact.mjs`, `src/lib/correction.mjs`). No analytics script; the site's code sets no cookies.
-- Device storage: theme, climate, the language offer (sessionStorage) in `Base.astro`; guide checklists; the tool's consortium, country and site climate (`state/persist.ts`, split from the old `memory.ts` in E6 S2; the privacy page's source comment names it since E6 chunk 5) and site location (`state/location.ts`); share links live in the fragment. Since the PP-B second-round review (2026-11-16) the tab also keeps a count of its "Forget this location" presses in sessionStorage (`canopi-forget`, `state/save.ts`: a number, no personal data, read so no history entry brings forgotten answers back); `privacy.tool.device` does not name it (owner-approved text left as it is). Since PP-B commit 0b `privacy.tool.device` is the owner-approved text of 2026-11-14 (EN and FR exact, the 9 others translated, pt Brazilian): it also names the soil files, the palette's height limit, plot size and spot answers, the last spot answers kept to seed the next palette (`canopi-place`), and what "Forget this location" clears, ahead of the streams that build them (b1a, f2); the tool's reader-facing name is "Plant palette" (`privacy.tool.title`, `dataSources.tool.title`).
+- Device storage: theme, climate, the language offer (sessionStorage) in `Base.astro`; guide checklists; the tool's country, site climate (`state/persist.ts`) and site location (`state/location.ts`) in `localStorage`; share links live in the fragment. Since Wave 7.1 (Operator decision `#4325`), palettes are never auto-saved in browser `localStorage` (`canopi-consortium`, `canopi-place`, `canopi-ns-existing`, and `canopi-ns-checked` are removed once on load and never written); only a palette linked to a user-saved `.canopi` file auto-saves, while per-tab `sessionStorage` (`canopi-ns-session`, `canopi-lang-switch`, `canopi-forget`) keeps the active tab's state across language switches. `privacy.tool.device` was updated across all 11 locales to reflect this.
 - Location (S5b, per the P5 design check §B): asked only on click, used on the device to read the climate and the country (`state/location.ts` `locateNow`: `lookup.regions.isoA2`) and saved only on the device; tiles are static files from this site, whole tiles of 100 × 0.1° (climate) and 200 × 0.05° (soil, regions), about 1,000 km. The page says a download does not reveal the *precise* point, not the point: where the point's own cell has no value (sea, ice, a built-up soil gap) within 2 cells of a tile edge, `lookupSite` (`src/lib/climate/index.ts`) also loads the neighbouring tile, which narrows the place to a strip some 10–20 km wide. With the tick a link holds the 0.1° cell centre (`o=`; about 11 km north to south, the page and `consortium.share.locationNote` say "about 11 km") and the country the location gave (`state/persist.ts` `shareState` writes a location's country only with the tick; `state.ts` `encodeLink` `k=`). Nominatim on Enter; OpenFreeMap only once the map opens.
 - `palette-p5-seams-s5f.test.mjs` checks these claims in all 11 locales (the cell size against `CLIMATE_GRID`, the country in the link and device lines, "precise point" in the tiles line); ho-misc's seam check (2026-11-11) fixed "about 10 km", the missing country and the stronger "do not reveal the point".
 - Contact and corrections go by Cloudflare Email Routing to the association's Gmail mailbox; the address is never written in a page.

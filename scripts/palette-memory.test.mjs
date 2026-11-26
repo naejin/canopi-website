@@ -276,7 +276,7 @@ test('restore: the reader acting during a first-visit load cancels it; the link\
   assert.equal(m.restoring.peek(), false);
 });
 
-test('restore: an edit made while a pasted link loads and fails is saved (round 3, 1)', async () => {
+test('restore: an edit made while a pasted link loads and fails is kept in memory without writing localStorage (round 3, 1)', async () => {
   const pool = await shown();
   const link = await linkOf('Mediterranean', 5);
   failing.add('Mediterranean');
@@ -285,12 +285,11 @@ test('restore: an edit made while a pasted link loads and fails is saved (round 
   await wait(5);
   store.members.value = pool.slice(0, 7).map((t) => t.id);
   assert.equal(await r, false);
-  const saved = readRecord(storage.getItem(STORE));
-  assert.ok(saved, 'saved');
-  assert.equal(decodeLink(saved.fragment, { Temperate: pool.map((t) => t.id) }).state.members.length, 7, 'the edit is the saved state');
+  assert.equal(storage.getItem(STORE), null, 'palettes never auto-save to localStorage');
+  assert.equal(decodeLink(m.currentFragment(), { Temperate: pool.map((t) => t.id) }).state.members.length, 7, 'the edit stays in memory/fragment');
 });
 
-test('restore: a cut or old-version link arriving during a first-visit restore leaves nothing stuck; edits save again (round 4, 1)', async () => {
+test('restore: a cut or old-version link arriving during a first-visit restore leaves nothing stuck; edits update fragment without writing localStorage (round 4, 1)', async () => {
   const pool = await shown();
   store.view.value = 'start';
   store.climate.value = null;
@@ -308,11 +307,12 @@ test('restore: a cut or old-version link arriving during a first-visit restore l
   store.view.value = 'matrix';
   writes = 0;
   store.members.value = pool.slice(0, 3).map((t) => t.id);
-  assert.ok(writes > 0, 'an edit is saved again');
-  assert.equal(decodeLink(readRecord(storage.getItem(STORE)).fragment, { Temperate: pool.map((t) => t.id) }).state.members.length, 3);
+  assert.equal(writes, 0, 'no localStorage auto-save on palette edit');
+  assert.equal(storage.getItem(STORE), null);
+  assert.equal(decodeLink(m.currentFragment(), { Temperate: pool.map((t) => t.id) }).state.members.length, 3);
 });
 
-test('restore: an edit during restore A, superseded by a newer restore B that fails, is saved (round 4, 2)', async () => {
+test('restore: an edit during restore A, superseded by a newer restore B that fails, is kept without writing localStorage (round 4, 2)', async () => {
   const pool = await shown();
   const linkA = await linkOf('Tropical', 4), linkB = await linkOf('Mediterranean', 5);
   delays.Tropical = 60;
@@ -325,7 +325,8 @@ test('restore: an edit during restore A, superseded by a newer restore B that fa
   assert.equal(await b, false);
   assert.equal(await a, false, 'the reader acted: A does not apply');
   assert.equal(store.climate.peek(), 'Temperate');
-  assert.equal(decodeLink(readRecord(storage.getItem(STORE)).fragment, { Temperate: pool.map((t) => t.id) }).state.members.length, 8, 'the edit is saved');
+  assert.equal(storage.getItem(STORE), null, 'no localStorage auto-save');
+  assert.equal(decodeLink(m.currentFragment(), { Temperate: pool.map((t) => t.id) }).state.members.length, 8, 'the edit stays in memory/fragment');
   assert.equal(m.restoring.peek(), false);
 });
 
@@ -519,18 +520,13 @@ test('every saved field has a round-trip case below', () => {
 });
 
 for (const [k, c] of Object.entries(CASES)) {
-  test(`save → restore keeps ${k}`, async () => {
+  test(`changing ${k} never auto-saves to localStorage`, async () => {
     const pool = await blankShown();
+    storage.removeItem(STORE);
     await c.change(pool);
     const want = await valueOf(c.want, pool);
     assert.deepEqual(store[k].peek(), want);
-    const rec = readRecord(storage.getItem(STORE));
-    assert.ok(rec, 'saved');
-    await blankShown();
-    assert.notDeepEqual(store[k].peek(), want, 'changed back before the restore');
-    await c.before?.(pool);
-    assert.equal(await m.restore(rec.fragment, { from: 'saved', src: rec.src, place: rec.place }), true);
-    assert.deepEqual(c.fromSave ? c.fromSave(rec) : store[k].peek(), 'saved' in c ? c.saved : want);
+    assert.equal(storage.getItem(STORE), null, 'canopi-consortium is never written to localStorage');
   });
   test(`link → restore keeps ${k}`, async () => {
     const pool = await blankShown();

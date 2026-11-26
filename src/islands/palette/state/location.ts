@@ -34,7 +34,7 @@ import { currentPosition, queryGeolocationPermission, PROMPT_CAP_MS, SITE_POSITI
 import type { Country } from '../store.ts';
 import * as store from '../store.ts';
 import { pageLang } from '../strings.ts';
-import { changeOwnPlace, forgetSavedPlace, memory, pendingLinkClimate, placeAt, quietly, LOCATION_STORE, PLACE_STORE } from './persist.ts';
+import { changeOwnPlace, memory, pendingLinkClimate, placeAt, quietly, LOCATION_STORE } from './persist.ts';
 import { chooseClimate } from './draft.ts';
 import { locationAtStart } from './restore.ts';
 import { noteForget } from './save.ts';
@@ -411,8 +411,6 @@ export function forget(): void {
     changeOwnPlace({ siteEdits: NO_EDITS, location: null });
   });
   if (own) { keepLocation(null); locationAtStart.value = false; }
-  memory.remove(PLACE_STORE);
-  forgetSavedPlace(own);
 }
 
 // "Use it" on a link that brings a place (8.3; coordinator row 2026-11-14): the link's cell becomes

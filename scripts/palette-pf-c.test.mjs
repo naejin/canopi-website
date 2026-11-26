@@ -83,12 +83,11 @@ test('pf-c final1 N4 (board Loading, Old browser): the button names the guides w
   }
 });
 
-test('pf-c final1 N5 (the head painted before the island): the inline script takes the link\'s end key and the save\'s store name from the code that writes them, keeping no copy', () => {
+test('pf-c final1 N5 (the head painted before the island): the inline script takes the link\'s end key from the code that writes it and never reads canopi-consortium', () => {
   const page = readFileSync(new URL('../src/components/palette/PalettePage.astro', import.meta.url), 'utf8');
   const script = page.slice(page.indexOf('<script is:inline define:vars'), page.indexOf('</script>', page.indexOf('<script is:inline define:vars')));
   assert.match(script, /define:vars=\{\{[^}]*\bendKey: END_KEY\b/, 'END_KEY (lib/palette/state.ts) passed in');
-  assert.match(script, /define:vars=\{\{[^}]*\bsaveStore: STORE\b/, 'the save\'s store name (state/save.ts STORE) passed in');
-  assert.doesNotMatch(script, /'canopi-consortium'|p\.get\('e'\)/, 'no copy of the store name or the end key');
+  assert.doesNotMatch(script, /canopi-consortium|saveStore|p\.get\('e'\)/, 'no palette localStorage auto-restore or copy of the end key');
 });
 
 // ---- step back: the country field (board Country "Your country") ----

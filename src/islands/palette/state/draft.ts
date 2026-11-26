@@ -11,8 +11,8 @@ import * as store from '../store.ts';
 import { focusAfterStartOver, focusView } from '../focus.ts';
 import { state as schema } from './schema.ts';
 import { P, T } from '../strings.ts';
-import { adoptPending, attempt, holdSave, linkPlace, memory, placeSaid, placeSeed, COUNTRY_STORE, NO_COUNTRY, PLACE_STORE, SITE_CLIMATE } from './persist.ts';
-import { held, lastSave, putSave, STORE } from './save.ts';
+import { adoptPending, attempt, holdSave, linkPlace, memory, placeSaid, COUNTRY_STORE, NO_COUNTRY, SITE_CLIMATE } from './persist.ts';
+import { held } from './save.ts';
 import { adoptLinkLocation, notices, ownLocation, restore, savedInstead, NO_NOTICES } from './restore.ts';
 import { letGo } from './lookups.ts';
 
@@ -89,7 +89,7 @@ export function backToPlace(): void {
 export function startOver(): void {
   const before = store.snapshot();
   placeSaid.value = '';
-  if (!held.peek()) putSave(null);
+  if (!held.peek()) holdSave(true);
   batch(() => {
     holdSave(true);
     schema.write(schema.valuesOf(schema.lists.plants));
@@ -123,11 +123,8 @@ export async function useLinkPlace(): Promise<void> {
     if (linkPlace.peek() !== pending) return;
     const c = store.country.peek();
     if (c.code && c.source === 'link') chooseCountry(c.code);
-    // The notice ends first, so the seed takes the link's place now the reader's (placeSeed writes the
-    // reader's own values while a link's place waits).
     linkPlace.value = null;
-    const seeded = memory.write(PLACE_STORE, placeSeed());
-    answered(T(kept && seeded ? 'place.usedLink' : 'place.usedLinkUnkept'));
+    answered(T(kept ? 'place.usedLink' : 'place.usedLinkUnkept'));
   } finally { answering.value = false; }
 }
 
@@ -151,7 +148,6 @@ export function useOwnPlace(): void {
 // with no link, which owns it. What storage holds when pressed, another tab's save included, becomes
 // the save this page writes over (fix round 4, s-5), so it never writes a palette of its own over it.
 export async function openSavedInstead(): Promise<void> {
-  lastSave.value = memory.read(STORE);
   const saved = savedInstead.peek();
   if (!saved) return;
   notices.value = { ...notices.peek(), guidePlant: null, guideMissing: null, newer: false, unreadable: false };
