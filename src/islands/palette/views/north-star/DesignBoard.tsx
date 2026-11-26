@@ -122,7 +122,7 @@ function PlantRow({ taxon, rep, primaryJobId }: { taxon: Taxon; rep: PaletteRepo
         <button
           class="rm-btn"
           type="button"
-          aria-label={`${T('ns.remove')} ${fullName}`}
+          aria-label={T('ns.removePlant', { name: fullName })}
           onClick={() => removePlantFromPalette(taxon.id)}
         >
           ×
@@ -201,7 +201,7 @@ function PlantRow({ taxon, rep, primaryJobId }: { taxon: Taxon; rep: PaletteRepo
       <button
         class="rm-btn"
         type="button"
-        aria-label={`${T('ns.remove')} ${fullName}`}
+        aria-label={T('ns.removePlant', { name: fullName })}
         onClick={() => removePlantFromPalette(taxon.id)}
       >
         ×
@@ -217,7 +217,7 @@ function PulseCard({ rep }: { rep: PaletteReport }) {
   const waterWord = eff.watering === 'rain' ? T('ns.water.rainShort') : eff.watering === 'first-years' ? T('ns.water.firstYears') : T('ns.water.allYear');
 
   const backupPart = missingJobs.length > 0
-    ? T('ns.pulse.jobGaps', { n: missingJobs.length })
+    ? P('ns.pulse.jobGaps', missingJobs.length)
     : noBackupJobs.length > 0
       ? T('ns.pulse.noBackup', { n: noBackupJobs.length })
       : T('ns.pulse.allBackedUp');
@@ -318,7 +318,7 @@ function PulseCard({ rep }: { rep: PaletteReport }) {
             ? T('ns.jobs.gapAdd')
             : js.total === 1
               ? T('ns.jobs.oneNoBackup')
-              : T('ns.jobs.backedUp', { n: js.total });
+              : P('ns.jobs.backedUp', js.total);
           return (
             <button
               key={js.job}
@@ -649,7 +649,7 @@ export function DesignBoard({ rep }: { rep: PaletteReport }) {
           <div class="unrec-head">
             <h2 class="unrec-title">
               {unrecognized.length > 0
-                ? T('ns.unrec.heading', { n: unrecognized.length })
+                ? P('ns.unrec.heading', unrecognized.length)
                 : T('ns.unrec.nonSpeciesOnlyHeading', { n: nonSpecies.length })}
             </h2>
             <p class="small muted">{T('ns.unrec.sub')}</p>
@@ -674,7 +674,7 @@ export function DesignBoard({ rep }: { rep: PaletteReport }) {
                     <button
                       type="button"
                       class="rm-btn"
-                      aria-label={`${T('ns.remove')} ${u.canonical_name}`}
+                      aria-label={T('ns.removePlant', { name: u.canonical_name })}
                       onClick={() => {
                         const removed = removeUnrecognizedPlant(u.canonical_name);
                         if (removed) {
@@ -707,10 +707,17 @@ export function DesignBoard({ rep }: { rep: PaletteReport }) {
             + {T('ns.addPlant')}
           </button>
         </div>
+      ) : q && filtered.length === 0 && (viewMode === 'job' || viewMode === 'grid') ? (
+        <div class="arrival-card" style={{ textAlign: 'center', justifyItems: 'center' }} role="status">
+          <p>{T('ns.board.noFilterMatch', { q: nsSearch.value.trim() })}</p>
+          <button type="button" class="btn-ghost" onClick={() => { nsSearch.value = ''; }}>
+            {T('ns.board.clearFilter')}
+          </button>
+        </div>
       ) : viewMode === 'job' ? (
         <>
           {isCompact && (
-            <nav class="job-jump" aria-label="Jump to job">
+            <nav class="job-jump" aria-label={T('ns.board.jumpToJob')}>
               {jobIds.map((jid) => (
                 <a key={jid} href={`#job-${jid}`}>{jobLabel(jid)} ({primaryByJob[jid].length})</a>
               ))}

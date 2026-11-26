@@ -4,8 +4,8 @@
 // snap-back or cursor jump. Commits live only on complete in-range numbers; clamps & announces
 // on blur/Enter; cancels draft on Escape without closing parent dialogs.
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { T } from '../../strings.ts';
-import { fmtNum } from './ns-helpers.ts';
+import { pageLang, T } from '../../strings.ts';
+import { fmtNum, normalizeNumericInput } from './ns-helpers.ts';
 
 export interface NumericFieldProps {
   id: string;
@@ -26,10 +26,6 @@ export interface NumericFieldProps {
   /** Incrementing or changing this key (e.g. on Reset, Reset all, or location change) clears draft & clamp note. */
   resetKey?: string | number;
   onCommit: (next: number | null) => void;
-}
-
-function normalizeNumeric(raw: string): string {
-  return raw.trim().replace(/−/g, '-').replace(/,/g, '.');
 }
 
 function isCompleteNumeric(norm: string, allowNegative: boolean, allowDecimal: boolean): boolean {
@@ -86,12 +82,13 @@ export function NumericField({
     const raw = (e.currentTarget as HTMLInputElement).value;
     setDraft(raw);
     if (clampNote) setClampNote(null);
-    const norm = normalizeNumeric(raw);
+    const norm = normalizeNumericInput(raw, pageLang(), allowDecimal);
     if (!isCompleteNumeric(norm, allowNegative, allowDecimal)) return;
     const parsed = Number(norm);
     if (!Number.isFinite(parsed)) return;
     if (parsed < min || parsed > max) return;
-    const committed = allowDecimal ? Math.round(parsed * 10) / 10 : Math.round(parsed);
+    const rawCommit = allowDecimal ? Math.round(parsed * 10) / 10 : Math.round(parsed);
+    const committed = rawCommit === 0 ? 0 : rawCommit;
     didLiveCommitRef.current = true;
     onCommit(committed);
   }
@@ -99,7 +96,7 @@ export function NumericField({
   function finalizeDraft() {
     if (draft === null) return;
     didLiveCommitRef.current = false;
-    const norm = normalizeNumeric(draft);
+    const norm = normalizeNumericInput(draft, pageLang(), allowDecimal);
     if (norm === '') {
       setDraft(null);
       setClampNote(null);
@@ -113,7 +110,8 @@ export function NumericField({
       return;
     }
     const rounded = allowDecimal ? Math.round(parsed * 10) / 10 : Math.round(parsed);
-    const clamped = Math.max(min, Math.min(max, rounded));
+    const rawClamped = Math.max(min, Math.min(max, rounded));
+    const clamped = rawClamped === 0 ? 0 : rawClamped;
     if (clamped !== rounded) {
       const numText = fmtNum(clamped, allowDecimal ? 1 : 0);
       setClampNote(T('ns.land.clampedUsed', { val: unit ? `${numText} ${unit}` : numText }));

@@ -12,6 +12,7 @@ import type {
   Taxon,
 } from '../../../../lib/palette/index.ts';
 import { jobsOf, toxicityStatusOf } from '../../../../lib/palette/index.ts';
+import { formatNumber } from '../../format.ts';
 import { nameOf, pageLang, T } from '../../strings.ts';
 
 const PFAF_RE = /pfaf|plants for a future/i;
@@ -159,8 +160,11 @@ export function localizedReason(r: ReportVerdictReason, eff: EffectiveSiteClimat
   const cl = t.climate;
   const ext = t.extremes;
   const ph = t.traits.soil_ph;
-  const phRange = ph ? `${ph.min ?? '?'}–${ph.max ?? '?'}` : '?';
+  const phRange = ph && (ph.min != null || ph.max != null)
+    ? `${ph.min != null ? fmtNum(ph.min, 1) : T('ns.unknown')}–${ph.max != null ? fmtNum(ph.max, 1) : T('ns.unknown')}`
+    : T('ns.unknown');
   const dUnit = T('ns.unit.dayShort');
+  const mUnit = T('ns.unit.m');
   switch (r.code) {
     case 'cold_monthly': return T('ns.reason.coldMonthly', { site: fmtC(eff.tminColdC), lim: fmtC(cl?.tminCold?.low) });
     case 'cold_monthly_edge': return T('ns.reason.coldMonthlyEdge', { site: fmtC(eff.tminColdC), lim: fmtC(cl?.tminCold?.low) });
@@ -182,16 +186,57 @@ export function localizedReason(r: ReportVerdictReason, eff: EffectiveSiteClimat
     case 'extreme_freeze_edge': return T('ns.reason.extremeFreezeEdge', { site: fmtC(eff.freeze10C), lim: fmtC(ext?.tminExtreme?.low ?? ext?.coldTailC) });
     case 'extreme_heat': return T('ns.reason.extremeHeat', { site: fmtC(eff.heat10C), lim: fmtC(ext?.tmaxExtreme?.high ?? ext?.heatDomeC) });
     case 'extreme_heat_edge': return T('ns.reason.extremeHeatEdge', { site: fmtC(eff.heat10C), lim: fmtC(ext?.tmaxExtreme?.high ?? ext?.heatDomeC) });
-    case 'topsoil_ph': return T('ns.reason.topsoilPh', { site: fmtNum(eff.soilPh, 1), lim: phRange });
-    case 'subsoil_ph_trap': return T('ns.reason.subsoilPh', { site: fmtNum(eff.subsoilPh, 1), lim: phRange });
+    case 'topsoil_ph': return T('ns.reason.topsoilPh', { site: eff.soilPh != null ? fmtNum(eff.soilPh, 1) : T('ns.unknown'), lim: phRange });
+    case 'subsoil_ph_trap': return T('ns.reason.subsoilPh', { site: eff.subsoilPh != null ? fmtNum(eff.subsoilPh, 1) : T('ns.unknown'), lim: phRange });
     case 'summer_water_est': return T('ns.reason.summerWaterEst');
-    case 'dry_spell_water': return T('ns.reason.drySpell', { cdd: `~${eff.cddDays ?? '?'} ${dUnit}`, tank: `~${eff.tankDays ?? '?'} ${dUnit}` });
+    case 'dry_spell_water': return T('ns.reason.drySpell', {
+      cdd: eff.cddDays != null ? `~${Math.round(eff.cddDays)} ${dUnit}` : T('ns.unknown'),
+      tank: eff.tankDays != null ? `~${Math.round(eff.tankDays)} ${dUnit}` : T('ns.unknown'),
+    });
     case 'waterlogged': return T('ns.reason.waterlogged');
-    case 'heavy_clay_prep': return T('ns.reason.heavyClay', { clay: `${eff.clayPct ?? '?'}%` });
+    case 'heavy_clay_prep': return T('ns.reason.heavyClay', {
+      clay: eff.clayPct != null ? `${Math.round(eff.clayPct)}%` : T('ns.unknown'),
+    });
     case 'wind_sensitive': return T('ns.reason.windSensitive');
-    case 'room_tall': return T('ns.reason.roomTall', { maxH: `${fmtNum(t.traits.height_m?.max, 1)} m`, limitH: `${fmtNum(eff.roomLimitM, 1)} m` });
+    case 'site_light': return T('ns.reason.siteLight', {
+      pref: lightKeyLabel(plantLightKey(t)),
+      site: lightKeyLabel(eff.siteLight),
+    });
+    case 'stony_soil': return T('ns.reason.stonySoil', {
+      pct: eff.stonesPct != null ? `${Math.round(eff.stonesPct)}%` : T('ns.unknown'),
+    });
+    case 'room_tall': return T('ns.reason.roomTall', {
+      maxH: `${fmtNum(t.traits.height_m?.max, 1)} ${mUnit}`,
+      limitH: `${fmtNum(eff.roomLimitM, 1)} ${mUnit}`,
+    });
     default: return r.detail;
   }
+}
+
+export function habitLabel(raw: string | null | undefined): string {
+  const s = (raw ?? '').trim().toLowerCase();
+  if (!s) return T('ns.unknown');
+  if (s === 'tree' || s.includes('tree')) return T('ns.habit.tree');
+  if (s === 'shrub' || s.includes('shrub')) return T('ns.habit.shrub');
+  if (s === 'vine' || s.includes('climber') || s.includes('vine') || s.includes('liana')) return T('ns.habit.vine');
+  if (s === 'ground' || s.includes('ground') || s.includes('carpet') || s.includes('creeping')) return T('ns.habit.ground');
+  if (s === 'herb' || s.includes('herb') || s.includes('perennial') || s.includes('annual') || s.includes('fern') || s.includes('grass') || s.includes('bamboo')) return T('ns.habit.herb');
+  return raw!.trim();
+}
+
+export function rootSystemLabel(raw: string | null | undefined): string {
+  const s = (raw ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  if (!s) return '';
+  if (s.includes('tap')) return T('ns.root.taproot');
+  if (s.includes('fibrous')) return T('ns.root.fibrous');
+  if (s.includes('rhizom')) return T('ns.root.rhizomatous');
+  if (s.includes('stolon')) return T('ns.root.stoloniferous');
+  if (s.includes('tuber')) return T('ns.root.tuberous');
+  if (s.includes('bulb')) return T('ns.root.bulbous');
+  if (s.includes('shallow') || s.includes('surface')) return T('ns.root.shallow');
+  if (s.includes('deep')) return T('ns.root.deep');
+  if (s.includes('heart')) return T('ns.root.heart');
+  return raw!.trim();
 }
 
 export function taxCommonName(t: Taxon): string {
@@ -206,6 +251,31 @@ export function shortSiteName(label: string | null | undefined): string {
   const raw = (label ?? '').trim();
   if (!raw) return '';
   return raw.split(',')[0].trim();
+}
+
+const decimalSepCache = new Map<string, string>();
+function localeDecimalSep(locale: string): string {
+  const cached = decimalSepCache.get(locale);
+  if (cached) return cached;
+  const sep = formatNumber(1.1, locale || 'en', 1).includes(',') ? ',' : '.';
+  decimalSepCache.set(locale, sep);
+  return sep;
+}
+
+export function normalizeNumericInput(raw: string, locale: string, allowDecimal: boolean): string {
+  const cleaned = raw.trim().replace(/[\s\u00A0\u202F_]/g, '').replace(/−/g, '-');
+  if (!cleaned) return '';
+  const decSep = localeDecimalSep(locale);
+  if (!allowDecimal) {
+    return decSep === ',' ? cleaned.replace(/[.,]/g, '') : cleaned.replace(/,/g, '');
+  }
+  if (decSep === ',') {
+    if (cleaned.includes(',')) {
+      return cleaned.replace(/\./g, '').replace(/,/g, '.');
+    }
+    return /^-?\d{1,3}(?:\.\d{3})+$/.test(cleaned) ? cleaned.replace(/\./g, '') : cleaned;
+  }
+  return cleaned.replace(/,/g, '');
 }
 
 export function fmtNum(v: number | null | undefined, dec = 1): string {

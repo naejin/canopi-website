@@ -8,7 +8,8 @@ import { useEffect, useRef } from 'preact/hooks';
 import type { ReportHorizonId } from '../../../../lib/palette/index.ts';
 import { CANOPI_FILE_VERSION, REPORT_SCENARIOS } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
-import { T } from '../../strings.ts';
+import { notices } from '../../state/restore.ts';
+import { P, T } from '../../strings.ts';
 import { markFirstView } from '../kit/start-mark.ts';
 import { DesignBoard } from './DesignBoard.tsx';
 import { Drawers } from './Drawers.tsx';
@@ -313,6 +314,22 @@ export function NorthStarStudio() {
       <div class="wrap studio-shell" data-land-open={landOpen ? 'true' : 'false'}>
         {landOpen && <LandPanel rep={rep} returnFocusTo={placePillRef.current} />}
         <div class="studio-main">
+          {(notices.value.unknownCount > 0 || notices.value.pasted) && (
+            <div class="land-alert" role="status" style={{ marginBottom: '12px' }}>
+              <span>
+                {notices.value.pasted ? T(`share.pasted.${notices.value.pasted}`) : ''}
+                {notices.value.pasted && notices.value.unknownCount > 0 ? ' · ' : ''}
+                {notices.value.unknownCount > 0 ? P('share.unknown', notices.value.unknownCount) : ''}
+              </span>
+              <button
+                type="button"
+                class="btn-ghost"
+                onClick={() => { notices.value = { ...notices.peek(), unknownCount: 0, cut: false, pasted: null }; }}
+              >
+                {T('share.close')}
+              </button>
+            </div>
+          )}
           {surface === 'design' ? <DesignBoard rep={rep} /> : <PlanSurface rep={rep} />}
         </div>
       </div>

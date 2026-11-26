@@ -205,7 +205,7 @@ test('Wave 7.2: NumericField editing (clear, decimal comma, clamp notice, Escape
     assert.equal(modes.freezeType, 'text', 'freeze input is type=text');
     assert.equal(modes.freezeMode, null, 'freeze input omits inputMode so iOS keeps minus key');
     assert.equal(modes.heatMode, 'decimal', 'heat input has inputMode=decimal');
-    assert.equal(modes.elevMode, 'numeric', 'elev input has inputMode=numeric');
+    assert.equal(modes.elevMode, null, 'elev input omits inputMode so iOS keeps minus key for below-sea-level sites');
 
     // Clear #freeze-input with select + Backspace -> stays empty with zero snap-back
     const origFreeze = await page.evaluate(() => document.querySelector('#freeze-input')?.value ?? '');
@@ -248,4 +248,61 @@ test('Wave 7.2: NumericField editing (clear, decimal comma, clamp notice, Escape
 
     assert.deepEqual(await pageErrorsOf(page), [], `${cfg.path} zero console/page errors`);
   }
+});
+
+test('Wave 7.3 regressions: FR Plan/Picker/Dossier i18n, empty filter state, 1,200 plot & 4150 m elevation @real-data', async () => {
+  const page = await openSuggestedPalette({ path: '/fr/palette/', width: 1440, theme: 'light' });
+
+  // 1. Empty palette filter shows message + Clear filter button (Lead #4)
+  await page.click('#palette-filter');
+  await page.keyboard.type('zzzznotaplant');
+  await page.waitForFunction(() => document.querySelectorAll('.job-group').length === 0, { timeout: 3_000 });
+  const emptyCardText = await page.evaluate(() => document.querySelector('.studio-main .arrival-card')?.textContent ?? '');
+  assert.match(emptyCardText, /zzzznotaplant/, 'empty filter card echoes query');
+  await page.click('.studio-main .arrival-card button');
+  await page.waitForFunction(() => document.querySelectorAll('.job-group').length > 0, { timeout: 3_000 });
+
+  // 2. Picker habit chips localized & active pill not raw "ground" (Lead #5)
+  await page.click('.bar-btn-add');
+  await page.waitForSelector('.drawer[role="dialog"]', { timeout: 5_000 });
+  await page.evaluate(() => document.querySelector('.picker-controls .proto-btn')?.click());
+  await page.waitForSelector('.picker-filter-panel', { timeout: 3_000 });
+  const pickerPanelText = await page.evaluate(() => document.querySelector('.picker-filter-panel')?.textContent ?? '');
+  assert.ok(!pickerPanelText.includes('Tree / Canopy') && !pickerPanelText.includes('Perennial / Herb'), 'FR picker habit chips localized');
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => !document.querySelector('.drawer[role="dialog"]'), { timeout: 3_000 });
+
+  // 3. Dossier correction link is /fr/contact/ (Lead #3)
+  await page.click('.plant-row .plant-open');
+  await page.waitForSelector('.drawer[role="dialog"]', { timeout: 5_000 });
+  const contactHref = await page.evaluate(() => document.querySelector('.drawer a[href*="contact"]')?.getAttribute('href') ?? '');
+  assert.equal(contactHref, '/fr/contact/', 'FR dossier correction link uses /fr/contact/');
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => !document.querySelector('.drawer[role="dialog"]'), { timeout: 3_000 });
+
+  // 4. Plan surface has 0 English leaks & honest copy (Lead #1)
+  await page.evaluate(() => document.querySelectorAll('.studio-left .seg button')[1]?.click());
+  await page.waitForSelector('.budget-bar[role="progressbar"]', { timeout: 5_000 });
+  const planText = await page.evaluate(() => document.querySelector('.plan-grid')?.textContent ?? '');
+  for (const enLeak of ['Honest crown-area budget', 'Site-prep & planting window', 'Checkmarks save on this device', 'Mobile-ready nursery pocket checklist', 'Wave 1 (']) {
+    assert.ok(!planText.includes(enLeak), `FR Plan must not leak "${enLeak}"`);
+  }
+  assert.deepEqual(await pageErrorsOf(page), [], 'FR Wave 7.3 regression journey zero console/page errors');
+
+  // 5. EN NumericField: "1,200" plot -> 1200 & elevation 4150 m accepted (R7)
+  const enPage = await openSuggestedPalette({ path: '/palette/', width: 1440, theme: 'light' });
+  await enPage.click('.place-pill');
+  await enPage.waitForSelector('.land-panel[role="dialog"]', { timeout: 5_000 });
+  await clearFieldWithBackspace(enPage, '#land-plot-m2');
+  await enPage.keyboard.type('1,200');
+  await enPage.keyboard.press('Enter');
+  assert.equal(await enPage.evaluate(() => document.querySelector('#land-plot-m2')?.value), '1200', 'EN 1,200 parses as 1200');
+  await enPage.evaluate(() => document.querySelectorAll('.land-panel .tune-details summary')[1]?.click());
+  await enPage.waitForSelector('#elev-input', { timeout: 3_000 });
+  await clearFieldWithBackspace(enPage, '#elev-input');
+  await enPage.keyboard.type('4150');
+  await enPage.keyboard.press('Enter');
+  assert.equal(await enPage.evaluate(() => document.querySelector('#elev-input')?.value), '4150', 'elevation 4150 m accepted');
+
+  assert.deepEqual(await pageErrorsOf(enPage), [], 'EN Wave 7.3 regression journey zero console/page errors');
 });

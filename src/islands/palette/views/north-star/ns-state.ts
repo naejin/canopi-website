@@ -28,7 +28,7 @@ import {
   type CanopiPaletteStudioMeta,
 } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
-import { buildMonthlyV07, buildTier1V07, buildTier2AV07, loadSiteAnalogues, siteAnalogue } from '../../state/climate-v07.ts';
+import { buildMonthlyV07, buildTier1V07, buildTier2AV07, clearSiteV07Caches, loadSiteAnalogues, siteAnalogue } from '../../state/climate-v07.ts';
 import { pageLang, T } from '../../strings.ts';
 import type { LightKey } from './ns-helpers.ts';
 import {
@@ -119,8 +119,9 @@ function defaultPickerFilters(job: JobId | 'all' = 'all'): PickerFilterState {
 
 export interface NsPresetSite {
   id: string;
-  label: string;
-  sub: string;
+  city: string;
+  koppen: string;
+  phHint?: string;
   lat: number;
   lon: number;
   zone: ClimateZone;
@@ -128,13 +129,18 @@ export interface NsPresetSite {
 }
 
 export const NS_PRESETS: readonly NsPresetSite[] = [
-  { id: 'montpellier', label: 'Montpellier, France', sub: 'Mediterranean (Csa) · pH 7.7', lat: 43.61, lon: 3.88, zone: 'Mediterranean', country: 'FR' },
-  { id: 'lyon', label: 'Lyon, France', sub: 'Temperate (Cfb)', lat: 45.76, lon: 4.84, zone: 'Temperate', country: 'FR' },
-  { id: 'kyoto', label: 'Kyoto, Japan', sub: 'Subtropical (Cfa)', lat: 35.01, lon: 135.77, zone: 'Subtropical', country: 'JP' },
-  { id: 'capetown', label: 'Cape Town, South Africa', sub: 'Southern Mediterranean (Csb)', lat: -33.92, lon: 18.42, zone: 'Mediterranean', country: 'ZA' },
-  { id: 'briancon', label: 'Briançon, France', sub: 'Mountain / Continental (Dfb)', lat: 44.90, lon: 6.64, zone: 'Continental', country: 'FR' },
-  { id: 'belem', label: 'Belém, Brazil', sub: 'Tropical (Af)', lat: -1.45, lon: -48.50, zone: 'Tropical', country: 'BR' },
+  { id: 'montpellier', city: 'Montpellier', koppen: 'Csa', phHint: '7.7', lat: 43.61, lon: 3.88, zone: 'Mediterranean', country: 'FR' },
+  { id: 'lyon', city: 'Lyon', koppen: 'Cfb', lat: 45.76, lon: 4.84, zone: 'Temperate', country: 'FR' },
+  { id: 'kyoto', city: 'Kyoto', koppen: 'Cfa', lat: 35.01, lon: 135.77, zone: 'Subtropical', country: 'JP' },
+  { id: 'capetown', city: 'Cape Town', koppen: 'Csb', lat: -33.92, lon: 18.42, zone: 'Mediterranean', country: 'ZA' },
+  { id: 'briancon', city: 'Briançon', koppen: 'Dfb', lat: 44.90, lon: 6.64, zone: 'Continental', country: 'FR' },
+  { id: 'belem', city: 'Belém', koppen: 'Af', lat: -1.45, lon: -48.50, zone: 'Tropical', country: 'BR' },
 ];
+
+export function presetSiteLabel(p: NsPresetSite): string {
+  const country = formatCountryName(p.country, currentLocale());
+  return country ? `${p.city}, ${country}` : p.city;
+}
 
 const NS_SESSION_KEY = 'canopi-ns-session';
 
@@ -263,6 +269,7 @@ export const nsAllNames = signal<readonly PlantNames[] | null>(null);
 export const nsAllTaxa = signal<readonly Taxon[] | null>(null);
 export const nsGuestZoneById = signal<ReadonlyMap<PlantId, ClimateZone>>(new Map());
 export const nsSiteLoading = signal<boolean>(false);
+export const nsSiteError = signal<string | null>(null);
 export const nsToast = signal<{ message: string; undo?: () => void } | null>(null);
 
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
@@ -427,6 +434,60 @@ export const starterPreview = computed<readonly Taxon[]>(() => {
   });
 });
 
+const VALID_CLIMATE_ZONES: ReadonlySet<string> = new Set<ClimateZone>([
+  'Tropical', 'Arid', 'Mediterranean', 'Subtropical', 'Temperate', 'Continental', 'Boreal',
+]);
+
+export function parseValidClimate(raw: unknown): ClimateZone | null {
+  return typeof raw === 'string' && VALID_CLIMATE_ZONES.has(raw) ? (raw as ClimateZone) : null;
+}
+
+function finiteClamp(raw: unknown, min: number, max: number): number | undefined {
+  if (typeof raw !== 'number' || !Number.isFinite(raw)) return undefined;
+  return Math.max(min, Math.min(max, raw));
+}
+
+function validEnum<T extends string>(raw: unknown, allowed: readonly T[]): T | undefined {
+  return typeof raw === 'string' && (allowed as readonly string[]).includes(raw) ? (raw as T) : undefined;
+}
+
+export function sanitizeStudioOverrides(raw: unknown): Partial<ReportSiteOverrides> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const r = raw as Record<string, unknown>;
+  const out: Partial<ReportSiteOverrides> = {};
+  const room = validEnum(r.room, ['pots', 'small', 'large', 'field', 'unsure'] as const);
+  if (room) out.room = room;
+  const plotM2 = finiteClamp(r.plotM2, 20, 50000);
+  if (plotM2 !== undefined) out.plotM2 = Math.round(plotM2);
+  const watering = validEnum(r.watering, ['rain', 'first-years', 'all-year'] as const);
+  if (watering) out.watering = watering;
+  const soilPh = finiteClamp(r.soilPh, 3.5, 9.5);
+  if (soilPh !== undefined) out.soilPh = soilPh;
+  const drainage = validEnum(r.drainage, ['drains', 'wet', 'sandy', 'clay'] as const);
+  if (drainage) out.drainage = drainage;
+  const stonesPct = finiteClamp(r.stonesPct, 0, 100);
+  if (stonesPct !== undefined) out.stonesPct = Math.round(stonesPct);
+  const freeze10 = finiteClamp(r.freeze10, -60, 25);
+  if (freeze10 !== undefined) out.freeze10 = freeze10;
+  const heat10 = finiteClamp(r.heat10, 10, 60);
+  if (heat10 !== undefined) out.heat10 = heat10;
+  const cddDays = finiteClamp(r.cddDays, 0, 365);
+  if (cddDays !== undefined) out.cddDays = Math.round(cddDays);
+  const wind = validEnum(r.wind, ['sheltered', 'moderate', 'windy', 'sea'] as const);
+  if (wind) out.wind = wind;
+  const siteLight = validEnum(r.siteLight, ['full_sun', 'part_shade', 'shade'] as const);
+  if (siteLight) out.siteLight = siteLight;
+  const elevM = finiteClamp(r.elevM, -430, 6000);
+  if (elevM !== undefined) out.elevM = Math.round(elevM);
+  const slopeDeg = finiteClamp(r.slopeDeg, 0, 75);
+  if (slopeDeg !== undefined) out.slopeDeg = Math.round(slopeDeg);
+  const aspect = validEnum(r.aspect, ['neutral', 'south', 'north'] as const);
+  if (aspect) out.aspect = aspect;
+  const coldAir = validEnum(r.coldAir, ['normal', 'hollow', 'higher'] as const);
+  if (coldAir) out.coldAir = coldAir;
+  return out;
+}
+
 let watcherStarted = false;
 export function startNsWatchers(): void {
   if (watcherStarted) return;
@@ -443,26 +504,40 @@ export function startNsWatchers(): void {
       if (!meta) return;
       batch(() => {
         if (meta.overrides) {
-          const ov = meta.overrides as Partial<ReportSiteOverrides>;
-          nsOverrides.value = { ...ov };
+          const ov = sanitizeStudioOverrides(meta.overrides);
+          nsOverrides.value = ov;
           if (ov.room) store.room.value = ov.room;
-          if (ov.plotM2) store.plot.value = ov.plotM2;
+          if (ov.plotM2 !== undefined) store.plot.value = ov.plotM2;
           if (ov.watering !== undefined) {
             store.siteEdits.value = { ...store.siteEdits.peek(), watering: ov.watering ?? undefined };
           }
         }
-        if (meta.qtyById) nsQtyById.value = { ...meta.qtyById };
-        if (Array.isArray(meta.existingIds)) {
-          nsExistingIds.value = new Set<PlantId>(meta.existingIds);
+        if (meta.qtyById && typeof meta.qtyById === 'object') {
+          const cleanQty: Record<string, number> = {};
+          for (const [k, v] of Object.entries(meta.qtyById)) {
+            if (typeof v === 'number' && Number.isFinite(v) && v >= 1) {
+              cleanQty[k] = Math.min(999, Math.round(v));
+            }
+          }
+          nsQtyById.value = cleanQty;
         }
-        if (typeof meta.pathPct === 'number') nsPathPct.value = meta.pathPct;
+        if (Array.isArray(meta.existingIds)) {
+          nsExistingIds.value = new Set<PlantId>(meta.existingIds.filter((x): x is PlantId => typeof x === 'string'));
+        }
+        if (typeof meta.pathPct === 'number' && Number.isFinite(meta.pathPct)) {
+          nsPathPct.value = Math.max(0, Math.min(50, Math.round(meta.pathPct)));
+        }
       });
-      if (meta.site && typeof meta.site.lat === 'number' && typeof meta.site.lon === 'number') {
+      if (
+        meta.site
+        && typeof meta.site.lat === 'number' && Number.isFinite(meta.site.lat) && Math.abs(meta.site.lat) <= 90
+        && typeof meta.site.lon === 'number' && Number.isFinite(meta.site.lon) && Math.abs(meta.site.lon) <= 180
+      ) {
         void pickCoordinates(
           meta.site.lat,
           meta.site.lon,
           meta.site.label || fallbackName,
-          (meta.site.climate as ClimateZone | undefined) ?? undefined,
+          parseValidClimate(meta.site.climate) ?? undefined,
           meta.site.country ?? undefined,
           true,
         );
@@ -563,17 +638,20 @@ export async function ensureAllCatalogLoaded(): Promise<void> {
   }
 }
 
-function koppenToZone(koppen: string | null | undefined): ClimateZone {
+function koppenToZone(koppen: string | null | undefined): ClimateZone | null {
   const k = (koppen ?? '').trim();
+  if (!k) return null;
   if (k.startsWith('Af') || k.startsWith('Am') || k.startsWith('Aw')) return 'Tropical';
   if (k.startsWith('B')) return 'Arid';
   if (k.startsWith('Cs')) return 'Mediterranean';
   if (k.startsWith('Cfa') || k.startsWith('Cwa')) return 'Subtropical';
   if (k.startsWith('Cf') || k.startsWith('Cw')) return 'Temperate';
-  if (k.startsWith('Dfc') || k.startsWith('Dfd') || k.startsWith('ET')) return 'Boreal';
+  if (k.startsWith('Dfc') || k.startsWith('Dfd') || k.startsWith('ET') || k.startsWith('EF')) return 'Boreal';
   if (k.startsWith('D')) return 'Continental';
-  return 'Temperate';
+  return null;
 }
+
+let pickSeq = 0;
 
 export async function pickCoordinates(
   lat: number,
@@ -583,15 +661,20 @@ export async function pickCoordinates(
   fallbackCountry?: string,
   preserveOverrides = false,
 ): Promise<void> {
+  const seq = ++pickSeq;
   nsSiteLoading.value = true;
+  nsSiteError.value = null;
+  clearSiteV07Caches();
   try {
     let lookup: SiteLookup | null = null;
     const rawEl = typeof document !== 'undefined' ? document.getElementById('ct-climate')?.textContent : null;
     if (rawEl) {
       const { createTileSource, lookupSite, lookupSiteMonthly, lookupSiteTier2A, siteIndex } = await import('../../../../lib/climate/index.ts');
+      if (seq !== pickSeq) return;
       const idx = siteIndex(JSON.parse(rawEl));
       const tileSource = createTileSource({ index: idx });
       const raw = await lookupSite(lat, lon, tileSource);
+      if (seq !== pickSeq) return;
       const tier1V07 = buildTier1V07(raw.tier1);
       const baseLookup: SiteLookup = {
         lat: raw.lat,
@@ -606,7 +689,9 @@ export async function pickCoordinates(
         lookupSiteTier2A(raw, tileSource).catch(() => null),
         lookupSiteMonthly(raw, tileSource).catch(() => null),
       ]);
+      if (seq !== pickSeq) return;
       const tier2AV07 = t2aRaw ? await buildTier2AV07(locObj, t2aRaw, baseLookup.v07).catch(() => ({})) : {};
+      if (seq !== pickSeq) return;
       const monthlyV07 = t2bRaw ? buildMonthlyV07(t2bRaw) : null;
       lookup = {
         ...baseLookup,
@@ -616,11 +701,10 @@ export async function pickCoordinates(
           ...(monthlyV07 ? { monthly: monthlyV07 } : {}),
         },
       };
-      void loadSiteAnalogues({ ...locObj, lookup }, '2041-2070');
     }
 
     const todayKoppen = lookup?.climate?.periods?.find((p) => p.period === '1991-2020')?.koppen ?? '';
-    const zone = todayKoppen ? koppenToZone(todayKoppen) : (fallbackZone ?? 'Temperate');
+    const zone = koppenToZone(todayKoppen) ?? fallbackZone ?? null;
     const country = lookup?.regions?.isoA2 ?? fallbackCountry ?? null;
 
     batch(() => {
@@ -635,10 +719,17 @@ export async function pickCoordinates(
       store.climate.value = zone;
       if (country) store.country.value = { code: country, source: 'location' };
     });
+    if (lookup) {
+      void loadSiteAnalogues({ lat: lookup.lat, lon: lookup.lon, source: 'search', label, lookup }, '2041-2070');
+    }
     if (!preserveOverrides) markNsDirty();
     writeNsSessionSnapshot();
+  } catch {
+    if (seq === pickSeq) {
+      nsSiteError.value = T('ns.site.loadError');
+    }
   } finally {
-    nsSiteLoading.value = false;
+    if (seq === pickSeq) nsSiteLoading.value = false;
   }
 }
 

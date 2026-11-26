@@ -42,6 +42,7 @@ import {
   doyToDateLabel,
   fmtNum,
   frostSourceLabel,
+  habitLabel,
   jobLabel,
   lightKeyLabel,
   lightSpanLabel,
@@ -112,13 +113,94 @@ function sizeClassLabel(t: Taxon): string {
   return localizedHabit(t.traits.habit);
 }
 
+function localizedTraitLevel(raw: string | null | undefined): string {
+  const s = (raw ?? '').trim().toLowerCase();
+  if (!s) return T('ns.notRecorded');
+  if (s === 'very high') return T('ns.val.veryHigh');
+  if (s === 'high') return T('ns.val.high');
+  if (s === 'medium' || s === 'moderate') return T('ns.val.medium');
+  if (s === 'low') return T('ns.val.low');
+  if (s === 'very low') return T('ns.val.veryLow');
+  if (s === 'none') return T('ns.val.none');
+  if (s === 'slow') return T('ns.val.slow');
+  if (s === 'fast' || s === 'rapid') return T('ns.val.fast');
+  if (s === 'short' || s === 'short-lived') return T('ns.val.short');
+  if (s === 'long' || s === 'long-lived') return T('ns.val.long');
+  return raw!.trim();
+}
+
+function localizedSexualSystem(raw: string | null | undefined): string {
+  const s = (raw ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  if (!s) return T('ns.notRecorded');
+  if (s === 'hermaphrodite' || s === 'bisexual' || s === 'perfect') return T('ns.val.sex.hermaphrodite');
+  if (s === 'monoecious') return T('ns.val.sex.monoecious');
+  if (s === 'dioecious') return T('ns.val.sex.dioecious');
+  if (s === 'gynodioecious') return T('ns.val.sex.gynodioecious');
+  if (s === 'androdioecious') return T('ns.val.sex.androdioecious');
+  if (s === 'polygamous') return T('ns.val.sex.polygamous');
+  return raw!.trim();
+}
+
+function localizedPollinator(raw: string): string {
+  const s = raw.trim().toLowerCase().replace(/[\s-]+/g, '_');
+  if (s === 'insects' || s === 'insect') return T('ns.val.poll.insects');
+  if (s === 'bees' || s === 'bee') return T('ns.val.poll.bees');
+  if (s === 'wind') return T('ns.val.poll.wind');
+  if (s === 'birds' || s === 'bird') return T('ns.val.poll.birds');
+  if (s === 'bats' || s === 'bat') return T('ns.val.poll.bats');
+  if (s === 'flies' || s === 'fly') return T('ns.val.poll.flies');
+  if (s === 'moths' || s === 'moth') return T('ns.val.poll.moths');
+  if (s === 'butterflies' || s === 'butterfly') return T('ns.val.poll.butterflies');
+  if (s === 'beetles' || s === 'beetle') return T('ns.val.poll.beetles');
+  if (s === 'wasps' || s === 'wasp') return T('ns.val.poll.wasps');
+  if (s === 'self') return T('ns.val.poll.self');
+  if (s === 'water') return T('ns.val.poll.water');
+  return raw.trim();
+}
+
+function localizedToxLevel(raw: string | null | undefined): string {
+  const s = (raw ?? '').trim().toLowerCase();
+  if (!s) return T('ns.tox.caution');
+  if (s === 'slight' || s === 'low' || s === 'mild') return T('ns.val.tox.slight');
+  if (s === 'moderate' || s === 'medium') return T('ns.val.tox.moderate');
+  if (s === 'high' || s === 'severe' || s === 'fatal') return T('ns.val.tox.high');
+  return raw!.trim();
+}
+
+function localizedPlantPart(raw: string): string {
+  const s = raw.trim().toLowerCase().replace(/[\s-]+/g, '_');
+  if (s === 'leaves' || s === 'leaf' || s === 'foliage') return T('ns.val.part.leaves');
+  if (s === 'seeds' || s === 'seed') return T('ns.val.part.seeds');
+  if (s === 'fruits' || s === 'fruit' || s === 'berries') return T('ns.val.part.fruits');
+  if (s === 'roots' || s === 'root') return T('ns.val.part.roots');
+  if (s === 'bark') return T('ns.val.part.bark');
+  if (s === 'sap' || s === 'latex') return T('ns.val.part.sap');
+  if (s === 'stems' || s === 'stem') return T('ns.val.part.stems');
+  if (s === 'flowers' || s === 'flower') return T('ns.val.part.flowers');
+  if (s === 'bulbs' || s === 'bulb') return T('ns.val.part.bulbs');
+  if (s === 'all_parts' || s === 'all' || s === 'whole_plant') return T('ns.val.part.allParts');
+  return raw.replace(/_/g, ' ').trim();
+}
+
+function localizedMycorrhizae(raw: string | null | undefined): string {
+  const s = (raw ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  if (!s) return T('ns.notRecorded');
+  if (s === 'am' || s === 'arbuscular' || s === 'arbuscular_mycorrhizal') return T('ns.val.myco.am');
+  if (s === 'ecm' || s === 'ecto' || s === 'ectomycorrhizal') return T('ns.val.myco.ecm');
+  if (s === 'ericoid') return T('ns.val.myco.ericoid');
+  if (s === 'orchid') return T('ns.val.myco.orchid');
+  if (s === 'both' || s === 'am_ecm' || s === 'am+ecm') return T('ns.val.myco.both');
+  if (s === 'none' || s === 'nm' || s === 'non_mycorrhizal') return T('ns.val.none');
+  return raw!.trim();
+}
+
 function toxDossierText(t: Taxon, details: Details | null = null): string {
   const tx = toxicityStatusOf(t);
   if (tx.status === 'not_toxic') return T('ns.tox.none');
   if (tx.status === 'unknown') return T('ns.tox.unknown');
-  const parts = details?.toxicityParts?.map((tp) => tp.part.replace(/_/g, ' ')) ?? [];
+  const parts = details?.toxicityParts?.map((tp) => localizedPlantPart(tp.part)) ?? [];
   const uniq = [...new Set(parts)];
-  return `${tx.level ?? T('ns.tox.caution')}${uniq.length ? ` (${uniq.slice(0, 3).join(', ')})` : ''}`;
+  return `${localizedToxLevel(tx.level)}${uniq.length ? ` (${uniq.slice(0, 3).join(', ')})` : ''}`;
 }
 
 function isWinterCrop(t: Taxon): boolean {
@@ -135,11 +217,13 @@ function isWindbreak(t: Taxon): boolean {
 /** Verbatim port of mockup-v73.html renderSwapDiff (L3553). */
 function SwapDiffTable({ curPlant, candPlant, rep }: { curPlant: Taxon; candPlant: Taxon; rep: PaletteReport }) {
   const cmpEff = nsScenario.value === 'today' ? rep.eff2050 : rep.eff;
-  const cmpTag = nsScenario.value === 'today' ? '2050s' : scenarioShort(nsScenario.value);
+  const cmpTag = nsScenario.value === 'today' ? T('ns.scen.y2050.short') : scenarioShort(nsScenario.value);
   const vcT = evaluatePlantVerdict(curPlant, rep.effToday);
   const vcC = evaluatePlantVerdict(curPlant, cmpEff);
   const vnT = evaluatePlantVerdict(candPlant, rep.effToday);
   const vnC = evaluatePlantVerdict(candPlant, cmpEff);
+  const yrUnit = T('ns.unit.yr');
+  const mUnit = T('ns.unit.m');
 
   const extStr = (p: Taxon) => (p.extremes?.tminExtreme?.low != null && p.extremes?.tmaxExtreme?.high != null)
     ? `${fmtNum(p.extremes.tminExtreme.low)} – ${fmtNum(p.extremes.tmaxExtreme.high)} °C`
@@ -147,12 +231,12 @@ function SwapDiffTable({ curPlant, candPlant, rep }: { curPlant: Taxon; candPlan
   const matStr = (p: Taxon) => {
     const m = p.traits.age_of_maturity_years;
     if (m == null) return T('ns.unknown');
-    return m <= 0 ? T('ns.plan.ltOneYr') : `${fmtNum(m)} yr`;
+    return m <= 0 ? T('ns.plan.ltOneYr') : `${fmtNum(m)} ${yrUnit}`;
   };
-  const sizeStr = (p: Taxon) => `${p.traits.height_m?.max != null ? `${fmtNum(p.traits.height_m.max)} m` : '—'} × ${p.traits.width_max_m != null ? `${fmtNum(p.traits.width_max_m)} m` : '—'}`;
+  const sizeStr = (p: Taxon) => `${p.traits.height_m?.max != null ? `${fmtNum(p.traits.height_m.max)} ${mUnit}` : '—'} × ${p.traits.width_max_m != null ? `${fmtNum(p.traits.width_max_m)} ${mUnit}` : '—'}`;
   const waterStr = (p: Taxon) => T('ns.swaps.waterPair', {
-    drought: p.traits.drought_tolerance ?? T('ns.notRecorded'),
-    moisture: p.traits.moisture_use ?? T('ns.notRecorded'),
+    drought: localizedTraitLevel(p.traits.drought_tolerance),
+    moisture: localizedTraitLevel(p.traits.moisture_use),
   });
   const curJobs = jobsOf(curPlant);
   const candJobs = jobsOf(candPlant);
@@ -192,7 +276,7 @@ function SwapDiffTable({ curPlant, candPlant, rep }: { curPlant: Taxon; candPlan
           <tr><th>{T('ns.field.toxicity')}</th><td>{toxDossierText(curPlant)}</td><td>{toxDossierText(candPlant)}</td></tr>
           <tr>
             <th>{T('ns.swaps.rowJobsKept')}</th>
-            <td colSpan={2}>{jobsKept.length > 0 ? jobsKept.join(', ') : candJobs.map(jobLabel).join(', ')}</td>
+            <td colSpan={2}>{jobsKept.length > 0 ? jobsKept.join(', ') : T('ns.swaps.noJobsKept')}</td>
           </tr>
         </tbody>
       </table>
@@ -591,14 +675,8 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
           <div class="pf-group">
             <div class="pf-label">{T('ns.picker.grpHabit')}</div>
             <div class="pf-chips">
-              {[
-                ['tree', 'Tree / Canopy'],
-                ['shrub', 'Shrub'],
-                ['herb', 'Perennial / Herb'],
-                ['ground', 'Groundcover'],
-                ['vine', 'Vine'],
-              ].map(([k, lbl]) =>
-                facetChip(k, lbl, f.habit === k, cntWith({ habit: k }), () => setF((prev) => ({ ...prev, habit: prev.habit === k ? 'all' : k }))),
+              {(['tree', 'shrub', 'herb', 'ground', 'vine'] as const).map((k) =>
+                facetChip(k, habitLabel(k), f.habit === k, cntWith({ habit: k }), () => setF((prev) => ({ ...prev, habit: prev.habit === k ? 'all' : k }))),
               )}
               {boolChip('annual', T('ns.picker.fAnnual'))}
               {boolChip('fitsRoom', roomChipLabel)}
@@ -644,7 +722,7 @@ function PickerDrawer({ rep, initialJob }: { rep: PaletteReport; initialJob: Job
         <div class="active-pills" role="region" aria-label={T('ns.picker.moreFilters')}>
           {f.job !== 'all' && <button type="button" class="active-pill" onClick={() => setF((p) => ({ ...p, job: 'all' }))}>{jobLabel(f.job)} <span aria-hidden="true">✕</span></button>}
           {f.sun !== 'all' && <button type="button" class="active-pill" onClick={() => setF((p) => ({ ...p, sun: 'all' }))}>{lightKeyLabel(f.sun)} <span aria-hidden="true">✕</span></button>}
-          {f.habit !== 'all' && <button type="button" class="active-pill" onClick={() => setF((p) => ({ ...p, habit: 'all' }))}>{f.habit} <span aria-hidden="true">✕</span></button>}
+          {f.habit !== 'all' && <button type="button" class="active-pill" onClick={() => setF((p) => ({ ...p, habit: 'all' }))}>{habitLabel(f.habit)} <span aria-hidden="true">✕</span></button>}
           {f.phaseIdx !== null && <button type="button" class="active-pill" onClick={() => setF((p) => ({ ...p, phaseIdx: null }))}>{phaseLabel(PHASE_LIST[f.phaseIdx])} <span aria-hidden="true">✕</span></button>}
           {boolLabels.filter((b) => Boolean(f[b.key])).map((b) => (
             <button key={String(b.key)} type="button" class="active-pill" onClick={() => toggleBool(b.key)}>
@@ -847,17 +925,29 @@ function AtlasDrawer({ rep, swapFor }: { rep: PaletteReport; swapFor?: PlantId }
         <div class="shift-dials">
           <div class="shift-dial">
             <span class="shift-dial-k">{T('ns.land.freeze10')}</span>
-            <span class="shift-dial-v">{fmtNum(effToday.freeze10C)} → {fmtNum(eff2050.freeze10C)} °C</span>
+            <span class="shift-dial-v">
+              {effToday.freeze10C != null || eff2050.freeze10C != null
+                ? `${fmtNum(effToday.freeze10C)} → ${fmtNum(eff2050.freeze10C)} °C`
+                : T('ns.unknown')}
+            </span>
             <span class="shift-dial-d">{fmtDelta(dFreeze, '°C')}</span>
           </div>
           <div class="shift-dial">
             <span class="shift-dial-k">{T('ns.land.heat10')}</span>
-            <span class="shift-dial-v">{fmtNum(effToday.heat10C)} → {fmtNum(eff2050.heat10C)} °C</span>
+            <span class="shift-dial-v">
+              {effToday.heat10C != null || eff2050.heat10C != null
+                ? `${fmtNum(effToday.heat10C)} → ${fmtNum(eff2050.heat10C)} °C`
+                : T('ns.unknown')}
+            </span>
             <span class="shift-dial-d">{fmtDelta(dHeat, '°C')}</span>
           </div>
           <div class="shift-dial">
             <span class="shift-dial-k">{T('ns.land.drySpell')}</span>
-            <span class="shift-dial-v">{effToday.dryMonths ?? '—'} → {eff2050.dryMonths ?? '—'} / 12</span>
+            <span class="shift-dial-v">
+              {effToday.dryMonths != null || eff2050.dryMonths != null
+                ? `${effToday.dryMonths ?? '—'} → ${eff2050.dryMonths ?? '—'} / 12`
+                : T('ns.unknown')}
+            </span>
             <span class="shift-dial-d">{dDry == null ? '—' : dDry === 0 ? '0' : `${dDry > 0 ? '+' : ''}${dDry}`}</span>
           </div>
         </div>
@@ -1075,11 +1165,11 @@ function AtlasDrawer({ rep, swapFor }: { rep: PaletteReport; swapFor?: PlantId }
             </div>
             <div class="ph-track bullet-track-pad" style={{ marginBlock: '14px 4px' }}>
               <div class="ph-pin" style={{ left: `${pctPh(eff.soilPh).toFixed(1)}%` }} title={`0–30 cm pH ${fmtNum(eff.soilPh)}`}>
-                <span class="pin-tag">Top</span>
+                <span class="pin-tag">{T('ns.atlas.phTop')}</span>
               </div>
               {eff.subsoilPh != null && (
                 <div class="ph-pin ph-pin-sub" style={{ left: `${pctPh(eff.subsoilPh).toFixed(1)}%` }} title={`30–100 cm pH ${fmtNum(eff.subsoilPh)}`}>
-                  <span class="pin-tag" style={{ top: '17px' }}>Sub</span>
+                  <span class="pin-tag" style={{ top: '17px' }}>{T('ns.atlas.phSub')}</span>
                 </div>
               )}
             </div>
@@ -1660,11 +1750,11 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
         <div class="plant-badges">
           <span class="badge">
             {taxon.traits.age_of_maturity_years != null
-              ? (taxon.traits.age_of_maturity_years <= 0 ? T('ns.plan.ltOneYr') : `${fmtNum(taxon.traits.age_of_maturity_years)} yr`)
+              ? (taxon.traits.age_of_maturity_years <= 0 ? T('ns.plan.ltOneYr') : `${fmtNum(taxon.traits.age_of_maturity_years)} ${T('ns.unit.yr')}`)
               : T('ns.notRecorded')}
           </span>
-          <span class="badge">{taxon.traits.growth_rate ?? T('ns.notRecorded')}</span>
-          <span class="badge">{taxon.traits.lifespan ?? T('ns.notRecorded')}</span>
+          <span class="badge">{localizedTraitLevel(taxon.traits.growth_rate)}</span>
+          <span class="badge">{localizedTraitLevel(taxon.traits.lifespan)}</span>
         </div>
       </div>
 
@@ -1676,14 +1766,14 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
             <div class="fact-card">
               <div class="fact-card-title">{T('ns.dossier.grpPollination')}</div>
               <span><strong>{T('ns.picker.fSelfFertile')}:</strong> {poll ?? T('ns.notRecorded')}</span>
-              <span><strong>System:</strong> {taxon.traits.sexual_system ?? T('ns.notRecorded')}</span>
-              <span><strong>Pollinators:</strong> {taxon.traits.pollinators?.length ? taxon.traits.pollinators.join(', ') : T('ns.notRecorded')}</span>
+              <span><strong>{T('ns.dossier.system')}:</strong> {localizedSexualSystem(taxon.traits.sexual_system)}</span>
+              <span><strong>{T('ns.dossier.pollinators')}:</strong> {taxon.traits.pollinators?.length ? taxon.traits.pollinators.map(localizedPollinator).join(', ') : T('ns.notRecorded')}</span>
             </div>
             <div class="fact-card">
               <div class="fact-card-title">{T('ns.dossier.grpToxicity')}</div>
               <span>{toxDossierText(taxon, details)}</span>
               <span>
-                <strong>Allelopathy:</strong>{' '}
+                <strong>{T('ns.dossier.allelopathy')}:</strong>{' '}
                 {taxon.warnings.allelopathic === true ? T('ns.dossier.yesRecorded') : taxon.warnings.allelopathic === false ? T('ns.dossier.noRecorded') : T('ns.notRecorded')}
               </span>
               <span>
@@ -1693,8 +1783,8 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
             </div>
             <div class="fact-card">
               <div class="fact-card-title">{T('ns.dossier.grpWater')}</div>
-              <span><strong>{T('ns.picker.fDrought')}:</strong> {taxon.traits.drought_tolerance ?? T('ns.notRecorded')}</span>
-              <span><strong>{T('ns.field.water')}:</strong> {taxon.traits.moisture_use ?? T('ns.notRecorded')}</span>
+              <span><strong>{T('ns.picker.fDrought')}:</strong> {localizedTraitLevel(taxon.traits.drought_tolerance)}</span>
+              <span><strong>{T('ns.field.water')}:</strong> {localizedTraitLevel(taxon.traits.moisture_use)}</span>
               <span><strong>{T('ns.dossier.wind')}:</strong> {windText}</span>
               {rep.eff.tankDays != null && rep.eff.cddDays != null && (
                 <span class="small muted">
@@ -1706,10 +1796,14 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
               <div class="fact-card-title">{T('ns.dossier.grpSoil')}</div>
               <span>
                 <strong>{T('ns.land.drainage')}:</strong>{' '}
-                {taxon.traits.well_drained === true ? T('ns.dossier.wellDrained') : T('ns.notRecorded')}
+                {taxon.traits.well_drained === true
+                  ? T('ns.dossier.wellDrained')
+                  : taxon.traits.well_drained === false
+                    ? T('ns.dossier.notWellDrained')
+                    : T('ns.notRecorded')}
               </span>
-              <span><strong>{T('ns.dossier.fertility')}:</strong> {taxon.traits.fertility_requirement ?? T('ns.notRecorded')}</span>
-              <span><strong>Mycorrhizae:</strong> {taxon.traits.mycorrhizal_type ?? T('ns.notRecorded')}</span>
+              <span><strong>{T('ns.dossier.fertility')}:</strong> {localizedTraitLevel(taxon.traits.fertility_requirement)}</span>
+              <span><strong>{T('ns.dossier.mycorrhizae')}:</strong> {localizedMycorrhizae(taxon.traits.mycorrhizal_type)}</span>
               <span>
                 <strong>{T('ns.picker.fNfix')}:</strong>{' '}
                 {taxon.traits.nitrogen_fixer === true ? T('ns.dossier.yesRecorded') : taxon.traits.nitrogen_fixer === false ? T('ns.dossier.no') : T('ns.notRecorded')}
@@ -1781,7 +1875,7 @@ function DossierDrawer({ rep, id }: { rep: PaletteReport; id: PlantId }) {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px' }}>
-        <a class="small tap-link" href="/contact/">{T('ns.dossier.suggestCorrection')}</a>
+        <a class="small tap-link" href={currentLocale() === 'en' ? '/contact/' : `/${currentLocale()}/contact/`}>{T('ns.dossier.suggestCorrection')}</a>
         <button class="btn-primary" type="button" onClick={() => { nsDrawer.value = null; }}>
           {T('ns.close')}
         </button>

@@ -353,6 +353,7 @@ input[type="range"] { accent-color: var(--accent); width: 100%; min-height: 44px
   font-size: 12px; font-weight: 600; letter-spacing: 0.06em;
   text-transform: uppercase; color: var(--text-muted);
 }
+.pulse-kicker-keepcase { text-transform: none; }
 .pulse-h1 { font-size: clamp(20px, 2.3vw, 24px); line-height: 1.15; }
 .pulse-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .pill {

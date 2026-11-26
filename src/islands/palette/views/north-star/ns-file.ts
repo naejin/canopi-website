@@ -376,6 +376,19 @@ export async function saveCanopiFile(opts: { saveAs?: boolean; silent?: boolean 
   return true;
 }
 
+const VALID_FILE_CLIMATES: ReadonlySet<string> = new Set<ClimateZone>([
+  'Tropical', 'Arid', 'Mediterranean', 'Subtropical', 'Temperate', 'Continental', 'Boreal',
+]);
+
+function localizedOpenError(err: unknown): string {
+  const msg = err instanceof Error ? err.message : '';
+  const verMatch = /^Unsupported \.canopi version:\s*(.+)$/.exec(msg);
+  if (verMatch) return T('ns.file.errUnsupportedVersion', { v: verMatch[1] });
+  if (msg.startsWith('Invalid .canopi JSON')) return T('ns.file.errInvalidJson');
+  if (msg.startsWith('Invalid .canopi document')) return T('ns.file.errInvalidDoc');
+  return T('ns.file.readError');
+}
+
 export async function openCanopiText(
   text: string,
   opts: { fileName?: string; handle?: FileSystemFileHandleLike | null } = {},
@@ -385,7 +398,7 @@ export async function openCanopiText(
   try {
     parsed = parseCanopiFile(text);
   } catch (err) {
-    return { ok: false, error: (err as Error).message || T('ns.file.readError') };
+    return { ok: false, error: localizedOpenError(err) };
   }
 
   if (ensureCatalogFn) await ensureCatalogFn();
@@ -393,7 +406,11 @@ export async function openCanopiText(
   const byCanon = new Map<string, { id: PlantId; zone?: ClimateZone }>();
   const catalogTaxa = allCatalogTaxaFn?.() ?? [];
   const guestZones = guestZoneByIdFn?.() ?? new Map<PlantId, ClimateZone>();
-  const activeZ = (parsed.paletteStudio?.site?.climate as ClimateZone | undefined) ?? store.climate.peek();
+  const rawFileClimate = parsed.paletteStudio?.site?.climate;
+  const validFileClimate = typeof rawFileClimate === 'string' && VALID_FILE_CLIMATES.has(rawFileClimate)
+    ? (rawFileClimate as ClimateZone)
+    : undefined;
+  const activeZ = validFileClimate ?? store.climate.peek();
 
   for (const t of catalogTaxa) {
     const key = t.canonical_name.trim().toLowerCase();
@@ -479,7 +496,7 @@ export async function openCanopiText(
     store.members.value = matchedIds;
     store.guests.value = nextGuests;
     if (!store.climate.peek()) {
-      const targetZ = (parsed.paletteStudio?.site?.climate as ClimateZone | undefined)
+      const targetZ = validFileClimate
         ?? store.curatedClimates.peek()[0]
         ?? 'Temperate';
       store.climate.value = targetZ;

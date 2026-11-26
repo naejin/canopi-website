@@ -19,6 +19,7 @@ import * as store from '../store.ts';
 import { microclimate } from './studio.ts';
 
 interface SiteAnalogueView {
+  siteKey: string;
   horizon: '2041-2070' | '2071-2099';
   result: AnalogueResult;
   queryMs: number;
@@ -349,11 +350,17 @@ export async function loadSiteAnalogues(
   loc: SiteLocation | null,
   horizon: '2041-2070' | '2071-2099' = '2041-2070',
 ): Promise<void> {
-  if (!loc?.lookup?.climate) return;
-  const key = `${loc.lat.toFixed(3)},${loc.lon.toFixed(3)}:${horizon}`;
+  if (!loc?.lookup?.climate) {
+    siteAnalogue.value = null;
+    analogueStatus.value = 'idle';
+    return;
+  }
+  const siteKey = `${loc.lat.toFixed(3)},${loc.lon.toFixed(3)}`;
+  const key = `${siteKey}:${horizon}`;
   if (analogueInFlight === key) return;
   const cur = siteAnalogue.peek();
-  if (cur && cur.horizon === horizon && analogueStatus.peek() === 'ready') return;
+  if (cur && cur.siteKey === siteKey && cur.horizon === horizon && analogueStatus.peek() === 'ready') return;
+  if (cur && cur.siteKey !== siteKey) siteAnalogue.value = null;
   analogueInFlight = key;
   analogueStatus.value = 'loading';
   try {
@@ -397,11 +404,13 @@ export async function loadSiteAnalogues(
       { k: 3, exclude_radius_km: 50 },
     );
     const t1 = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const latest = store.location.peek();
+    if (latest && `${latest.lat.toFixed(3)},${latest.lon.toFixed(3)}` !== siteKey) return;
     if (!result) {
       analogueStatus.value = 'unavailable';
       return;
     }
-    siteAnalogue.value = { horizon, result, queryMs: Math.max(0.1, Math.round((t1 - t0) * 10) / 10) };
+    siteAnalogue.value = { siteKey, horizon, result, queryMs: Math.max(0.1, Math.round((t1 - t0) * 10) / 10) };
     analogueStatus.value = 'ready';
   } catch {
     analogueStatus.value = 'unavailable';

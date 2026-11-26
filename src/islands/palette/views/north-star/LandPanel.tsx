@@ -27,10 +27,12 @@ import {
   nsDrawer,
   nsLandOpen,
   nsOverrides,
+  nsSiteError,
   resetAllSiteOverrides,
   setRoomChoice,
   updateOverrides,
 } from './ns-state.ts';
+import { zoneName } from '../kit/names.ts';
 
 function EditResetBadge({ label, onReset }: { label?: string; onReset: () => void }) {
   return (
@@ -113,9 +115,9 @@ export function LandPanel({ rep, returnFocusTo }: { rep: PaletteReport; returnFo
   const highRelief = terrain != null && terrain.reliefM != null && terrain.reliefM > 300;
   const dShort = T('ns.unit.dayShort');
   const windValue = rawOv.wind ?? 'moderate';
-  const siteLabel = loc?.label ?? store.climate.value ?? T('ns.land.title');
+  const siteLabel = loc?.label ?? (store.climate.value ? zoneName(store.climate.value) : T('ns.land.title'));
   const climateParts = [
-    eff.koppen || store.climate.value || null,
+    eff.koppen || (store.climate.value ? zoneName(store.climate.value) : null),
     eff.usdaZone ? `USDA ${eff.usdaZone}` : null,
     eff.precipMm != null ? `${Math.round(eff.precipMm)} ${T('ns.unit.mmYear')}` : null,
   ].filter(Boolean);
@@ -162,7 +164,7 @@ export function LandPanel({ rep, returnFocusTo }: { rep: PaletteReport; returnFo
             <p class="pulse-kicker">{T('ns.land.title')}</p>
             <h2>{siteLabel}</h2>
             <p class="small muted tnum">
-              {climateParts.length ? climateParts.join(' · ') : T('ns.unknown')}
+              {climateParts.length ? climateParts.join(' · ') : T('ns.climateUnknown')}
               {elevEdited ? ` ${T('ns.land.gridCellTag')}` : ''}
             </p>
           </div>
@@ -187,6 +189,9 @@ export function LandPanel({ rep, returnFocusTo }: { rep: PaletteReport; returnFo
         </div>
 
         <div class="land-drawer-body">
+          {nsSiteError.value && (
+            <p class="ns-err" role="alert">{nsSiteError.value}</p>
+          )}
           {changePlaceOpen && (
             <div class="land-change-box">
               <PlaceSearchBox
@@ -235,8 +240,10 @@ export function LandPanel({ rep, returnFocusTo }: { rep: PaletteReport; returnFo
 
           {highRelief && terrain && (
             <div class="land-alert">
-              <strong>{T('ns.land.gridElev', { m: `${terrain.elevM?.toLocaleString() ?? '—'} m` })}</strong>
-              <span>{T('ns.land.mixedTerrain', { m: `${terrain.reliefM ?? 0} m` })}</span>
+              {terrain.elevM != null && (
+                <strong>{T('ns.land.gridElev', { m: `${fmtNum(terrain.elevM, 0)} ${T('ns.unit.m')}` })}</strong>
+              )}
+              <span>{T('ns.land.mixedTerrain', { m: `${fmtNum(terrain.reliefM ?? 0, 0)} ${T('ns.unit.m')}` })}</span>
             </div>
           )}
 
@@ -455,12 +462,12 @@ export function LandPanel({ rep, returnFocusTo }: { rep: PaletteReport; returnFo
                   <NumericField
                     id="elev-input"
                     value={eff.elevEff != null ? Math.round(eff.elevEff) : null}
-                    min={0}
-                    max={4000}
+                    min={-430}
+                    max={6000}
+                    allowNegative
                     optional
                     isEdited={elevEdited}
-                    inputMode="numeric"
-                    unit="m"
+                    unit={T('ns.unit.m')}
                     resetKey={fieldResetKey}
                     onCommit={(n) => updateOverrides({ elevM: n })}
                   />

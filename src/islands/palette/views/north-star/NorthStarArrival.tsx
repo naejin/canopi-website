@@ -4,8 +4,9 @@ import { useEffect, useState } from 'preact/hooks';
 import type { ClimateZone } from '../../../../lib/palette/index.ts';
 import { evaluatePlantVerdict, formatCountryName, isStructuralVine, resolveEffectiveSite, vineSupportTree } from '../../../../lib/palette/index.ts';
 import * as store from '../../store.ts';
-import { T } from '../../strings.ts';
+import { P, T } from '../../strings.ts';
 import { soilTextureLabel } from '../../rules/soil-labels.ts';
+import { zoneName } from '../kit/names.ts';
 import { markStart } from '../kit/start-mark.ts';
 import { PlantThumb } from './GuildVisuals.tsx';
 import { PlaceSearchBox } from './PlaceSearchBox.tsx';
@@ -27,21 +28,23 @@ import {
   launchEmpty,
   launchWithStarter,
   NS_PRESETS,
+  nsSiteError,
   nsSiteLoading,
   openCanopiAndToast,
   pickCoordinates,
+  presetSiteLabel,
   siteAnalogueLabel,
   startNsWatchers,
   starterPreview,
   updateOverrides,
 } from './ns-state.ts';
 
-const DIRECT_CLIMATES: readonly { id: ClimateZone; presetId: string; label: string }[] = [
-  { id: 'Mediterranean', presetId: 'montpellier', label: 'Mediterranean (Csa)' },
-  { id: 'Temperate', presetId: 'lyon', label: 'Temperate (Cfb)' },
-  { id: 'Subtropical', presetId: 'kyoto', label: 'Subtropical (Cfa)' },
-  { id: 'Continental', presetId: 'briancon', label: 'Mountain / Continental (Dfb)' },
-  { id: 'Tropical', presetId: 'belem', label: 'Tropical (Af)' },
+const DIRECT_CLIMATES: readonly { id: ClimateZone; presetId: string; koppen: string }[] = [
+  { id: 'Mediterranean', presetId: 'montpellier', koppen: 'Csa' },
+  { id: 'Temperate', presetId: 'lyon', koppen: 'Cfb' },
+  { id: 'Subtropical', presetId: 'kyoto', koppen: 'Cfa' },
+  { id: 'Continental', presetId: 'briancon', koppen: 'Dfb' },
+  { id: 'Tropical', presetId: 'belem', koppen: 'Af' },
 ];
 
 export function NorthStarArrival() {
@@ -63,7 +66,7 @@ export function NorthStarArrival() {
     startNsWatchers();
     if (!store.location.value && !nsSiteLoading.value) {
       const def = NS_PRESETS[0];
-      void pickCoordinates(def.lat, def.lon, def.label, def.zone, def.country);
+      void pickCoordinates(def.lat, def.lon, presetSiteLabel(def), def.zone, def.country);
     }
   }, []);
 
@@ -73,15 +76,15 @@ export function NorthStarArrival() {
   const starterThrives = starter.filter((p) => starterVerdicts.get(p.id)?.level === 'fits').length;
   const allFit = starter.length > 0 && starterThrives === starter.length;
 
-  const siteLabel = loc?.label ?? NS_PRESETS[0].label;
+  const siteLabel = loc?.label ?? presetSiteLabel(NS_PRESETS[0]);
   const shortName = shortSiteName(siteLabel);
   const texture = soilTextureLabel(loc?.lookup?.soil?.texture);
   const dryMoT = effToday.dryMonths;
   const dryMo50 = eff2050.dryMonths;
   const frostCal = loc?.lookup?.v07?.frostCalendar ?? null;
   const springP90Date = doyToDateLabel(frostCal?.lastSpringP90Doy);
-  const poolReady = store.load.value.status === 'ready' && activePool.value.length > 0;
-  const isHydrating = !loc?.lookup || loading || !poolReady;
+  const poolReady = store.load.value.status === 'ready' && (zone === null || activePool.value.length > 0);
+  const isHydrating = (!loc?.lookup && !nsSiteError.value) || loading || !poolReady;
   const noStarter = !isHydrating && starter.length === 0;
   const countryCode = effToday.country;
   const countryChecked = !!countryCode && store.source.value?.countries().get(countryCode)?.invasiveChecked === true;
@@ -97,20 +100,23 @@ export function NorthStarArrival() {
     if (res && !res.ok) setOpenErr(res.error);
   }
 
-  const renderPresetChip = (p: (typeof NS_PRESETS)[number], fullLabel: boolean, onPicked?: () => void) => (
-    <button
-      key={p.id}
-      type="button"
-      class="sample-chip"
-      aria-pressed={loc?.label === p.label ? 'true' : 'false'}
-      onClick={() => {
-        onPicked?.();
-        void pickCoordinates(p.lat, p.lon, p.label, p.zone, p.country);
-      }}
-    >
-      {fullLabel ? p.label : p.label.split(',')[0]}
-    </button>
-  );
+  const renderPresetChip = (p: (typeof NS_PRESETS)[number], fullLabel: boolean, onPicked?: () => void) => {
+    const pLabel = presetSiteLabel(p);
+    return (
+      <button
+        key={p.id}
+        type="button"
+        class="sample-chip"
+        aria-pressed={loc?.label === pLabel ? 'true' : 'false'}
+        onClick={() => {
+          onPicked?.();
+          void pickCoordinates(p.lat, p.lon, pLabel, p.zone, p.country);
+        }}
+      >
+        {fullLabel ? pLabel : p.city}
+      </button>
+    );
+  };
 
   return (
     <div class="wrap arrival-wrap">
@@ -172,10 +178,10 @@ export function NorthStarArrival() {
                     aria-pressed={active ? 'true' : 'false'}
                     onClick={() => {
                       setClimatePickOpen(false);
-                      void pickCoordinates(pr.lat, pr.lon, pr.label, pr.zone, pr.country);
+                      void pickCoordinates(pr.lat, pr.lon, presetSiteLabel(pr), pr.zone, pr.country);
                     }}
                   >
-                    {dc.label}
+                    {`${zoneName(dc.id)} (${dc.koppen})`}
                   </button>
                 );
               })}
@@ -189,20 +195,31 @@ export function NorthStarArrival() {
         {NS_PRESETS.map((p) => renderPresetChip(p, false))}
       </div>
 
+      {nsSiteError.value && (
+        <p class="ns-err" role="alert" style={{ marginBottom: '12px' }}>{nsSiteError.value}</p>
+      )}
+
       <section class="arrival-card" aria-label={T('ns.arrival.placeCardAria')} aria-busy={isHydrating ? 'true' : undefined}>
         <div>
-          <p class="pulse-kicker">
+          <p class="pulse-kicker pulse-kicker-keepcase">
             {isHydrating ? (
               <span class="ns-skel ns-skel-kicker" aria-hidden="true" />
-            ) : (
+            ) : effToday.koppen ? (
               <>
-                {effToday.koppen || zone || '—'} → {eff2050.koppen || effToday.koppen || '—'} (2050s)
+                {effToday.koppen} → {eff2050.koppen || effToday.koppen} ({T('ns.scen.y2050.short')})
                 {effToday.usdaZone ? ` · USDA ${effToday.usdaZone}` : ''}
               </>
+            ) : zone ? (
+              <>
+                {zoneName(zone)}
+                {effToday.usdaZone ? ` · USDA ${effToday.usdaZone}` : ''}
+              </>
+            ) : (
+              T('ns.climateUnknown')
             )}
           </p>
           <h2 style={{ fontSize: '26px', marginTop: '4px' }}>
-            {isHydrating ? siteLabel : siteLabel}
+            {siteLabel}
           </h2>
           <p class="muted" style={{ marginTop: '6px' }}>
             {isHydrating ? (
@@ -214,7 +231,9 @@ export function NorthStarArrival() {
             ) : (
               <>
                 {allFit
-                  ? T('ns.arrival.allFit', { ph: fmtNum(effToday.soilPh) })
+                  ? (effToday.soilPh != null
+                      ? T('ns.arrival.allFit', { ph: fmtNum(effToday.soilPh) })
+                      : T('ns.arrival.allFitNoPh'))
                   : T('ns.arrival.someFit', { ok: starterThrives, total: starter.length })}
                 {assumingSmall ? ` · ${T('ns.arrival.assumingSmall')}` : ''}
                 {' · '}
@@ -263,11 +282,11 @@ export function NorthStarArrival() {
               {isHydrating ? (
                 <span class="ns-skel ns-skel-meta" aria-hidden="true" />
               ) : frostCal?.frostFree ? (
-                T('ns.arrival.frostFreeDays', { n: 365 })
+                P('ns.arrival.frostFreeDays', 365)
               ) : springP90Date ? (
                 T('ns.arrival.lateSpringFrost', { date: springP90Date })
               ) : frostCal?.frostFreeDays != null ? (
-                T('ns.arrival.frostFreeDays', { n: frostCal.frostFreeDays })
+                P('ns.arrival.frostFreeDays', frostCal.frostFreeDays)
               ) : (
                 T('ns.unknown')
               )}
@@ -291,7 +310,15 @@ export function NorthStarArrival() {
           <div class="metric-box">
             <div class="metric-k">{T('ns.arrival.soilWaterCard')}</div>
             <div class="metric-v">
-              {isHydrating ? <span class="ns-skel ns-skel-val" aria-hidden="true" /> : <>pH {fmtNum(effToday.soilPh)} · {texture}</>}
+              {isHydrating
+                ? <span class="ns-skel ns-skel-val" aria-hidden="true" />
+                : (() => {
+                    const soilParts = [
+                      effToday.soilPh != null ? `pH ${fmtNum(effToday.soilPh)}` : null,
+                      loc?.lookup?.soil?.texture ? texture : null,
+                    ].filter(Boolean);
+                    return soilParts.length ? soilParts.join(' · ') : T('ns.unknown');
+                  })()}
             </div>
             <div class="metric-sub">
               {isHydrating ? (

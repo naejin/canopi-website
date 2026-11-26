@@ -59,13 +59,15 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
   const toBuy = rep.nurseryList;
   const alreadyOnSite = rep.taxa.filter((p) => rep.verdicts.get(p.id)?.alreadyOnSite);
 
+  const yrUnit = T('ns.unit.yr');
+  const mUnit = T('ns.unit.m');
   const y1: { p: Taxon; label: string }[] = [];
   const y5: { p: Taxon; label: string }[] = [];
   const y15: { p: Taxon; label: string }[] = [];
   for (const p of rep.taxa) {
     const mat = p.traits.age_of_maturity_years ?? null;
     if (mat != null) {
-      const matLabel = mat <= 0 ? T('ns.plan.ltOneYr') : `${fmtNum(mat)} yr`;
+      const matLabel = mat <= 0 ? T('ns.plan.ltOneYr') : `${fmtNum(mat)} ${yrUnit}`;
       if (mat <= 1.5) y1.push({ p, label: matLabel });
       else if (mat <= 5) y5.push({ p, label: matLabel });
       else y15.push({ p, label: matLabel });
@@ -83,7 +85,7 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
 
   const rootTraps = rep.taxa
     .filter((p) => rep.verdicts.get(p.id)?.subsoilPhTrap)
-    .map((p) => ({ name: taxCommonName(p), text: `Subsoil pH ${fmtNum(eff.subsoilPh)} outside preferred range` }));
+    .map((p) => ({ name: taxCommonName(p), text: T('ns.plan.subsoilTrapText', { ph: fmtNum(eff.subsoilPh) }) }));
 
   const unrecognizedCount = nsUnrecognizedPlants.value.length;
   const nonSpeciesCount = nsNonSpeciesEntries.value.length;
@@ -95,11 +97,11 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
     <div class="plan-grid">
       <section class="plan-card">
         <div>
-          <p class="pulse-kicker">Honest crown-area budget</p>
+          <p class="pulse-kicker">{T('ns.plan.budgetKicker')}</p>
           <h1 class="pulse-h1">{budgetHeadline}</h1>
           {unknownWidthCount > 0 && (
             <p class="small muted" style={{ marginTop: '4px' }}>
-              + {unknownWidthCount} species with unrecorded mature width (excluded from m² total).
+              {P('ns.plan.unknownWidthNote', unknownWidthCount)}
             </p>
           )}
         </div>
@@ -136,8 +138,8 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
         </div>
         <p class="small muted">
           {budgetPct > 100
-            ? 'Crowns overlap at maturity — reduce tree quantities or widen plot area.'
-            : `Fits comfortably inside your ${netM2} m² net planted area (${pathPct}% reserved for paths & access).`}
+            ? T('ns.plan.budgetOverHint')
+            : T('ns.plan.budgetFitsHint', { net: `${netM2} m²`, pct: pathPct })}
         </p>
       </section>
 
@@ -276,31 +278,27 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
         <div>
           <p class="pulse-kicker">{T('ns.plan.wavesHead')}</p>
           <h2 style={{ fontSize: '22px', marginTop: '4px' }}>
-            {eff.isMildWinter ? 'Autumn / Winter establishment → Canopy' : 'Wave 1 pioneer bridge → Wave 2 canopy'}
+            {eff.isMildWinter ? T('ns.plan.wavesTitleMild') : T('ns.plan.wavesTitleFrost')}
           </h2>
         </div>
         <p>
-          <strong>Wave 1 ({wave1.length} species):</strong>{' '}
-          {eff.isMildWinter
-            ? 'Establish nitrogen fixers, ground covers, and winter-rain perennials in Autumn / Winter so roots tap cool-season rain before dry summers.'
-            : 'Establish nitrogen fixers, ground covers, and mulch plants after last spring frost to build soil warmth and organic matter.'}
+          <strong>{P('ns.plan.wave1Head', wave1.length)}</strong>{' '}
+          {eff.isMildWinter ? T('ns.plan.wave1Mild') : T('ns.plan.wave1Frost')}
         </p>
         <p>
-          <strong>Wave 2 ({wave2.length} species):</strong>{' '}
-          {eff.isMildWinter
-            ? 'Plant drought-adapted perennials and bare-root canopy trees in late Autumn / Winter (dormancy) so deep roots establish before summer heat.'
-            : 'Plant hardy canopy trees during spring dormancy once soil can be worked and Wave 1 mulch is established.'}
+          <strong>{P('ns.plan.wave2Head', wave2.length)}</strong>{' '}
+          {eff.isMildWinter ? T('ns.plan.wave2Mild') : T('ns.plan.wave2Frost')}
         </p>
         <div class="land-alert">
-          <strong>Site-prep &amp; planting window:</strong>
+          <strong>{T('ns.plan.sitePrepHead')}</strong>
           <span>
-            {T('studio.tuner.phTexture', { texture })} (pH {fmtNum(eff.soilPh)}
+            {T('studio.tuner.phTexture', { texture })} ({eff.soilPh != null ? `pH ${fmtNum(eff.soilPh)}` : T('ns.unknown')}
             {eff.subsoilPh != null ? `, ${T('studio.v07.subsoilPhTag', { ph: fmtNum(eff.subsoilPh) })}` : ''}) · {T('ns.land.freeze10')} {freezeText(eff)}.
           </span>
         </div>
         {rootTraps.length > 0 && (
           <div class="land-alert">
-            <strong>Root-zone &amp; subsoil trap checks ({rootTraps.length}):</strong>
+            <strong>{T('ns.plan.rootTrapsHead', { n: rootTraps.length })}</strong>
             {rootTraps.slice(0, 5).map((t) => (
               <span key={t.name}>• <strong>{t.name}:</strong> {t.text}</span>
             ))}
@@ -310,12 +308,12 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
 
       <section class="plan-card">
         <div>
-          <p class="pulse-kicker">Mobile-ready nursery pocket checklist</p>
+          <p class="pulse-kicker">{T('ns.plan.nurseryKicker')}</p>
           <h2 style={{ fontSize: '22px', marginTop: '4px' }}>
             {T('ns.plan.nurseryTitle')} ({T('ns.plan.toSource', { n: toBuy.length })})
           </h2>
           <p class="small muted" style={{ marginTop: '4px' }}>
-            Checkmarks save on this device. Mark established plants &ldquo;Already on site&rdquo; to keep them in guild jobs, canopy, and pollination checks while hiding them from your shopping list.
+            {T('ns.plan.nurseryHint')}
           </p>
         </div>
 
@@ -343,8 +341,11 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
               const pollWarn = pollinationShortWarn(p);
               const wMax = p.traits.width_max_m ?? null;
               const spacingText = wMax != null
-                ? `Space ${fmtNum(wMax)} m · ~${fmtNum(Math.PI * (wMax / 2) ** 2 * qty, 1)} m² crown (est.)`
-                : 'Spacing unknown (mature width unrecorded)';
+                ? T('ns.plan.spacingEst', {
+                    w: `${fmtNum(wMax)} ${mUnit}`,
+                    crown: `${fmtNum(Math.PI * (wMax / 2) ** 2 * qty, 1)} m²`,
+                  })
+                : T('ns.plan.spacingUnknown');
               const fullName = taxCommonName(p);
               return (
                 <div key={p.id} class="nursery-item">
@@ -354,7 +355,7 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
                       class="nursery-check"
                       type="checkbox"
                       checked={ck}
-                      aria-label={`Mark ${fullName} bought`}
+                      aria-label={T('ns.plan.markBought', { name: fullName })}
                       onChange={() => toggleChecked(p.id)}
                     />
                   </label>
@@ -379,8 +380,8 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
                       <span class="small muted" style={{ fontStyle: 'italic' }}>{p.canonical_name}</span>{' '}
                       {tox && <span class={`badge ${tox.cls}`}>{tox.text}</span>}
                     </div>
-                    <div class="small muted">×{qty} (est.) · {spacingText}</div>
-                    {pollWarn && <div class="small" style={{ color: 'var(--pal-warn)', fontWeight: 600 }}>Pollination: {pollWarn}</div>}
+                    <div class="small muted">{T('ns.plan.qtyEst', { qty })} · {spacingText}</div>
+                    {pollWarn && <div class="small" style={{ color: 'var(--pal-warn)', fontWeight: 600 }}>{T('ns.plan.pollinationPrefix')} {pollWarn}</div>}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
                       <button
                         type="button"
@@ -403,7 +404,7 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
                     <button
                       type="button"
                       class="qty-btn"
-                      aria-label={`Decrease quantity of ${fullName}`}
+                      aria-label={T('ns.plan.qtyDec', { name: fullName })}
                       onClick={() => stepQty(p.id, -1, defQty)}
                     >
                       −
@@ -412,7 +413,7 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
                     <button
                       type="button"
                       class="qty-btn"
-                      aria-label={`Increase quantity of ${fullName}`}
+                      aria-label={T('ns.plan.qtyInc', { name: fullName })}
                       onClick={() => stepQty(p.id, 1, defQty)}
                     >
                       +
@@ -438,7 +439,7 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
         {alreadyOnSite.length > 0 && (
           <details class="tune-details">
             <summary>
-              <span>{T('ns.alreadyOnSite')} ({alreadyOnSite.length}) — excluded from shopping list</span>
+              <span>{T('ns.plan.onSiteSummary', { n: alreadyOnSite.length })}</span>
               <span aria-hidden="true">▾</span>
             </summary>
             <div class="tune-body">
@@ -446,7 +447,7 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
                 <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                   <span>
                     <strong>{taxCommonName(p)}</strong>{' '}
-                    <span class="small muted">(still counted in guild, canopy &amp; pollination)</span>
+                    <span class="small muted">{T('ns.plan.onSiteStillCounted')}</span>
                   </span>
                   <button
                     type="button"
@@ -454,7 +455,7 @@ export function PlanSurface({ rep }: { rep: PaletteReport }) {
                     aria-pressed="true"
                     onClick={() => toggleExisting(p.id)}
                   >
-                    ✓ On site (undo)
+                    {T('ns.plan.onSiteUndo')}
                   </button>
                 </div>
               ))}

@@ -19,9 +19,11 @@ import { T } from '../../strings.ts';
 import { Glyph } from '../kit/Glyph.tsx';
 import {
   fmtNum,
+  habitLabel,
   lightSpanLabel,
   pairInteractionLabel,
   photoUrlOf,
+  rootSystemLabel,
   scenarioShort,
   taxCommonName,
   verdictSymbolLabel,
@@ -279,7 +281,7 @@ export function GuildProfileSvg({ rep }: { rep: PaletteReport }) {
             }
           }}
         >
-          <title>{`${fullName} (${p.traits.habit ?? T('ns.unknown')} · ${hTag} · ${lightNeed})`}</title>
+          <title>{`${fullName} (${habitLabel(p.traits.habit)} · ${hTag} · ${lightNeed})`}</title>
           {isPartner && (
             <circle cx={cx.toFixed(1)} cy={(soilY - pH * 0.5).toFixed(1)} r={Math.max(14, pW * 0.6).toFixed(1)} fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-dasharray="3 2" />
           )}
@@ -420,11 +422,12 @@ export function WalterLiethSvg({ eff, rep }: { eff: EffectiveSiteClimate; rep: P
   // Size the vertical degree span from the site's actual peak rainfall/temp (+2° headroom) so no rain bar ever clamps flat at padT.
   const maxP = Math.max(0, ...mP);
   const maxT = Math.max(40, ...mT);
+  const minT = Math.min(-10, Math.floor((Math.min(...mT) - 2) / 10) * 10);
   const hasOver100 = maxP > 100;
   const precipTopDeg = hasOver100 ? 50 + Math.ceil((maxP - 100) / 100) * 5 + 2 : 50;
   const topDeg = Math.max(50, maxT, precipTopDeg);
-  const degSpan = topDeg + 10; // -10°C bottom to topDeg top
-  const yOfDeg = (deg: number) => Math.max(padT + 1, Math.min(padT + plotH, padT + plotH - ((deg + 10) / degSpan) * plotH));
+  const degSpan = topDeg - minT; // minT bottom (<= -10°C for boreal winters) to topDeg top
+  const yOfDeg = (deg: number) => Math.max(padT + 1, Math.min(padT + plotH, padT + plotH - ((deg - minT) / degSpan) * plotH));
   const yTemp = (t: number) => yOfDeg(t);
   const yPrecip = (p: number) => {
     const safeP = Math.max(0, p);
@@ -545,10 +548,12 @@ export function ScaleRootSvg({ taxon, roomLimitM }: { taxon: Taxon; roomLimitM: 
   const rootDepthPx = hasRootDepth ? Math.max(14, Math.min(40, (rootCm / 150) * 40)) : 36;
   const roomLineY = roomLimitM != null && roomLimitM <= scaleTopM ? (soilY - roomLimitM * pxPerM) : null;
 
-  const heightLabel = hVal != null ? T('ns.elev.heightVal', { m: `${fmtNum(hVal)} m` }) : T('ns.elev.heightUnknown');
-  const crownLabel = wVal != null ? T('ns.elev.crownVal', { m: `${fmtNum(wVal)} m` }) : T('ns.elev.crownUnknown');
+  const mUnit = T('ns.unit.m');
+  const heightLabel = hVal != null ? T('ns.elev.heightVal', { m: `${fmtNum(hVal)} ${mUnit}` }) : T('ns.elev.heightUnknown');
+  const crownLabel = wVal != null ? T('ns.elev.crownVal', { m: `${fmtNum(wVal)} ${mUnit}` }) : T('ns.elev.crownUnknown');
+  const rootKind = rootSystemLabel(taxon.traits.root_system_type);
   const rootLabel = hasRootDepth
-    ? `${T('ns.elev.rootsMin', { depth: `${fmtNum(rootCm, 0)} cm` })}${taxon.traits.root_system_type ? ` (${taxon.traits.root_system_type})` : ''}`
+    ? `${T('ns.elev.rootsMin', { depth: `${fmtNum(rootCm, 0)} cm` })}${rootKind ? ` (${rootKind})` : ''}`
     : T('ns.elev.rootUnknown');
 
   return (
