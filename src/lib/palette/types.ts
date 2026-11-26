@@ -524,14 +524,14 @@ export interface SiteExtremeSlot {
   scenario: string;
   tminExtremeC: number;
   tmaxExtremeC: number;
-  usdaZone: string;
+  usdaZone: string | null;
 }
 export interface SiteV07 {
   /** Tier 1 eager layers */
   extremes?: {
     tminExtremeC: number;
     tmaxExtremeC: number;
-    usdaZone: string;
+    usdaZone: string | null;
     futureTminExtremeC?: number | null;
     futureTmaxExtremeC?: number | null;
     lateTminExtremeC?: number | null;

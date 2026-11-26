@@ -88,7 +88,7 @@ export function buildTier1V07(tier1: SiteTier1 | null | undefined): Pick<SiteV07
       out.extremes = {
         tminExtremeC: pToday.tmin_extreme_c,
         tmaxExtremeC: pToday.tmax_extreme_c,
-        usdaZone: pToday.usda_zone,
+        usdaZone: pToday.usda_zone ?? null,
         futureTminExtremeC: p2050?.tmin_extreme_c ?? null,
         futureTmaxExtremeC: p2050?.tmax_extreme_c ?? null,
         lateTminExtremeC: p2080?.tmin_extreme_c ?? null,
@@ -98,7 +98,7 @@ export function buildTier1V07(tier1: SiteTier1 | null | undefined): Pick<SiteV07
           scenario: p.scenario,
           tminExtremeC: p.tmin_extreme_c,
           tmaxExtremeC: p.tmax_extreme_c,
-          usdaZone: p.usda_zone,
+          usdaZone: p.usda_zone ?? null,
         })),
       };
     }
